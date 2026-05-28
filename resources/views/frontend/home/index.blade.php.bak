@@ -1,0 +1,259 @@
+@extends('frontend.layouts.app')
+
+@section('title', 'JeniCare - منصة العناية بالشعر والبشرة')
+
+@push('scripts')
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "JeniCare",
+  "url": "{{ url('/') }}",
+  "logo": "{{ asset('assets/images/logo.png') }}",
+  "description": "منصة العناية بالشعر والبشرة الأولى في فلسطين - منتجات أصلية 100%",
+  "address": { "@type": "PostalAddress", "addressLocality": "رام الله", "addressCountry": "PS" },
+  "contactPoint": { "@type": "ContactPoint", "telephone": "+970-59-123-4567", "contactType": "customer service" },
+  "sameAs": ["#", "#", "#", "#"]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "JeniCare",
+  "url": "{{ url('/') }}",
+  "potentialAction": { "@type": "SearchAction", "target": "{{ url('/shop') }}?search={search_term_string}", "query-input": "required name=search_term_string" }
+}
+</script>
+@endpush
+
+@push('styles')
+<style>
+.section-pad { padding:50px 0; }
+.section-pad-alt { padding:50px 0; background:var(--gray-50); }
+.section-head { text-align:center; margin-bottom:32px; }
+.section-head h2 { font-size:1.5rem; font-weight:800; color:var(--gray-800); margin-bottom:6px; }
+.section-head p { color:var(--gray-500); font-size:.95rem; }
+.feature-box { background:#fff; border-radius:16px; padding:24px 20px; text-align:center; border:1px solid var(--gray-100); height:100%; transition:all .3s; }
+.feature-box:hover { box-shadow:0 8px 32px rgba(0,0,0,.08); transform:translateY(-3px); }
+.feature-icon { width:56px; height:56px; border-radius:14px; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:1.3rem; }
+.feature-box h3 { font-size:1rem; font-weight:700; margin-bottom:6px; color:var(--gray-800); }
+.feature-box p { color:var(--gray-500); font-size:.85rem; line-height:1.6; margin:0; }
+</style>
+@endpush
+
+@section('content')
+
+@include('frontend.components.hero-slider', ['slides' => $slides])
+
+@php
+    $trustStats = [
+        ['icon' => 'fa-box', 'value' => \App\Models\Product::count(), 'label' => 'منتج'],
+        ['icon' => 'fa-users', 'value' => \App\Models\Category::count(), 'label' => 'قسم'],
+        ['icon' => 'fa-truck', 'value' => '1-3', 'label' => 'أيام توصيل'],
+        ['icon' => 'fa-shield-alt', 'value' => '100%', 'label' => 'منتجات أصلية'],
+    ];
+@endphp
+<div style="background:#fff;border-bottom:1px solid var(--gray-100);padding:20px 0;">
+    <div class="container">
+        <div class="row g-2 text-center">
+            @foreach($trustStats as $stat)
+            <div class="col-6 col-md-3">
+                <div style="padding:12px 8px;">
+                    <div style="font-size:1.4rem;font-weight:800;color:var(--gray-800);margin-bottom:2px;">{{ $stat['value'] }}</div>
+                    <div style="font-size:.8rem;color:var(--gray-500);display:flex;align-items:center;justify-content:center;gap:6px;">
+                        <i class="fas {{ $stat['icon'] }}" style="color:var(--pink-600);font-size:.7rem;"></i> {{ $stat['label'] }}
+                    </div>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+</div>
+
+<section class="section-pad-alt">
+    <div class="container">
+        <div class="section-head">
+            <h2>لماذا <span style="color:var(--pink-600);">JeniCare</span>؟</h2>
+            <p>نقدم لكِ تجربة تسوق فاخرة ومتكاملة</p>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-box">
+                    <div class="feature-icon" style="background:linear-gradient(135deg,var(--pink-50),var(--pink-100));color:var(--pink-600);"><i class="fas fa-check-circle"></i></div>
+                    <h3>منتجات أصلية 100%</h3>
+                    <p>نضمن لكِ منتجات أصلية ومضمونة من الوكلاء المعتمدين</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-box">
+                    <div class="feature-icon" style="background:linear-gradient(135deg,#E0F2FE,#BAE6FD);color:#0284C7;"><i class="fas fa-truck"></i></div>
+                    <h3>شحن سريع وآمن</h3>
+                    <p>توصيل لكل مدن فلسطين خلال 1-3 أيام عمل</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-box">
+                    <div class="feature-icon" style="background:linear-gradient(135deg,#FEF3C7,#FDE68A);color:#D97706;"><i class="fas fa-headset"></i></div>
+                    <h3>دعم فني متخصص</h3>
+                    <p>فريق متخصص للإجابة على استفساراتك ومساعدتك</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-box">
+                    <div class="feature-icon" style="background:linear-gradient(135deg,#DCFCE7,#BBF7D0);color:#16A34A;"><i class="fas fa-credit-card"></i></div>
+                    <h3>طرق دفع مرنة</h3>
+                    <p>الدفع عند الاستلام، تحويل بنكي، جوال باي، أو Reflect</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@if($categories->isNotEmpty())
+<section class="section-pad">
+    <div class="container">
+        <div class="section-head">
+            <h2>تصفحي <span style="color:var(--pink-600);">الأقسام</span></h2>
+            <p>اكتشفي مجموعتنا المختارة بعناية</p>
+        </div>
+        <div class="row g-3" id="categoriesGrid">
+            @foreach($categories as $index => $category)
+            <div class="col-6 col-md-4 col-lg-3 category-grid-item" style="{{ $index >= 8 ? 'display:none;' : '' }}">
+                <a href="{{ route('shop', ['category' => $category->slug]) }}" style="display:block;text-decoration:none;">
+                    <div style="background:#fff;border-radius:16px;overflow:hidden;border:1px solid var(--gray-100);transition:all .35s cubic-bezier(0.16,1,0.3,1);" onmouseover="this.style.boxShadow='0 12px 40px rgba(0,0,0,.1)';this.style.transform='translateY(-4px)'" onmouseout="this.style.boxShadow='none';this.style.transform='none'">
+                        
+                        {{-- Image --}}
+                        <div style="position:relative;aspect-ratio:1/1;overflow:hidden;background:linear-gradient(135deg,var(--gray-50),var(--gray-100));">
+                            @if($category->sample_image)
+                            <img src="{{ $category->sample_image }}" alt="{{ $category->display_name }}" loading="lazy" style="width:100%;height:100%;object-fit:cover;transition:transform .6s;" onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'">
+                            @else
+                            <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-layer-group" style="font-size:2.5rem;color:var(--pink-200);"></i>
+                            </div>
+                            @endif
+                            
+                            {{-- Soft gradient overlay at bottom --}}
+                            <div style="position:absolute;bottom:0;right:0;left:0;height:50%;background:linear-gradient(to top,rgba(0,0,0,0.5),transparent);"></div>
+                            
+                            {{-- Product count badge --}}
+                            <div style="position:absolute;top:10px;right:10px;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);color:var(--gray-700);padding:4px 10px;border-radius:50px;font-size:.7rem;font-weight:600;display:flex;align-items:center;gap:4px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+                                <i class="fas fa-box" style="font-size:.55rem;color:var(--pink-600);"></i> {{ $category->products_count }}
+                            </div>
+
+                            {{-- Category name at bottom --}}
+                            <div style="position:absolute;bottom:12px;right:12px;left:12px;">
+                                <h3 style="color:#fff;font-size:.95rem;font-weight:700;margin:0;line-height:1.3;text-shadow:0 1px 3px rgba(0,0,0,0.3);">
+                                    {{ $category->display_name }}
+                                </h3>
+                                @if($category->min_price)
+                                <div style="color:rgba(255,255,255,0.85);font-size:.75rem;font-weight:500;margin-top:2px;">
+                                    {{ number_format($category->min_price) }} - {{ number_format($category->max_price) }} ₪
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            @endforeach
+        </div>
+        @if($categories->count() > 8)
+        <div class="text-center" style="margin-top:20px;">
+            <button id="showMoreCats" onclick="toggleCategories()" style="padding:12px 36px;background:#fff;color:var(--pink-600);border:2px solid var(--pink-200);border-radius:50px;font-weight:700;font-size:.9rem;cursor:pointer;transition:all .3s;font-family:inherit;" onmouseover="this.style.background='var(--pink-50)';this.style.borderColor='var(--pink-400)'" onmouseout="this.style.background='#fff';this.style.borderColor='var(--pink-200)'">
+                <i class="fas fa-chevron-down"></i> عرض المزيد من الأقسام
+            </button>
+        </div>
+        @endif
+    </div>
+</section>
+@endif
+
+@if($featuredProducts->isNotEmpty())
+<section class="section-pad-alt">
+    <div class="container">
+        <div class="section-head">
+            <h2>المنتجات <span style="color:var(--pink-600);">المميزة</span></h2>
+            <p>أفضل منتجاتنا اختياراً لك</p>
+        </div>
+        <div class="row g-3">
+            @foreach($featuredProducts as $product)
+            <div class="col-md-6 col-lg-3">
+                @include('frontend.components.product-card', ['product' => $product, 'badge' => $product->is_on_sale ? 'sale' : null])
+            </div>
+            @endforeach
+        </div>
+    </div>
+</section>
+@endif
+
+@if($newProducts->isNotEmpty())
+<section class="section-pad">
+    <div class="container">
+        <div class="section-head">
+            <h2>وصل <span style="color:var(--pink-600);">حديثاً</span></h2>
+            <p>أحدث المنتجات المضافة إلى متجرنا</p>
+        </div>
+        <div class="row g-3">
+            @foreach($newProducts as $product)
+            <div class="col-md-6 col-lg-3">
+                @include('frontend.components.product-card', ['product' => $product, 'badge' => 'new'])
+            </div>
+            @endforeach
+        </div>
+    </div>
+</section>
+@endif
+
+{{-- Recently Viewed --}}
+<div id="recentlyViewed" style="display:none;background:var(--gray-50);padding:40px 0;border-top:1px solid var(--gray-100);">
+    <div class="container">
+        <div class="section-head">
+            <h2>شاهدتِ <span style="color:var(--pink-600);">مؤخراً</span></h2>
+        </div>
+        <div class="row g-3" id="recentlyViewedGrid"></div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+    if (viewed.length < 1) return;
+    const section = document.getElementById('recentlyViewed');
+    const grid = document.getElementById('recentlyViewedGrid');
+    const bp = window.basePath || '';
+    section.style.display = 'block';
+    grid.innerHTML = viewed.slice(0, 4).map(p => `
+        <div class="col-6 col-md-3">
+            <a href="${bp}/product/${p.slug}" style="text-decoration:none;">
+                <div style="background:#fff;border-radius:12px;overflow:hidden;border:1px solid var(--gray-100);transition:all .3s;" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.1)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='none';this.style.transform='none'">
+                    ${p.img ? `<img src="${p.img}" style="width:100%;aspect-ratio:1/1;object-fit:cover;">` : '<div style="width:100%;aspect-ratio:1/1;background:var(--gray-100);display:flex;align-items:center;justify-content:center;"><i class="fas fa-box" style="color:var(--gray-300);font-size:2rem;"></i></div>'}
+                    <div style="padding:10px;">
+                        <div style="font-size:.8rem;font-weight:600;color:var(--gray-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+                        <div style="font-size:.85rem;font-weight:700;color:var(--pink-600);">${p.price}</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    `).join('');
+})();
+</script>
+
+<script>
+function toggleCategories() {
+    const btn = document.getElementById('showMoreCats');
+    const items = document.querySelectorAll('.category-grid-item');
+    const isShowing = btn.dataset.expanded === '1';
+    
+    items.forEach((el, i) => {
+        if (i >= 8) el.style.display = isShowing ? 'none' : '';
+    });
+    
+    btn.dataset.expanded = isShowing ? '0' : '1';
+    btn.innerHTML = isShowing 
+        ? '<i class="fas fa-chevron-down"></i> عرض المزيد من الأقسام' 
+        : '<i class="fas fa-chevron-up"></i> عرض أقل';
+}
+</script>
+
+@endsection

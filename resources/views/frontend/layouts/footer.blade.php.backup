@@ -1,0 +1,268 @@
+<footer class="site-footer">
+    <div class="footer-newsletter">
+        <div class="container">
+            <div class="newsletter-content">
+                <div class="newsletter-text">
+                    <h3><i class="fas fa-envelope-open-text"></i> اشترك في نشرتنا البريدية</h3>
+                    <p>احصل على عروض حصرية وأحدث المنتجات أولاً بأول</p>
+                </div>
+                <form class="newsletter-form" id="newsletterForm">
+                    @csrf
+                    <input type="email" placeholder="أدخل بريدك الإلكتروني" required>
+                    <button type="submit">اشتراك</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-main">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col footer-brand">
+                    <div class="footer-logo">
+                        @if(!empty($siteSettings['site_logo_url']))
+                            <img src="{{ $siteSettings['site_logo_url'] }}" alt="{{ $siteSettings['site_name'] ?? 'JeninCare' }}" style="height:40px;width:auto;object-fit:contain;">
+                        @else
+                            <span class="logo-icon">{{ substr($siteSettings['site_name'] ?? 'J', 0, 1) }}</span>
+                            <span class="logo-text">{{ $siteSettings['site_name'] ?? 'JeninCare' }}</span>
+                        @endif
+                    </div>
+                    <p class="footer-desc">{{ $siteSettings['site_description'] ?? 'منصة العناية بالشعر والبشرة الأولى في فلسطين. نقدم أفضل المنتجات العالمية والعناية الاحترافية.' }}</p>
+                    <div class="footer-social">
+                        @if(!empty($siteSettings['facebook_url']))
+                            <a href="{{ $siteSettings['facebook_url'] }}" class="social-link" target="_blank" title="فيسبوك"><i class="fab fa-facebook-f"></i></a>
+                        @endif
+                        @if(!empty($siteSettings['instagram_url']))
+                            <a href="{{ $siteSettings['instagram_url'] }}" class="social-link" target="_blank" title="إنستغرام"><i class="fab fa-instagram"></i></a>
+                        @endif
+                        @if(!empty($siteSettings['twitter_url']))
+                            <a href="{{ $siteSettings['twitter_url'] }}" class="social-link" target="_blank" title="تويتر"><i class="fab fa-twitter"></i></a>
+                        @endif
+                        @if(!empty($siteSettings['linkedin_url']))
+                            <a href="{{ $siteSettings['linkedin_url'] }}" class="social-link" target="_blank" title="لينكدإن"><i class="fab fa-linkedin-in"></i></a>
+                        @endif
+                        @if(!empty($siteSettings['tiktok_url']))
+                            <a href="{{ $siteSettings['tiktok_url'] }}" class="social-link" target="_blank" title="تيك توك"><i class="fab fa-tiktok"></i></a>
+                        @endif
+                        @if(!empty($siteSettings['youtube_url']))
+                            <a href="{{ $siteSettings['youtube_url'] }}" class="social-link" target="_blank" title="يوتيوب"><i class="fab fa-youtube"></i></a>
+                        @endif
+                        @if(!empty($siteSettings['whatsapp_number']))
+                            <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $siteSettings['whatsapp_number']) }}" class="social-link" target="_blank" title="واتساب"><i class="fab fa-whatsapp"></i></a>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="footer-title">روابط سريعة</h4>
+                    <ul class="footer-links">
+                        <li><a href="{{ route('home') }}"><i class="fas fa-chevron-left"></i> الرئيسية</a></li>
+                        <li><a href="{{ route('shop') }}"><i class="fas fa-chevron-left"></i> المتجر</a></li>
+                        <li><a href="{{ route('b2b') }}"><i class="fas fa-chevron-left"></i> للأعمال</a></li>
+                        <li><a href="{{ route('contact') }}"><i class="fas fa-chevron-left"></i> تواصل معنا</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="footer-title">خدمة العملاء</h4>
+                    <ul class="footer-links">
+                        <li><a href="{{ route('return-policy') }}"><i class="fas fa-chevron-left"></i> سياسة الإرجاع</a></li>
+                        <li><a href="{{ route('shipping-policy') }}"><i class="fas fa-chevron-left"></i> الشحن والتوصيل</a></li>
+                        <li><a href="{{ route('faq') }}"><i class="fas fa-chevron-left"></i> الأسئلة الشائعة</a></li>
+                        <li><a href="{{ route('terms') }}"><i class="fas fa-chevron-left"></i> الشروط والأحكام</a></li>
+                        <li><a href="{{ route('privacy') }}"><i class="fas fa-chevron-left"></i> سياسة الخصوصية</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="footer-title">معلومات الاتصال</h4>
+                    <ul class="footer-contact">
+                        <li><i class="fas fa-map-marker-alt"></i> {{ $siteSettings['site_address'] ?? 'رام الله، فلسطين' }}</li>
+                        <li><i class="fas fa-phone-alt"></i> {{ $siteSettings['site_phone'] ?? '+972 56 903 0203' }}</li>
+                        <li><i class="fas fa-envelope"></i> {{ $siteSettings['site_email'] ?? 'info@jenincare.com' }}</li>
+                        <li><i class="fas fa-clock"></i> سبت - خميس: 9:00 - 21:00</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-bottom">
+        <div class="container">
+            <div class="footer-bottom-content">
+                <p class="copyright">&copy; {{ date('Y') }} {{ $siteSettings['site_name'] ?? 'JeninCare' }}. جميع الحقوق محفوظة.</p>
+                <div class="payment-methods">
+                    <span class="payment-cod">الدفع عند الاستلام</span>
+                    @if(($siteSettings['payment_bank_enabled'] ?? '0') == '1')<span class="payment-cod">تحويل بنكي</span>@endif
+                    @if(($siteSettings['payment_jawwal_enabled'] ?? '0') == '1')<span class="payment-cod" style="background:#FEF3C7;color:#92400E;">جوال باي</span>@endif
+                    @if(($siteSettings['payment_reflect_enabled'] ?? '0') == '1')<span class="payment-cod" style="background:#ECFEFF;color:#155E75;">Reflect</span>@endif
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<style>
+.site-footer {
+    background: var(--white);
+    color: var(--gray-700);
+    margin-top: 60px;
+    border-top: 1px solid var(--gray-200);
+}
+.footer-newsletter {
+    background: var(--pink-50);
+    padding: 30px 0;
+    border-bottom: 1px solid var(--pink-200);
+}
+.newsletter-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+.newsletter-text h3 {
+    color: var(--gray-800);
+    margin-bottom: 4px;
+    font-size: 1.2rem;
+}
+.newsletter-text h3 i { color: var(--pink-600); margin-left: 8px; }
+.newsletter-text p { color: var(--gray-500); margin: 0; font-size: 0.9rem; }
+.newsletter-form {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    width: 100%;
+    max-width: 420px;
+}
+.newsletter-form input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    font-family: var(--font-primary);
+    font-size: 0.9rem;
+    outline: none;
+}
+.newsletter-form button {
+    padding: 12px 28px;
+    background: linear-gradient(135deg, var(--pink-600), var(--pink-500));
+    border: none;
+    border-radius: var(--radius-md);
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.3s;
+}
+.newsletter-form button:hover { opacity: 0.9; }
+.footer-main { padding: 50px 0 30px; }
+.footer-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    gap: 2rem;
+}
+@media (max-width: 768px) {
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 576px) {
+    .footer-grid { grid-template-columns: 1fr; }
+    .newsletter-content { flex-direction: column; }
+}
+.footer-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.footer-logo .logo-icon {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--pink-600), var(--pink-500));
+    border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 0.75rem; color: #fff;
+}
+.footer-logo .logo-text { font-family: var(--font-secondary); font-size: 1.3rem; font-weight: 800; color: var(--gray-800); }
+.footer-desc { color: var(--gray-500); font-size: 0.9rem; line-height: 1.7; margin-bottom: 16px; }
+.footer-social { display: flex; gap: 8px; }
+.social-link {
+    width: 38px; height: 38px;
+    background: var(--gray-100);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gray-600);
+    text-decoration: none;
+    transition: all 0.3s;
+}
+.social-link:hover { background: var(--pink-600); color: #fff; }
+.footer-title {
+    color: var(--gray-800);
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    position: relative;
+    padding-bottom: 10px;
+}
+.footer-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 30px;
+    height: 3px;
+    background: linear-gradient(135deg, var(--pink-500), var(--pink-300));
+    border-radius: 2px;
+}
+.footer-links { list-style: none; padding: 0; margin: 0; }
+.footer-links li { margin-bottom: 10px; }
+.footer-links a {
+    color: var(--gray-600);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s;
+    font-size: 0.9rem;
+}
+.footer-links a i { font-size: 0.6rem; }
+.footer-links a:hover { color: var(--pink-600); padding-right: 5px; }
+.footer-contact { list-style: none; padding: 0; margin: 0; }
+.footer-contact li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    color: var(--gray-600);
+    font-size: 0.9rem;
+}
+.footer-contact li i {
+    width: 32px; height: 32px;
+    background: var(--pink-100);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--pink-600);
+    flex-shrink: 0;
+}
+.footer-bottom {
+    background: var(--gray-50);
+    padding: 16px 0;
+    border-top: 1px solid var(--gray-200);
+}
+.footer-bottom-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.copyright { color: var(--gray-500); font-size: 0.85rem; margin: 0; }
+.payment-methods {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--gray-400);
+    font-size: 1.5rem;
+}
+.payment-cod {
+    font-size: 0.7rem;
+    font-weight: 700;
+    background: var(--gray-200);
+    color: var(--gray-700);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+</style>

@@ -10,7 +10,16 @@ use Modules\Meta\Models\MetaLead;
 class MarketingTrackingController extends Controller
 {
     private function dbVal($key, $default = '') {
-        return Setting::where('key', $key)->value('value') ?? $default;
+        try {
+            $val = Setting::where('key', $key)->value('value');
+            if (is_string($val)) {
+                $decoded = json_decode($val, true);
+                if ($decoded !== null && is_string($decoded)) return $decoded;
+            }
+            return $val ?? $default;
+        } catch (\Exception $e) {
+            return $default;
+        }
     }
 
     private function fbSettings() {

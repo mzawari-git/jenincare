@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="description" content="@yield('meta_description', 'JeniCare - المنصة الرائدة لتقنيات العناية بالبشرة المتقدمة وحلول الجمال الاحترافية')">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="@yield('title', ($siteSettings['site_name'] ?? 'JeninCare') . ' | ' . ($siteSettings['site_description'] ?? ''))">
+    <meta property="og:description" content="@yield('meta_description', $siteSettings['site_description'] ?? 'المنصة الرائدة لتقنيات العناية بالبشرة المتقدمة وحلول الجمال الاحترافية')">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:image" content="@yield('og_image', asset('assets/images/og-image.webp'))">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@yield('title', ($siteSettings['site_name'] ?? 'JeninCare') . ' | ' . ($siteSettings['site_description'] ?? ''))">
+    <meta name="twitter:description" content="@yield('meta_description', 'المنصة الرائدة لتقنيات العناية بالبشرة المتقدمة وحلول الجمال الاحترافية')">
+    <meta name="twitter:image" content="@yield('og_image', asset('assets/images/og-image.webp'))">
+
+    <title>@yield('title', ($siteSettings['site_name'] ?? 'JeninCare'))</title>
+
+    {{-- Favicon --}}
+    @if(!empty($siteSettings['site_favicon_url']))
+        <link rel="icon" type="image/png" href="{{ $siteSettings['site_favicon_url'] }}">
+        <link rel="apple-touch-icon" href="{{ $siteSettings['site_favicon_url'] }}">
+    @else
+        <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    @endif
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('css/main.css') }}">
+
+    @php $tracking = app(\App\Services\AdvertisingTrackingService::class); @endphp
+
+    {{-- Floating Social Sidebar Styles --}}
+    <style>
+        .floating-social {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .floating-social a {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            text-decoration: none;
+        }
+        .floating-social a:hover {
+            transform: scale(1.1) translateX(5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+        .floating-social .social-facebook { background: #1877F2; }
+        .floating-social .social-instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
+        .floating-social .social-twitter { background: #1DA1F2; }
+        .floating-social .social-linkedin { background: #0A66C2; }
+        .floating-social .social-tiktok { background: #000; }
+        .floating-social .social-youtube { background: #FF0000; }
+        .floating-social .social-whatsapp { background: #25D366; }
+
+        @media (max-width: 768px) {
+            .floating-social {
+                left: 10px;
+                bottom: 100px;
+                top: auto;
+                transform: none;
+            }
+            .floating-social a {
+                width: 38px;
+                height: 38px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+
+    @stack('styles')
+</head>
+<body>
+    @if($tracking->isEnabled()) {!! $tracking->getBrowserPixelNoscript() !!} @endif
+
+    @include('frontend.layouts.header')
+
+    <main class="main-content">
+        @yield('content')
+    </main>
+
+    @include('frontend.layouts.footer')
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="{{ asset('js/app.js') }}"></script>
+
+    @if($tracking->isEnabled()) {!! $tracking->getBrowserPixelScript() !!} @endif
+
+    @stack('scripts')
+
+    {{-- Quick View Modal --}}
+    <div class="modal fade" id="quickViewModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content" style="border-radius:16px;border:none;overflow:hidden;">
+                <div class="modal-header" style="border:none;padding:16px 20px;">
+                    <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="quickViewBody" style="padding:0 20px 24px;">
+                    <div class="text-center py-4"><div class="spinner-border text-pink"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Search Autocomplete Dropdown --}}
+    <div id="searchDropdown" style="display:none;position:absolute;top:100%;right:0;left:0;background:#fff;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.15);z-index:9999;max-height:420px;overflow-y:auto;margin-top:4px;"></div>
+
+    <script>
+    // ============ SEARCH AUTOCOMPLETE ============
+    let searchTimer;
+    const searchInput = document.querySelector('input[name="search"], input[placeholder*="بحث"], input[placeholder*="search"]');
+    const searchDropdown = document.getElementById('searchDropdown');
+
+    if (searchInput && searchDropdown) {
+        searchInput.setAttribute('autocomplete', 'off');
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimer);
+            const q = this.value.trim();
+            if (q.length < 2) { searchDropdown.style.display = 'none'; return; }
+            searchTimer = setTimeout(() => {
+                const basePath = window.basePath || '';
+                fetch(basePath + '/api/search?q=' + encodeURIComponent(q))
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.length) { searchDropdown.style.display = 'none'; return; }
+                        searchDropdown.innerHTML = data.map(p => `
+                            <a href="${p.url}" style="display:flex;align-items:center;gap:12px;padding:10px 14px;text-decoration:none;color:var(--gray-800);transition:background .15s;border-bottom:1px solid var(--gray-100);"
+                               onmouseover="this.style.background='var(--pink-50)'" onmouseout="this.style.background=''">
+                                ${p.image ? `<img src="${p.image}" style="width:44px;height:44px;border-radius:10px;object-fit:cover;">` : '<div style="width:44px;height:44px;border-radius:10px;background:var(--gray-100);"></div>'}
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-weight:600;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+                                    <div style="font-size:.8rem;color:var(--pink-600);font-weight:700;">${p.price}</div>
+                                </div>
+                            </a>
+                        `).join('');
+                        searchDropdown.style.display = 'block';
+                        // Position dropdown below search input
+                        const rect = searchInput.getBoundingClientRect();
+                        searchDropdown.style.top = (rect.bottom + window.scrollY) + 'px';
+                        searchDropdown.style.left = rect.left + 'px';
+                        searchDropdown.style.width = rect.width + 'px';
+                    });
+            }, 300);
+        });
+        document.addEventListener('click', e => { if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) searchDropdown.style.display = 'none'; });
+    }
+
+    // ============ QUICK VIEW ============
+    async function quickView(productId) {
+        const modal = new bootstrap.Modal(document.getElementById('quickViewModal'));
+        const body = document.getElementById('quickViewBody');
+        body.innerHTML = '<div class="text-center py-4"><div class="spinner-border" style="color:var(--pink-600);"></div></div>';
+        modal.show();
+        const basePath = window.basePath || '';
+        try {
+            const r = await fetch(basePath + '/api/product/' + productId + '/quickview');
+            const p = await r.json();
+            body.innerHTML = `
+                <div class="row g-4">
+                    <div class="col-md-5">
+                        ${p.image ? `<img src="${p.image}" style="width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:12px;">` : '<div style="width:100%;aspect-ratio:1/1;background:var(--gray-100);border-radius:12px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-box" style="font-size:3rem;color:var(--gray-300);"></i></div>'}
+                    </div>
+                    <div class="col-md-7">
+                        ${p.category ? `<div style="font-size:.75rem;color:var(--pink-600);font-weight:600;margin-bottom:4px;">${p.category}</div>` : ''}
+                        <h4 style="font-weight:800;margin-bottom:8px;">${p.name}</h4>
+                        <div style="font-size:1.3rem;font-weight:800;color:var(--pink-600);margin-bottom:8px;">${p.price} ₪</div>
+                        <div style="background:${p.stock.includes('نفذ')?'#FEE2E2':p.stock.includes('تبقى')?'#FEF3C7':'#DCFCE7'};color:${p.stock.includes('نفذ')?'#DC2626':p.stock.includes('تبقى')?'#D97706':'#16A34A'};padding:4px 12px;border-radius:50px;display:inline-block;font-size:.8rem;font-weight:600;margin-bottom:12px;">${p.stock}</div>
+                        ${p.description ? `<p style="color:var(--gray-500);font-size:.9rem;line-height:1.7;margin-bottom:16px;">${p.description}</p>` : ''}
+                        <div class="d-flex gap-2">
+                            <button onclick="addToCart(${p.id})" class="btn btn-pink"><i class="fas fa-cart-plus"></i> أضف للسلة</button>
+                            <a href="${p.url}" class="btn btn-outline-pink">تفاصيل المنتج</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } catch(e) { body.innerHTML = '<div class="text-center py-4 text-danger">تعذر تحميل المنتج</div>'; }
+    }
+
+    // ============ WISHLIST TOGGLE ============
+    async function toggleWishlist(productId, btn) {
+        const basePath = window.basePath || '';
+        try {
+            const r = await fetch(basePath + '/wishlist/toggle', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]').content},
+                body: JSON.stringify({product_id: productId})
+            });
+            const d = await r.json();
+            if (d.success) {
+                const icon = btn.querySelector('i');
+                if (d.action === 'added') {
+                    icon.className = 'fas fa-heart';
+                    btn.style.color = '#EF4444';
+                } else {
+                    icon.className = 'far fa-heart';
+                    btn.style.color = 'var(--gray-400)';
+                }
+                showNotification('success', d.message);
+            } else if (r.status === 401) {
+                window.location = '/login';
+            }
+        } catch(e) {}
+    }
+
+    // ============ RECENTLY VIEWED ============
+    (function() {
+        const productLink = document.querySelector('a[href*="/product/"]');
+        if (!productLink) return;
+        const slug = productLink.getAttribute('href').split('/product/')[1];
+        if (!slug) return;
+        let viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+        viewed = viewed.filter(p => p.slug !== slug);
+        const name = document.querySelector('h1')?.textContent?.trim() || document.title;
+        const img = document.querySelector('.product-detail img, img[alt]')?.src || '';
+        const price = document.querySelector('[style*="pink-600"]')?.textContent?.trim() || '';
+        viewed.unshift({slug, name, img, price});
+        if (viewed.length > 8) viewed = viewed.slice(0, 8);
+        localStorage.setItem('recentlyViewed', JSON.stringify(viewed));
+    })();
+    </script>
+
+    {{-- Floating Social Media Sidebar --}}
+    <div class="floating-social">
+        @if(!empty($siteSettings['facebook_url']))
+            <a href="{{ $siteSettings['facebook_url'] }}" class="social-facebook" target="_blank" title="فيسبوك"><i class="fab fa-facebook-f"></i></a>
+        @endif
+        @if(!empty($siteSettings['instagram_url']))
+            <a href="{{ $siteSettings['instagram_url'] }}" class="social-instagram" target="_blank" title="إنستغرام"><i class="fab fa-instagram"></i></a>
+        @endif
+        @if(!empty($siteSettings['twitter_url']))
+            <a href="{{ $siteSettings['twitter_url'] }}" class="social-twitter" target="_blank" title="تويتر"><i class="fab fa-twitter"></i></a>
+        @endif
+        @if(!empty($siteSettings['linkedin_url']))
+            <a href="{{ $siteSettings['linkedin_url'] }}" class="social-linkedin" target="_blank" title="لينكدإن"><i class="fab fa-linkedin-in"></i></a>
+        @endif
+        @if(!empty($siteSettings['tiktok_url']))
+            <a href="{{ $siteSettings['tiktok_url'] }}" class="social-tiktok" target="_blank" title="تيك توك"><i class="fab fa-tiktok"></i></a>
+        @endif
+        @if(!empty($siteSettings['youtube_url']))
+            <a href="{{ $siteSettings['youtube_url'] }}" class="social-youtube" target="_blank" title="يوتيوب"><i class="fab fa-youtube"></i></a>
+        @endif
+        @if(!empty($siteSettings['whatsapp_number']))
+            <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $siteSettings['whatsapp_number']) }}" class="social-whatsapp" target="_blank" title="واتساب"><i class="fab fa-whatsapp"></i></a>
+        @endif
+    </div>
+
+    {{-- Scroll to Top Button --}}
+    <button class="scroll-to-top" id="scrollToTop" title="العودة للأعلى" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+        <i class="fas fa-chevron-up"></i>
+    </button>
+
+    <script>
+        @if(session('success'))
+        showNotification('success', '{{ session('success') }}');
+        @endif
+        @if(session('error'))
+        showNotification('error', '{{ session('error') }}');
+        @endif
+        @if(session('warning'))
+        showNotification('warning', '{{ session('warning') }}');
+        @endif
+
+        // Scroll to top button visibility
+        const scrollBtn = document.getElementById('scrollToTop');
+        window.addEventListener('scroll', function() {
+            scrollBtn.style.opacity = window.scrollY > 400 ? '1' : '0';
+            scrollBtn.style.pointerEvents = window.scrollY > 400 ? 'auto' : 'none';
+        });
+    </script>
+
+    <style>
+    .floating-whatsapp {
+        position:fixed;bottom:24px;right:24px;z-index:9998;
+        width:56px;height:56px;border-radius:50%;
+        background:#25D366;color:#fff;
+        display:flex;align-items:center;justify-content:center;
+        font-size:1.6rem;text-decoration:none;
+        box-shadow:0 4px 20px rgba(37,211,102,.4);
+        transition:all .3s;animation:whatsappPulse 2s infinite;
+    }
+    .floating-whatsapp:hover {transform:scale(1.1);box-shadow:0 6px 28px rgba(37,211,102,.5);}
+    @keyframes whatsappPulse {
+        0%,100%{box-shadow:0 4px 20px rgba(37,211,102,.4)}
+        50%{box-shadow:0 4px 30px rgba(37,211,102,.7)}
+    }
+    .scroll-to-top {
+        position:fixed;bottom:92px;right:24px;z-index:9998;
+        width:44px;height:44px;border-radius:50%;
+        background:#fff;color:var(--gray-600);border:1px solid var(--gray-200);
+        display:flex;align-items:center;justify-content:center;
+        font-size:.9rem;cursor:pointer;
+        box-shadow:0 2px 12px rgba(0,0,0,.1);
+        transition:all .3s;opacity:0;pointer-events:none;
+    }
+    .scroll-to-top:hover {background:var(--pink-600);color:#fff;border-color:var(--pink-600);}
+    @media (max-width:768px) {
+        .floating-whatsapp {bottom:16px;right:16px;width:50px;height:50px;font-size:1.4rem;}
+        .scroll-to-top {bottom:76px;right:16px;width:40px;height:40px;}
+    }
+    </style>
+</body>
+</html>
