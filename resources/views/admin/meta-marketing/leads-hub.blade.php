@@ -14,7 +14,7 @@
 <div class="card">
     <div class="card-header bg-light fw-bold d-flex justify-content-between align-items-center">
         <span><i class="fas fa-list" style="color:var(--pink-600);margin-left:6px;"></i> قائمة العملاء</span>
-        <small class="text-muted">{{ $leads->total() ?? 0 }} عميل</small>
+        <small class="text-muted">{{ $totalLeads ?? 0 }} عميل</small>
     </div>
     <div class="card-body p-0">
         @if(($leads->count() ?? 0) > 0)
@@ -26,7 +26,6 @@
             @endforeach
             </tbody>
         </table>
-        <div class="p-3">{{ $leads->links('pagination::bootstrap-5') }}</div>
         @else
         <p class="text-muted text-center py-5 mb-0"><i class="fas fa-inbox d-block mb-2" style="font-size:2rem;opacity:.3;"></i>لا يوجد عملاء بعد</p>
         @endif
