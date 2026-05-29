@@ -1,258 +1,192 @@
 /* ═════════════════════════════════════════════════
-   JeniCare Light Mode — Professional Approach
-   Overrides ALL Tailwind white/surface/ink classes
-   for [data-theme-mode="light"] on <html>
+   JeniCare Light Mode — Professional Light Theme
+   Overrides CSS variables for [data-theme-mode="light"]
    ═════════════════════════════════════════════════ */
 
-/* ── 1. CSS Custom Properties (Variables) ── */
 html[data-theme-mode="light"] {
-  --surface: #faf9f8;
-  --surface-alt: #f0f0f0;
-  --ink: #1c1917;
-  --ink-muted: #6b6b6b;
-  --ink-dim: #777777;
-  --header-bg: rgba(250, 249, 248, 0.88);
-  --glass-bg: rgba(255, 255, 255, 0.55);
-  --glass-border: rgba(0, 0, 0, 0.08);
-  --glass-shadow: 0 1px 4px rgba(0,0,0,0.04);
-  --neon-glow: 0 0 12px rgba(255,42,133,0.2);
-  --neon-glow-strong: 0 0 20px rgba(255,42,133,0.3);
-  --neon-text-shadow: 0 0 6px rgba(255,42,133,0.15);
-  --accent-glow: 0 0 10px rgba(214,51,132,0.15);
-  --accent-glow-strong: 0 0 18px rgba(214,51,132,0.25);
+  --surface: #f8f9fa;
+  --surface-alt: #e9ecef;
+  --ink: #1a1a2e;
+  --ink-muted: #6c757d;
+  --ink-dim: #868e96;
+  --header-bg: rgba(248, 249, 250, 0.92);
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(0, 0, 0, 0.06);
+  --glass-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04);
+  --neon-glow: 0 0 12px rgba(var(--brand-500-rgb, 236, 72, 153), 0.15);
+  --neon-glow-strong: 0 0 24px rgba(var(--brand-500-rgb, 236, 72, 153), 0.25);
+  --neon-text-shadow: none;
+  --accent-glow: 0 0 10px rgba(var(--accent-500-rgb, 192, 38, 211), 0.12);
+  --accent-glow-strong: 0 0 20px rgba(var(--accent-500-rgb, 192, 38, 211), 0.2);
 }
 
-/* ── 2. Body background ── */
 html[data-theme-mode="light"] body {
-  background-color: #faf9f8 !important;
-  color: #1c1917 !important;
+  background-color: var(--surface) !important;
+  color: var(--ink) !important;
 }
 
-/* ── 3. Override Tailwind text-white and opacity variants ── */
-html[data-theme-mode="light"] .text-white { color: rgb(28 25 23) !important; }
-html[data-theme-mode="light"] .text-white\/90 { color: rgb(28 25 23 / 0.9) !important; }
-html[data-theme-mode="light"] .text-white\/80 { color: rgb(28 25 23 / 0.8) !important; }
-html[data-theme-mode="light"] .text-white\/70 { color: rgb(28 25 23 / 0.7) !important; }
-html[data-theme-mode="light"] .text-white\/60 { color: rgb(28 25 23 / 0.6) !important; }
-html[data-theme-mode="light"] .text-white\/50 { color: rgb(28 25 23 / 0.5) !important; }
-html[data-theme-mode="light"] .text-white\/40 { color: rgb(28 25 23 / 0.4) !important; }
-html[data-theme-mode="light"] .text-white\/30 { color: rgb(28 25 23 / 0.3) !important; }
-html[data-theme-mode="light"] .text-white\/20 { color: rgb(28 25 23 / 0.2) !important; }
-html[data-theme-mode="light"] .text-white\/10 { color: rgb(28 25 23 / 0.1) !important; }
+html[data-theme-mode="light"] {
+  /* Override Tailwind's hardcoded white/surface/ink classes */
+  .text-white { color: var(--ink) !important; }
+  .text-white\/90 { color: color-mix(in srgb, var(--ink) 90%, transparent) !important; }
+  .text-white\/80 { color: color-mix(in srgb, var(--ink) 80%, transparent) !important; }
+  .text-white\/70 { color: color-mix(in srgb, var(--ink) 70%, transparent) !important; }
+  .text-white\/60 { color: color-mix(in srgb, var(--ink) 60%, transparent) !important; }
+  .text-white\/50 { color: color-mix(in srgb, var(--ink) 50%, transparent) !important; }
+  .text-white\/40 { color: color-mix(in srgb, var(--ink) 40%, transparent) !important; }
+  .text-white\/30 { color: color-mix(in srgb, var(--ink) 30%, transparent) !important; }
+  .text-white\/20 { color: color-mix(in srgb, var(--ink) 20%, transparent) !important; }
+  .text-white\/10 { color: color-mix(in srgb, var(--ink) 10%, transparent) !important; }
+}
 
-/* ── 4. Override Tailwind bg-white and opacity variants ── */
-html[data-theme-mode="light"] .bg-white { background-color: rgb(255 255 255) !important; }
-html[data-theme-mode="light"] .bg-white\/5 { background-color: rgb(0 0 0 / 0.03) !important; }
-html[data-theme-mode="light"] .bg-white\/10 { background-color: rgb(0 0 0 / 0.05) !important; }
-html[data-theme-mode="light"] .bg-white\/20 { background-color: rgb(0 0 0 / 0.08) !important; }
-html[data-theme-mode="light"] .bg-white\/30 { background-color: rgb(0 0 0 / 0.12) !important; }
+html[data-theme-mode="light"] {
+  .bg-white { background-color: #fff !important; }
+  .bg-white\/5 { background-color: rgba(0,0,0,0.03) !important; }
+  .bg-white\/10 { background-color: rgba(0,0,0,0.05) !important; }
+  .bg-white\/20 { background-color: rgba(0,0,0,0.08) !important; }
+  .bg-white\/30 { background-color: rgba(0,0,0,0.1) !important; }
+}
 
-/* ── 5. Override Tailwind border-white variants ── */
-html[data-theme-mode="light"] .border-white\/5 { border-color: rgb(0 0 0 / 0.06) !important; }
-html[data-theme-mode="light"] .border-white\/10 { border-color: rgb(0 0 0 / 0.10) !important; }
-html[data-theme-mode="light"] .border-white\/15 { border-color: rgb(0 0 0 / 0.12) !important; }
-html[data-theme-mode="light"] .border-white\/20 { border-color: rgb(0 0 0 / 0.15) !important; }
+html[data-theme-mode="light"] {
+  .border-white\/5 { border-color: rgba(0,0,0,0.06) !important; }
+  .border-white\/10 { border-color: rgba(0,0,0,0.08) !important; }
+  .border-white\/15 { border-color: rgba(0,0,0,0.1) !important; }
+  .border-white\/20 { border-color: rgba(0,0,0,0.12) !important; }
+  .hover\:text-white:hover { color: var(--ink) !important; }
+  .hover\:bg-white\/5:hover { background-color: rgba(0,0,0,0.04) !important; }
+  .hover\:bg-white\/10:hover { background-color: rgba(0,0,0,0.06) !important; }
+}
 
-/* ── 6. Override Tailwind hover:text-white ── */
-html[data-theme-mode="light"] .hover\:text-white:hover { color: rgb(28 25 23) !important; }
-html[data-theme-mode="light"] .hover\:bg-white\/5:hover { background-color: rgb(0 0 0 / 0.04) !important; }
-html[data-theme-mode="light"] .hover\:bg-white\/10:hover { background-color: rgb(0 0 0 / 0.06) !important; }
-
-/* ── 7. text-ink classes (use CSS var — already handled by :root override) ── */
-
-/* ── 8. Glass panels and cards — light backgrounds ── */
 html[data-theme-mode="light"] .glass-panel {
-  background: rgba(255, 255, 255, 0.55) !important;
+  background: var(--glass-bg) !important;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(0, 0, 0, 0.06) !important;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04) !important;
-}
-html[data-theme-mode="light"] .spa-card {
-  background: rgba(255, 255, 255, 0.55) !important;
-  border-color: rgba(0, 0, 0, 0.06) !important;
-}
-html[data-theme-mode="light"] .editorial-card {
-  background: #ffffff !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-}
-html[data-theme-mode="light"] .luxury-card {
-  background: rgba(255, 255, 255, 0.6) !important;
-  border-color: rgba(0, 0, 0, 0.06) !important;
+  border-color: var(--glass-border) !important;
+  box-shadow: var(--glass-shadow) !important;
 }
 
-/* ── 9. Forms ── */
-html[data-theme-mode="light"] input[type="text"],
-html[data-theme-mode="light"] input[type="email"],
-html[data-theme-mode="light"] input[type="tel"],
-html[data-theme-mode="light"] input[type="number"],
-html[data-theme-mode="light"] input[type="search"],
-html[data-theme-mode="light"] select,
-html[data-theme-mode="light"] textarea {
-  background-color: #ffffff !important;
-  border-color: rgba(0, 0, 0, 0.12) !important;
-  color: #1c1917 !important;
-}
-html[data-theme-mode="light"] input::placeholder,
-html[data-theme-mode="light"] textarea::placeholder {
-  color: #999 !important;
+html[data-theme-mode="light"] {
+  .spa-card { background: rgba(255,255,255,0.65) !important; border-color: rgba(0,0,0,0.06) !important; }
+  .editorial-card { background: #fff !important; border-color: rgba(0,0,0,0.08) !important; }
+  .luxury-card { background: rgba(255,255,255,0.7) !important; border-color: rgba(0,0,0,0.06) !important; }
 }
 
-/* ── 10. Dropdowns, modals, overlays ── */
-html[data-theme-mode="light"] #searchDropdown {
-  background: #ffffff !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
-}
-html[data-theme-mode="light"] .modal-content {
-  background-color: #ffffff !important;
-  color: #1c1917 !important;
-}
-
-/* ── 11. Fix black overlays to be transparent light ── */
-html[data-theme-mode="light"] [class*="bg-black"] {
-  background-color: transparent !important;
+html[data-theme-mode="light"] {
+  input[type="text"], input[type="email"], input[type="tel"],
+  input[type="number"], input[type="search"], select, textarea {
+    background-color: #fff !important;
+    border-color: rgba(0,0,0,0.12) !important;
+    color: var(--ink) !important;
+  }
+  input::placeholder, textarea::placeholder { color: #adb5bd !important; }
 }
 
-/* ── 12. Scanner line ── */
-html[data-theme-mode="light"] .scanner-line { opacity: 0.3; }
-
-/* ── 13. Ambient glows ── */
-html[data-theme-mode="light"] .ambient-glow { opacity: 0.03 !important; }
-
-/* ── 14. Terminal blocks ── */
-html[data-theme-mode="light"] .terminal-block {
-  background-color: rgba(0, 0, 0, 0.03) !important;
-  color: #555 !important;
-  border-color: rgba(0, 0, 0, 0.06) !important;
+html[data-theme-mode="light"] {
+  #searchDropdown { background: #fff !important; border-color: rgba(0,0,0,0.08) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important; }
+  .modal-content { background-color: #fff !important; color: var(--ink) !important; }
 }
 
-/* ── 15. Brand colors — PRESERVE, never override ── */
-html[data-theme-mode="light"] .text-brand-500,
-html[data-theme-mode="light"] a.text-brand-500 { color: var(--brand-500) !important; }
-html[data-theme-mode="light"] .text-accent-500,
-html[data-theme-mode="light"] a.text-accent-500 { color: var(--accent-500) !important; }
-html[data-theme-mode="light"] .text-brand-600 { color: var(--brand-600) !important; }
-html[data-theme-mode="light"] .text-accent-600 { color: var(--accent-600) !important; }
-html[data-theme-mode="light"] .bg-brand-500 { background-color: var(--brand-500) !important; }
-html[data-theme-mode="light"] .bg-brand-500\/10 { background-color: color-mix(in srgb, var(--brand-500) 10%, transparent) !important; }
-html[data-theme-mode="light"] .bg-brand-500\/20 { background-color: color-mix(in srgb, var(--brand-500) 20%, transparent) !important; }
-html[data-theme-mode="light"] .bg-accent-500\/10 { background-color: color-mix(in srgb, var(--accent-500) 10%, transparent) !important; }
+html[data-theme-mode="light"] [class*="bg-black"] { background-color: transparent !important; }
 
-/* Brand gradient buttons keep white text */
-html[data-theme-mode="light"] [style*="var(--gradient-primary)"] {
-  color: #ffffff !important;
-}
-html[data-theme-mode="light"] [style*="var(--gradient-primary)"] * {
-  color: #ffffff !important;
+html[data-theme-mode="light"] {
+  .scanner-line { opacity: 0.15; }
+  .ambient-glow { opacity: 0.02 !important; }
+  .terminal-block { background-color: rgba(0,0,0,0.03) !important; color: #6c757d !important; border-color: rgba(0,0,0,0.06) !important; }
 }
 
-/* ── 16. Green/red/yellow status text stay colored ── */
-html[data-theme-mode="light"] .text-green-400,
-html[data-theme-mode="light"] .text-green-500,
-html[data-theme-mode="light"] .text-green-600 { color: #16a34a !important; }
-html[data-theme-mode="light"] .text-red-400,
-html[data-theme-mode="light"] .text-red-500 { color: #dc2626 !important; }
-html[data-theme-mode="light"] .text-amber-400,
-html[data-theme-mode="light"] .text-amber-500 { color: #d97706 !important; }
-html[data-theme-mode="light"] .text-yellow-400 { color: #ca8a04 !important; }
+/* Preserve brand/accent colors */
+html[data-theme-mode="light"] {
+  .text-brand-500, a.text-brand-500 { color: var(--brand-500) !important; }
+  .text-brand-600 { color: var(--brand-600) !important; }
+  .text-accent-500, a.text-accent-500 { color: var(--accent-500) !important; }
+  .text-accent-600 { color: var(--accent-600) !important; }
+  .bg-brand-500 { background-color: var(--brand-500) !important; }
+  .bg-brand-500\/10 { background-color: color-mix(in srgb, var(--brand-500) 10%, transparent) !important; }
+  .bg-brand-500\/20 { background-color: color-mix(in srgb, var(--brand-500) 20%, transparent) !important; }
+  .bg-accent-500\/10 { background-color: color-mix(in srgb, var(--accent-500) 10%, transparent) !important; }
+  [style*="var(--gradient-primary)"], [style*="var(--gradient-primary)"] * { color: #fff !important; }
+}
 
-/* ── 17. Social sidebar stays colored ── */
+/* Status colors */
+html[data-theme-mode="light"] {
+  .text-green-400, .text-green-500, .text-green-600 { color: #16a34a !important; }
+  .text-red-400, .text-red-500 { color: #dc2626 !important; }
+  .text-amber-400, .text-amber-500, .text-amber-600 { color: #d97706 !important; }
+  .text-yellow-400 { color: #ca8a04 !important; }
+}
+
+/* Social sidebar stays white */
 html[data-theme-mode="light"] .floating-social-v3 a,
 html[data-theme-mode="light"] .floating-social-v3 a * { color: #ffffff !important; }
 
-/* ── 18. Bootstrap close button ── */
-html[data-theme-mode="light"] .btn-close-white { filter: invert(1); }
-
-/* ── 19. Theme switcher palette ── */
-html[data-theme-mode="light"] #themePalette {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-}
-html[data-theme-mode="light"] #themePalette h6,
-html[data-theme-mode="light"] #themePalette span:not(.color-btn) { color: #1c1917 !important; }
-html[data-theme-mode="light"] #themeToggleBtn,
-html[data-theme-mode="light"] #darkLightBtn {
-  background: rgba(255, 255, 255, 0.85) !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
-}
-html[data-theme-mode="light"] #themeToggleBtn i,
-html[data-theme-mode="light"] #darkLightBtn i { color: #1c1917 !important; }
-
-/* ── 20. Header specific overrides ── */
-html[data-theme-mode="light"] header .nav-link { color: #555 !important; }
-html[data-theme-mode="light"] header .nav-link:hover,
-html[data-theme-mode="light"] header .nav-link.active { color: var(--brand-500) !important; }
-html[data-theme-mode="light"] .marquee-item { color: #888 !important; }
-html[data-theme-mode="light"] .marquee-item:hover { color: var(--brand-500) !important; }
-
-/* ── 21. Footer text ── */
-html[data-theme-mode="light"] footer { color: #555 !important; }
-html[data-theme-mode="light"] footer a { color: #555 !important; }
-html[data-theme-mode="light"] footer a:hover { color: var(--brand-500) !important; }
-
-/* ── 22. Product/category cards ── */
-html[data-theme-mode="light"] .product-grid-item { color: #1c1917 !important; }
-html[data-theme-mode="light"] .product-grid-item h3 { color: #1c1917 !important; }
-html[data-theme-mode="light"] .product-grid-item h3:hover { color: var(--brand-500) !important; }
-html[data-theme-mode="light"] .product-grid-item .text-ink-dim { color: #888 !important; }
-
-/* ── 23. Pill badges (keep brand colors) ── */
-html[data-theme-mode="light"] .pill-brand { color: var(--brand-500) !important; }
-html[data-theme-mode="light"] .pill-accent { color: var(--accent-500) !important; }
-
-/* ── 24. Shadows ── */
-html[data-theme-mode="light"] .shadow-neon { box-shadow: 0 0 8px rgba(255,42,133,0.2) !important; }
-html[data-theme-mode="light"] .shadow-neon-strong { box-shadow: 0 0 16px rgba(255,42,133,0.3) !important; }
-html[data-theme-mode="light"] .shadow-glass { box-shadow: 0 2px 12px rgba(0,0,0,0.04) !important; }
-
-/* ── 25. Selection ── */
-html[data-theme-mode="light"] ::selection {
-  background-color: var(--brand-500) !important;
-  color: #ffffff !important;
+/* Theme switcher */
+html[data-theme-mode="light"] {
+  #themePalette { background: rgba(255,255,255,0.95) !important; border-color: rgba(0,0,0,0.08) !important; }
+  #themePalette h6, #themePalette span:not(.color-btn) { color: var(--ink) !important; }
+  #themeToggleBtn, #darkLightBtn { background: rgba(0,0,0,0.03) !important; border-color: rgba(0,0,0,0.1) !important; }
+  #themeToggleBtn i, #darkLightBtn i { color: var(--ink) !important; }
 }
 
-/* ── 26. Hero section hard fix ── */
-html[data-theme-mode="light"] #hero h1,
-html[data-theme-mode="light"] #hero h1 span,
-html[data-theme-mode="light"] #hero h1 * { color: #1c1917 !important; }
-html[data-theme-mode="light"] #hero p,
-html[data-theme-mode="light"] #hero .text-ink-dim { color: #555 !important; }
-html[data-theme-mode="light"] #hero .gradient-text {
-  -webkit-text-fill-color: transparent !important;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  background-clip: text;
+/* Header */
+html[data-theme-mode="light"] {
+  header .nav-link { color: var(--ink-dim) !important; }
+  header .nav-link:hover, header .nav-link.active { color: var(--brand-500) !important; }
+  .marquee-item { color: var(--ink-muted) !important; }
+  .marquee-item:hover { color: var(--brand-500) !important; }
 }
 
-/* ── 27. All headings visible ── */
-html[data-theme-mode="light"] h1, html[data-theme-mode="light"] h2,
-html[data-theme-mode="light"] h3, html[data-theme-mode="light"] h4,
-html[data-theme-mode="light"] h5, html[data-theme-mode="light"] h6 {
-  color: #1c1917 !important;
+/* Footer */
+html[data-theme-mode="light"] {
+  footer { color: var(--ink-muted) !important; }
+  footer a { color: var(--ink-muted) !important; }
+  footer a:hover { color: var(--brand-500) !important; }
 }
-html[data-theme-mode="light"] h1.text-brand-500 { color: var(--brand-500) !important; }
-html[data-theme-mode="light"] h2.text-brand-500 { color: var(--brand-500) !important; }
-html[data-theme-mode="light"] h3.text-brand-500 { color: var(--brand-500) !important; }
+
+/* Product cards */
+html[data-theme-mode="light"] {
+  .product-grid-item { color: var(--ink) !important; }
+  .product-grid-item h3 { color: var(--ink) !important; }
+  .product-grid-item h3:hover { color: var(--brand-500) !important; }
+  .product-grid-item .text-ink-dim { color: var(--ink-dim) !important; }
+}
+
+/* Badges */
+html[data-theme-mode="light"] {
+  .pill-brand { color: var(--brand-500) !important; }
+  .pill-accent { color: var(--accent-500) !important; }
+}
+
+/* Gradients */
 html[data-theme-mode="light"] .gradient-text {
   -webkit-text-fill-color: transparent !important;
   background: var(--gradient-primary);
-  background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
+  background-size: 200% auto;
 }
 
-/* ── 28. Hero description, breadcrumbs, secondary text ── */
-html[data-theme-mode="light"] .text-ink-dim,
-html[data-theme-mode="light"] [class*="text-ink-dim"] { color: #555 !important; }
-html[data-theme-mode="light"] .text-ink-muted { color: #777 !important; }
-
-/* ── 29. Logo fix ── */
-html[data-theme-mode="light"] header a[href*="home"] span,
-html[data-theme-mode="light"] a[style*="var(--ink)"] { color: #1c1917 !important; }
-html[data-theme-mode="light"] header a[href*="home"] .text-brand-500 { color: var(--brand-500) !important; }
-
-/* ── 30. Any text-white that escaped ── */
-html[data-theme-mode="light"] [class*="text-white"]:not(.text-brand-500):not(.text-accent-500):not(.text-green-400):not(.text-green-500):not(.text-red-400):not(.text-red-500):not(.text-amber-400):not(.text-amber-500):not(.text-yellow-400):not(.floating-social-v3 *):not(.btn-primary *) {
-  color: #1c1917 !important;
+/* Headings */
+html[data-theme-mode="light"] h1, html[data-theme-mode="light"] h2,
+html[data-theme-mode="light"] h3, html[data-theme-mode="light"] h4,
+html[data-theme-mode="light"] h5, html[data-theme-mode="light"] h6 {
+  color: var(--ink) !important;
 }
+
+/* Catch-all for any text-white that escaped */
+html[data-theme-mode="light"] [class*="text-white"]:not(.text-brand-500):not(.text-accent-500):not(.text-green-400):not(.text-green-500):not(.text-red-400):not(.text-red-500):not(.text-amber-400):not(.text-amber-500):not(.text-yellow-400):not(.floating-social-v3 *):not(.btn-primary *):not(.text-brand-600):not(.text-accent-600) {
+  color: var(--ink) !important;
+}
+
+/* Shadows */
+html[data-theme-mode="light"] {
+  .shadow-neon { box-shadow: var(--neon-glow) !important; }
+  .shadow-neon-strong { box-shadow: var(--neon-glow-strong) !important; }
+  .shadow-glass { box-shadow: 0 2px 12px rgba(0,0,0,0.04) !important; }
+}
+
+html[data-theme-mode="light"] ::selection {
+  background-color: var(--brand-500) !important;
+  color: #fff !important;
+}
+
+html[data-theme-mode="light"] .btn-close-white { filter: invert(1); }
