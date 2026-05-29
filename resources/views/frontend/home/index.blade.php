@@ -81,34 +81,32 @@ $slideshowCats = $categories->filter(fn($c) => $c->products_count > 0)->shuffle(
                     <span class="text-xs tracking-widest text-brand-500 uppercase font-bold">جنين للتجميل</span>
                 </div>
 
-                <h1 class="text-4xl md:text-5xl lg:text-6xl font-black mb-6 leading-tight tracking-tight">
-                    <span class="text-ink">منتجات أصلية</span><br>
-                    <span class="gradient-text bg-[length:200%_auto]">نتائج مبهرة.</span>
+                <h1 class="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black mb-8 leading-[0.85] tracking-tight">
+                    <span class="block text-ink">منتجات أصلية</span>
+                    <span class="gradient-text bg-[length:300%_auto] block mt-2">نتائج مبهرة.</span>
                 </h1>
 
-                <div id="heroPhraseContainer" class="relative h-20 md:h-16 mb-8 overflow-hidden">
+                <div id="heroPhraseContainer" class="relative h-24 md:h-20 mb-10 overflow-hidden">
                     @foreach($allPhrases as $i => $phrase)
-                    <p class="hero-phrase text-lg md:text-xl text-ink-dim max-w-lg font-light leading-relaxed absolute w-full text-right"
+                    <p class="hero-phrase text-xl md:text-2xl text-ink-dim max-w-xl font-light leading-relaxed absolute w-full text-right"
                        style="top:0;right:0;opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '16px' }});transition:opacity 0.7s ease,transform 0.7s ease;"
                        data-phrase="{{ $i }}">{{ $phrase }}</p>
                     @endforeach
                 </div>
 
                 <div class="flex items-center gap-6 flex-wrap">
-                    <a href="{{ route('shop') }}" class="group relative px-8 py-4 rounded-full overflow-hidden font-black tracking-wide inline-flex items-center gap-2 shadow-neon hover:shadow-neon-strong transition-all" style="background:var(--gradient-primary);color:#fff;">
-                        <span class="relative z-10">تسوقي الآن <i class="fa-solid fa-arrow-left mr-2"></i></span>
+                    <a href="{{ route('shop') }}" class="px-10 py-4 rounded-full font-black text-base tracking-wide inline-flex items-center gap-3 shadow-lg hover:shadow-xl transition-all hover:scale-105" style="background:var(--gradient-primary);color:#fff;">
+                        تسوقي الآن <i class="fa-solid fa-arrow-left mr-1"></i>
                     </a>
-                    <a href="{{ route('shop') }}" class="text-ink-dim hover:text-brand-500 border-b border-ink-dim/20 pb-1 hover:border-brand-500 transition-all font-bold text-sm">
-                        جميع المنتجات
+                    <a href="{{ route('shop') }}" class="text-ink-dim hover:text-brand-500 border-b-2 border-ink-dim/20 pb-1 hover:border-brand-500 transition-all font-bold text-base">
+                        تصفحي جميع المنتجات
                     </a>
                 </div>
 
-                {{-- Phrase counter dots --}}
-                <div class="flex gap-1.5 mt-8 justify-end">
-                    @for($i = 0; $i < min($phraseCount, 6); $i++)
-                    <span class="phrase-dot block w-1.5 h-1.5 rounded-full transition-all duration-300 {{ $i === 0 ? 'bg-brand-500 w-5' : 'bg-ink-dim/20' }}"></span>
+                <div class="flex gap-1.5 mt-10 justify-end">
+                    @for($i = 0; $i < 6; $i++)
+                    <span class="phrase-dot block w-1.5 h-1.5 rounded-full transition-all duration-300 {{ $i === 0 ? 'bg-brand-500 w-6' : 'bg-ink-dim/20' }}"></span>
                     @endfor
-                    <span class="text-[10px] text-ink-dim/40 ml-2">{{ $phraseCount }}+</span>
                 </div>
             </div>
 
