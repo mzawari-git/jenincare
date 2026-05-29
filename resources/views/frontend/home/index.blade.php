@@ -103,9 +103,9 @@ if (empty($slidesData) && $featuredProducts->isNotEmpty()) {
                 </div>
 
                 {{-- Dynamic Title --}}
-                <div id="heroTitleContainer" class="relative mb-8" style="min-height:180px;">
+                <div id="heroTitleContainer" class="relative mb-8 overflow-hidden" style="height:180px;">
                     @foreach($slidesData as $i => $slide)
-                    <div class="hero-title absolute w-full text-right" style="top:0;right:0;opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '30px' }});transition:opacity 0.8s ease,transform 0.8s ease;" data-title="{{ $i }}">
+                    <div class="hero-title absolute w-full text-right" style="top:0;right:0;opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '30px' }});transition:opacity 0.8s ease,transform 0.8s ease;pointer-events:{{ $i === 0 ? 'auto' : 'none' }};" data-title="{{ $i }}">
                         <h1 class="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black leading-[0.85] tracking-tight">
                             <span class="block" style="color:#ffffff;text-shadow:0 2px 10px rgba(255,255,255,0.1);">{{ $slide['title_line1'] }}</span>
                             <span class="block mt-3" style="color:#ffffff;text-shadow:0 0 40px rgba(255,255,255,0.4),0 0 80px rgba(255,255,255,0.2),0 4px 8px rgba(0,0,0,0.3);">{{ $slide['title_line2'] }}</span>
@@ -115,10 +115,10 @@ if (empty($slidesData) && $featuredProducts->isNotEmpty()) {
                 </div>
 
                 {{-- Cycling Phrases --}}
-                <div id="heroPhraseContainer" class="relative mb-10 overflow-hidden" style="min-height:100px;">
+                <div id="heroPhraseContainer" class="relative mb-10 overflow-hidden" style="height:100px;">
                     @foreach($allPhrases as $i => $phrase)
                     <p class="hero-phrase text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-snug absolute w-full text-right"
-                       style="top:0;right:0;color:#ffffff;text-shadow:0 2px 20px rgba(255,255,255,0.15);opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '20px' }});transition:opacity 0.8s ease,transform 0.8s ease;"
+                       style="top:0;right:0;color:#ffffff;text-shadow:0 2px 20px rgba(255,255,255,0.15);opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '20px' }});transition:opacity 0.8s ease,transform 0.8s ease;pointer-events:{{ $i === 0 ? 'auto' : 'none' }};"
                        data-phrase="{{ $i }}">{{ $phrase }}</p>
                     @endforeach
                 </div>
@@ -261,7 +261,7 @@ if (empty($slidesData) && $featuredProducts->isNotEmpty()) {
                 </div>
                 <h3 class="font-black text-xs mb-1.5 text-ink group-hover:text-brand-500 transition-colors duration-300 leading-tight">{{ $cat->display_name ?? $cat->name_ar }}</h3>
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-brand-500/10 text-brand-500 text-[10px] font-bold">
-                    {{ $cat->products_count }}
+                    {{ $cat->products_count }} منتج
                 </span>
             </a>
             @endforeach

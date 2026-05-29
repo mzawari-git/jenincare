@@ -20,12 +20,24 @@ class HomeController extends Controller
             ->limit(8)
             ->get();
 
+        if ($featuredProducts->isEmpty()) {
+            $featuredProducts = Product::active()->showInB2C()
+                ->with(["category", "brand"])
+                ->inRandomOrder()->limit(8)->get();
+        }
+
         $newProducts = Product::active()
             ->showInB2C()
             ->where("is_new", true)
             ->with(["category", "brand"])
             ->limit(8)
             ->get();
+
+        if ($newProducts->isEmpty()) {
+            $newProducts = Product::active()->showInB2C()
+                ->with(["category", "brand"])
+                ->latest()->limit(8)->get();
+        }
 
         $categories = Category::active()
             ->withCount(['products' => function($q) {
@@ -36,8 +48,6 @@ class HomeController extends Controller
             ->map(function($cat) {
                 $sample = Product::active()->showInB2C()
                     ->where('category_id', $cat->id)
-                    ->whereNotNull('main_image')
-                    ->select('main_image')
                     ->latest()
                     ->first();
                 $prices = Product::active()->showInB2C()
