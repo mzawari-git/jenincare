@@ -97,9 +97,9 @@ if (empty($slidesData) && $featuredProducts->isNotEmpty()) {
         <div class="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
 
             <div class="w-full lg:w-[45%] text-right">
-                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-500/20 bg-brand-500/5 mb-6">
-                    <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse shadow-neon"></span>
-                    <span class="text-xs tracking-widest text-brand-500 uppercase font-bold">جنين للتجميل</span>
+                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/20 bg-white/10 mb-6">
+                    <span class="w-2 h-2 rounded-full bg-white animate-pulse" style="box-shadow:0 0 10px rgba(255,255,255,0.6);"></span>
+                    <span class="text-xs tracking-widest text-white uppercase font-bold">جنين للتجميل</span>
                 </div>
 
                 {{-- Dynamic Title --}}
@@ -107,7 +107,7 @@ if (empty($slidesData) && $featuredProducts->isNotEmpty()) {
                     @foreach($slidesData as $i => $slide)
                     <div class="hero-title absolute w-full text-right" style="top:0;right:0;opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '30px' }});transition:opacity 0.8s ease,transform 0.8s ease;" data-title="{{ $i }}">
                         <h1 class="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black leading-[0.85] tracking-tight">
-                            <span class="block text-ink">{{ $slide['title_line1'] }}</span>
+                            <span class="block" style="color:#ffffff;text-shadow:0 2px 10px rgba(255,255,255,0.1);">{{ $slide['title_line1'] }}</span>
                             <span class="block mt-3" style="color:#ffffff;text-shadow:0 0 40px rgba(255,255,255,0.4),0 0 80px rgba(255,255,255,0.2),0 4px 8px rgba(0,0,0,0.3);">{{ $slide['title_line2'] }}</span>
                         </h1>
                     </div>
@@ -117,8 +117,8 @@ if (empty($slidesData) && $featuredProducts->isNotEmpty()) {
                 {{-- Cycling Phrases --}}
                 <div id="heroPhraseContainer" class="relative mb-10 overflow-hidden" style="min-height:100px;">
                     @foreach($allPhrases as $i => $phrase)
-                    <p class="hero-phrase text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-ink-dim font-bold leading-snug absolute w-full text-right"
-                       style="top:0;right:0;opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '20px' }});transition:opacity 0.8s ease,transform 0.8s ease;"
+                    <p class="hero-phrase text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-snug absolute w-full text-right"
+                       style="top:0;right:0;color:#ffffff;text-shadow:0 2px 20px rgba(255,255,255,0.15);opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '20px' }});transition:opacity 0.8s ease,transform 0.8s ease;"
                        data-phrase="{{ $i }}">{{ $phrase }}</p>
                     @endforeach
                 </div>
@@ -127,7 +127,7 @@ if (empty($slidesData) && $featuredProducts->isNotEmpty()) {
                     <a href="{{ route('shop') }}" class="px-10 py-4 rounded-full font-black text-base tracking-wide inline-flex items-center gap-3 shadow-lg hover:shadow-xl transition-all hover:scale-105" style="background:var(--gradient-primary);color:#fff;">
                         تسوقي الآن <i class="fa-solid fa-arrow-left mr-1"></i>
                     </a>
-                    <a href="{{ route('shop') }}" class="text-ink-dim hover:text-brand-500 border-b-2 border-ink-dim/20 pb-1 hover:border-brand-500 transition-all font-bold text-base">
+                    <a href="{{ route('shop') }}" class="text-white/80 hover:text-white border-b-2 border-white/20 pb-1 hover:border-white transition-all font-bold text-base">
                         تصفحي جميع المنتجات
                     </a>
                 </div>
