@@ -93,7 +93,7 @@
                 </p>
                 <div class="flex items-center gap-3">
                     <div class="flex border border-white/10 rounded-lg overflow-hidden">
-                        <button id="viewGrid" onclick="setViewMode('grid')" title="عرض شبكي" class="w-9 h-9 flex items-center justify-center bg-white text-surface transition-all">
+                        <button id="viewGrid" onclick="setViewMode('grid')" title="عرض شبكي" class="w-9 h-9 flex items-center justify-center transition-all" style="background:#0f172a;color:#fff;">
                             <i class="ph ph-squares-four"></i>
                         </button>
                         <button id="viewList" onclick="setViewMode('list')" title="عرض قائمة" class="w-9 h-9 flex items-center justify-center bg-transparent text-white-dim transition-all">
@@ -158,7 +158,7 @@
                             <span class="text-base font-extrabold text-brand-500">{{ number_format($product->final_b2c_price ?? $product->b2c_price, 2) }} ₪</span>
                         </div>
                         <div class="flex gap-2 mt-3">
-                            <button onclick="addToCart({{ $product->id }})" class="flex-1 py-2.5 bg-white text-surface text-sm font-bold rounded-xl hover:bg-brand-500 hover:text-white transition-all flex items-center justify-center gap-1.5">
+                            <button onclick="addToCart({{ $product->id }})" class="flex-1 py-2.5 bg-white text-sm font-bold rounded-xl hover:bg-brand-500 hover:text-white transition-all flex items-center justify-center gap-1.5" style="color:#0f172a;">
                                 <i class="ph ph-shopping-bag"></i> أضف للسلة
                             </button>
                             <a href="https://wa.me/{{ $siteSettings['whatsapp_number'] ?? '970591234567' }}?text={{ urlencode('السلام عليكم، مهتمة بـ: ' . $product->name_ar . ' - ' . number_format($product->final_b2c_price ?? $product->b2c_price, 2) . ' ₪') }}" target="_blank" class="py-2.5 px-3 border border-green-500/30 text-green-400 text-sm font-bold rounded-xl hover:bg-green-500 hover:text-white transition-all flex items-center justify-center" title="تواصل واتساب" aria-label="تواصل واتساب">
@@ -202,7 +202,7 @@
                         </div>
                     </div>
                     <div class="flex flex-col gap-2 flex-shrink-0">
-                        <button onclick="addToCart({{ $product->id }})" class="px-5 py-2.5 bg-white text-surface text-sm font-bold rounded-xl hover:bg-brand-500 hover:text-white transition-colors flex items-center gap-2 whitespace-nowrap">
+                        <button onclick="addToCart({{ $product->id }})" class="px-5 py-2.5 bg-white text-sm font-bold rounded-xl hover:bg-brand-500 hover:text-white transition-colors flex items-center gap-2 whitespace-nowrap" style="color:#0f172a;">
                             <i class="ph ph-shopping-bag"></i> أضف للسلة
                         </button>
                         <a href="https://wa.me/{{ $siteSettings['whatsapp_number'] ?? '970591234567' }}?text={{ urlencode('السلام عليكم، مهتمة بـ: ' . $product->name_ar . ' - ' . number_format($product->final_b2c_price ?? $product->b2c_price, 2) . ' ₪') }}" target="_blank" class="px-5 py-2.5 border border-green-500/30 text-green-400 text-sm font-bold rounded-xl hover:bg-green-500 hover:text-white transition-colors text-center whitespace-nowrap">
@@ -228,12 +228,12 @@ function setViewMode(mode) {
     if (mode === 'grid') {
         grid.classList.remove('hidden'); grid.style.display = '';
         list.classList.add('hidden');
-        gridBtn.style.background = 'var(--ink)'; gridBtn.style.color = 'var(--surface)';
+        gridBtn.style.background = '#0f172a'; gridBtn.style.color = '#fff';
         listBtn.style.background = 'transparent'; listBtn.style.color = 'var(--ink-dim)';
     } else {
         grid.classList.add('hidden'); grid.style.display = 'none';
         list.classList.remove('hidden');
-        listBtn.style.background = 'var(--ink)'; listBtn.style.color = 'var(--surface)';
+        listBtn.style.background = '#0f172a'; listBtn.style.color = '#fff';
         gridBtn.style.background = 'transparent'; gridBtn.style.color = 'var(--ink-dim)';
     }
     localStorage.setItem('shopViewMode', mode);
