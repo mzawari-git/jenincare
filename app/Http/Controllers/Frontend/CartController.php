@@ -58,6 +58,8 @@ class CartController extends Controller
             ]);
         }
 
+        $cart->load('items');
+
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
