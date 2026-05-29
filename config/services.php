@@ -31,4 +31,26 @@ return [
         'redirect' => env('FACEBOOK_REDIRECT'),
     ],
 
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY', ''),
+        'model' => env('OPENAI_MODEL', 'gpt-4o'),
+        'timeout' => env('OPENAI_TIMEOUT', 15),
+    ],
+
+    'claude' => [
+        'api_key' => env('CLAUDE_API_KEY', ''),
+        'model' => env('CLAUDE_MODEL', 'claude-3-5-sonnet-20241022'),
+        'timeout' => env('CLAUDE_TIMEOUT', 15),
+    ],
+
+    'llama' => [
+        'base_url' => env('LLAMA_BASE_URL', 'http://localhost:11434'),
+        'model' => env('LLAMA_MODEL', 'llama3:8b'),
+        'timeout' => env('LLAMA_TIMEOUT', 10),
+    ],
+
+    'ltv' => [
+        'base_url' => env('LTV_SERVICE_URL', 'http://localhost:8000'),
+    ],
+
 ];

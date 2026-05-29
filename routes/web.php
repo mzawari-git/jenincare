@@ -85,6 +85,10 @@ Route::middleware('auth')->group(function () {
 Route::get('/api/search', [\App\Http\Controllers\Frontend\ShopController::class, 'searchAjax'])->name('api.search');
 Route::get('/api/product/{id}/quickview', [\App\Http\Controllers\Frontend\ProductController::class, 'quickView'])->name('api.quickview');
 
+// Tracking endpoints (client-side analytics, no CSRF needed for sendBeacon)
+Route::post('/api/track/fingerprint', [\App\Http\Controllers\Api\FingerprintController::class, 'store'])->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+Route::post('/api/track/behavior', [\App\Http\Controllers\Api\BehavioralController::class, 'store'])->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+
 // Optimized image endpoints
 Route::get('/images/{path}', [\App\Http\Controllers\Frontend\OptimizedImageController::class, 'show'])->where('path', '.*');
 Route::get('/thumbnails/{path}', [\App\Http\Controllers\Frontend\OptimizedImageController::class, 'thumbnail'])->where('path', '.*');

@@ -25,7 +25,7 @@ class TrackPurchaseEvent implements ShouldQueue
     {
         $this->order = $order;
         $this->userData = $userData;
-        $this->onQueue('tracking');
+        $this->onQueue('capi-events');
     }
 
     public function handle(AdvertisingTrackingService $tracking): void

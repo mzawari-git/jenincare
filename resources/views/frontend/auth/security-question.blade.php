@@ -1,4 +1,4 @@
-@extends('frontend.layouts.app-v2')
+﻿@extends($layoutPath)
 
 @section('title', 'سؤال الأمان - ' . ($siteSettings['site_name'] ?? 'JeniCare'))
 
@@ -9,22 +9,22 @@
         <div class="absolute bottom-20 right-10 w-96 h-96 bg-pink-100 rounded-full blur-3xl opacity-20"></div>
     </div>
 
-    <div class="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-3xl border border-gray-100 shadow-xl p-8 relative z-10">
+    <div class="w-full max-w-md glass-panel rounded-3xl border border-white/5 shadow-xl p-8 relative z-10">
         <div class="text-center mb-8">
-            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-brand-200">
+            <div class="w-16 h-16 rounded-full bg-brand-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-brand-200">
                 <i class="ph ph-question text-3xl text-white"></i>
             </div>
-            <h1 class="text-2xl font-extrabold text-ink">سؤال الأمان</h1>
-            <p class="text-gray-500 text-sm mt-1">أجب على سؤال الأمان لاستعادة كلمة المرور</p>
+            <h1 class="text-2xl font-extrabold text-white">سؤال الأمان</h1>
+            <p class="text-white-dim text-sm mt-1">أجب على سؤال الأمان لاستعادة كلمة المرور</p>
         </div>
 
-        <div class="bg-surface border border-gray-100 rounded-xl p-4 mb-6">
-            <p class="text-sm text-gray-500 mb-1">البريد الإلكتروني</p>
-            <p class="font-bold text-ink">{{ $email }}</p>
+        <div class="bg-surface border border-white/5 rounded-xl p-4 mb-6">
+            <p class="text-sm text-white-dim mb-1">البريد الإلكتروني</p>
+            <p class="font-bold text-white">{{ $email }}</p>
         </div>
 
         @if(session('error'))
-        <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-6 text-sm flex items-center gap-2">
+        <div class="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl px-4 py-3 mb-6 text-sm flex items-center gap-2">
             <i class="ph ph-warning-circle text-lg"></i>
             <span>{{ session('error') }}</span>
         </div>
@@ -34,18 +34,18 @@
             @csrf
 
             <div>
-                <label class="block text-sm font-bold text-ink mb-1.5">سؤال الأمان</label>
+                <label class="block text-sm font-bold text-white mb-1.5">سؤال الأمان</label>
                 <div class="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 text-sm text-yellow-800 font-medium">
                     <i class="ph ph-shield-check me-2"></i> {{ $question }}
                 </div>
             </div>
 
             <div>
-                <label class="block text-sm font-bold text-ink mb-1.5">إجابتك <span class="text-red-400">*</span></label>
+                <label class="block text-sm font-bold text-white mb-1.5">إجابتك <span class="text-red-400">*</span></label>
                 <div class="relative">
-                    <i class="ph ph-pencil-simple-line absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                    <i class="ph ph-pencil-simple-line absolute right-4 top-1/2 -translate-y-1/2 text-white-dim text-lg"></i>
                     <input type="text" name="security_answer" required autofocus
-                        class="w-full bg-white border border-gray-200 rounded-xl pr-12 pl-4 py-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all @error('security_answer') border-red-400 @enderror"
+                        class="w-full bg-white border border-white/10 rounded-xl pr-12 pl-4 py-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all @error('security_answer') border-red-400 @enderror"
                         placeholder="أدخل إجابتك">
                 </div>
                 @error('security_answer')<p class="text-red-500 text-xs mt-1 flex items-center gap-1"><i class="ph ph-warning-circle"></i> {{ $message }}</p>@enderror
@@ -57,8 +57,8 @@
             </button>
         </form>
 
-        <p class="text-center text-sm text-gray-500 mt-6">
-            <a href="{{ route('password.request') }}" class="text-brand-600 font-bold hover:underline">تغيير البريد الإلكتروني</a>
+        <p class="text-center text-sm text-white-dim mt-6">
+            <a href="{{ route('password.request') }}" class="text-brand-500 font-bold hover:underline">تغيير البريد الإلكتروني</a>
         </p>
     </div>
 </div>

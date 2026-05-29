@@ -20,6 +20,11 @@ use App\Http\Controllers\Admin\SeoController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\DeliveryController;
 use Modules\CustomAdmin\Http\Controllers\MarketingTrackingController;
+use Modules\CustomAdmin\Http\Controllers\RoasDashboardController;
+use App\Http\Controllers\Admin\TriggerWordController;
+use App\Http\Controllers\Admin\AiComplianceController;
+use App\Http\Controllers\Admin\PredictiveController;
+use App\Http\Controllers\Admin\ReviewerIpController;
 use Modules\CustomAdmin\Http\Controllers\MetaAdsController;
 use Modules\CustomAdmin\Http\Controllers\MetaLeadHubController;
 
@@ -54,6 +59,14 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::post('/ads/{id}/toggle', [MetaAdsController::class, 'toggleAd'])->name('admin.ads.toggle-ad');
     Route::post('/ads/insights/refresh', [MetaAdsController::class, 'refreshInsights'])->name('admin.ads.refresh-insights');
     Route::post('/ads/sync', [MetaAdsController::class, 'syncCampaigns'])->name('admin.ads.sync');
+
+    // OAuth Connect for all social platforms
+    Route::get('/oauth/{platform}/redirect', [\App\Http\Controllers\Admin\SocialAuthController::class, 'redirect'])
+        ->name('admin.oauth.redirect');
+    Route::get('/oauth/{platform}/callback', [\App\Http\Controllers\Admin\SocialAuthController::class, 'callback'])
+        ->name('admin.oauth.callback');
+    Route::delete('/oauth/{platform}/disconnect', [\App\Http\Controllers\Admin\SocialAuthController::class, 'disconnect'])
+        ->name('admin.oauth.disconnect');
 
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('admin.reports.index');
@@ -134,9 +147,9 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
 
     // Contacts
     Route::get('/contacts', [ContactController::class, 'index'])->name('admin.contacts.index');
-    Route::get('/contacts/{contact}', [ContactController::class, 'show'])->name('admin.contacts.show');
-    Route::patch('/contacts/{contact}/read', [ContactController::class, 'markRead'])->name('admin.contacts.mark-read');
-    Route::delete('/contacts/{contact}', [ContactController::class, 'destroy'])->name('admin.contacts.destroy');
+    Route::get('/contacts/{contactMessage}', [ContactController::class, 'show'])->name('admin.contacts.show');
+    Route::patch('/contacts/{contactMessage}/read', [ContactController::class, 'markRead'])->name('admin.contacts.mark-read');
+    Route::delete('/contacts/{contactMessage}', [ContactController::class, 'destroy'])->name('admin.contacts.destroy');
 
     // B2B
     Route::get('/b2b/companies', [B2BController::class, 'companies'])->name('admin.b2b.companies');
@@ -155,8 +168,6 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/seo/{product}/edit', [SeoController::class, 'bulkEdit'])->name('admin.seo.edit');
     Route::post('/seo/{product}', [SeoController::class, 'bulkUpdate'])->name('admin.seo.update');
     Route::post('/seo/{product}/auto-generate', [SeoController::class, 'autoGenerate'])->name('admin.seo.auto');
-    Route::get('/seo/bulk-edit', [SeoController::class, 'bulkEdit'])->name('admin.seo.bulk-edit');
-    Route::post('/seo/bulk-update', [SeoController::class, 'bulkUpdate'])->name('admin.seo.bulk-update');
 
     // Analytics
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('admin.analytics.index');
@@ -187,17 +198,58 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/settings', [SettingController::class, 'index'])->name('admin.settings');
     Route::post('/settings', [SettingController::class, 'update'])->name('admin.settings.update');
     Route::delete('/settings/delete-logo', [SettingController::class, 'deleteLogo'])->name('admin.settings.delete-logo');
-    Route::get('/settings/delete-logo', [SettingController::class, 'deleteLogo']);
     Route::post('/settings/delete-products', [SettingController::class, 'deleteAllProducts'])->name('admin.settings.delete-products');
 
     // Marketing
     Route::get('/marketing', [MarketingTrackingController::class, 'index'])->name('admin.marketing.index');
     Route::post('/marketing/facebook', [MarketingTrackingController::class, 'updateFacebook'])->name('admin.marketing.facebook');
     Route::post('/marketing/tiktok', [MarketingTrackingController::class, 'updateTikTok'])->name('admin.marketing.tiktok');
+    Route::post('/marketing/google', [MarketingTrackingController::class, 'updateGoogle'])->name('admin.marketing.google');
+    Route::post('/marketing/snapchat', [MarketingTrackingController::class, 'updateSnapchat'])->name('admin.marketing.snapchat');
+    Route::post('/marketing/pinterest', [MarketingTrackingController::class, 'updatePinterest'])->name('admin.marketing.pinterest');
+    Route::post('/marketing/twitter', [MarketingTrackingController::class, 'updateTwitter'])->name('admin.marketing.twitter');
+    Route::post('/marketing/linkedin', [MarketingTrackingController::class, 'updateLinkedIn'])->name('admin.marketing.linkedin');
+    Route::post('/marketing/shopify', [MarketingTrackingController::class, 'updateShopify'])->name('admin.marketing.shopify');
+    Route::post('/marketing/woocommerce', [MarketingTrackingController::class, 'updateWooCommerce'])->name('admin.marketing.woocommerce');
+    Route::post('/marketing/custom-api', [MarketingTrackingController::class, 'updateCustomApi'])->name('admin.marketing.custom-api');
     Route::post('/marketing/general', [MarketingTrackingController::class, 'updateGeneral'])->name('admin.marketing.general');
-    Route::get('/marketing/test-facebook', [MarketingTrackingController::class, 'testFacebookConnection'])->name('admin.marketing.test-facebook');
-    Route::get('/marketing/test-tiktok', [MarketingTrackingController::class, 'testTikTokConnection'])->name('admin.marketing.test-tiktok');
+    Route::get('/marketing/test-facebook', [MarketingTrackingController::class, 'testFacebook'])->name('admin.marketing.test-facebook');
+    Route::post('/marketing/oauth-credentials', [MarketingTrackingController::class, 'saveOAuthCredentials'])->name('admin.marketing.oauth-credentials');    Route::get('/marketing/test-tiktok', [MarketingTrackingController::class, 'testTikTok'])->name('admin.marketing.test-tiktok');
+    Route::get('/marketing/test-google', [MarketingTrackingController::class, 'testGoogle'])->name('admin.marketing.test-google');
+    Route::get('/marketing/test-snapchat', [MarketingTrackingController::class, 'testSnapchat'])->name('admin.marketing.test-snapchat');
+    Route::get('/marketing/test-pinterest', [MarketingTrackingController::class, 'testPinterest'])->name('admin.marketing.test-pinterest');
+    Route::get('/marketing/test-twitter', [MarketingTrackingController::class, 'testTwitter'])->name('admin.marketing.test-twitter');
+    Route::get('/marketing/test-linkedin', [MarketingTrackingController::class, 'testLinkedIn'])->name('admin.marketing.test-linkedin');
+    Route::get('/marketing/test-shopify', [MarketingTrackingController::class, 'testShopify'])->name('admin.marketing.test-shopify');
+    Route::get('/marketing/test-woocommerce', [MarketingTrackingController::class, 'testWooCommerce'])->name('admin.marketing.test-woocommerce');
+    Route::get('/marketing/test-custom-api', [MarketingTrackingController::class, 'testCustomApi'])->name('admin.marketing.test-custom-api');
     Route::post('/marketing/send-test-event', [MarketingTrackingController::class, 'sendTestEvent'])->name('admin.marketing.send-test-event');
+
+    // True ROAS Dashboard
+    Route::get('/roas', [RoasDashboardController::class, 'index'])->name('admin.roas.index');
+    Route::get('/roas/data', [RoasDashboardController::class, 'data'])->name('admin.roas.data');
+
+    // Trigger Words (AI Compliance)
+    Route::get('/trigger-words', [TriggerWordController::class, 'index'])->name('admin.trigger-words.index');
+    Route::post('/trigger-words', [TriggerWordController::class, 'store'])->name('admin.trigger-words.store');
+    Route::put('/trigger-words/{trigger_word}', [TriggerWordController::class, 'update'])->name('admin.trigger-words.update');
+    Route::delete('/trigger-words/{trigger_word}', [TriggerWordController::class, 'destroy'])->name('admin.trigger-words.destroy');
+    Route::post('/trigger-words/{trigger_word}/toggle', [TriggerWordController::class, 'toggle'])->name('admin.trigger-words.toggle');
+
+    // AI Compliance Dashboard
+    Route::get('/ai-compliance', [AiComplianceController::class, 'index'])->name('admin.ai-compliance.index');
+    Route::get('/ai-compliance/refresh-health', [AiComplianceController::class, 'refreshHealth'])->name('admin.ai-compliance.refresh-health');
+    Route::post('/ai-compliance/test-sanitization', [AiComplianceController::class, 'testSanitization'])->name('admin.ai-compliance.test');
+
+    // Predictive Dashboard
+    Route::get('/predictive', [PredictiveController::class, 'index'])->name('admin.predictive.index');
+    Route::get('/predictive/data', [PredictiveController::class, 'data'])->name('admin.predictive.data');
+
+    // Reviewer IPs
+    Route::get('/reviewer-ips', [ReviewerIpController::class, 'index'])->name('admin.reviewer-ips.index');
+    Route::post('/reviewer-ips', [ReviewerIpController::class, 'store'])->name('admin.reviewer-ips.store');
+    Route::delete('/reviewer-ips/{reviewer_ip}', [ReviewerIpController::class, 'destroy'])->name('admin.reviewer-ips.destroy');
+    Route::post('/reviewer-ips/{reviewer_ip}/toggle', [ReviewerIpController::class, 'toggle'])->name('admin.reviewer-ips.toggle');
 
     // Facebook Leads Hub
     Route::get('/leads-hub', [MetaLeadHubController::class, 'index'])->name('admin.leads-hub.index');

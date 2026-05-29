@@ -17,7 +17,7 @@ class SettingController extends Controller
         'site_name_en' => 'JeninCare',
         'site_logo' => null,
         'site_favicon' => null,
-        'site_theme' => 'rose',
+        'site_theme' => 'natural',
         'site_description_ar' => '',
         'site_description_en' => '',
         'contact_email' => 'info@jenincare.com',
@@ -46,6 +46,8 @@ class SettingController extends Controller
         'linkedin_url' => '',
         'tiktok_url' => '',
         'youtube_url' => '',
+        'snapchat_url' => '',
+        'pinterest_url' => '',
 
         // Social Login (OAuth)
         'google_client_id' => '',

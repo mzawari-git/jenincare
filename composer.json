@@ -10,8 +10,11 @@
         "guzzlehttp/guzzle": "*",
         "intervention/image": "^2.7",
         "laravel/framework": "^10.0",
+        "laravel/horizon": "^5.47",
+        "laravel/pulse": "^1.7",
         "laravel/socialite": "^5.27",
         "maatwebsite/excel": "^3.1",
+        "predis/predis": "*",
         "yajra/laravel-datatables": "^10.0"
     },
     "require-dev": {

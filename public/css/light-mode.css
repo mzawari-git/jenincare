@@ -1,0 +1,258 @@
+/* ═════════════════════════════════════════════════
+   JeniCare Light Mode — Professional Approach
+   Overrides ALL Tailwind white/surface/ink classes
+   for [data-theme-mode="light"] on <html>
+   ═════════════════════════════════════════════════ */
+
+/* ── 1. CSS Custom Properties (Variables) ── */
+html[data-theme-mode="light"] {
+  --surface: #faf9f8;
+  --surface-alt: #f0f0f0;
+  --ink: #1c1917;
+  --ink-muted: #6b6b6b;
+  --ink-dim: #777777;
+  --header-bg: rgba(250, 249, 248, 0.88);
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  --neon-glow: 0 0 12px rgba(255,42,133,0.2);
+  --neon-glow-strong: 0 0 20px rgba(255,42,133,0.3);
+  --neon-text-shadow: 0 0 6px rgba(255,42,133,0.15);
+  --accent-glow: 0 0 10px rgba(214,51,132,0.15);
+  --accent-glow-strong: 0 0 18px rgba(214,51,132,0.25);
+}
+
+/* ── 2. Body background ── */
+html[data-theme-mode="light"] body {
+  background-color: #faf9f8 !important;
+  color: #1c1917 !important;
+}
+
+/* ── 3. Override Tailwind text-white and opacity variants ── */
+html[data-theme-mode="light"] .text-white { color: rgb(28 25 23) !important; }
+html[data-theme-mode="light"] .text-white\/90 { color: rgb(28 25 23 / 0.9) !important; }
+html[data-theme-mode="light"] .text-white\/80 { color: rgb(28 25 23 / 0.8) !important; }
+html[data-theme-mode="light"] .text-white\/70 { color: rgb(28 25 23 / 0.7) !important; }
+html[data-theme-mode="light"] .text-white\/60 { color: rgb(28 25 23 / 0.6) !important; }
+html[data-theme-mode="light"] .text-white\/50 { color: rgb(28 25 23 / 0.5) !important; }
+html[data-theme-mode="light"] .text-white\/40 { color: rgb(28 25 23 / 0.4) !important; }
+html[data-theme-mode="light"] .text-white\/30 { color: rgb(28 25 23 / 0.3) !important; }
+html[data-theme-mode="light"] .text-white\/20 { color: rgb(28 25 23 / 0.2) !important; }
+html[data-theme-mode="light"] .text-white\/10 { color: rgb(28 25 23 / 0.1) !important; }
+
+/* ── 4. Override Tailwind bg-white and opacity variants ── */
+html[data-theme-mode="light"] .bg-white { background-color: rgb(255 255 255) !important; }
+html[data-theme-mode="light"] .bg-white\/5 { background-color: rgb(0 0 0 / 0.03) !important; }
+html[data-theme-mode="light"] .bg-white\/10 { background-color: rgb(0 0 0 / 0.05) !important; }
+html[data-theme-mode="light"] .bg-white\/20 { background-color: rgb(0 0 0 / 0.08) !important; }
+html[data-theme-mode="light"] .bg-white\/30 { background-color: rgb(0 0 0 / 0.12) !important; }
+
+/* ── 5. Override Tailwind border-white variants ── */
+html[data-theme-mode="light"] .border-white\/5 { border-color: rgb(0 0 0 / 0.06) !important; }
+html[data-theme-mode="light"] .border-white\/10 { border-color: rgb(0 0 0 / 0.10) !important; }
+html[data-theme-mode="light"] .border-white\/15 { border-color: rgb(0 0 0 / 0.12) !important; }
+html[data-theme-mode="light"] .border-white\/20 { border-color: rgb(0 0 0 / 0.15) !important; }
+
+/* ── 6. Override Tailwind hover:text-white ── */
+html[data-theme-mode="light"] .hover\:text-white:hover { color: rgb(28 25 23) !important; }
+html[data-theme-mode="light"] .hover\:bg-white\/5:hover { background-color: rgb(0 0 0 / 0.04) !important; }
+html[data-theme-mode="light"] .hover\:bg-white\/10:hover { background-color: rgb(0 0 0 / 0.06) !important; }
+
+/* ── 7. text-ink classes (use CSS var — already handled by :root override) ── */
+
+/* ── 8. Glass panels and cards — light backgrounds ── */
+html[data-theme-mode="light"] .glass-panel {
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04) !important;
+}
+html[data-theme-mode="light"] .spa-card {
+  background: rgba(255, 255, 255, 0.55) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+html[data-theme-mode="light"] .editorial-card {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+html[data-theme-mode="light"] .luxury-card {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ── 9. Forms ── */
+html[data-theme-mode="light"] input[type="text"],
+html[data-theme-mode="light"] input[type="email"],
+html[data-theme-mode="light"] input[type="tel"],
+html[data-theme-mode="light"] input[type="number"],
+html[data-theme-mode="light"] input[type="search"],
+html[data-theme-mode="light"] select,
+html[data-theme-mode="light"] textarea {
+  background-color: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+  color: #1c1917 !important;
+}
+html[data-theme-mode="light"] input::placeholder,
+html[data-theme-mode="light"] textarea::placeholder {
+  color: #999 !important;
+}
+
+/* ── 10. Dropdowns, modals, overlays ── */
+html[data-theme-mode="light"] #searchDropdown {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+}
+html[data-theme-mode="light"] .modal-content {
+  background-color: #ffffff !important;
+  color: #1c1917 !important;
+}
+
+/* ── 11. Fix black overlays to be transparent light ── */
+html[data-theme-mode="light"] [class*="bg-black"] {
+  background-color: transparent !important;
+}
+
+/* ── 12. Scanner line ── */
+html[data-theme-mode="light"] .scanner-line { opacity: 0.3; }
+
+/* ── 13. Ambient glows ── */
+html[data-theme-mode="light"] .ambient-glow { opacity: 0.03 !important; }
+
+/* ── 14. Terminal blocks ── */
+html[data-theme-mode="light"] .terminal-block {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+  color: #555 !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ── 15. Brand colors — PRESERVE, never override ── */
+html[data-theme-mode="light"] .text-brand-500,
+html[data-theme-mode="light"] a.text-brand-500 { color: var(--brand-500) !important; }
+html[data-theme-mode="light"] .text-accent-500,
+html[data-theme-mode="light"] a.text-accent-500 { color: var(--accent-500) !important; }
+html[data-theme-mode="light"] .text-brand-600 { color: var(--brand-600) !important; }
+html[data-theme-mode="light"] .text-accent-600 { color: var(--accent-600) !important; }
+html[data-theme-mode="light"] .bg-brand-500 { background-color: var(--brand-500) !important; }
+html[data-theme-mode="light"] .bg-brand-500\/10 { background-color: color-mix(in srgb, var(--brand-500) 10%, transparent) !important; }
+html[data-theme-mode="light"] .bg-brand-500\/20 { background-color: color-mix(in srgb, var(--brand-500) 20%, transparent) !important; }
+html[data-theme-mode="light"] .bg-accent-500\/10 { background-color: color-mix(in srgb, var(--accent-500) 10%, transparent) !important; }
+
+/* Brand gradient buttons keep white text */
+html[data-theme-mode="light"] [style*="var(--gradient-primary)"] {
+  color: #ffffff !important;
+}
+html[data-theme-mode="light"] [style*="var(--gradient-primary)"] * {
+  color: #ffffff !important;
+}
+
+/* ── 16. Green/red/yellow status text stay colored ── */
+html[data-theme-mode="light"] .text-green-400,
+html[data-theme-mode="light"] .text-green-500,
+html[data-theme-mode="light"] .text-green-600 { color: #16a34a !important; }
+html[data-theme-mode="light"] .text-red-400,
+html[data-theme-mode="light"] .text-red-500 { color: #dc2626 !important; }
+html[data-theme-mode="light"] .text-amber-400,
+html[data-theme-mode="light"] .text-amber-500 { color: #d97706 !important; }
+html[data-theme-mode="light"] .text-yellow-400 { color: #ca8a04 !important; }
+
+/* ── 17. Social sidebar stays colored ── */
+html[data-theme-mode="light"] .floating-social-v3 a,
+html[data-theme-mode="light"] .floating-social-v3 a * { color: #ffffff !important; }
+
+/* ── 18. Bootstrap close button ── */
+html[data-theme-mode="light"] .btn-close-white { filter: invert(1); }
+
+/* ── 19. Theme switcher palette ── */
+html[data-theme-mode="light"] #themePalette {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+html[data-theme-mode="light"] #themePalette h6,
+html[data-theme-mode="light"] #themePalette span:not(.color-btn) { color: #1c1917 !important; }
+html[data-theme-mode="light"] #themeToggleBtn,
+html[data-theme-mode="light"] #darkLightBtn {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+html[data-theme-mode="light"] #themeToggleBtn i,
+html[data-theme-mode="light"] #darkLightBtn i { color: #1c1917 !important; }
+
+/* ── 20. Header specific overrides ── */
+html[data-theme-mode="light"] header .nav-link { color: #555 !important; }
+html[data-theme-mode="light"] header .nav-link:hover,
+html[data-theme-mode="light"] header .nav-link.active { color: var(--brand-500) !important; }
+html[data-theme-mode="light"] .marquee-item { color: #888 !important; }
+html[data-theme-mode="light"] .marquee-item:hover { color: var(--brand-500) !important; }
+
+/* ── 21. Footer text ── */
+html[data-theme-mode="light"] footer { color: #555 !important; }
+html[data-theme-mode="light"] footer a { color: #555 !important; }
+html[data-theme-mode="light"] footer a:hover { color: var(--brand-500) !important; }
+
+/* ── 22. Product/category cards ── */
+html[data-theme-mode="light"] .product-grid-item { color: #1c1917 !important; }
+html[data-theme-mode="light"] .product-grid-item h3 { color: #1c1917 !important; }
+html[data-theme-mode="light"] .product-grid-item h3:hover { color: var(--brand-500) !important; }
+html[data-theme-mode="light"] .product-grid-item .text-ink-dim { color: #888 !important; }
+
+/* ── 23. Pill badges (keep brand colors) ── */
+html[data-theme-mode="light"] .pill-brand { color: var(--brand-500) !important; }
+html[data-theme-mode="light"] .pill-accent { color: var(--accent-500) !important; }
+
+/* ── 24. Shadows ── */
+html[data-theme-mode="light"] .shadow-neon { box-shadow: 0 0 8px rgba(255,42,133,0.2) !important; }
+html[data-theme-mode="light"] .shadow-neon-strong { box-shadow: 0 0 16px rgba(255,42,133,0.3) !important; }
+html[data-theme-mode="light"] .shadow-glass { box-shadow: 0 2px 12px rgba(0,0,0,0.04) !important; }
+
+/* ── 25. Selection ── */
+html[data-theme-mode="light"] ::selection {
+  background-color: var(--brand-500) !important;
+  color: #ffffff !important;
+}
+
+/* ── 26. Hero section hard fix ── */
+html[data-theme-mode="light"] #hero h1,
+html[data-theme-mode="light"] #hero h1 span,
+html[data-theme-mode="light"] #hero h1 * { color: #1c1917 !important; }
+html[data-theme-mode="light"] #hero p,
+html[data-theme-mode="light"] #hero .text-ink-dim { color: #555 !important; }
+html[data-theme-mode="light"] #hero .gradient-text {
+  -webkit-text-fill-color: transparent !important;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* ── 27. All headings visible ── */
+html[data-theme-mode="light"] h1, html[data-theme-mode="light"] h2,
+html[data-theme-mode="light"] h3, html[data-theme-mode="light"] h4,
+html[data-theme-mode="light"] h5, html[data-theme-mode="light"] h6 {
+  color: #1c1917 !important;
+}
+html[data-theme-mode="light"] h1.text-brand-500 { color: var(--brand-500) !important; }
+html[data-theme-mode="light"] h2.text-brand-500 { color: var(--brand-500) !important; }
+html[data-theme-mode="light"] h3.text-brand-500 { color: var(--brand-500) !important; }
+html[data-theme-mode="light"] .gradient-text {
+  -webkit-text-fill-color: transparent !important;
+  background: var(--gradient-primary);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* ── 28. Hero description, breadcrumbs, secondary text ── */
+html[data-theme-mode="light"] .text-ink-dim,
+html[data-theme-mode="light"] [class*="text-ink-dim"] { color: #555 !important; }
+html[data-theme-mode="light"] .text-ink-muted { color: #777 !important; }
+
+/* ── 29. Logo fix ── */
+html[data-theme-mode="light"] header a[href*="home"] span,
+html[data-theme-mode="light"] a[style*="var(--ink)"] { color: #1c1917 !important; }
+html[data-theme-mode="light"] header a[href*="home"] .text-brand-500 { color: var(--brand-500) !important; }
+
+/* ── 30. Any text-white that escaped ── */
+html[data-theme-mode="light"] [class*="text-white"]:not(.text-brand-500):not(.text-accent-500):not(.text-green-400):not(.text-green-500):not(.text-red-400):not(.text-red-500):not(.text-amber-400):not(.text-amber-500):not(.text-yellow-400):not(.floating-social-v3 *):not(.btn-primary *) {
+  color: #1c1917 !important;
+}

@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use Modules\Commerce\Services\AdvertisingTrackingService;
+use App\Services\AdvertisingTrackingService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Log;
 class TrackAddToCartEvent implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public string $queue = 'capi-events';
 
     public int $tries = 2;
     public int $backoff = 30;
@@ -28,13 +30,13 @@ class TrackAddToCartEvent implements ShouldQueue
     public function handle(AdvertisingTrackingService $trackingService): void
     {
         try {
-            $trackingService->trackAddToCart(
-                $this->productId,
-                $this->productName,
-                $this->price,
-                $this->quantity,
-                $this->userId
-            );
+            $productData = [
+                'id' => $this->productId,
+                'name' => $this->productName,
+                'price' => $this->price,
+                'sku' => (string) $this->productId,
+            ];
+            $trackingService->trackAddToCart($productData, $this->quantity);
 
             Log::info('AddToCart tracking job completed', [
                 'product_id' => $this->productId,

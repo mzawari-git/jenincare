@@ -21,6 +21,14 @@ return [
             'block_for' => null,
             'after_commit' => false,
         ],
+        'capi' => [
+            'driver' => 'redis',
+            'connection' => 'default',
+            'queue' => 'capi-events',
+            'retry_after' => 300,
+            'block_for' => null,
+            'after_commit' => true,
+        ],
     ],
     'batching' => [
         'database' => env('DB_CONNECTION', 'mysql'),

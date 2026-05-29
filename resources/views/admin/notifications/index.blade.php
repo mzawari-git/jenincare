@@ -81,7 +81,7 @@
 @push('scripts')
 <script>
 function markAsRead(id) {
-    fetch(`{{ url('/admin/notifications') }}/${id}/read`, {
+    fetch(`{{ route("admin.notifications.index") }}/${id}/read`, {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -115,7 +115,7 @@ function markAllAsRead() {
 function deleteNotification(id) {
     if (!confirm('هل أنت متأكد من حذف هذا الإشعار؟')) return;
     
-    fetch(`{{ url('/admin/notifications') }}/${id}`, {
+    fetch(`{{ route("admin.notifications.index") }}/${id}`, {
         method: 'DELETE',
         headers: {
             'X-CSRF-TOKEN': '{{ csrf_token() }}',

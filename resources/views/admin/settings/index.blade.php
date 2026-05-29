@@ -89,6 +89,7 @@
                     <option value="luxury" {{ ($settings['site_theme'] ?? '') == 'luxury' ? 'selected' : '' }}>الفخامة - Luxury (ذهبي)</option>
                     <option value="minimal" {{ ($settings['site_theme'] ?? '') == 'minimal' ? 'selected' : '' }}>مينيمال - Minimal (بسيط)</option>
                     <option value="sunset" {{ ($settings['site_theme'] ?? '') == 'sunset' ? 'selected' : '' }}>الغروب - Sunset (دافئ)</option>
+                    <option value="natural" {{ ($settings['site_theme'] ?? '') == 'natural' ? 'selected' : '' }}>طبيعي - Natural (أخضر عضوي)</option>
                 </select>
                 <div class="form-text">اختر القالب المناسب لهوية متجرك</div>
             </div>
@@ -116,6 +117,8 @@
             <div class="col-md-6"><label class="card-label">تويتر</label><input type="url" name="twitter_url" class="form-control" value="{{ $settings['twitter_url'] ?? '' }}"></div>
             <div class="col-md-6"><label class="card-label">لينكدإن</label><input type="url" name="linkedin_url" class="form-control" value="{{ $settings['linkedin_url'] ?? '' }}"></div>
             <div class="col-md-6"><label class="card-label">يوتيوب</label><input type="url" name="youtube_url" class="form-control" value="{{ $settings['youtube_url'] ?? '' }}"></div>
+            <div class="col-md-6"><label class="card-label">سناب شات</label><input type="url" name="snapchat_url" class="form-control" value="{{ $settings['snapchat_url'] ?? '' }}"></div>
+            <div class="col-md-6"><label class="card-label">بينتيريست</label><input type="url" name="pinterest_url" class="form-control" value="{{ $settings['pinterest_url'] ?? '' }}"></div>
         </div>
     </div>
 </div>
@@ -316,6 +319,7 @@
 {{-- Save Bar --}}
 <div class="save-bar" id="saveBar">
     <div><small class="text-white-50">تأكد من صحة البيانات قبل الحفظ</small></div>
+    <input type="hidden" name="tab" id="activeTab" value="general">
     <button type="submit" class="btn btn-pink btn-lg px-5"><i class="fas fa-save"></i> حفظ جميع الإعدادات</button>
 </div>
 
@@ -330,6 +334,18 @@ function switchTab(tabName) {
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
     document.getElementById('tab-' + tabName).classList.add('active');
     localStorage.setItem('settingsActiveTab', tabName);
+    document.getElementById('activeTab').value = tabName;
+}
+
+function previewTheme(themeName) {
+    var link = document.getElementById('themePreview');
+    if (!link) {
+        link = document.createElement('link');
+        link.id = 'themePreview';
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+    }
+    link.href = '{{ url('/css/themes/') }}/' + themeName + '.css';
 }
 
 document.addEventListener('DOMContentLoaded', function() {

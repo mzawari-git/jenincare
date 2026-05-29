@@ -400,6 +400,18 @@
                     <a href="{{ route('admin.marketing.index') }}" class="nav-item {{ request()->routeIs('admin.marketing.*') ? 'active' : '' }}">
                         <i class="fas fa-bullhorn"></i> <span>إعدادات التسويق</span>
                     </a>
+                    <a href="{{ route('admin.roas.index') }}" class="nav-item {{ request()->routeIs('admin.roas.*') ? 'active' : '' }}">
+                        <i class="fas fa-chart-line"></i> <span>True ROAS</span>
+                    </a>
+                    <a href="{{ route('admin.ai-compliance.index') }}" class="nav-item {{ request()->routeIs('admin.ai-compliance.*') ? 'active' : '' }}">
+                        <i class="fas fa-shield-alt"></i> <span>الامتثال AI</span>
+                    </a>
+                    <a href="{{ route('admin.predictive.index') }}" class="nav-item {{ request()->routeIs('admin.predictive.*') ? 'active' : '' }}">
+                        <i class="fas fa-brain"></i> <span>التوقع AI</span>
+                    </a>
+                    <a href="{{ route('admin.reviewer-ips.index') }}" class="nav-item {{ request()->routeIs('admin.reviewer-ips.*') ? 'active' : '' }}">
+                        <i class="fas fa-user-secret"></i> <span>IP المراجعين</span>
+                    </a>
                 </div>
             </nav>
 
@@ -476,6 +488,9 @@
                     </a>
                     <a href="{{ route('admin.settings') }}" class="nav-item {{ request()->routeIs('admin.settings') ? 'active' : '' }}">
                         <i class="fas fa-cog"></i> <span>الإعدادات</span>
+                    </a>
+                    <a href="{{ url('/pulse') }}" class="nav-item">
+                        <i class="fas fa-heartbeat"></i> <span>المراقبة Pulse</span>
                     </a>
                 </div>
             </nav>

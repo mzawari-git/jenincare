@@ -1,0 +1,85 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+        extensions: mbstring, pdo_mysql, redis, xml, gd, intl
+        coverage: xdebug
+
+    - name: Copy .env
+      run: cp .env.example .env
+
+    - name: Install Dependencies
+      run: composer install --no-interaction --prefer-dist
+
+    - name: Generate key
+      run: php artisan key:generate
+
+    - name: Run Tests
+      run: php vendor/bin/phpunit
+
+    - name: Run PHPStan
+      run: vendor/bin/phpstan analyse --level=4 app
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+
+    - name: Install Dependencies
+      run: composer install --no-interaction --prefer-dist
+
+    - name: Check Coding Standards
+      run: vendor/bin/php-cs-fixer fix --dry-run --diff
+
+  deploy:
+    needs: [test, lint]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build and push Docker images
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ secrets.DOCKER_REGISTRY }}/jenicare:latest
+
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@v1
+      with:
+        host: ${{ secrets.DEPLOY_HOST }}
+        username: ${{ secrets.DEPLOY_USER }}
+        key: ${{ secrets.DEPLOY_KEY }}
+        script: |
+          cd /opt/jenincare
+          docker-compose pull
+          docker-compose up -d --force-recreate
+          docker system prune -f

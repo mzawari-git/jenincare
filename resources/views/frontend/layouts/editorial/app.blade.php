@@ -1,0 +1,133 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="description" content="@yield('meta_description', ($siteSettings['site_description'] ?? 'JeniCare - المنصة الرائدة لتقنيات العناية بالبشرة'))">
+    <meta name="keywords" content="@yield('meta_keywords', 'JeniCare, تجميل, عناية, بشرة')">
+    <link rel="canonical" href="@yield('canonical_url', url()->current())">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="@yield('title', ($siteSettings['site_name'] ?? 'JeniCare'))">
+    <meta property="og:description" content="@yield('meta_description', $siteSettings['site_description'] ?? '')">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:image" content="@yield('og_image', asset('assets/images/og-image.webp'))">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@yield('title', ($siteSettings['site_name'] ?? 'JeniCare'))">
+    <meta name="twitter:description" content="@yield('meta_description', '')">
+    <meta name="twitter:image" content="@yield('og_image', asset('assets/images/og-image.webp'))">
+    <title>@yield('title', ($siteSettings['site_name'] ?? 'JeniCare'))</title>
+
+    @if(!empty($siteSettings['site_favicon_url']))
+        <link rel="icon" href="{{ $siteSettings['site_favicon_url'] }}">
+    @else
+        <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
+    @endif
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link id="googleFontsLink" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
+    <link rel="stylesheet" href="{{ asset('css/tailwind.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="manifest" href="{{ asset('manifest.json') }}"><meta name="theme-color" content="var(--surface, #080808)">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="stylesheet" href="{{ asset('css/themes/' . $activeTheme . '.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/light-mode.css') }}">
+    <script>(function(){var m=localStorage.getItem('jenicare_mode');if(!m){var c=document.cookie.match('jenicare_mode=([^;]+)');m=c?c[1]:null;}if(m==='light')document.documentElement.setAttribute('data-theme-mode','light');})();</script>
+
+    @php $tracking = app(\App\Services\AdvertisingTrackingService::class); @endphp
+
+    <style>
+        /* ── Editorial: Clean Minimal Typography-Focused ── */
+        * { transition: opacity 0.2s ease, border-color 0.2s ease; }
+        ::selection { background: var(--brand-500); color: var(--surface); }
+
+        .editorial-card {
+            background: var(--surface-alt);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 4px;
+            transition: border-color 0.2s;
+        }
+        .editorial-card:hover { border-color: var(--ink-muted); }
+
+        .editorial-hero-text {
+            letter-spacing: -0.02em;
+            line-height: 1.05;
+        }
+        .editorial-line {
+            width: 40px;
+            height: 1px;
+            background: var(--ink-muted);
+            display: inline-block;
+            margin: 0 12px;
+            vertical-align: middle;
+        }
+
+        .floating-social-v3 {
+            position: fixed; left: 20px; top: 50%; transform: translateY(-50%); z-index: 999; display: flex; flex-direction: column; gap: 8px;
+        }
+        .floating-social-v3 a {
+            width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--ink-dim); font-size: 1.1rem; transition: all .2s; text-decoration: none !important;
+        }
+        .floating-social-v3 a:hover { color: var(--ink); }
+        @media (max-width:768px) { .floating-social-v3 { left: 8px; bottom: 80px; top: auto; transform: none; } }
+    </style>
+    @stack('styles')
+    <script>if('serviceWorker' in navigator&&window.location.hostname!=='localhost'){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister()})}).then(function(){navigator.serviceWorker.register('{{ asset('sw.js') }}').catch(function(){})})}</script>
+    <script>window.basePath="{{ rtrim(url('/'), '/') }}";</script>
+</head>
+<body class="antialiased" style="background-color:var(--surface);color:var(--ink);">
+    <a href="#main-content" class="skip-link">الانتقال إلى المحتوى الرئيسي</a>
+    @if($tracking->isEnabled()) {!! $tracking->getBrowserPixelNoscript() !!} @endif
+
+    @include('frontend.layouts.editorial.header')
+    <main id="main-content" style="min-height:60vh;">
+        @yield('content')
+    </main>
+    @include('frontend.layouts.editorial.footer')
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="{{ asset('js/behavioral-analysis.js') }}" defer></script>
+    <script src="{{ asset('js/app.js') }}"></script>
+    @if($tracking->isEnabled()) {!! $tracking->getBrowserPixelScript() !!} @endif
+    @stack('scripts')
+
+    {{-- QuickView Modal --}}
+    <div class="modal fade" id="quickViewModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content editorial-card" style="color:var(--ink);">
+                <div class="modal-header" style="border:none;"><button type="button" class="btn-close btn-close-white ms-0 me-auto" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body" id="quickViewBody" style="padding:0 20px 24px;"><div class="text-center py-4"><div class="spinner-border" style="color:var(--brand-500);"></div></div></div>
+            </div>
+        </div>
+    </div>
+    <div id="searchDropdown" style="display:none;position:absolute;background:var(--surface-alt);border:1px solid rgba(255,255,255,.08);border-radius:4px;box-shadow:0 4px 20px rgba(0,0,0,.3);z-index:9999;max-height:400px;overflow-y:auto;"></div>
+
+    <script>
+    let st; const si=document.querySelectorAll('#searchOverlayV3 input[name="search"]'),sd=document.getElementById('searchDropdown');
+    if(si.length&&sd){si.forEach(function(i){i.setAttribute('autocomplete','off');i.addEventListener('input',function(){clearTimeout(st);const q=this.value.trim();if(q.length<2){sd.style.display='none';return;}st=setTimeout(()=>{fetch((window.basePath||'')+'/api/search?q='+encodeURIComponent(q)).then(r=>r.json()).then(d=>{if(!d.length){sd.style.display='none';return;}sd.innerHTML=d.map(p=>'<a href="'+p.url+'" style="display:flex;align-items:center;gap:10px;padding:8px 12px;text-decoration:none;color:var(--ink);border-bottom:1px solid rgba(255,255,255,.05);" onmouseover="this.style.background=\'rgba(255,255,255,.03)\'" onmouseout="this.style.background=\'\'">'+(p.image?'<img src="'+p.image+'" style="width:40px;height:40px;border-radius:2px;object-fit:cover;">':'')+'<div><div style="font-weight:500;font-size:.8rem;">'+p.name+'</div><div style="font-size:.75rem;color:var(--brand-500);">'+p.price+'</div></div></a>').join('');sd.style.display='block';const r=this.getBoundingClientRect();sd.style.top=(r.bottom+window.scrollY)+'px';sd.style.left=r.left+'px';sd.style.width=r.width+'px';});},250);});});document.addEventListener('click',e=>{let in_=false;si.forEach(i=>{if(i.contains(e.target))in_=true;});if(!in_&&!sd.contains(e.target))sd.style.display='none';});}
+    async function quickView(id){const m=new bootstrap.Modal(document.getElementById('quickViewModal')),b=document.getElementById('quickViewBody');b.innerHTML='<div class="text-center py-4"><div class="spinner-border" style="color:var(--brand-500);"></div></div>';m.show();try{const r=await fetch((window.basePath||'')+'/api/product/'+id+'/quickview'),p=await r.json();b.innerHTML='<div class="row g-4"><div class="col-md-5">'+(p.image?'<img src="'+p.image+'" style="width:100%;aspect-ratio:1/1;object-fit:cover;">':'<div style="width:100%;aspect-ratio:1/1;background:var(--surface);display:flex;align-items:center;justify-content:center;"><i class="ph ph-package" style="font-size:3rem;color:#333;"></i></div>')+'</div><div class="col-md-7"><h4 style="font-weight:800;">'+p.name+'</h4><div style="font-size:1.3rem;font-weight:800;color:var(--brand-500);">'+p.price+' ₪</div><div class="d-flex gap-2 mt-3"><button onclick="addToCart('+p.id+')" class="btn" style="background:var(--ink);color:var(--surface);border-radius:0;font-weight:700;">أضف للسلة</button><a href="'+p.url+'" class="btn" style="border:1px solid var(--ink-muted);color:var(--ink);border-radius:0;">تفاصيل</a></div></div></div>';}catch(e){b.innerHTML='<div class="text-center py-4 text-danger">تعذر تحميل المنتج</div>';}}
+    async function toggleWishlist(id,btn){try{const r=await fetch((window.basePath||'')+'/wishlist/toggle',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]').content},body:JSON.stringify({product_id:id})});const d=await r.json();if(d.success){const i=btn.querySelector('i');i.className=d.action==='added'?'fas fa-heart':'far fa-heart';btn.style.color=d.action==='added'?'#EF4444':'var(--ink-dim)';showNotification('success',d.message);}else if(r.status===401)window.location='/login';}catch(e){}}
+    </script>
+
+    <div class="floating-social-v3">
+        @if(!empty($siteSettings['facebook_url']))<a href="{{ $siteSettings['facebook_url'] }}" target="_blank" aria-label="فيسبوك"><i class="ph ph-facebook-logo"></i></a>@endif
+        @if(!empty($siteSettings['instagram_url']))<a href="{{ $siteSettings['instagram_url'] }}" target="_blank" aria-label="إنستغرام"><i class="ph ph-instagram-logo"></i></a>@endif
+        @if(!empty($siteSettings['twitter_url']))<a href="{{ $siteSettings['twitter_url'] }}" target="_blank" aria-label="تويتر"><i class="ph ph-twitter-logo"></i></a>@endif
+        @if(!empty($siteSettings['tiktok_url']))<a href="{{ $siteSettings['tiktok_url'] }}" target="_blank" aria-label="تيك توك"><i class="ph ph-tiktok-logo"></i></a>@endif
+        @if(!empty($siteSettings['linkedin_url']))<a href="{{ $siteSettings['linkedin_url'] }}" target="_blank" aria-label="لينكد إن"><i class="ph ph-linkedin-logo"></i></a>@endif
+        @if(!empty($siteSettings['youtube_url']))<a href="{{ $siteSettings['youtube_url'] }}" target="_blank" aria-label="يوتيوب"><i class="ph ph-youtube-logo"></i></a>@endif
+        @if(!empty($siteSettings['whatsapp_number']))<a href="https://wa.me/{{ preg_replace('/[^0-9]/','',$siteSettings['whatsapp_number']) }}" target="_blank" aria-label="واتساب"><i class="ph ph-whatsapp-logo"></i></a>@endif
+    </div>
+
+    <style>.skip-link{position:absolute;top:-40px;left:0;background:var(--ink);color:var(--surface);padding:6px 12px;z-index:100;font-size:.75rem;font-weight:700;}.skip-link:focus{top:0;}</style>
+@include('frontend.layouts.partials.theme-switcher')
+</body>
+</html>

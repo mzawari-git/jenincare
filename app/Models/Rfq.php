@@ -12,6 +12,8 @@ class Rfq extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = 'rfqs';
+
     protected $fillable = [
         'tenant_id', 'rfq_number', 'company_id', 'user_id', 'title', 'description',
         'required_by_date', 'estimated_quantity', 'delivery_address', 'status',

@@ -59,6 +59,32 @@ class MarketingSetting extends Model
                 'capi_enabled' => (bool) static::get('tiktok_capi_enabled', false),
                 'access_token' => static::get('tiktok_access_token'),
             ],
+            'google' => [
+                'enabled' => (bool) static::get('google_ads_enabled', false),
+                'conversion_id' => static::get('google_conversion_id'),
+                'conversion_label' => static::get('google_conversion_label'),
+                'google_ads_cid' => static::get('google_ads_cid'),
+            ],
+            'snapchat' => [
+                'enabled' => (bool) static::get('snapchat_pixel_enabled', false),
+                'pixel_id' => static::get('snapchat_pixel_id'),
+                'api_token' => static::get('snapchat_api_token'),
+            ],
+            'pinterest' => [
+                'enabled' => (bool) static::get('pinterest_tag_enabled', false),
+                'tag_id' => static::get('pinterest_tag_id'),
+                'access_token' => static::get('pinterest_access_token'),
+            ],
+            'twitter' => [
+                'enabled' => (bool) static::get('twitter_pixel_enabled', false),
+                'pixel_id' => static::get('twitter_pixel_id'),
+                'api_key' => static::get('twitter_api_key'),
+            ],
+            'linkedin' => [
+                'enabled' => (bool) static::get('linkedin_insight_enabled', false),
+                'partner_id' => static::get('linkedin_partner_id'),
+                'access_token' => static::get('linkedin_access_token'),
+            ],
             'test_mode' => (bool) static::get('tracking_test_mode', false),
         ];
     }
@@ -70,6 +96,11 @@ class MarketingSetting extends Model
             'facebook_capi_enabled' => false,
             'tiktok_pixel_enabled' => false,
             'tiktok_capi_enabled' => false,
+            'google_ads_enabled' => false,
+            'snapchat_pixel_enabled' => false,
+            'pinterest_tag_enabled' => false,
+            'twitter_pixel_enabled' => false,
+            'linkedin_insight_enabled' => false,
             'tracking_enabled' => true,
             'tracking_test_mode' => false,
             'tracking_async_mode' => true,
@@ -96,6 +127,56 @@ class MarketingSetting extends Model
         }
     }
 
+    public static function saveGoogleAdsSettings(array $data): void
+    {
+        $keys = ['google_ads_enabled', 'google_conversion_id', 'google_conversion_label', 'google_ads_cid', 'google_ads_developer_token', 'google_ads_refresh_token'];
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $data)) {
+                static::setValue($key, $data[$key], 'google');
+            }
+        }
+    }
+
+    public static function saveSnapchatSettings(array $data): void
+    {
+        $keys = ['snapchat_pixel_enabled', 'snapchat_pixel_id', 'snapchat_api_token'];
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $data)) {
+                static::setValue($key, $data[$key], 'snapchat');
+            }
+        }
+    }
+
+    public static function savePinterestSettings(array $data): void
+    {
+        $keys = ['pinterest_tag_enabled', 'pinterest_tag_id', 'pinterest_access_token', 'pinterest_ad_account_id'];
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $data)) {
+                static::setValue($key, $data[$key], 'pinterest');
+            }
+        }
+    }
+
+    public static function saveTwitterSettings(array $data): void
+    {
+        $keys = ['twitter_pixel_enabled', 'twitter_pixel_id', 'twitter_api_key'];
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $data)) {
+                static::setValue($key, $data[$key], 'twitter');
+            }
+        }
+    }
+
+    public static function saveLinkedInSettings(array $data): void
+    {
+        $keys = ['linkedin_insight_enabled', 'linkedin_partner_id', 'linkedin_access_token', 'linkedin_conversion_rule_id'];
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $data)) {
+                static::setValue($key, $data[$key], 'linkedin');
+            }
+        }
+    }
+
     public static function isFacebookPixelEnabled(): bool { return (bool) static::get('facebook_pixel_enabled', false); }
     public static function isFacebookCAPIEnabled(): bool { return (bool) static::get('facebook_capi_enabled', false); }
     public static function getFacebookPixelId(): ?string { return static::get('facebook_pixel_id'); }
@@ -106,6 +187,46 @@ class MarketingSetting extends Model
     public static function getTikTokPixelId(): ?string { return static::get('tiktok_pixel_id'); }
     public static function getTikTokAccessToken(): ?string { return static::get('tiktok_access_token'); }
 
+    public static function isGoogleAdsEnabled(): bool { return (bool) static::get('google_ads_enabled', false); }
+    public static function isSnapchatEnabled(): bool { return (bool) static::get('snapchat_pixel_enabled', false); }
+    public static function isPinterestEnabled(): bool { return (bool) static::get('pinterest_tag_enabled', false); }
+    public static function isTwitterEnabled(): bool { return (bool) static::get('twitter_pixel_enabled', false); }
+    public static function isLinkedInEnabled(): bool { return (bool) static::get('linkedin_insight_enabled', false); }
+
     public static function isTrackingEnabled(): bool { return (bool) static::get('tracking_enabled', true); }
     public static function isTestMode(): bool { return (bool) static::get('tracking_test_mode', false); }
+
+    public static function saveShopifySettings(array $data): void
+    {
+        $keys = ['shopify_enabled', 'shopify_shop_domain', 'shopify_access_token', 'shopify_api_secret'];
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $data)) {
+                static::setValue($key, $data[$key], 'shopify');
+            }
+        }
+    }
+
+    public static function saveWooCommerceSettings(array $data): void
+    {
+        $keys = ['woocommerce_enabled', 'woocommerce_store_url', 'woocommerce_consumer_key', 'woocommerce_consumer_secret'];
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $data)) {
+                static::setValue($key, $data[$key], 'woocommerce');
+            }
+        }
+    }
+
+    public static function saveCustomApiSettings(array $data): void
+    {
+        $keys = ['custom_api_enabled', 'custom_api_key'];
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $data)) {
+                static::setValue($key, $data[$key], 'custom_api');
+            }
+        }
+    }
+
+    public static function isShopifyEnabled(): bool { return (bool) static::get('shopify_enabled', false); }
+    public static function isWooCommerceEnabled(): bool { return (bool) static::get('woocommerce_enabled', false); }
+    public static function isCustomApiEnabled(): bool { return (bool) static::get('custom_api_enabled', false); }
 }

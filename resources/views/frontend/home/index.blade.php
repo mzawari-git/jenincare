@@ -1,6 +1,8 @@
-@extends('frontend.layouts.app-v2')
+﻿@extends($layoutPath)
 
-@section('title', ($siteSettings['site_name'] ?? 'JeniCare') . ' | جنين للتجميل')
+@section('title', ($siteSettings['site_name'] ?? 'JeniCare') . ' | منصة الجمال الذكية')
+@section('meta_description', 'JeniCare - الجيل الجديد من العناية بالبشرة. بروتوكولات علاجية تتكيف مع بيئتك. منتجات أصلية، شحن لكل فلسطين.')
+@section('meta_keywords', 'JeniCare, جيني كير, عناية بالبشرة, عناية بالشعر, منتجات تجميل, فلسطين, شحن مجاني, منتجات أصلية, جمال, ذكاء اصطناعي')
 
 @push('scripts')
 <script type="application/ld+json">
@@ -10,7 +12,7 @@
   "name": "{{ $siteSettings['site_name'] ?? 'JeniCare' }}",
   "url": "{{ url('/') }}",
   "logo": "{{ asset('assets/images/logo.png') }}",
-  "description": "منصة العناية بالشعر والبشرة الأولى في فلسطين - منتجات أصلية 100%",
+  "description": "منصة العناية بالبشرة الذكية - منتجات أصلية 100%",
   "address": { "@type": "PostalAddress", "addressLocality": "رام الله", "addressCountry": "PS" },
   "contactPoint": { "@type": "ContactPoint", "telephone": "{{ $siteSettings['site_phone'] ?? '+972 56 903 0203' }}", "contactType": "customer service" },
   "sameAs": ["{{ $siteSettings['facebook_url'] ?? '#' }}", "{{ $siteSettings['instagram_url'] ?? '#' }}"]
@@ -30,752 +32,427 @@
 @section('content')
 
 {{-- ═══════════════════════════════════════════════════════════════
-     القسم الرئيسي (Hero Section) - تصميم احترافي مع سلايدشو
+     SECTION 1: HERO — Dark Sci-Fi Immersive Experience
      ═══════════════════════════════════════════════════════════════ --}}
-<section class="relative min-h-[90vh] flex items-center overflow-hidden {{ $slides->isNotEmpty() && $slides->first()->parallax ? 'bg-fixed' : '' }}">
-    {{-- فيديو خلفية إذا كان متاحا في الشريحة الأولى --}}
-    @php
-        $firstSlide = $slides->isNotEmpty() ? $slides->first() : null;
-        $activeVideo = $firstSlide && $firstSlide->video_url;
-        $gradientFrom = $firstSlide ? ($firstSlide->gradient_from ?: '#FDF2F8') : '#FDF2F8';
-        $gradientTo = $firstSlide ? ($firstSlide->gradient_to ?: '#FFF1F2') : '#FFF1F2';
-        $overlayOpacity = $firstSlide ? floatval($firstSlide->overlay_opacity) : 0.30;
-        $textColor = $firstSlide ? ($firstSlide->text_color ?: '#262626') : '#262626';
-        $textAlign = $firstSlide ? ($firstSlide->text_align ?: 'right') : 'right';
-        $imagePosition = $firstSlide ? ($firstSlide->image_position ?: 'right') : 'right';
-        $contentWidth = $firstSlide ? ($firstSlide->content_width ?: 'container') : 'container';
-        $fullWidthImage = $firstSlide && $firstSlide->full_width_image;
-    @endphp
+<section id="hero" class="relative min-h-screen flex items-center justify-center overflow-hidden">
 
-    @if($activeVideo)
+    {{-- Background Image + Gradient Overlay --}}
     <div class="absolute inset-0 z-0">
-        @if(str_contains($activeVideo, 'youtube.com') || str_contains($activeVideo, 'youtu.be'))
-            @php
-                preg_match('/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $activeVideo, $matches);
-                $videoId = $matches[1] ?? '';
-            @endphp
-            @if($videoId)
-            <iframe src="https://www.youtube.com/embed/{{ $videoId }}?autoplay=1&mute=1&controls=0&loop=1&playlist={{ $videoId }}&playsinline=1"
-                class="absolute inset-0 w-full h-full object-cover scale-150" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-            @endif
-        @elseif(str_contains($activeVideo, 'vimeo.com'))
-            @php preg_match('/vimeo\.com\/(\d+)/', $activeVideo, $vmatch); $vimeoId = $vmatch[1] ?? ''; @endphp
-            @if($vimeoId)
-            <iframe src="https://player.vimeo.com/video/{{ $vimeoId }}?autoplay=1&mute=1&loop=1&background=1"
-                class="absolute inset-0 w-full h-full object-cover scale-150" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
-            @endif
-        @else
-            <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover">
-                <source src="{{ $activeVideo }}" type="video/mp4">
-            </video>
-        @endif
-        <div class="absolute inset-0 bg-gradient-to-t from-ink/{{ intval($overlayOpacity * 100) < 10 ? 10 : intval($overlayOpacity * 100) }} via-ink/{{ max(0, intval($overlayOpacity * 50)) }} to-transparent z-10"></div>
+        <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop"
+             class="w-full h-full object-cover opacity-30 mix-blend-luminosity filter contrast-125"
+             alt="" aria-hidden="true" loading="eager" fetchpriority="high">
+        <div class="absolute inset-0 bg-gradient-to-b from-surface/50 via-surface/85 to-surface"></div>
     </div>
-    @endif
 
-    {{-- خلفيات زخرفية متحركة (إذا لا يوجد فيديو) --}}
-    @if(!$activeVideo)
-    <div class="absolute inset-0" style="background: linear-gradient(135deg, {{ $gradientFrom }} 0%, {{ $gradientTo }} 50%, #fff 100%);"></div>
-    <div class="blob bg-gradient-to-br from-brand-100 to-pink-100 w-[600px] h-[600px] top-[-200px] right-[-200px] animate-pulse" style="animation-delay:0.5s;"></div>
-    <div class="blob bg-gradient-to-br from-purple-100 to-brand-100 w-[500px] h-[500px] bottom-[-150px] left-[-150px] animate-pulse" style="animation-delay: 1.5s;"></div>
-    <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%23d97a8c&quot; fill-opacity=&quot;0.04&quot;%3E%3Ccircle cx=&quot;30&quot; cy=&quot;30&quot; r=&quot;1&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
-    @endif
-
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 w-full pt-28 pb-16 {{ $contentWidth === 'container-fluid' ? 'max-w-none' : '' }}">
-        @if($slides->isNotEmpty() && $slides->count() > 1)
-            {{-- ═══ سلايدشو متعدد الشرائح ═══ --}}
-            <div class="relative" id="heroSlideshow">
-                @foreach($slides as $index => $slide)
-                <div class="hero-slide grid grid-cols-1 lg:grid-cols-2 gap-12 items-center transition-all duration-1000 {{ $index === 0 ? 'block' : 'hidden' }}"
-                     data-slide="{{ $index }}"
-                     style="--text-color: {{ $slide->text_color ?: '#262626' }}; --text-align: {{ $slide->text_align === 'center' ? 'center' : ($slide->text_align === 'left' ? 'left' : 'right') }};">
-
-                    {{-- النص --}}
-                    <div class="order-2 lg:order-1 {{ $slide->text_align === 'center' ? 'text-center' : ($slide->text_align === 'left' ? 'lg:text-left' : 'lg:text-right') }}">
-                        @if($slide->badge_text_ar)
-                        <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/90 backdrop-blur-md border border-brand-200/50 shadow-lg text-sm text-brand-700 font-semibold mb-6 animate-slide-down">
-                            <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
-                            <span>{{ $slide->badge_text_ar }}</span>
-                        </div>
-                        @elseif($slide->subtitle_ar)
-                        <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/90 backdrop-blur-md border border-brand-200/50 shadow-lg text-sm text-brand-700 font-semibold mb-6 animate-slide-down">
-                            <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
-                            <span>{{ $slide->subtitle_ar }}</span>
-                        </div>
-                        @endif
-
-                        <h1 class="text-5xl lg:text-7xl font-extrabold leading-[1.1] mb-6" style="color: {{ $slide->text_color ?: '#262626' }};">
-                            @if($slide->title_ar)
-                                {!! nl2br(e($slide->title_ar)) !!}
-                            @else
-                                تألقي بثقة،<br>
-                                <span class="text-transparent bg-clip-text bg-gradient-to-l from-brand-600 via-brand-500 to-pink-500 animate-gradient-shift">أنتِ تستحقين الأفضل.</span>
-                            @endif
-                        </h1>
-
-                        @if($slide->description_ar)
-                        <p class="text-lg lg:text-xl leading-relaxed font-light mb-8 max-w-lg {{ $slide->text_align === 'center' ? 'mx-auto' : ($slide->text_align === 'left' ? '' : 'lg:mr-0 lg:ml-auto') }}" style="color: {{ ($textColor === '#262626' && $slide->text_color) ? $slide->text_color : '#4B5563' }}; opacity:0.9;">
-                            {{ $slide->description_ar }}
-                        </p>
-                        @endif
-
-                        <div class="flex flex-col sm:flex-row gap-4 {{ $slide->text_align === 'center' ? 'justify-center' : ($slide->text_align === 'left' ? 'justify-start' : 'lg:justify-start justify-center') }}">
-                            @if($slide->button_text_ar && $slide->button_url)
-                            <a href="{{ $slide->button_url }}" class="group relative px-8 sm:px-10 py-4 sm:py-5 bg-gradient-to-r from-ink to-brand-600 text-white rounded-full font-bold overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-500 flex items-center justify-center gap-3 transform hover:-translate-y-1 text-base sm:text-lg touch-target">
-                                <span class="relative z-10">{{ $slide->button_text_ar }}</span>
-                                <i class="ph ph-arrow-left relative z-10 group-hover:-translate-x-2 transition-transform duration-300"></i>
-                                <div class="absolute inset-0 bg-gradient-to-r from-brand-600 to-pink-500 transform scale-x-0 group-hover:scale-x-100 origin-right transition-transform duration-700 ease-out z-0"></div>
-                            </a>
-                            @else
-                            <a href="{{ route('shop') }}" class="group relative px-8 sm:px-10 py-4 sm:py-5 bg-gradient-to-r from-ink to-brand-600 text-white rounded-full font-bold overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-500 flex items-center justify-center gap-3 transform hover:-translate-y-1 text-base sm:text-lg touch-target">
-                                <span class="relative z-10">تسوقي المجموعة</span>
-                                <i class="ph ph-arrow-left relative z-10 group-hover:-translate-x-2 transition-transform duration-300"></i>
-                                <div class="absolute inset-0 bg-gradient-to-r from-brand-600 to-pink-500 transform scale-x-0 group-hover:scale-x-100 origin-right transition-transform duration-700 ease-out z-0"></div>
-                            </a>
-                            @endif
-
-                            @if($slide->second_button_text_ar && $slide->second_button_url)
-                            <a href="{{ $slide->second_button_url }}" class="group relative px-6 sm:px-8 py-4 sm:py-5 bg-white/90 backdrop-blur-md text-ink rounded-full font-bold border-2 border-brand-200 hover:border-brand-500 hover:text-brand-600 transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1 text-base sm:text-lg touch-target">
-                                <i class="ph ph-sparkle text-xl"></i>
-                                <span>{{ $slide->second_button_text_ar }}</span>
-                            </a>
-                            @else
-                            <a href="{{ route('shop') }}?sort=newest" class="group relative px-6 sm:px-8 py-4 sm:py-5 bg-white/90 backdrop-blur-md text-ink rounded-full font-bold border-2 border-brand-200 hover:border-brand-500 hover:text-brand-600 transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1 text-base sm:text-lg touch-target">
-                                <i class="ph ph-sparkle text-xl group-hover:animate-spin-slow"></i>
-                                <span>وصل حديثاً</span>
-                            </a>
-                            @endif
-                        </div>
-                    </div>
-
-                    {{-- الصورة --}}
-                    <div class="order-1 lg:order-2 relative flex justify-center items-center {{ $slide->image_position === 'background' ? '' : 'lg:h-[600px]' }}">
-                        @if($slide->image_position === 'background' && $slide->image_url)
-                            <div class="absolute inset-0 -m-8 z-0">
-                                <img src="{{ $slide->image_url }}" alt="{{ $slide->title_ar }}" class="w-full h-full object-cover rounded-[40px] {{ $slide->parallax ? 'parallax-bg' : '' }}">
-                                <div class="absolute inset-0 rounded-[40px]" style="background: linear-gradient(to top, rgba(38,38,38,{{ $overlayOpacity }}), rgba(38,38,38,0));"></div>
-                            </div>
-                        @else
-                            <div class="relative {{ $fullWidthImage ? 'w-full' : 'w-[320px] md:w-[420px]' }} h-[420px] md:h-[520px]">
-                                <div class="relative w-full h-full rounded-[40px] overflow-hidden shadow-2xl z-20 {{ $slide->animation_type === 'zoom' ? 'animate-zoom-in' : ($slide->animation_type === 'slide' ? 'animate-slide-in' : 'animate-fade-in') }}">
-                                    @if($slide->image_url)
-                                    <img src="{{ $slide->image_url }}" alt="{{ $slide->title_ar }}" class="w-full h-full object-cover {{ $slide->parallax ? 'parallax-img' : '' }}" loading="{{ $index === 0 ? 'eager' : 'lazy' }}" onerror="this.outerHTML='<div class=&quot;w-full h-full bg-gradient-to-br from-brand-100 to-pink-100 flex items-center justify-center&quot;><i class=&quot;ph ph-sparkle text-6xl text-brand-300&quot;></i></div>'">
-                                    @elseif($slide->product && $slide->product->main_image_url)
-                                    <img src="{{ $slide->product->main_image_url }}" alt="{{ $slide->product->name_ar }}" class="w-full h-full object-cover" loading="lazy">
-                                    @else
-                                    <div class="w-full h-full bg-gradient-to-br from-brand-100 to-pink-100 flex items-center justify-center">
-                                        <i class="ph ph-sparkle text-6xl text-brand-300"></i>
-                                    </div>
-                                    @endif
-                                    <div class="absolute inset-0 bg-gradient-to-t from-ink/{{ intval($overlayOpacity * 100) < 10 ? 10 : intval($overlayOpacity * 100) }} via-transparent to-transparent"></div>
-                                </div>
-                                {{-- إطارات زخرفية --}}
-                                <div class="absolute w-full h-full rounded-[40px] border-2 border-brand-500/20 -rotate-6 top-4 z-10 animate-rotate-slow"></div>
-                                <div class="absolute w-full h-full rounded-[40px] border border-brand-300/10 rotate-3 top-6 z-10 animate-rotate-slow" style="animation-delay: 2s;"></div>
-
-                                {{-- بطاقات طافية --}}
-                                <div class="absolute top-8 -right-6 md:-right-12 bg-white/95 backdrop-blur-lg p-4 rounded-3xl shadow-2xl flex items-center gap-3 w-52 border border-white/50 animate-bounce-slow z-40">
-                                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-500 flex items-center justify-center text-white shadow-lg">
-                                        <i class="ph-fill ph-check-circle text-2xl"></i>
-                                    </div>
-                                    <div><p class="text-xs text-gray-500 font-medium">ضمان الجودة</p><p class="text-sm font-bold text-ink">100% أصلي</p></div>
-                                </div>
-                                <div class="absolute bottom-12 -left-6 md:-left-12 bg-white/95 backdrop-blur-lg p-4 rounded-3xl shadow-2xl border border-white/50 animate-bounce-slow z-40" style="animation-delay: 0.5s;">
-                                    <div class="flex -space-x-3 space-x-reverse mb-3">
-                                        <div class="w-10 h-10 rounded-full border-3 border-white bg-gradient-to-br from-brand-400 to-brand-500 flex items-center justify-center text-[10px] text-white font-bold shadow-lg">J</div>
-                                        <div class="w-10 h-10 rounded-full border-3 border-white bg-gradient-to-br from-brand-300 to-brand-400 flex items-center justify-center text-[10px] text-white font-bold shadow-lg">C</div>
-                                        <div class="w-10 h-10 rounded-full border-3 border-white bg-gradient-to-br from-pink-400 to-pink-500 flex items-center justify-center text-xs text-white font-bold shadow-lg">+{{ \App\Models\Product::count() }}</div>
-                                    </div>
-                                    <p class="text-xs font-bold text-ink">{{ \App\Models\Product::count() }} منتج متاح</p>
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-                @endforeach
-
-                {{-- أزرار تحكم السلايدشو --}}
-                <button onclick="previousSlide()" class="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-ink hover:bg-white hover:shadow-xl transition-all duration-300 shadow-lg z-30">
-                    <i class="ph ph-arrow-right text-xl"></i>
-                </button>
-                <button onclick="nextSlide()" class="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-ink hover:bg-white hover:shadow-xl transition-all duration-300 shadow-lg z-30">
-                    <i class="ph ph-arrow-left text-xl"></i>
-                </button>
-
-                {{-- مؤشرات --}}
-                <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-30">
-                    @foreach($slides as $idx => $slide)
-                    <button onclick="goToSlide({{ $idx }})" class="hero-indicator w-2 h-2 rounded-full transition-all duration-300 {{ $idx === 0 ? 'w-8 bg-white' : 'bg-white/60' }}" data-indicator="{{ $idx }}"></button>
-                    @endforeach
-                </div>
-            </div>
-        @elseif($slides->isNotEmpty())
-            {{-- ═══ شريحة واحدة ═══ --}}
+    <div class="relative z-10 w-full max-w-7xl mx-auto px-4 pt-28 pb-16">
+        @if($slides->isNotEmpty())
             @php $slide = $slides->first(); @endphp
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                <div class="order-2 lg:order-1 {{ $slide->text_align === 'center' ? 'text-center' : ($slide->text_align === 'left' ? 'lg:text-left' : 'lg:text-right') }}">
-                    @if($slide->badge_text_ar)
-                    <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/90 backdrop-blur-md border border-brand-200/50 shadow-lg text-sm text-brand-700 font-semibold mb-6 animate-slide-down">
-                        <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
-                        <span>{{ $slide->badge_text_ar }}</span>
-                    </div>
-                    @elseif($slide->subtitle_ar)
-                    <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/90 backdrop-blur-md border border-brand-200/50 shadow-lg text-sm text-brand-700 font-semibold mb-6 animate-slide-down">
-                        <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
-                        <span>{{ $slide->subtitle_ar }}</span>
-                    </div>
-                    @endif
+            <div class="flex flex-col lg:flex-row items-center justify-between gap-12">
 
-                    <div class="relative mb-8">
-                        <h1 class="text-5xl lg:text-7xl font-extrabold leading-[1.1] relative" style="color: {{ $slide->text_color ?: '#262626' }};">
-                            @if($slide->title_ar)
-                                {!! nl2br(e($slide->title_ar)) !!}
-                            @else
-                                <span class="animate-text-glow">تألقي بثقة،</span><br>
-                                <span class="text-transparent bg-clip-text bg-gradient-to-l from-brand-600 via-brand-500 to-pink-500 animate-gradient-shift">أنتِ تستحقين الأفضل.</span>
-                            @endif
-                        </h1>
-                        <div class="absolute inset-0 bg-gradient-to-r from-brand-500/20 to-pink-500/20 blur-3xl -z-10 animate-pulse"></div>
+                {{-- Right: Text Content (RTL) --}}
+                <div class="w-full lg:w-1/2 text-right">
+                    {{-- System Status Badge --}}
+                    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 glass-panel mb-6">
+                        <span class="w-2 h-2 rounded-full bg-brand-500 shadow-neon animate-pulse"></span>
+                        <span class="text-xs tracking-widest text-white/80 uppercase font-bold">
+                            {{ $slide->badge_text_ar ?: 'V 4.0 Online' }}
+                        </span>
                     </div>
 
-                    @if($slide->description_ar)
-                    <div class="mb-10 max-w-lg {{ $slide->text_align === 'center' ? 'mx-auto' : ($slide->text_align === 'left' ? '' : 'lg:mr-0 lg:ml-auto') }} animate-fade-in-up" style="animation-delay: 0.3s;">
-                        <p class="text-lg lg:text-xl leading-relaxed font-light" style="color: #4B5563; opacity:0.9;">
-                            {{ $slide->description_ar }}
-                        </p>
-                    </div>
-                    @endif
-
-                    <div class="flex flex-col sm:flex-row gap-4 {{ $slide->text_align === 'center' ? 'justify-center' : ($slide->text_align === 'left' ? 'justify-start' : 'lg:justify-start justify-center') }} animate-fade-in-up" style="animation-delay: 0.6s;">
-                        @if($slide->button_text_ar && $slide->button_url)
-                        <a href="{{ $slide->button_url }}" class="group relative px-10 py-4 bg-gradient-to-r from-ink to-brand-600 text-white rounded-full font-bold overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-500 flex items-center justify-center gap-3 transform hover:-translate-y-1">
-                            <span class="relative z-10">{{ $slide->button_text_ar }}</span>
-                            <i class="ph ph-arrow-left relative z-10 group-hover:-translate-x-2 transition-transform duration-300"></i>
-                            <div class="absolute inset-0 bg-gradient-to-r from-brand-600 to-pink-500 transform scale-x-0 group-hover:scale-x-100 origin-right transition-transform duration-700 ease-out z-0"></div>
-                        </a>
+                    {{-- Main Heading --}}
+                    <h1 class="text-5xl md:text-7xl lg:text-8xl font-black mb-6 leading-none tracking-tighter">
+                        @if($slide->title_ar)
+                            <span class="text-white">{!! nl2br(e($slide->title_ar)) !!}</span>
                         @else
-                        <a href="{{ route('shop') }}" class="group relative px-10 py-4 bg-gradient-to-r from-ink to-brand-600 text-white rounded-full font-bold overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-500 flex items-center justify-center gap-3 transform hover:-translate-y-1">
-                            <span class="relative z-10">تسوقي المجموعة</span>
-                            <i class="ph ph-arrow-left relative z-10 group-hover:-translate-x-2 transition-transform duration-300"></i>
-                            <div class="absolute inset-0 bg-gradient-to-r from-brand-600 to-pink-500 transform scale-x-0 group-hover:scale-x-100 origin-right transition-transform duration-700 ease-out z-0"></div>
-                        </a>
+                            <span class="text-white">جمالك</span><br>
+                            <span class="gradient-text bg-[length:200%_auto]">المُحوسب.</span>
                         @endif
-                        @if($slide->second_button_text_ar && $slide->second_button_url)
-                        <a href="{{ $slide->second_button_url }}" class="group relative px-8 py-4 bg-white/90 backdrop-blur-md text-ink rounded-full font-bold border-2 border-brand-200 hover:border-brand-500 hover:text-brand-600 transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-                            <i class="ph ph-sparkle text-xl"></i>
-                            <span>{{ $slide->second_button_text_ar }}</span>
+                    </h1>
+
+                    {{-- Description --}}
+                    <p class="text-lg md:text-xl text-ink-dim mb-10 max-w-lg font-light leading-relaxed">
+                        {{ $slide->description_ar ?: 'اكتشفي أرقى منتجات العناية بالبشرة والشعر من الماركات العالمية الأصلية. مختارة بعناية لتبرز جمالك الطبيعي.' }}
+                    </p>
+
+                    {{-- CTA Buttons --}}
+                    <div class="flex items-center gap-6 flex-wrap">
+                        <a href="{{ $slide->button_url ?? route('shop') }}"
+                           class="group relative px-8 py-4 rounded-full overflow-hidden bg-white text-surface font-black tracking-wide inline-flex items-center gap-2">
+                            <span class="relative z-10">{{ $slide->button_text_ar ?: 'تسوقي الآن' }} <i class="fa-solid fa-arrow-left mr-2"></i></span>
+                            <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style="background: var(--gradient-primary);"></div>
+                            <span class="relative z-10 opacity-0 group-hover:opacity-100 absolute inset-0 flex items-center justify-center text-white transition-opacity duration-500">{{ $slide->button_text_ar ?: 'تسوقي الآن' }} <i class="fa-solid fa-arrow-left mr-2"></i></span>
                         </a>
-                        @else
-                        <a href="{{ route('shop') }}?sort=newest" class="group relative px-8 py-4 bg-white/90 backdrop-blur-md text-ink rounded-full font-bold border-2 border-brand-200 hover:border-brand-500 hover:text-brand-600 transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-                            <i class="ph ph-sparkle text-xl group-hover:animate-spin-slow"></i>
-                            <span>وصل حديثاً</span>
+                        <a href="{{ route('shop') }}?sort=newest"
+                           class="text-white/60 hover:text-white border-b border-white/15 pb-1 hover:border-brand-500 transition-all font-bold text-sm">
+                            استكشاف المنتجات
                         </a>
-                        @endif
                     </div>
                 </div>
 
-                <div class="order-1 lg:order-2 relative flex justify-center items-center {{ $slide->image_position === 'background' ? '' : 'lg:h-[600px]' }}">
-                    @if($slide->image_position === 'background' && $slide->image_url)
-                        <div class="absolute inset-0 -m-8 z-0">
-                            <img src="{{ $slide->image_url }}" alt="{{ $slide->title_ar }}" class="w-full h-full object-cover rounded-[40px] {{ $slide->parallax ? 'parallax-bg' : '' }}">
-                            <div class="absolute inset-0 rounded-[40px]" style="background: linear-gradient(to top, rgba(38,38,38,{{ $overlayOpacity }}), rgba(38,38,38,0));"></div>
-                        </div>
-                    @else
-                        <div class="relative {{ $fullWidthImage ? 'w-full' : 'w-[320px] md:w-[420px]' }} h-[420px] md:h-[520px]">
-                            <div class="relative w-full h-full rounded-[40px] overflow-hidden shadow-2xl z-20 {{ $slide->animation_type === 'zoom' ? 'animate-zoom-in' : ($slide->animation_type === 'slide' ? 'animate-slide-in' : 'animate-fade-in') }}">
-                                @if($slide->image_url)
-                                <img src="{{ $slide->image_url }}" alt="{{ $slide->title_ar }}" class="w-full h-full object-cover {{ $slide->parallax ? 'parallax-img' : '' }}" loading="eager" onerror="this.outerHTML='<div class=&quot;w-full h-full bg-gradient-to-br from-brand-100 to-pink-100 flex items-center justify-center&quot;><i class=&quot;ph ph-sparkle text-6xl text-brand-300&quot;></i></div>'">
-                                @elseif($featuredProducts->isNotEmpty() && $featuredProducts->first()->main_image_url)
-                                <img src="{{ $featuredProducts->first()->main_image_url }}" alt="Beauty" class="w-full h-full object-cover">
-                                @else
-                                <div class="w-full h-full bg-gradient-to-br from-brand-100 to-pink-100 flex items-center justify-center">
-                                    <i class="ph ph-sparkle text-6xl text-brand-300"></i>
-                                </div>
-                                @endif
-                                <div class="absolute inset-0 bg-gradient-to-t from-ink/{{ intval($overlayOpacity * 100) < 10 ? 10 : intval($overlayOpacity * 100) }} via-transparent to-transparent"></div>
-                            </div>
-                            <div class="absolute w-full h-full rounded-[40px] border-2 border-brand-500/20 -rotate-6 top-4 z-10 animate-rotate-slow"></div>
-                            <div class="absolute w-full h-full rounded-[40px] border border-brand-300/10 rotate-3 top-6 z-10 animate-rotate-slow" style="animation-delay: 2s;"></div>
+                {{-- Left: Hologram / Scanner Visual --}}
+                <div class="w-full lg:w-1/2 relative flex justify-center mt-8 lg:mt-0">
+                    <div class="relative w-[280px] h-[400px] md:w-[380px] md:h-[520px] rounded-[2.5rem] border border-white/5 glass-panel overflow-hidden group">
 
-                            <div class="absolute top-8 -right-6 md:-right-12 bg-white/95 backdrop-blur-lg p-4 rounded-3xl shadow-2xl flex items-center gap-3 w-52 border border-white/50 animate-bounce-slow z-40">
-                                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-500 flex items-center justify-center text-white shadow-lg">
-                                    <i class="ph-fill ph-check-circle text-2xl"></i>
-                                </div>
-                                <div><p class="text-xs text-gray-500 font-medium">ضمان الجودة</p><p class="text-sm font-bold text-ink">100% أصلي</p></div>
+                        {{-- Scanner Line Animation --}}
+                        <div class="scanner-line"></div>
+
+                        {{-- Main Image --}}
+                        @if($slide->image_url)
+                            <img src="{{ $slide->image_url }}" alt="{{ $slide->title_ar ?? '' }}"
+                                 class="w-full h-full object-cover filter grayscale sepia-[.1] hue-rotate-[170deg] opacity-60 group-hover:opacity-90 transition-opacity duration-700"
+                                 loading="eager">
+                        @elseif($slide->product && $slide->product->main_image_url)
+                            <img src="{{ $slide->product->main_image_url }}" alt="{{ $slide->product->name_ar }}"
+                                 class="w-full h-full object-cover filter grayscale sepia-[.1] hue-rotate-[170deg] opacity-60 group-hover:opacity-90 transition-opacity duration-700"
+                                 loading="eager">
+                        @elseif($featuredProducts->isNotEmpty())
+                            <img src="{{ $featuredProducts->first()->main_image_url }}" alt=""
+                                 class="w-full h-full object-cover filter grayscale sepia-[.1] hue-rotate-[170deg] opacity-60 group-hover:opacity-90 transition-opacity duration-700"
+                                 loading="eager">
+                        @else
+                            <div class="w-full h-full flex items-center justify-center">
+                                <i class="fa-solid fa-flask text-6xl text-white/10"></i>
                             </div>
-                            <div class="absolute bottom-12 -left-6 md:-left-12 bg-white/95 backdrop-blur-lg p-4 rounded-3xl shadow-2xl border border-white/50 animate-bounce-slow z-40" style="animation-delay: 0.5s;">
-                                <div class="flex -space-x-3 space-x-reverse mb-3">
-                                    <div class="w-10 h-10 rounded-full border-3 border-white bg-gradient-to-br from-brand-400 to-brand-500 flex items-center justify-center text-[10px] text-white font-bold shadow-lg">J</div>
-                                    <div class="w-10 h-10 rounded-full border-3 border-white bg-gradient-to-br from-brand-300 to-brand-400 flex items-center justify-center text-[10px] text-white font-bold shadow-lg">C</div>
-                                    <div class="w-10 h-10 rounded-full border-3 border-white bg-gradient-to-br from-pink-400 to-pink-500 flex items-center justify-center text-xs text-white font-bold shadow-lg">+{{ \App\Models\Product::count() }}</div>
-                                </div>
-                                <p class="text-xs font-bold text-ink">{{ \App\Models\Product::count() }} منتج متاح</p>
-                            </div>
+                        @endif
+
+                        {{-- Grid Overlay --}}
+                        <div class="absolute inset-0 bg-grid opacity-40 pointer-events-none"></div>
+
+                        {{-- Floating HUD Nodes --}}
+                        <div class="absolute top-[20%] right-4 bg-black/80 border border-brand-500/30 text-brand-500 text-[10px] px-3 py-1.5 rounded-full font-mono animate-float-slow backdrop-blur-md">
+                            <i class="fa-solid fa-droplet mr-1"></i> تحليل البشرة: نشط
                         </div>
-                    @endif
+                        <div class="absolute bottom-[25%] left-4 bg-black/80 border border-accent-500/30 text-accent-500 text-[10px] px-3 py-1.5 rounded-full font-mono animate-float-fast backdrop-blur-md">
+                            <i class="fa-solid fa-shield-halved mr-1"></i> أصلي 100%
+                        </div>
+                        <div class="absolute top-[55%] left-2 md:left-6 bg-black/80 border border-white/10 text-white/60 text-[10px] px-3 py-1.5 rounded-full font-mono animate-float-slow backdrop-blur-md" style="animation-delay: 2s;">
+                            <i class="fa-solid fa-box mr-1"></i> شحن سريع
+                        </div>
+
+                        {{-- Center Target Ping --}}
+                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-14 h-14 border border-white/10 rounded-full flex items-center justify-center">
+                            <div class="w-1.5 h-1.5 bg-brand-500 rounded-full animate-ping-neon shadow-neon-strong"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         @else
-            {{-- ═══ سقوط للخلف (بدون شرائح) ═══ --}}
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                <div class="order-2 lg:order-1 text-center lg:text-right">
-                    <div class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-white/90 to-white/60 border border-brand-200/50 shadow-lg backdrop-blur-md text-sm text-brand-700 font-semibold mb-6 animate-slide-down">
-                        <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
-                        <span>تشكيلة الصيف الجديدة متوفرة الآن</span>
-                        <i class="ph-fill ph-sparkle text-brand-500 animate-spin-slow"></i>
+            {{-- Fallback: No slides --}}
+            <div class="flex flex-col lg:flex-row items-center justify-between gap-12">
+                <div class="w-full lg:w-1/2 text-right">
+                    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 glass-panel mb-6">
+                        <span class="w-2 h-2 rounded-full bg-brand-500 shadow-neon animate-pulse"></span>
+                        <span class="text-xs tracking-widest text-white/80 uppercase font-bold">V 4.0 Online</span>
                     </div>
-                    <div class="relative mb-8">
-                        <h1 class="text-5xl lg:text-7xl font-extrabold text-ink leading-[1.1] relative">
-                            <span class="animate-text-glow">تألقي بثقة،</span><br>
-                            <span class="text-transparent bg-clip-text bg-gradient-to-l from-brand-600 via-brand-500 to-pink-500 animate-gradient-shift">أنتِ تستحقين الأفضل.</span>
-                        </h1>
-                        <div class="absolute inset-0 bg-gradient-to-r from-brand-500/20 to-pink-500/20 blur-3xl -z-10 animate-pulse"></div>
-                    </div>
-                    <div class="mb-10 max-w-lg mx-auto lg:mx-0">
-                        <p class="text-lg lg:text-xl text-gray-600 leading-relaxed font-light animate-fade-in-up" style="animation-delay: 0.3s;">
-                            اكتشفي أرقى منتجات العناية بالبشرة والشعر من الماركات العالمية الأصلية، مختارة بعناية لتبرز جمالك الطبيعي.
-                        </p>
-                    </div>
-                    <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in-up" style="animation-delay: 0.6s;">
-                        <a href="{{ route('shop') }}" class="group relative px-10 py-4 bg-gradient-to-r from-ink to-brand-600 text-white rounded-full font-bold overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-500 flex items-center justify-center gap-3 transform hover:-translate-y-1">
-                            <span class="relative z-10">تسوقي المجموعة</span>
-                            <i class="ph ph-arrow-left relative z-10 group-hover:-translate-x-2 transition-transform duration-300"></i>
-                            <div class="absolute inset-0 bg-gradient-to-r from-brand-600 to-pink-500 transform scale-x-0 group-hover:scale-x-100 origin-right transition-transform duration-700 ease-out z-0"></div>
+                    <h1 class="text-5xl md:text-7xl lg:text-8xl font-black mb-6 leading-none tracking-tighter">
+                        <span class="text-white">جمالك</span><br>
+                        <span class="gradient-text bg-[length:200%_auto]">المُحوسب.</span>
+                    </h1>
+                    <p class="text-lg md:text-xl text-ink-dim mb-10 max-w-lg font-light leading-relaxed">
+                        اكتشفي أرقى منتجات العناية بالبشرة والشعر من الماركات العالمية الأصلية. مختارة بعناية لتبرز جمالك الطبيعي.
+                    </p>
+                    <div class="flex items-center gap-6 flex-wrap">
+                        <a href="{{ route('shop') }}"
+                           class="group relative px-8 py-4 rounded-full overflow-hidden bg-white text-surface font-black tracking-wide inline-flex items-center gap-2">
+                            <span class="relative z-10">تسوقي الآن <i class="fa-solid fa-arrow-left mr-2"></i></span>
+                            <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style="background: var(--gradient-primary);"></div>
+                            <span class="relative z-10 opacity-0 group-hover:opacity-100 absolute inset-0 flex items-center justify-center text-white transition-opacity duration-500">تسوقي الآن <i class="fa-solid fa-arrow-left mr-2"></i></span>
                         </a>
-                        <a href="{{ route('shop') }}?sort=newest" class="group relative px-8 py-4 bg-white/90 backdrop-blur-md text-ink rounded-full font-bold border-2 border-brand-200 hover:border-brand-500 hover:text-brand-600 transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-                            <i class="ph ph-sparkle text-xl group-hover:animate-spin-slow"></i>
-                            <span>وصل حديثاً</span>
+                        <a href="{{ route('shop') }}?sort=newest"
+                           class="text-white/60 hover:text-white border-b border-white/15 pb-1 hover:border-brand-500 transition-all font-bold text-sm">
+                            استكشاف المنتجات
                         </a>
                     </div>
                 </div>
-                <div class="order-1 lg:order-2 relative lg:h-[600px] flex justify-center items-center">
-                    <div class="relative w-[320px] h-[420px] md:w-[420px] md:h-[520px]">
-                        <div class="relative w-full h-full rounded-[40px] overflow-hidden shadow-2xl z-20 animate-float-3d">
-                            @if($featuredProducts->isNotEmpty() && $featuredProducts->first()->main_image_url)
-                                <img src="{{ $featuredProducts->first()->main_image_url }}" alt="Beauty" class="w-full h-full object-cover">
-                            @else
-                                <div class="w-full h-full bg-gradient-to-br from-brand-100 to-pink-100 flex items-center justify-center">
-                                    <i class="ph ph-sparkle text-6xl text-brand-300"></i>
-                                </div>
-                            @endif
-                            <div class="absolute inset-0 bg-gradient-to-t from-ink/40 via-transparent to-transparent"></div>
-                        </div>
-                        <div class="absolute w-full h-full rounded-[40px] border-2 border-brand-500/20 -rotate-6 top-4 z-10 animate-rotate-slow"></div>
-                        <div class="absolute w-full h-full rounded-[40px] border border-brand-300/10 rotate-3 top-6 z-10 animate-rotate-slow" style="animation-delay: 2s;"></div>
-
-                        <div class="absolute top-8 -right-6 md:-right-12 bg-white/95 backdrop-blur-lg p-4 rounded-3xl shadow-2xl flex items-center gap-3 w-52 border border-white/50 animate-bounce-slow z-40">
-                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-500 flex items-center justify-center text-white shadow-lg">
-                                <i class="ph-fill ph-check-circle text-2xl"></i>
+                <div class="w-full lg:w-1/2 relative flex justify-center mt-8 lg:mt-0">
+                    <div class="relative w-[280px] h-[400px] md:w-[380px] md:h-[520px] rounded-[2.5rem] border border-white/5 glass-panel overflow-hidden group">
+                        <div class="scanner-line"></div>
+                        @if($featuredProducts->isNotEmpty() && $featuredProducts->first()->main_image_url)
+                            <img src="{{ $featuredProducts->first()->main_image_url }}" alt=""
+                                 class="w-full h-full object-cover filter grayscale sepia-[.1] hue-rotate-[170deg] opacity-60 group-hover:opacity-90 transition-opacity duration-700"
+                                 loading="eager">
+                        @else
+                            <div class="w-full h-full flex items-center justify-center">
+                                <i class="fa-solid fa-flask text-6xl text-white/10"></i>
                             </div>
-                            <div><p class="text-xs text-gray-500 font-medium">ضمان الجودة</p><p class="text-sm font-bold text-ink">100% أصلي</p></div>
+                        @endif
+                        <div class="absolute inset-0 bg-grid opacity-40 pointer-events-none"></div>
+                        <div class="absolute top-[20%] right-4 bg-black/80 border border-brand-500/30 text-brand-500 text-[10px] px-3 py-1.5 rounded-full font-mono animate-float-slow backdrop-blur-md">
+                            <i class="fa-solid fa-droplet mr-1"></i> تحليل البشرة: نشط
                         </div>
-                        <div class="absolute bottom-12 -left-6 md:-left-12 bg-white/95 backdrop-blur-lg p-4 rounded-3xl shadow-2xl border border-white/50 animate-bounce-slow z-40" style="animation-delay: 0.5s;">
-                            <div class="flex -space-x-3 space-x-reverse mb-3">
-                                <div class="w-10 h-10 rounded-full border-3 border-white bg-gradient-to-br from-brand-400 to-brand-500 flex items-center justify-center text-[10px] text-white font-bold shadow-lg">J</div>
-                                <div class="w-10 h-10 rounded-full border-3 border-white bg-gradient-to-br from-brand-300 to-brand-400 flex items-center justify-center text-[10px] text-white font-bold shadow-lg">C</div>
-                                <div class="w-10 h-10 rounded-full border-3 border-white bg-gradient-to-br from-pink-400 to-pink-500 flex items-center justify-center text-xs text-white font-bold shadow-lg">+{{ \App\Models\Product::count() }}</div>
-                            </div>
-                            <p class="text-xs font-bold text-ink">{{ \App\Models\Product::count() }} منتج متاح</p>
+                        <div class="absolute bottom-[25%] left-4 bg-black/80 border border-accent-500/30 text-accent-500 text-[10px] px-3 py-1.5 rounded-full font-mono animate-float-fast backdrop-blur-md">
+                            <i class="fa-solid fa-shield-halved mr-1"></i> أصلي 100%
+                        </div>
+                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-14 h-14 border border-white/10 rounded-full flex items-center justify-center">
+                            <div class="w-1.5 h-1.5 bg-brand-500 rounded-full animate-ping-neon shadow-neon-strong"></div>
                         </div>
                     </div>
                 </div>
             </div>
         @endif
+    </div>
+
+    {{-- Scroll Indicator --}}
+    <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 opacity-40">
+        <span class="text-[10px] uppercase tracking-[0.3em] text-white/50">مرر</span>
+        <div class="w-px h-12 bg-gradient-to-b from-white/30 to-transparent"></div>
     </div>
 </section>
 
-{{-- CSS animations --}}
+{{-- ═══════════════════════════════════════════════════════════════
+     SECTION 2: Why JeniCare? — Premium Value Cards
+     ═══════════════════════════════════════════════════════════════ --}}
+<section class="py-24 relative overflow-hidden">
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_50%,rgba(var(--brand-500-rgb,255,42,133),0.03),transparent_70%)] pointer-events-none"></div>
+    <div class="max-w-7xl mx-auto px-4 relative z-10">
+        <div class="mb-16 text-center">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-500/20 bg-brand-500/5 mb-6">
+                <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
+                <span class="text-xs text-brand-500 font-bold tracking-widest uppercase">لماذا نحن</span>
+            </div>
+            <h2 class="text-3xl md:text-5xl font-black mb-4">لماذا <span class="gradient-text bg-[length:200%_auto]">JeniCare</span><span class="text-brand-500">.</span></h2>
+            <p class="text-ink-dim max-w-xl mx-auto text-lg font-light">لسنا مجرد متجر. نحن نظام ذكي للعناية ببشرتك من اختيار المنتج حتى باب منزلك.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+            @php
+                $valueCards = [
+                    ['num' => '01', 'icon' => 'fa-solid fa-shield-check', 'title' => 'منتجات أصلية 100%', 'desc' => 'نضمن لكِ أصالة كل منتج من مصادر موثوقة ومعتمدة دولياً.'],
+                    ['num' => '02', 'icon' => 'fa-solid fa-truck-fast', 'title' => 'شحن سريع لكل فلسطين', 'desc' => 'توصيل لجميع المناطق مع تتبع مباشر لشحنتك حتى باب منزلك.'],
+                    ['num' => '03', 'icon' => 'fa-solid fa-headset', 'title' => 'دعم يومي احترافي', 'desc' => 'فريق متخصص جاهز لمساعدتك من 9 صباحاً حتى 10 مساءً عبر الواتساب.'],
+                ];
+            @endphp
+            @foreach($valueCards as $card)
+            <div class="value-card glass-panel rounded-[2rem] p-8 text-right group relative overflow-hidden transition-all duration-500">
+                {{-- Top accent line --}}
+                <div class="absolute top-0 right-8 left-8 h-[3px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" style="background: var(--gradient-primary);"></div>
+                {{-- Background glow --}}
+                <div class="absolute -left-10 -bottom-10 w-40 h-40 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-700" style="background: radial-gradient(circle, var(--brand-500) 0%, transparent 70%); filter: blur(50px);"></div>
+                {{-- Number badge --}}
+                <div class="absolute top-6 left-6 text-6xl font-black opacity-[0.04] group-hover:opacity-[0.08] transition-opacity duration-500 select-none" style="color: var(--brand-500);">{{ $card['num'] }}</div>
+                {{-- Icon --}}
+                <div class="relative z-10 w-16 h-16 rounded-2xl bg-brand-500/10 flex items-center justify-center mb-6 group-hover:bg-brand-500/20 group-hover:scale-110 transition-all duration-500 shadow-neon">
+                    <i class="{{ $card['icon'] }} text-2xl" style="color: var(--brand-500);"></i>
+                </div>
+                {{-- Content --}}
+                <div class="relative z-10">
+                    <h3 class="text-xl font-black mb-3" style="color: var(--ink);">{{ $card['title'] }}</h3>
+                    <p class="text-ink-dim text-sm leading-relaxed">{{ $card['desc'] }}</p>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+</section>
+
 <style>
-@keyframes slide-down {
-    0% { transform: translateY(-20px); opacity: 0; }
-    100% { transform: translateY(0); opacity: 1; }
-}
-@keyframes fade-in-up {
-    0% { transform: translateY(20px); opacity: 0; }
-    100% { transform: translateY(0); opacity: 1; }
-}
-@keyframes fade-in {
-    0% { opacity: 0; }
-    100% { opacity: 1; }
-}
-@keyframes slide-in {
-    0% { transform: translateX(-30px); opacity: 0; }
-    100% { transform: translateX(0); opacity: 1; }
-}
-@keyframes zoom-in {
-    0% { transform: scale(0.9); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-}
-@keyframes text-glow {
-    0%, 100% { text-shadow: 0 0 20px rgba(217, 122, 140, 0.3); }
-    50% { text-shadow: 0 0 30px rgba(217, 122, 140, 0.5); }
-}
-@keyframes gradient-shift {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-}
-@keyframes float-3d {
-    0%, 100% { transform: translateY(0) rotateX(0); }
-    50% { transform: translateY(-20px) rotateX(2deg); }
-}
-@keyframes rotate-slow {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-@keyframes bounce-slow {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-}
-@keyframes spin-slow {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.animate-slide-down { animation: slide-down 0.8s ease-out; }
-.animate-fade-in-up { animation: fade-in-up 0.8s ease-out; }
-.animate-fade-in { animation: fade-in 0.8s ease-out; }
-.animate-slide-in { animation: slide-in 0.8s ease-out; }
-.animate-zoom-in { animation: zoom-in 0.8s ease-out; }
-.animate-text-glow { animation: text-glow 3s ease-in-out infinite; }
-.animate-gradient-shift { 
-    background-size: 200% 200%; 
-    animation: gradient-shift 4s ease-in-out infinite; 
-}
-.animate-float-3d { animation: float-3d 6s ease-in-out infinite; }
-.animate-rotate-slow { animation: rotate-slow 20s linear infinite; }
-.animate-bounce-slow { animation: bounce-slow 3s ease-in-out infinite; }
-.animate-spin-slow { animation: spin-slow 3s linear infinite; }
-
-.parallax-bg { transform: translateZ(-1px) scale(1.1); will-change: transform; }
-.parallax-img { transition: transform 0.3s ease-out; }
-.parallax-img:hover { transform: scale(1.05); }
+.value-card:hover { transform: translateY(-6px); border-color: rgba(255,42,133,0.15); box-shadow: 0 12px 40px rgba(0,0,0,0.3), var(--neon-glow); }
 </style>
 
-{{-- JavaScript for slideshow --}}
-<script>
-let currentSlide = 0;
-let slideInterval = null;
-const heroSlideshow = document.getElementById('heroSlideshow');
-if (heroSlideshow) {
-    const slides = heroSlideshow.querySelectorAll('[data-slide]');
-    const indicators = heroSlideshow.querySelectorAll('[data-indicator]');
-    const totalSlides = slides.length;
-
-    if (totalSlides > 1) {
-        slides.forEach((s, i) => {
-            if (i !== 0) s.classList.add('hidden');
-            s.style.transition = 'opacity 800ms ease, transform 800ms ease';
-        });
-
-        function showSlide(index) {
-            slides.forEach((slide, i) => {
-                if (i === index) {
-                    slide.classList.remove('hidden');
-                    slide.classList.add('block');
-                    requestAnimationFrame(() => {
-                        slide.style.opacity = '1';
-                        slide.style.transform = 'scale(1)';
-                    });
-                } else {
-                    slide.style.opacity = '0';
-                    slide.style.transform = 'scale(0.95)';
-                    const onDone = function() {
-                        slide.removeEventListener('transitionend', onDone);
-                        slide.classList.add('hidden');
-                        slide.classList.remove('block');
-                    };
-                    slide.addEventListener('transitionend', onDone, { once: true });
-                    setTimeout(onDone, 900);
-                }
-            });
-
-            indicators.forEach((indicator, i) => {
-                indicator.classList.toggle('w-8', i === index);
-                indicator.classList.toggle('bg-white', i === index);
-                indicator.classList.toggle('w-2', i !== index);
-                indicator.classList.toggle('bg-white/60', i !== index);
-            });
-        }
-
-        window.previousSlide = function() {
-            currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
-            showSlide(currentSlide);
-            resetAutoPlay();
-        };
-
-        window.nextSlide = function() {
-            currentSlide = (currentSlide + 1) % totalSlides;
-            showSlide(currentSlide);
-            resetAutoPlay();
-        };
-
-        window.goToSlide = function(index) {
-            currentSlide = index;
-            showSlide(currentSlide);
-            resetAutoPlay();
-        };
-
-        function resetAutoPlay() {
-            if (slideInterval) clearInterval(slideInterval);
-            slideInterval = setInterval(window.nextSlide, 5000);
-        }
-
-        function startAutoPlay() {
-            if (slideInterval) clearInterval(slideInterval);
-            slideInterval = setInterval(window.nextSlide, 5000);
-        }
-
-        function stopAutoPlay() {
-            if (slideInterval) clearInterval(slideInterval);
-            slideInterval = null;
-        }
-
-        heroSlideshow.addEventListener('mouseenter', stopAutoPlay);
-        heroSlideshow.addEventListener('mouseleave', startAutoPlay);
-        heroSlideshow.addEventListener('touchstart', stopAutoPlay, { passive: true });
-        heroSlideshow.addEventListener('touchend', () => setTimeout(startAutoPlay, 2000));
-
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) stopAutoPlay();
-            else startAutoPlay();
-        });
-
-        window.addEventListener('beforeunload', () => {
-            if (slideInterval) clearInterval(slideInterval);
-        });
-
-        startAutoPlay();
-    }
-}
-
-// Parallax effect on scroll
-(function() {
-    const parallaxEls = document.querySelectorAll('.parallax-bg, .parallax-img');
-    if (!parallaxEls.length) return;
-    window.addEventListener('scroll', () => {
-        const scrollY = window.scrollY;
-        parallaxEls.forEach(el => {
-            const speed = 0.4;
-            el.style.transform = `translateY(${scrollY * speed}px)`;
-        });
-    });
-})();
-</script>
-
 {{-- ═══════════════════════════════════════════════════════════════
-     شريط متحرك (Marquee Ticker)
+     SECTION 3: Product Lab — Asymmetric Grid
      ═══════════════════════════════════════════════════════════════ --}}
-<div class="bg-brand-500 py-4 overflow-hidden whitespace-nowrap relative flex items-center border-y border-brand-600">
-    <div class="flex gap-8 items-center text-white/90 font-bold text-lg tracking-wider uppercase animate-marquee" style="flex-shrink:0;">
-        <span>منتجات طبية تجميلية</span> <i class="ph-fill ph-star-four text-white text-sm"></i>
-        <span>شحن لكل فلسطين</span> <i class="ph-fill ph-star-four text-white text-sm"></i>
-        <span>تجهيز صالونات</span> <i class="ph-fill ph-star-four text-white text-sm"></i>
-        <span>ماركات عالمية</span> <i class="ph-fill ph-star-four text-white text-sm"></i>
-        <span>عناية بالبشرة والشعر</span> <i class="ph-fill ph-star-four text-white text-sm"></i>
-    </div>
-    <div class="flex gap-8 items-center text-white/90 font-bold text-lg tracking-wider uppercase animate-marquee" style="flex-shrink:0;" aria-hidden="true">
-        <span>منتجات طبية تجميلية</span> <i class="ph-fill ph-star-four text-white text-sm"></i>
-        <span>شحن لكل فلسطين</span> <i class="ph-fill ph-star-four text-white text-sm"></i>
-        <span>تجهيز صالونات</span> <i class="ph-fill ph-star-four text-white text-sm"></i>
-        <span>ماركات عالمية</span> <i class="ph-fill ph-star-four text-white text-sm"></i>
-        <span>عناية بالبشرة والشعر</span> <i class="ph-fill ph-star-four text-white text-sm"></i>
-    </div>
-</div>
-
-{{-- Trust Stats Counter --}}
-<div class="bg-white border-b border-gray-100">
-    <div class="max-w-5xl mx-auto px-4 py-12">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            @php $totalProducts = \App\Models\Product::count(); $totalOrders = \App\Models\Order::count(); @endphp
-            <div class="space-y-1">
-                <div class="text-3xl md:text-4xl font-extrabold text-brand-500 counter" data-target="{{ $totalProducts }}">0</div>
-                <div class="text-sm text-gray-500">منتج</div>
-            </div>
-            <div class="space-y-1">
-                <div class="text-3xl md:text-4xl font-extrabold text-brand-500 counter" data-target="{{ $categories->count() }}">0</div>
-                <div class="text-sm text-gray-500">قسم</div>
-            </div>
-            <div class="space-y-1">
-                <div class="text-3xl md:text-4xl font-extrabold text-brand-500 counter" data-target="{{ $totalOrders }}">0</div>
-                <div class="text-sm text-gray-500">طلب</div>
-            </div>
-            <div class="space-y-1">
-                <div class="text-3xl md:text-4xl font-extrabold text-brand-500">100%</div>
-                <div class="text-sm text-gray-500">منتجات أصلية</div>
-            </div>
+<section id="products" class="py-20 relative">
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_50%,rgba(var(--brand-500-rgb,255,42,133),0.04),transparent_60%)] pointer-events-none"></div>
+    <div class="max-w-7xl mx-auto px-4 relative z-10">
+        <div class="mb-16 text-right">
+            <h2 class="text-3xl md:text-5xl font-black mb-4">مختبر المنتجات <span class="text-white/10 text-xl align-super">/01</span></h2>
+            <p class="text-ink-dim max-w-xl text-lg font-light">كل منتج مختار بعناية ليكون جزءاً من بروتوكول عنايتك الشخصي.</p>
         </div>
-    </div>
-</div>
 
-<script>
-(function() {
-    const counters = document.querySelectorAll('.counter');
-    if (!counters.length) return;
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (!entry.isIntersecting) return;
-            const el = entry.target;
-            const target = parseInt(el.dataset.target);
-            const duration = 1500;
-            const start = performance.now();
-            function update(now) {
-                const elapsed = now - start;
-                const progress = Math.min(elapsed / duration, 1);
-                el.textContent = Math.floor(progress * target).toLocaleString('ar');
-                if (progress < 1) requestAnimationFrame(update);
-            }
-            requestAnimationFrame(update);
-            observer.unobserve(el);
-        });
-    }, { threshold: 0.3 });
-    counters.forEach(c => observer.observe(c));
-})();
-</script>
+        @if($featuredProducts->isNotEmpty() || $newProducts->isNotEmpty())
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
+
+            @php $bigProduct = $featuredProducts->first(); @endphp
+            @if($bigProduct)
+            {{-- Large Featured Product Card (col-span-8) --}}
+            <div class="md:col-span-7 lg:col-span-8 group relative rounded-[2rem] overflow-hidden glass-panel border border-white/5 h-[450px] cursor-pointer"
+                 onclick="window.location='{{ route('product.show', $bigProduct->slug) }}'">
+                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent z-10"></div>
+                @if($bigProduct->main_image_url)
+                <img src="{{ $bigProduct->main_image_url }}" alt="{{ $bigProduct->name_ar }}"
+                     class="absolute inset-0 w-full h-full object-cover filter grayscale mix-blend-luminosity group-hover:scale-105 transition-transform duration-700"
+                     loading="lazy">
+                @else
+                <div class="absolute inset-0 flex items-center justify-center text-white/10"><i class="fa-solid fa-flask text-8xl"></i></div>
+                @endif
+
+                <div class="absolute top-6 right-6 z-20 flex gap-2">
+                    <span class="bg-black/50 backdrop-blur px-3 py-1 rounded-full text-xs border border-white/10 text-white/70">منتجات مميزة</span>
+                    <span class="pill-brand backdrop-blur text-xs">الأكثر مبيعاً</span>
+                </div>
+
+                <div class="absolute bottom-8 right-8 z-20 text-right">
+                    <h3 class="text-3xl font-black mb-2 text-white">{{ $bigProduct->name_ar }}</h3>
+                    @if($bigProduct->brand)
+                    <p class="text-ink-dim text-sm mb-3">{{ $bigProduct->brand->name }}</p>
+                    @endif
+                    <div class="flex items-center justify-end gap-4">
+                        <span class="text-2xl font-bold text-brand-500">{{ number_format($bigProduct->b2c_price, 0) }} ₪</span>
+                        <button onclick="event.stopPropagation(); addToCart({{ $bigProduct->id }})"
+                                class="w-12 h-12 rounded-full bg-white text-surface flex items-center justify-center hover:shadow-neon transition-all"
+                                aria-label="إضافة للسلة">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            @php $secondProduct = $newProducts->first() ?? $featuredProducts->skip(1)->first(); @endphp
+            @if($secondProduct)
+            {{-- Tall Product Card (col-span-4) --}}
+            <div class="md:col-span-5 lg:col-span-4 group relative rounded-[2rem] overflow-hidden glass-panel border border-white/5 h-[450px] cursor-pointer"
+                 onclick="window.location='{{ route('product.show', $secondProduct->slug) }}'">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent z-10"></div>
+                <div class="absolute inset-0 bg-accent-500/5 mix-blend-overlay z-10 group-hover:bg-accent-500/10 transition-colors"></div>
+                @if($secondProduct->main_image_url)
+                <img src="{{ $secondProduct->main_image_url }}" alt="{{ $secondProduct->name_ar }}"
+                     class="absolute inset-0 w-full h-full object-cover filter contrast-125 group-hover:scale-105 transition-transform duration-700"
+                     loading="lazy">
+                @else
+                <div class="absolute inset-0 flex items-center justify-center text-white/10"><i class="fa-solid fa-droplet text-8xl"></i></div>
+                @endif
+
+                <div class="absolute top-6 right-6 z-20">
+                    <span class="pill-accent backdrop-blur text-xs">وصل حديثاً</span>
+                </div>
+
+                <div class="absolute bottom-8 right-8 z-20 text-right">
+                    <h3 class="text-xl font-black mb-1 text-white">{{ $secondProduct->name_ar }}</h3>
+                    @if($secondProduct->brand)
+                    <p class="text-ink-dim text-xs mb-4">{{ $secondProduct->brand->name }}</p>
+                    @endif
+                    <div class="flex items-center justify-between">
+                        <button onclick="event.stopPropagation(); addToCart({{ $secondProduct->id }})"
+                                class="text-xs font-bold uppercase tracking-wider border-b border-white/30 hover:text-brand-500 hover:border-brand-500 transition-colors pb-1 text-white/70">
+                            تفاصيل
+                        </button>
+                        <span class="font-bold text-white">{{ number_format($secondProduct->b2c_price, 0) }} ₪</span>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            {{-- Info/Value Card (col-span-5) --}}
+            <div class="md:col-span-5 rounded-[2rem] glass-panel border border-white/5 p-10 flex flex-col justify-between relative overflow-hidden group cursor-default">
+                <div class="absolute -left-20 -top-20 w-64 h-64 bg-brand-500/8 rounded-full blur-3xl group-hover:bg-brand-500/12 transition-colors"></div>
+                {{-- Top accent bar --}}
+                <div class="absolute top-0 right-8 left-8 h-[2px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" style="background: var(--gradient-primary);"></div>
+                <div class="relative z-10">
+                    <div class="w-14 h-14 rounded-2xl bg-accent-500/10 flex items-center justify-center mb-6 shadow-accent-neon">
+                        <i class="fa-solid fa-microchip text-2xl text-accent-500"></i>
+                    </div>
+                    <h3 class="text-2xl font-black mb-4" style="color: var(--ink);">بروتوكولات عناية<br>تتعلم منكِ.</h3>
+                    <p class="text-ink-dim text-sm leading-relaxed">
+                        نختار لكِ أفضل المنتجات المناسبة لنوع بشرتك واحتياجاتها. تصفحي، اختاري، واتركي الباقي علينا.
+                    </p>
+                </div>
+                <div class="mt-8">
+                    <a href="{{ route('shop') }}" class="text-accent-500 font-bold flex items-center gap-2 hover:gap-4 transition-all group/link">
+                        تصفحي المتجر <i class="fa-solid fa-arrow-left text-sm group-hover/link:-translate-x-1 transition-transform"></i>
+                    </a>
+                </div>
+            </div>
+
+            @php $thirdProduct = $featuredProducts->skip(1)->first() ?? $newProducts->skip(1)->first() ?? $featuredProducts->skip(2)->first(); @endphp
+            @if($thirdProduct)
+            {{-- Wide Bottom Card (col-span-7) --}}
+            <div class="md:col-span-7 group relative rounded-[2rem] overflow-hidden glass-panel border border-white/5 h-[300px] cursor-pointer"
+                 onclick="window.location='{{ route('product.show', $thirdProduct->slug) }}'">
+                <div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent z-10"></div>
+                @if($thirdProduct->main_image_url)
+                <img src="{{ $thirdProduct->main_image_url }}" alt="{{ $thirdProduct->name_ar }}"
+                     class="absolute inset-0 w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-1000"
+                     loading="lazy">
+                @else
+                <div class="absolute inset-0 flex items-center justify-center text-white/10"><i class="fa-solid fa-box-open text-8xl"></i></div>
+                @endif
+
+                <div class="absolute top-1/2 transform -translate-y-1/2 right-12 z-20 text-right max-w-sm">
+                    <h3 class="text-2xl font-black mb-2 text-white">{{ $thirdProduct->name_ar }}</h3>
+                    @if($thirdProduct->brand)
+                    <p class="text-ink-dim text-xs mb-5">{{ $thirdProduct->brand->name }}</p>
+                    @endif
+                    <button onclick="event.stopPropagation(); addToCart({{ $thirdProduct->id }})"
+                            class="px-6 py-2.5 bg-white text-surface rounded-full font-bold transition-all text-sm hover:shadow-neon hover:scale-105 inline-flex items-center gap-2">
+                        <i class="fa-solid fa-plus text-xs"></i> إضافة للمختبر — {{ number_format($thirdProduct->b2c_price, 0) }} ₪
+                    </button>
+                </div>
+            </div>
+            @endif
+
+        </div>
+        @else
+        <div class="text-center py-20 text-ink-dim">
+            <i class="fa-solid fa-flask text-5xl mb-6 opacity-20"></i>
+            <p class="text-lg">لم يتم إضافة منتجات بعد.</p>
+        </div>
+        @endif
+    </div>
+</section>
 
 {{-- ═══════════════════════════════════════════════════════════════
-     الأقسام باستخدام شبكة بينتو (Bento Grid)
+     SECTION 4: Tech Marquee Ticker
+     ═══════════════════════════════════════════════════════════════ --}}
+<div class="py-10 border-y border-white/5 overflow-hidden flex whitespace-nowrap opacity-40 hover:opacity-70 transition-opacity">
+    <div class="animate-marquee-rtl flex items-center gap-16 font-mono text-xs tracking-[0.2em] uppercase text-white/50">
+        <span><i class="fa-solid fa-asterisk text-brand-500 text-[8px] mr-2"></i> Premium Skincare</span>
+        <i class="fa-solid fa-circle text-[4px] text-brand-500"></i>
+        <span>100% Authentic Products</span>
+        <i class="fa-solid fa-circle text-[4px] text-accent-500"></i>
+        <span>Fast Palestine Shipping</span>
+        <i class="fa-solid fa-circle text-[4px] text-brand-500"></i>
+        <span>Professional Beauty Lab</span>
+        <i class="fa-solid fa-circle text-[4px] text-accent-500"></i>
+        <span>Daily Expert Support</span>
+        <i class="fa-solid fa-circle text-[4px] text-brand-500"></i>
+        <span>Premium Skincare</span>
+        <i class="fa-solid fa-circle text-[4px] text-accent-500"></i>
+        <span>100% Authentic Products</span>
+        <i class="fa-solid fa-circle text-[4px] text-brand-500"></i>
+        <span>Fast Palestine Shipping</span>
+        <i class="fa-solid fa-circle text-[4px] text-accent-500"></i>
+        <span>Professional Beauty Lab</span>
+    </div>
+</div>
+
+{{-- ═══════════════════════════════════════════════════════════════
+     SECTION 5: Categories Grid
      ═══════════════════════════════════════════════════════════════ --}}
 @if($categories->isNotEmpty())
-<section class="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex justify-between items-end mb-12">
-        <div>
-            <h2 class="text-sm font-bold tracking-widest text-brand-500 uppercase mb-2">تصفحي الأقسام</h2>
-            <h3 class="text-3xl md:text-4xl font-extrabold text-ink">كل ما يبرز جمالك<br>في مكان واحد.</h3>
+<section class="py-20">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="mb-16 text-right">
+            <h2 class="text-3xl md:text-5xl font-black mb-4">الأقسام <span class="text-white/10 text-xl align-super">/02</span></h2>
+            <p class="text-ink-dim max-w-xl text-lg font-light">تصفحي حسب الفئة لتجدي كل ما تحتاجينه لبشرتك.</p>
         </div>
-        <a href="{{ route('shop') }}" class="hidden md:flex items-center gap-2 font-medium text-ink hover:text-brand-500 transition-colors group">
-            عرض الكل <i class="ph ph-arrow-left group-hover:-translate-x-2 transition-transform"></i>
-        </a>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 auto-rows-[250px]">
-        @foreach($categories->take(5) as $index => $category)
-            @if($index === 0)
-            {{-- القسم الرئيسي (حجم كبير) --}}
-            <a href="{{ route('shop', ['category' => $category->slug]) }}" class="group relative md:col-span-2 md:row-span-2 rounded-[32px] overflow-hidden bg-gray-100 isolate">
-                @if($category->sample_image)
-                <img src="{{ $category->sample_image }}" alt="{{ $category->display_name }}" loading="lazy" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            @foreach($categories as $cat)
+            <a href="{{ route('shop', ['category' => $cat->slug]) }}"
+               class="category-card glass-panel rounded-[2rem] overflow-hidden group relative h-[340px] block transition-all duration-700 hover:-translate-y-2 hover:border-brand-500/20">
+                {{-- Gradient overlay --}}
+                <div class="absolute inset-0 bg-gradient-to-t from-surface/98 via-surface/30 to-transparent z-10"></div>
+                {{-- Top accent bar --}}
+                <div class="absolute top-0 right-8 left-8 h-[2px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-20" style="background: var(--gradient-primary);"></div>
+                @if($cat->sample_image)
+                <img src="{{ $cat->sample_image }}" alt="{{ $cat->display_name ?? $cat->name_ar }}"
+                     class="absolute inset-0 w-full h-full object-cover filter brightness-50 group-hover:brightness-75 group-hover:scale-110 transition-all duration-1000"
+                     loading="lazy">
                 @else
-                <div class="absolute inset-0 w-full h-full bg-gradient-to-br from-brand-100 to-brand-200"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <i class="fa-solid fa-tag text-8xl text-white/5"></i>
+                </div>
                 @endif
-                <div class="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/20 to-transparent"></div>
-                
-                <div class="absolute bottom-0 left-0 w-full p-8 flex justify-between items-end">
-                    <div>
-                        <div class="bg-white/20 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full w-max mb-3 border border-white/30">{{ $category->products_count }} منتج</div>
-                        <h4 class="text-3xl font-bold text-white mb-2">{{ $category->display_name }}</h4>
-                        @if($category->min_price)
-                        <p class="text-white/80">{{ number_format($category->min_price) }} - {{ number_format($category->max_price) }} ₪</p>
+                <div class="absolute bottom-8 right-8 left-8 z-20 text-right">
+                    <h3 class="text-2xl font-black mb-2 text-white group-hover:text-brand-500 transition-colors duration-300">{{ $cat->display_name ?? $cat->name_ar }}</h3>
+                    <div class="flex items-center justify-between">
+                        <span class="pill-brand text-xs">{{ $cat->products_count }} منتج</span>
+                        @if($cat->min_price)
+                        <span class="text-ink-dim text-xs">من {{ number_format($cat->min_price, 0) }} ₪</span>
                         @endif
                     </div>
-                    <div class="w-12 h-12 rounded-full bg-white text-ink flex items-center justify-center transform group-hover:-rotate-45 transition-transform duration-300 shadow-lg">
-                        <i class="ph ph-arrow-up-right text-xl"></i>
-                    </div>
                 </div>
             </a>
-            @elseif($index <= 2)
-            {{-- أقسام عادية --}}
-            <a href="{{ route('shop', ['category' => $category->slug]) }}" class="group relative rounded-[32px] overflow-hidden bg-gray-100 isolate">
-                @if($category->sample_image)
-                <img src="{{ $category->sample_image }}" alt="{{ $category->display_name }}" loading="lazy" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
-                @else
-                <div class="absolute inset-0 w-full h-full bg-gradient-to-br from-brand-100 to-brand-200"></div>
-                @endif
-                <div class="absolute inset-0 bg-gradient-to-t from-ink/70 to-transparent"></div>
-                <div class="absolute bottom-0 left-0 w-full p-6">
-                    <h4 class="text-xl font-bold text-white mb-1">{{ $category->display_name }}</h4>
-                    <span class="text-sm text-white/70 flex items-center gap-1 group-hover:text-brand-100 transition-colors">{{ $category->products_count }} منتج <i class="ph ph-arrow-left text-xs"></i></span>
-                </div>
-            </a>
-            @elseif($index === 3 || $index === 4)
-            {{-- قسم أفقي --}}
-                @if($index === 3)
-            <a href="{{ route('shop', ['category' => $category->slug]) }}" class="group relative md:col-span-2 rounded-[32px] overflow-hidden bg-gray-100 isolate">
-                @if($category->sample_image)
-                <img src="{{ $category->sample_image }}" alt="{{ $category->display_name }}" loading="lazy" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
-                @else
-                <div class="absolute inset-0 w-full h-full bg-gradient-to-br from-gray-200 to-gray-300"></div>
-                @endif
-                <div class="absolute inset-0 bg-gradient-to-t from-ink/80 via-transparent to-transparent"></div>
-                <div class="absolute bottom-0 left-0 w-full p-6 flex justify-between items-end">
-                    <div>
-                        <h4 class="text-2xl font-bold text-white mb-1">{{ $category->display_name }}</h4>
-                        <p class="text-white/80 text-sm">{{ $category->products_count }} منتج متاح</p>
-                    </div>
-                </div>
-            </a>
-                @endif
-            @endif
-        @endforeach
-    </div>
-    
-    <div class="mt-8 text-center md:hidden">
-         <a href="{{ route('shop') }}" class="inline-flex items-center gap-2 font-medium text-ink hover:text-brand-500 transition-colors">
-            عرض كل الأقسام <i class="ph ph-arrow-left"></i>
-        </a>
-    </div>
-</section>
-@endif
-
-{{-- ═══════════════════════════════════════════════════════════════
-     المنتجات المميزة (تصميم بطاقات عصرية - تمرير أفقي)
-     ═══════════════════════════════════════════════════════════════ --}}
-@if($featuredProducts->isNotEmpty())
-<section class="py-16 bg-white border-y border-gray-100">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h3 class="text-2xl md:text-3xl font-bold text-ink mb-10 text-center">المنتجات <span class="text-brand-500">المميزة</span></h3>
-        
-        {{-- عرض أفقي قابل للتمرير --}}
-        <div class="flex overflow-x-auto gap-6 pb-8 hide-scroll snap-x">
-            @foreach($featuredProducts as $product)
-            <div class="min-w-[260px] max-w-[260px] snap-start group cursor-pointer">
-                <div class="relative bg-surface rounded-2xl aspect-[4/5] mb-4 overflow-hidden flex items-center justify-center p-4">
-@if($product->stock_quantity <= 5 && $product->stock_quantity > 0)
-                            <div class="absolute top-3 left-3 bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded animate-pulse">
-                                <i class="ph ph-fire"></i> {{ $product->stock_quantity }} متبقي
-                            </div>
-                            @endif
-                            @if($product->is_on_sale)
-                            <div class="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">-{{ $product->discount_percentage_display }}%</div>
-                            @elseif($product->is_new)
-                            <div class="absolute top-3 right-3 bg-brand-500 text-white text-xs font-bold px-2 py-1 rounded">جديد</div>
-                            @endif
-
-                            @if($product->main_image_url)
-                            <a href="{{ route('product.show', $product->slug) }}">
-                                <img src="{{ $product->main_image_url }}" alt="{{ $product->name_ar }}" loading="lazy" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500" onerror="this.parentElement.innerHTML='<i class=&quot;ph ph-package text-5xl text-gray-300&quot;></i>'">
-                    </a>
-                    @else
-                    <a href="{{ route('product.show', $product->slug) }}" class="flex items-center justify-center w-full h-full">
-                        <i class="ph ph-package text-5xl text-gray-300"></i>
-                    </a>
-                    @endif
-
-                </div>
-                <div>
-                    @if($product->category)
-                    <p class="text-xs text-gray-500 mb-1">{{ $product->category->name_ar ?? $product->category->name }}</p>
-                    @endif
-                    <a href="{{ route('product.show', $product->slug) }}">
-                        <h4 class="text-ink font-bold leading-tight mb-2 group-hover:text-brand-500 transition-colors line-clamp-2 text-sm">{{ $product->name_ar }}</h4>
-                    </a>
-                    <div class="flex justify-between items-center mb-3">
-                        <div class="flex gap-2 items-center">
-                            <span class="text-lg font-extrabold text-ink">{{ number_format($product->final_b2c_price ?? $product->b2c_price, 0) }} ₪</span>
-                            @if($product->is_on_sale)
-                            <span class="text-sm text-gray-400 line-through">{{ number_format($product->b2c_price, 0) }} ₪</span>
-                            @endif
-                        </div>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="addToCart({{ $product->id }}, 1, this)" class="flex-1 bg-ink text-white py-2 rounded-xl font-medium text-xs shadow-lg hover:bg-gray-800 flex justify-center items-center gap-1.5">
-                            <i class="ph ph-shopping-cart-simple text-base"></i> أضف للسلة
-                        </button>
-                        <a href="https://wa.me/{{ $siteSettings['whatsapp_number'] ?? '970591234567' }}?text={{ urlencode('السلام عليكم، مهتمة بـ: ' . $product->name_ar . ' - ' . number_format($product->final_b2c_price ?? $product->b2c_price, 0) . ' ₪') }}" target="_blank" class="px-3 py-2 border-2 border-green-500 text-green-500 rounded-xl font-medium text-xs hover:bg-green-500 hover:text-white transition-all flex items-center justify-center" title="واتساب">
-                            <i class="ph ph-whatsapp-logo text-lg"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
             @endforeach
         </div>
     </div>
@@ -783,59 +460,54 @@ if (heroSlideshow) {
 @endif
 
 {{-- ═══════════════════════════════════════════════════════════════
-     وصل حديثاً (تمرير أفقي)
+     SECTION 6: More Products — Horizontal Scroll
      ═══════════════════════════════════════════════════════════════ --}}
-@if($newProducts->isNotEmpty())
-<section class="py-16">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h3 class="text-2xl md:text-3xl font-bold text-ink mb-10 text-center">وصل حديثاً <span class="text-brand-500">وحصرياً</span></h3>
-        
-        <div class="flex overflow-x-auto gap-6 pb-8 hide-scroll snap-x">
-            @foreach($newProducts as $product)
-            <div class="min-w-[260px] max-w-[260px] snap-start group cursor-pointer">
-                <div class="relative bg-surface rounded-2xl aspect-[4/5] mb-4 overflow-hidden flex items-center justify-center p-4">
-                    <div class="absolute top-3 right-3 bg-brand-500 text-white text-xs font-bold px-2 py-1 rounded">جديد</div>
-                    @if($product->stock_quantity <= 5 && $product->stock_quantity > 0)
-                    <div class="absolute top-3 left-3 bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded animate-pulse">
-                        <i class="ph ph-fire"></i> {{ $product->stock_quantity }} متبقي
-                    </div>
-                    @endif
+@if($newProducts->isNotEmpty() || $featuredProducts->isNotEmpty())
+<section class="py-20">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="mb-12 flex items-end justify-between">
+            <div class="text-right">
+                <h2 class="text-3xl md:text-4xl font-black mb-2">وصل حديثاً</h2>
+                <p class="text-ink-dim text-sm">أحدث ما يصل إلى مختبرنا</p>
+            </div>
+            <a href="{{ route('shop') }}?sort=newest" class="text-brand-500 font-bold text-sm hover:gap-3 flex items-center gap-1 transition-all">
+                عرض الكل <i class="fa-solid fa-arrow-left text-xs"></i>
+            </a>
+        </div>
 
+        <div class="flex gap-6 overflow-x-auto hide-scroll pb-4" style="scroll-snap-type: x mandatory;">
+            @php $scrollProducts = $newProducts->isNotEmpty() ? $newProducts : $featuredProducts; @endphp
+            @foreach($scrollProducts->take(8) as $product)
+            <a href="{{ route('product.show', $product->slug) }}"
+               class="flex-shrink-0 w-[260px] glass-panel rounded-2xl overflow-hidden group border border-white/5 block transition-all duration-500 hover:-translate-y-2 hover:border-brand-500/30" style="scroll-snap-align: start;">
+                <div class="relative h-[260px] overflow-hidden">
                     @if($product->main_image_url)
-                    <a href="{{ route('product.show', $product->slug) }}">
-                        <img src="{{ $product->main_image_url }}" alt="{{ $product->name_ar }}" loading="lazy" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500" onerror="this.parentElement.innerHTML='<i class=&quot;ph ph-package text-5xl text-gray-300&quot;></i>'">
-                    </a>
+                    <img src="{{ $product->main_image_url }}" alt="{{ $product->name_ar }}"
+                         class="w-full h-full object-cover filter brightness-75 group-hover:brightness-100 group-hover:scale-110 transition-all duration-700"
+                         loading="lazy">
                     @else
-                    <a href="{{ route('product.show', $product->slug) }}" class="flex items-center justify-center w-full h-full">
-                        <i class="ph ph-package text-5xl text-gray-300"></i>
-                    </a>
-                    @endif
-                </div>
-                <div>
-                    @if($product->category)
-                    <p class="text-xs text-gray-500 mb-1">{{ $product->category->name_ar ?? $product->category->name }}</p>
-                    @endif
-                    <a href="{{ route('product.show', $product->slug) }}">
-                        <h4 class="text-ink font-bold leading-tight mb-2 group-hover:text-brand-500 transition-colors line-clamp-2 text-sm">{{ $product->name_ar }}</h4>
-                    </a>
-                    <div class="flex justify-between items-center mb-3">
-                        <div class="flex gap-2 items-center">
-                            <span class="text-lg font-extrabold text-ink">{{ number_format($product->final_b2c_price ?? $product->b2c_price, 0) }} ₪</span>
-                            @if($product->is_on_sale)
-                            <span class="text-sm text-gray-400 line-through">{{ number_format($product->b2c_price, 0) }} ₪</span>
-                            @endif
-                        </div>
+                    <div class="w-full h-full flex items-center justify-center bg-surface-alt">
+                        <i class="fa-solid fa-box text-4xl text-white/10"></i>
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick="addToCart({{ $product->id }}, 1, this)" class="flex-1 bg-ink text-white py-2 rounded-xl font-medium text-xs shadow-lg hover:bg-gray-800 flex justify-center items-center gap-1.5">
-                            <i class="ph ph-shopping-cart-simple text-base"></i> أضف للسلة
-                        </button>
-                        <a href="https://wa.me/{{ $siteSettings['whatsapp_number'] ?? '970591234567' }}?text={{ urlencode('السلام عليكم، مهتمة بـ: ' . $product->name_ar . ' - ' . number_format($product->final_b2c_price ?? $product->b2c_price, 0) . ' ₪') }}" target="_blank" class="px-3 py-2 border-2 border-green-500 text-green-500 rounded-xl font-medium text-xs hover:bg-green-500 hover:text-white transition-all flex items-center justify-center" title="واتساب">
-                            <i class="ph ph-whatsapp-logo text-lg"></i>
-                        </a>
+                    @endif
+                    <div class="absolute inset-0 bg-gradient-to-t from-surface/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <div class="absolute top-3 right-3">
+                        <span class="pill-brand text-[10px] px-2 py-0.5">جديد</span>
+                    </div>
+                    <div class="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
+                        <span class="bg-white text-surface text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
+                            <i class="fa-solid fa-bag-shopping text-[9px]"></i> تسوق الآن
+                        </span>
                     </div>
                 </div>
-            </div>
+                <div class="p-5 text-right">
+                    <h3 class="font-bold text-sm mb-1 line-clamp-1" style="color: var(--ink);">{{ $product->name_ar }}</h3>
+                    @if($product->brand)
+                    <p class="text-ink-dim text-xs mb-3">{{ $product->brand->name }}</p>
+                    @endif
+                    <span class="text-brand-500 font-black text-lg">{{ number_format($product->b2c_price, 0) }} ₪</span>
+                </div>
+            </a>
             @endforeach
         </div>
     </div>
@@ -843,122 +515,36 @@ if (heroSlideshow) {
 @endif
 
 {{-- ═══════════════════════════════════════════════════════════════
-     شاهدتِ مؤخراً + منتجات اقتصادية
+     SECTION 7: Protocols / CTA Banner
      ═══════════════════════════════════════════════════════════════ --}}
-@php
-    $cheapestProducts = \App\Models\Product::active()->showInB2C()
-        ->where('stock_quantity', '>', 0)
-        ->where('b2c_price', '>', 0)
-        ->orderBy('b2c_price')
-        ->limit(8)
-        ->get();
-@endphp
-<div id="recentlyViewed" class="hidden py-16 bg-surface border-t border-gray-100">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h3 class="text-2xl font-bold text-ink mb-10 text-center">شاهدتِ <span class="text-brand-500">مؤخراً</span></h3>
-        <div class="flex overflow-x-auto gap-6 pb-4 hide-scroll snap-x" id="recentlyViewedGrid"></div>
-    </div>
-</div>
-
-@if($cheapestProducts->isNotEmpty())
-<section class="py-16">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h3 class="text-2xl md:text-3xl font-bold text-ink mb-2 text-center">منتجات <span class="text-brand-500">اقتصادية</span></h3>
-        <p class="text-gray-400 text-sm text-center mb-10">أفضل العروض بأسعار مناسبة</p>
-        <div class="flex overflow-x-auto gap-6 pb-8 hide-scroll snap-x">
-            @foreach($cheapestProducts as $product)
-            <div class="min-w-[200px] max-w-[200px] snap-start">
-                <a href="{{ route('product.show', $product->slug) }}" class="block no-underline">
-                    <div class="bg-white rounded-2xl overflow-hidden border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                        @if($product->main_image_url)
-                        <img src="{{ $product->main_image_url }}" alt="{{ $product->name_ar }}" loading="lazy" class="w-full aspect-square object-cover">
-                        @else
-                        <div class="w-full aspect-square bg-gray-50 flex items-center justify-center"><i class="ph ph-package text-3xl text-gray-200"></i></div>
-                        @endif
-                        <div class="p-3">
-                            <div class="text-xs font-semibold text-ink truncate">{{ $product->name_ar }}</div>
-                            <div class="flex items-center gap-1.5 mt-1">
-                                <span class="text-sm font-extrabold text-brand-500">{{ number_format($product->final_b2c_price ?? $product->b2c_price, 0) }} ₪</span>
-                                @if($product->is_on_sale)
-                                <span class="text-[10px] text-gray-400 line-through">{{ number_format($product->b2c_price, 0) }} ₪</span>
-                                @endif
-                            </div>
-                            @if($product->stock_quantity <= 10 && $product->stock_quantity > 0)
-                            <span class="text-[10px] text-amber-600 font-bold">تبقى {{ $product->stock_quantity }} فقط</span>
-                            @endif
-                        </div>
-                    </div>
+<section class="py-24 relative overflow-hidden">
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(var(--brand-500-rgb,255,42,133),0.06),transparent_70%)]"></div>
+    <div class="max-w-5xl mx-auto px-4 text-center relative z-10">
+        <div class="glass-panel rounded-[3rem] p-12 md:p-16 border border-white/5">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-500/20 bg-brand-500/5 mb-8">
+                <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
+                <span class="text-xs text-brand-500 font-bold tracking-widest uppercase">بروتوكول العناية الذكي</span>
+            </div>
+            <h2 class="text-3xl md:text-5xl font-black mb-6">
+                جاهزة لاكتشاف<br>
+                <span class="gradient-text bg-[length:200%_auto]">روتينك المثالي؟</span>
+            </h2>
+            <p class="text-ink-dim text-lg mb-10 max-w-2xl mx-auto font-light">
+                تصفحي منتجاتنا المختارة بعناية، واختاري ما يناسب بشرتك. نحن هنا لمساعدتك في كل خطوة.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="{{ route('shop') }}"
+                   class="px-10 py-4 rounded-full font-black text-sm tracking-wide inline-flex items-center justify-center gap-2 shadow-neon hover:shadow-neon-strong transition-all"
+                   style="background: var(--gradient-primary); color: white;">
+                    تصفحي المنتجات <i class="fa-solid fa-arrow-left"></i>
+                </a>
+                <a href="{{ route('b2b') }}"
+                   class="px-10 py-4 rounded-full font-bold text-sm border border-white/15 text-white hover:bg-white/5 transition-all inline-flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-crown text-accent-500"></i> للأعمال
                 </a>
             </div>
-            @endforeach
         </div>
     </div>
 </section>
-@endif
-
-{{-- قسم إكمال المجموعة (Cross-sells) --}}
-@php
-    $crossSellProducts = \App\Models\Product::active()->showInB2C()
-        ->where('stock_quantity', '>', 0)
-        ->where('b2c_price', '>', 0)
-        ->where('is_featured', true)
-        ->inRandomOrder()
-        ->limit(6)
-        ->get();
-@endphp
-@if($crossSellProducts->isNotEmpty())
-<section class="py-16 bg-gradient-to-b from-brand-50/30 to-surface">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-10">
-            <span class="inline-block bg-brand-100 text-brand-600 text-xs font-bold px-4 py-1 rounded-full mb-3">✨ اكتشفي المزيد</span>
-            <h3 class="text-2xl md:text-3xl font-bold text-ink">قد يعجبك أيضاً</h3>
-        </div>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            @foreach($crossSellProducts as $product)
-            <a href="{{ route('product.show', $product->slug) }}" class="group">
-                <div class="bg-white rounded-2xl overflow-hidden border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                    <div class="relative aspect-square overflow-hidden">
-                        @if($product->main_image_url)
-                        <img src="{{ $product->main_image_url }}" alt="{{ $product->name_ar }}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                        @else
-                        <div class="w-full h-full bg-gray-50 flex items-center justify-center"><i class="ph ph-package text-3xl text-gray-200"></i></div>
-                        @endif
-                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
-                    </div>
-                    <div class="p-3">
-                        <div class="text-xs font-semibold text-ink line-clamp-2 leading-tight mb-2">{{ $product->name_ar }}</div>
-                        <div class="text-sm font-extrabold text-brand-500">{{ number_format($product->final_b2c_price ?? $product->b2c_price, 0) }} ₪</div>
-                    </div>
-                </div>
-            </a>
-            @endforeach
-        </div>
-    </div>
-</section>
-@endif
-
-<script>
-(function() {
-    const viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
-    if (viewed.length < 1) return;
-    const section = document.getElementById('recentlyViewed');
-    const grid = document.getElementById('recentlyViewedGrid');
-    const bp = window.basePath || '';
-    section.classList.remove('hidden');
-    grid.innerHTML = viewed.slice(0, 6).map(p => `
-        <div class="min-w-[180px] max-w-[180px] snap-start">
-            <a href="${bp}/product/${p.slug}" class="block no-underline">
-                <div class="bg-white rounded-2xl overflow-hidden border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                    ${p.img ? `<img src="${p.img}" class="w-full aspect-square object-cover" loading="lazy" onerror="this.parentElement.innerHTML='<div class=&quot;w-full aspect-square bg-gray-50 flex items-center justify-center&quot;><i class=&quot;ph ph-package text-3xl text-gray-200&quot;></i></div>'">` : '<div class="w-full aspect-square bg-gray-50 flex items-center justify-center"><i class="ph ph-package text-3xl text-gray-200"></i></div>'}
-                    <div class="p-3">
-                        <div class="text-xs font-semibold text-ink truncate">${p.name}</div>
-                        <div class="text-sm font-extrabold text-brand-500 mt-1">${p.price}</div>
-                    </div>
-                </div>
-            </a>
-        </div>
-    `).join('');
-})();
-</script>
 
 @endsection

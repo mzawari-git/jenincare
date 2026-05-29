@@ -1,0 +1,33 @@
+/* ═══ NATURAL — Fresh Organic Clean ═══
+   Textured glass, leaf-green glow, organic shapes, botanical feel */
+:root {
+  --brand-50: #050a08; --brand-100: #081410; --brand-200: #0d241a;
+  --brand-300: #153b2a; --brand-400: #1f5c3f; --brand-500: #00ff88;
+  --brand-600: #39ffa8; --brand-700: #66ffbe; --brand-800: #99ffd4; --brand-900: #ccffe9;
+  --accent-50: #050f0c; --accent-100: #081a16; --accent-200: #0d2a23;
+  --accent-300: #154237; --accent-400: #1f6655; --accent-500: #00b894;
+  --accent-600: #39ddb4; --accent-700: #66eacc; --accent-800: #99f3e0; --accent-900: #ccf9f0;
+  --surface: #050a08; --surface-alt: #0a100d;
+  --ink: #ffffff; --ink-muted: #95a89d; --ink-dim: #5e6e64;
+  --header-bg: rgba(12, 20, 16, 0.7);
+  --glass-bg: rgba(16, 28, 22, 0.4);
+  --glass-border: rgba(0, 255, 136, 0.08);
+  --glass-shadow: 0 4px 25px rgba(0,0,0,0.55);
+  --neon-glow: 0 0 22px rgba(0,255,136,0.5);
+  --neon-glow-strong: 0 0 42px rgba(0,255,136,0.7);
+  --neon-text-shadow: 0 0 20px rgba(0,255,136,0.6);
+  --accent-glow: 0 0 20px rgba(0,184,148,0.5);
+  --accent-glow-strong: 0 0 40px rgba(0,184,148,0.7);
+  --gradient-primary: linear-gradient(270deg, #00ff88, #00b894, #00ff88);
+  --gradient-hero: linear-gradient(135deg, #00ff88 0%, #00b894 50%, #39ffa8 100%);
+  /* ── Natural Distinct Style ── */
+  --card-radius: 1.5rem;
+  --card-border: 1px solid rgba(0,255,136,0.1);
+  --bg-pattern: repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(0,255,136,0.015) 40px, rgba(0,255,136,0.015) 41px);
+  --glass-blur: blur(18px);
+  --glass-opacity: 0.35;
+  --animation-accent: floatSlow;
+  --hero-overlay: radial-gradient(ellipse at 50% 0%, rgba(0,255,136,0.06), transparent 70%);
+}
+
+body { background-image: var(--bg-pattern), radial-gradient(ellipse at 50% 10%, rgba(0,255,136,0.04) 0%, transparent 60%), radial-gradient(ellipse at 50% 90%, rgba(0,184,148,0.02) 0%, transparent 60%); }

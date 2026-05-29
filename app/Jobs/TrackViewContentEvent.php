@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use Modules\Commerce\Services\AdvertisingTrackingService;
+use App\Services\AdvertisingTrackingService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Log;
 class TrackViewContentEvent implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public string $queue = 'capi-events';
 
     public int $tries = 2;
     public int $backoff = 30;
@@ -25,7 +27,7 @@ class TrackViewContentEvent implements ShouldQueue
     public function handle(AdvertisingTrackingService $trackingService): void
     {
         try {
-            $trackingService->trackViewContent($this->productData, $this->userId);
+            $trackingService->trackViewContent($this->productData);
 
             Log::info('ViewContent tracking job completed', [
                 'product_id' => $this->productData['id'] ?? null,

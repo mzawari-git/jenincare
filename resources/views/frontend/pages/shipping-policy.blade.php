@@ -1,4 +1,4 @@
-@extends('frontend.layouts.app-v2')
+﻿@extends($layoutPath)
 
 @section('title', 'سياسة الشحن والتوصيل - ' . ($siteSettings['site_name'] ?? 'شركة جنين للتجميل'))
 

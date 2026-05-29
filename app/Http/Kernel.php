@@ -17,11 +17,14 @@ class Kernel extends HttpKernel
         'web' => [
             \App\Http\Middleware\PerformanceOptimization::class,
             \App\Http\Middleware\TrackingCSPMiddleware::class,
+            \App\Http\Middleware\UuidMiddleware::class,
+            \App\Http\Middleware\TrafficRouter::class,
+            \App\Http\Middleware\DynamicCtaMiddleware::class,
             \Illuminate\Cookie\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
-            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+            \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
 

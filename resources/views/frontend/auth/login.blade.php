@@ -1,4 +1,4 @@
-@extends('frontend.layouts.app-v2')
+﻿@extends($layoutPath)
 
 @section('title', 'تسجيل الدخول - ' . ($siteSettings['site_name'] ?? 'JeniCare'))
 
@@ -9,24 +9,24 @@
         <div class="absolute bottom-20 right-10 w-96 h-96 bg-pink-100 rounded-full blur-3xl opacity-20"></div>
     </div>
 
-    <div class="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-3xl border border-gray-100 shadow-xl p-8 relative z-10">
+    <div class="w-full max-w-md glass-panel rounded-3xl border border-white/5 shadow-xl p-8 relative z-10">
         <div class="text-center mb-8">
-            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-brand-200">
+            <div class="w-16 h-16 rounded-full bg-brand-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-brand-200">
                 <i class="ph ph-user text-3xl text-white"></i>
             </div>
-            <h1 class="text-2xl font-extrabold text-ink">تسجيل الدخول</h1>
-            <p class="text-gray-500 text-sm mt-1">أهلاً بعودتك! أدخل بياناتك للدخول</p>
+            <h1 class="text-2xl font-extrabold text-white">تسجيل الدخول</h1>
+            <p class="text-white-dim text-sm mt-1">أهلاً بعودتك! أدخل بياناتك للدخول</p>
         </div>
 
         @if(session('error'))
-        <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-6 text-sm flex items-center gap-2">
+        <div class="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl px-4 py-3 mb-6 text-sm flex items-center gap-2">
             <i class="ph ph-warning-circle text-lg"></i>
             <span>{{ session('error') }}</span>
         </div>
         @endif
 
         @if(session('success'))
-        <div class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 mb-6 text-sm flex items-center gap-2">
+        <div class="bg-green-500/10 border border-green-500/20 text-green-400 rounded-xl px-4 py-3 mb-6 text-sm flex items-center gap-2">
             <i class="ph ph-check-circle text-lg"></i>
             <span>{{ session('success') }}</span>
         </div>
@@ -36,24 +36,24 @@
             @csrf
 
             <div>
-                <label class="block text-sm font-bold text-ink mb-1.5">البريد الإلكتروني <span class="text-red-400">*</span></label>
+                <label class="block text-sm font-bold text-white mb-1.5">البريد الإلكتروني <span class="text-red-400">*</span></label>
                 <div class="relative">
-                    <i class="ph ph-envelope-simple absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                    <i class="ph ph-envelope-simple absolute right-4 top-1/2 -translate-y-1/2 text-white-dim text-lg"></i>
                     <input type="email" name="email" value="{{ old('email') }}" required autofocus
-                        class="w-full bg-white border border-gray-200 rounded-xl pr-12 pl-4 py-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all @error('email') border-red-400 @enderror"
+                        class="w-full bg-white border border-white/10 rounded-xl pr-12 pl-4 py-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all @error('email') border-red-400 @enderror"
                         placeholder="example@email.com">
                 </div>
                 @error('email')<p class="text-red-500 text-xs mt-1 flex items-center gap-1"><i class="ph ph-warning-circle"></i> {{ $message }}</p>@enderror
             </div>
 
             <div>
-                <label class="block text-sm font-bold text-ink mb-1.5">كلمة المرور <span class="text-red-400">*</span></label>
+                <label class="block text-sm font-bold text-white mb-1.5">كلمة المرور <span class="text-red-400">*</span></label>
                 <div class="relative" x-data="{ show: false }">
-                    <i class="ph ph-lock absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                    <i class="ph ph-lock absolute right-4 top-1/2 -translate-y-1/2 text-white-dim text-lg"></i>
                     <input :type="show ? 'text' : 'password'" name="password" required
-                        class="w-full bg-white border border-gray-200 rounded-xl pr-12 pl-12 py-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all @error('password') border-red-400 @enderror"
+                        class="w-full bg-white border border-white/10 rounded-xl pr-12 pl-12 py-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all @error('password') border-red-400 @enderror"
                         placeholder="********">
-                    <button type="button" @click="show = !show" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                    <button type="button" @click="show = !show" class="absolute left-4 top-1/2 -translate-y-1/2 text-white-dim hover:text-white-dim transition-colors">
                         <i :class="show ? 'ph ph-eye-slash' : 'ph ph-eye'" class="text-lg"></i>
                     </button>
                 </div>
@@ -62,10 +62,10 @@
 
             <div class="flex items-center justify-between">
                 <label class="flex items-center gap-2 cursor-pointer group">
-                    <input type="checkbox" name="remember" value="1" class="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer">
-                    <span class="text-sm text-gray-600 group-hover:text-ink transition-colors">تذكرني</span>
+                    <input type="checkbox" name="remember" value="1" class="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer">
+                    <span class="text-sm text-white-dim group-hover:text-white transition-colors">تذكرني</span>
                 </label>
-                <a href="{{ route('password.request') }}" class="text-sm text-brand-600 font-medium hover:text-brand-700 hover:underline transition-colors">نسيت كلمة المرور؟</a>
+                <a href="{{ route('password.request') }}" class="text-sm text-brand-500 font-medium hover:text-brand-700 hover:underline transition-colors">نسيت كلمة المرور؟</a>
             </div>
 
             <button type="submit" id="loginSubmit"
@@ -82,27 +82,27 @@
 
         <div class="relative my-6">
             <div class="absolute inset-0 flex items-center">
-                <div class="w-full border-t border-gray-200"></div>
+                <div class="w-full border-t border-white/10"></div>
             </div>
             <div class="relative flex justify-center text-sm">
-                <span class="px-4 bg-white text-gray-400">أو</span>
+                <span class="px-4 bg-white text-white-dim">أو</span>
             </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
-            <a href="{{ url('auth/google/redirect') }}" class="flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all">
+            <a href="{{ url('auth/google/redirect') }}" class="flex items-center justify-center gap-2 py-2.5 border border-white/10 rounded-xl text-sm text-white-dim hover:bg-white/5 hover:border-gray-300 transition-all">
                 <i class="ph ph-google-logo text-lg text-red-400"></i>
                 <span>Google</span>
             </a>
-            <a href="{{ url('auth/facebook/redirect') }}" class="flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all">
+            <a href="{{ url('auth/facebook/redirect') }}" class="flex items-center justify-center gap-2 py-2.5 border border-white/10 rounded-xl text-sm text-white-dim hover:bg-white/5 hover:border-gray-300 transition-all">
                 <i class="ph ph-facebook-logo text-lg text-blue-600"></i>
                 <span>Facebook</span>
             </a>
         </div>
 
-        <p class="text-center text-sm text-gray-500 mt-6">
+        <p class="text-center text-sm text-white-dim mt-6">
             ليس لديك حساب؟
-            <a href="{{ route('register') }}" class="text-brand-600 font-bold hover:underline">إنشاء حساب جديد</a>
+            <a href="{{ route('register') }}" class="text-brand-500 font-bold hover:underline">إنشاء حساب جديد</a>
         </p>
     </div>
 </div>

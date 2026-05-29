@@ -1,4 +1,4 @@
-@extends('frontend.layouts.app-v2')
+﻿@extends($layoutPath)
 
 @section('title', 'سياسة الإرجاع والاستبدال - ' . ($siteSettings['site_name'] ?? 'شركة جنين للتجميل'))
 

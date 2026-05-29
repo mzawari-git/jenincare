@@ -13,7 +13,7 @@ return [
     'cookie' => env('SESSION_COOKIE', 'jenincare_session'),
     'path' => env('SESSION_PATH', '/'),
     'domain' => env('SESSION_DOMAIN', '.jenincare.shop'),
-    'secure' => env('SESSION_SECURE_COOKIE', true),
+    'secure' => env('COOKIE_SECURE', env('SESSION_SECURE_COOKIE', false)),
     'http_only' => true,
     'same_site' => env('SESSION_SAME_SITE', 'lax'),
 ];

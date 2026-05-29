@@ -11,6 +11,8 @@ class RfqItem extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = 'rfq_items';
+
     protected $fillable = [
         'rfq_id', 'product_id', 'product_name', 'product_description',
         'quantity', 'specifications', 'quoted_unit_price', 'quoted_total_price'

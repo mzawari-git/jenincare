@@ -29,8 +29,11 @@ class PerformanceOptimization
                 $response->headers->set('Cache-Control', 'public, max-age=31536000, immutable');
             } elseif ($request->is('api/*')) {
                 $response->headers->set('Cache-Control', 'no-cache, must-revalidate');
+            } elseif ($request->route() && $request->route()->named('home')) {
+                // Homepage: no browser cache so edits appear immediately
+                $response->headers->set('Cache-Control', 'no-cache, must-revalidate');
             } else {
-                $response->headers->set('Cache-Control', 'public, max-age=3600');
+                $response->headers->set('Cache-Control', 'public, max-age=600');
             }
 
             // Add ETag for better caching
