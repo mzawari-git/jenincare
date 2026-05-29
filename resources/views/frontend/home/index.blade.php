@@ -200,7 +200,77 @@
 </section>
 
 {{-- ═══════════════════════════════════════════════════════════════
-     SECTION 2: Why JeniCare? — Premium Value Cards
+     SECTION 2: Trust Bar — Social Proof & Quick Stats
+     ═══════════════════════════════════════════════════════════════ --}}
+<section class="py-12 border-b border-white/5">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            <div class="glass-panel rounded-2xl p-6">
+                <span class="text-3xl md:text-4xl font-black gradient-text bg-[length:200%_auto] block mb-2">+{{ \App\Models\Product::count() }}</span>
+                <span class="text-sm text-ink-muted">منتج أصلي</span>
+            </div>
+            <div class="glass-panel rounded-2xl p-6">
+                <span class="text-3xl md:text-4xl font-black text-white block mb-2">15,000+</span>
+                <span class="text-sm text-ink-muted">عميلة سعيدة</span>
+            </div>
+            <div class="glass-panel rounded-2xl p-6">
+                <span class="text-3xl md:text-4xl font-black text-white block mb-2">4.9</span>
+                <span class="text-sm text-ink-muted">تقييم العملاء</span>
+            </div>
+            <div class="glass-panel rounded-2xl p-6">
+                <span class="text-3xl md:text-4xl font-black text-white block mb-2">24H</span>
+                <span class="text-sm text-ink-muted">توصيل سريع</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{-- ═══════════════════════════════════════════════════════════════
+     SECTION 3: Brand USP — Optimized for Facebook & Google Ads
+     ═══════════════════════════════════════════════════════════════ --}}
+<section class="py-16 relative overflow-hidden">
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_50%,rgba(var(--brand-500-rgb,255,42,133),0.04),transparent_60%)] pointer-events-none"></div>
+    <div class="max-w-7xl mx-auto px-4 relative z-10">
+        <div class="text-center mb-14">
+            <h2 class="text-3xl md:text-5xl font-black mb-4">أفضل وجهتك <span class="gradient-text bg-[length:200%_auto]">للعناية بالبشرة والشعر</span></h2>
+            <p class="text-ink-dim max-w-3xl mx-auto text-lg font-light leading-relaxed">متجر الكتروني متخصص في منتجات التجميل والعناية بالبشرة، نوفر لكِ ماركات عالمية أصلية بأسعار تنافسية، مع شحن سريع لجميع مدن فلسطين. اكتشفي عروضنا الحصرية وخدمة العملاء المميزة.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="glass-panel rounded-2xl p-7 text-right hover:-translate-y-2 transition-all duration-500 group">
+                <div class="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center mb-5 group-hover:bg-brand-500/20 transition-colors">
+                    <i class="fa-solid fa-certificate text-xl text-brand-500"></i>
+                </div>
+                <h3 class="font-black text-lg mb-3 text-white">منتجات أصلية مضمونة</h3>
+                <p class="text-ink-dim text-sm leading-relaxed">جميع منتجاتنا أصلية 100% ومستوردة من مصادر موثوقة ومعتمدة دولياً. نضمن لكِ الجودة والأصالة في كل طلب.</p>
+            </div>
+            <div class="glass-panel rounded-2xl p-7 text-right hover:-translate-y-2 transition-all duration-500 group">
+                <div class="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center mb-5 group-hover:bg-brand-500/20 transition-colors">
+                    <i class="fa-solid fa-truck-fast text-xl text-brand-500"></i>
+                </div>
+                <h3 class="font-black text-lg mb-3 text-white">توصيل لكل فلسطين</h3>
+                <p class="text-ink-dim text-sm leading-relaxed">نوصل طلبك لباب بيتك في الضفة الغربية، القدس، والداخل المحتل. شحن سريع وتتبع مباشر لشحنتك حتى الاستلام.</p>
+            </div>
+            <div class="glass-panel rounded-2xl p-7 text-right hover:-translate-y-2 transition-all duration-500 group">
+                <div class="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center mb-5 group-hover:bg-brand-500/20 transition-colors">
+                    <i class="fa-solid fa-tags text-xl text-brand-500"></i>
+                </div>
+                <h3 class="font-black text-lg mb-3 text-white">أفضل الأسعار والعروض</h3>
+                <p class="text-ink-dim text-sm leading-relaxed">أسعار تنافسية مع عروض حصرية وخصومات يومية. الدفع عند الاستلام متاح لراحتك وأمانك التام.</p>
+            </div>
+            <div class="glass-panel rounded-2xl p-7 text-right hover:-translate-y-2 transition-all duration-500 group">
+                <div class="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center mb-5 group-hover:bg-brand-500/20 transition-colors">
+                    <i class="fa-solid fa-headset text-xl text-brand-500"></i>
+                </div>
+                <h3 class="font-black text-lg mb-3 text-white">دعم احترافي متواصل</h3>
+                <p class="text-ink-dim text-sm leading-relaxed">فريق خدمة عملاء محترف جاهز لمساعدتك يومياً من 9 صباحاً حتى 10 مساءً عبر الواتساب. استفسري وسنرد فوراً.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{-- ═══════════════════════════════════════════════════════════════
+     SECTION 4: Why JeniCare? — Premium Value Cards
      ═══════════════════════════════════════════════════════════════ --}}
 <section class="py-24 relative overflow-hidden">
     <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_50%,rgba(var(--brand-500-rgb,255,42,133),0.03),transparent_70%)] pointer-events-none"></div>
@@ -208,17 +278,17 @@
         <div class="mb-16 text-center">
             <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-500/20 bg-brand-500/5 mb-6">
                 <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
-                <span class="text-xs text-brand-500 font-bold tracking-widest uppercase">لماذا نحن</span>
+                <span class="text-xs text-brand-500 font-bold tracking-widest uppercase">لماذا تختارينا</span>
             </div>
             <h2 class="text-3xl md:text-5xl font-black mb-4">لماذا <span class="gradient-text bg-[length:200%_auto]">JeniCare</span><span class="text-brand-500">.</span></h2>
-            <p class="text-ink-dim max-w-xl mx-auto text-lg font-light">لسنا مجرد متجر. نحن نظام ذكي للعناية ببشرتك من اختيار المنتج حتى باب منزلك.</p>
+            <p class="text-ink-dim max-w-xl mx-auto text-lg font-light">متجر العناية بالبشرة الأول في فلسطين. نوفر لكِ تجربة تسوق آمنة وموثوقة مع منتجات أصلية وخدمة عملاء استثنائية.</p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
             @php
                 $valueCards = [
-                    ['num' => '01', 'icon' => 'fa-solid fa-shield-check', 'title' => 'منتجات أصلية 100%', 'desc' => 'نضمن لكِ أصالة كل منتج من مصادر موثوقة ومعتمدة دولياً.'],
-                    ['num' => '02', 'icon' => 'fa-solid fa-truck-fast', 'title' => 'شحن سريع لكل فلسطين', 'desc' => 'توصيل لجميع المناطق مع تتبع مباشر لشحنتك حتى باب منزلك.'],
-                    ['num' => '03', 'icon' => 'fa-solid fa-headset', 'title' => 'دعم يومي احترافي', 'desc' => 'فريق متخصص جاهز لمساعدتك من 9 صباحاً حتى 10 مساءً عبر الواتساب.'],
+                    ['num' => '01', 'icon' => 'fa-solid fa-shield-check', 'title' => 'منتجات أصلية 100%', 'desc' => 'نضمن لكِ أصالة كل منتج من مصادر موثوقة ومعتمدة دولياً. لا تقلقي بشأن جودة المنتجات - نحن نتعامل فقط مع الماركات العالمية الأصلية.'],
+                    ['num' => '02', 'icon' => 'fa-solid fa-truck-fast', 'title' => 'شحن سريع لكل فلسطين', 'desc' => 'توصيل لجميع المناطق من جنين إلى رام الله والخليل وغزة، مع تتبع مباشر لشحنتك حتى باب منزلك. اطلبي اليوم واستلمي خلال 24-48 ساعة.'],
+                    ['num' => '03', 'icon' => 'fa-solid fa-headset', 'title' => 'دعم يومي احترافي', 'desc' => 'فريق متخصص جاهز لمساعدتك من 9 صباحاً حتى 10 مساءً عبر الواتساب. استشارات مجانية لاختيار المنتج المناسب لنوع بشرتك.'],
                 ];
             @endphp
             @foreach($valueCards as $card)
@@ -255,8 +325,11 @@
     <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_50%,rgba(var(--brand-500-rgb,255,42,133),0.04),transparent_60%)] pointer-events-none"></div>
     <div class="max-w-7xl mx-auto px-4 relative z-10">
         <div class="mb-16 text-right">
-            <h2 class="text-3xl md:text-5xl font-black mb-4">مختبر المنتجات <span class="text-white/10 text-xl align-super">/01</span></h2>
-            <p class="text-ink-dim max-w-xl text-lg font-light">كل منتج مختار بعناية ليكون جزءاً من بروتوكول عنايتك الشخصي.</p>
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-500/20 bg-brand-500/5 mb-6">
+                <span class="text-xs text-brand-500 font-bold tracking-widest uppercase">مختبر الجمال</span>
+            </div>
+            <h2 class="text-3xl md:text-5xl font-black mb-4">منتجات مختارة <span class="gradient-text bg-[length:200%_auto]">بعناية فائقة</span></h2>
+            <p class="text-ink-dim max-w-xl text-lg font-light">كل منتج في متجرنا تم انتقاؤه بعناية من أفضل الماركات العالمية ليكون جزءاً من روتين عنايتك الشخصي. منتجات أصلية، نتائج مضمونة.</p>
         </div>
 
         @if($featuredProducts->isNotEmpty() || $newProducts->isNotEmpty())
@@ -342,9 +415,9 @@
                     <div class="w-14 h-14 rounded-2xl bg-accent-500/10 flex items-center justify-center mb-6 shadow-accent-neon">
                         <i class="fa-solid fa-microchip text-2xl text-accent-500"></i>
                     </div>
-                    <h3 class="text-2xl font-black mb-4" style="color: var(--ink);">بروتوكولات عناية<br>تتعلم منكِ.</h3>
+                    <h3 class="text-2xl font-black mb-4" style="color: var(--ink);">روتين عناية<br>مصمم خصيصاً لكِ.</h3>
                     <p class="text-ink-dim text-sm leading-relaxed">
-                        نختار لكِ أفضل المنتجات المناسبة لنوع بشرتك واحتياجاتها. تصفحي، اختاري، واتركي الباقي علينا.
+                        نختار لكِ أفضل المنتجات المناسبة لنوع بشرتك واحتياجاتك. تصفحي مجموعتنا المميزة من منتجات العناية بالبشرة والشعر، وتمتعي بتجربة تسوق فريدة مع شحن سريع ودفع آمن.
                     </p>
                 </div>
                 <div class="mt-8">
@@ -396,23 +469,25 @@
      ═══════════════════════════════════════════════════════════════ --}}
 <div class="py-10 border-y border-white/5 overflow-hidden flex whitespace-nowrap opacity-40 hover:opacity-70 transition-opacity">
     <div class="animate-marquee-rtl flex items-center gap-16 font-mono text-xs tracking-[0.2em] uppercase text-white/50">
-        <span><i class="fa-solid fa-asterisk text-brand-500 text-[8px] mr-2"></i> Premium Skincare</span>
+        <span><i class="fa-solid fa-asterisk text-brand-500 text-[8px] mr-2"></i> منتجات أصلية 100%</span>
         <i class="fa-solid fa-circle text-[4px] text-brand-500"></i>
-        <span>100% Authentic Products</span>
+        <span>شحن سريع لكل فلسطين</span>
         <i class="fa-solid fa-circle text-[4px] text-accent-500"></i>
-        <span>Fast Palestine Shipping</span>
+        <span>أفضل ماركات التجميل العالمية</span>
         <i class="fa-solid fa-circle text-[4px] text-brand-500"></i>
-        <span>Professional Beauty Lab</span>
+        <span>الدفع عند الاستلام</span>
         <i class="fa-solid fa-circle text-[4px] text-accent-500"></i>
-        <span>Daily Expert Support</span>
+        <span>دعم احترافي يومي</span>
         <i class="fa-solid fa-circle text-[4px] text-brand-500"></i>
-        <span>Premium Skincare</span>
+        <span>عروض وخصومات حصرية</span>
         <i class="fa-solid fa-circle text-[4px] text-accent-500"></i>
-        <span>100% Authentic Products</span>
+        <span>توصيل لجميع المناطق</span>
         <i class="fa-solid fa-circle text-[4px] text-brand-500"></i>
-        <span>Fast Palestine Shipping</span>
+        <span>منتجات أصلية 100%</span>
         <i class="fa-solid fa-circle text-[4px] text-accent-500"></i>
-        <span>Professional Beauty Lab</span>
+        <span>شحن سريع لكل فلسطين</span>
+        <i class="fa-solid fa-circle text-[4px] text-brand-500"></i>
+        <span>أفضل ماركات التجميل العالمية</span>
     </div>
 </div>
 
@@ -423,8 +498,11 @@
 <section class="py-20">
     <div class="max-w-7xl mx-auto px-4">
         <div class="mb-16 text-right">
-            <h2 class="text-3xl md:text-5xl font-black mb-4">الأقسام <span class="text-white/10 text-xl align-super">/02</span></h2>
-            <p class="text-ink-dim max-w-xl text-lg font-light">تصفحي حسب الفئة لتجدي كل ما تحتاجينه لبشرتك.</p>
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-500/20 bg-brand-500/5 mb-6">
+                <span class="text-xs text-brand-500 font-bold tracking-widest uppercase">تصفحي الأقسام</span>
+            </div>
+            <h2 class="text-3xl md:text-5xl font-black mb-4">تسوقي حسب <span class="gradient-text bg-[length:200%_auto]">القسم</span></h2>
+            <p class="text-ink-dim max-w-xl text-lg font-light">اكتشفي مجموعتنا الكاملة من منتجات التجميل والعناية بالبشرة والشعر. جميع المنتجات أصلية ومضمونة من أفضل الماركات العالمية.</p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             @foreach($categories as $cat)
@@ -468,7 +546,7 @@
         <div class="mb-12 flex items-end justify-between">
             <div class="text-right">
                 <h2 class="text-3xl md:text-4xl font-black mb-2">وصل حديثاً</h2>
-                <p class="text-ink-dim text-sm">أحدث ما يصل إلى مختبرنا</p>
+                <p class="text-ink-dim text-sm">أحدث المنتجات الأصلية في مختبر الجمال - شحن سريع وتوصيل لكل فلسطين</p>
             </div>
             <a href="{{ route('shop') }}?sort=newest" class="text-brand-500 font-bold text-sm hover:gap-3 flex items-center gap-1 transition-all">
                 عرض الكل <i class="fa-solid fa-arrow-left text-xs"></i>
@@ -523,24 +601,24 @@
         <div class="glass-panel rounded-[3rem] p-12 md:p-16 border border-white/5">
             <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-500/20 bg-brand-500/5 mb-8">
                 <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
-                <span class="text-xs text-brand-500 font-bold tracking-widest uppercase">بروتوكول العناية الذكي</span>
+                <span class="text-xs text-brand-500 font-bold tracking-widest uppercase">ابدئي رحلتك الآن</span>
             </div>
             <h2 class="text-3xl md:text-5xl font-black mb-6">
-                جاهزة لاكتشاف<br>
+                مستعدة لاكتشاف<br>
                 <span class="gradient-text bg-[length:200%_auto]">روتينك المثالي؟</span>
             </h2>
             <p class="text-ink-dim text-lg mb-10 max-w-2xl mx-auto font-light">
-                تصفحي منتجاتنا المختارة بعناية، واختاري ما يناسب بشرتك. نحن هنا لمساعدتك في كل خطوة.
+                انضمي إلى آلاف العميلات السعيدات وابدئي رحلة العناية ببشرتك مع أفضل المنتجات الأصلية. شحن سريع، دفع آمن، ودعم احترافي على مدار الأسبوع.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <a href="{{ route('shop') }}"
                    class="px-10 py-4 rounded-full font-black text-sm tracking-wide inline-flex items-center justify-center gap-2 shadow-neon hover:shadow-neon-strong transition-all"
                    style="background: var(--gradient-primary); color: white;">
-                    تصفحي المنتجات <i class="fa-solid fa-arrow-left"></i>
+                    تسوقي الآن <i class="fa-solid fa-arrow-left"></i>
                 </a>
                 <a href="{{ route('b2b') }}"
                    class="px-10 py-4 rounded-full font-bold text-sm border border-white/15 text-white hover:bg-white/5 transition-all inline-flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-crown text-accent-500"></i> للأعمال
+                    <i class="fa-solid fa-crown text-accent-500"></i> طلبات الجملة والصالونات
                 </a>
             </div>
         </div>
