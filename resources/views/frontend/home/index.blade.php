@@ -32,7 +32,7 @@
 @section('content')
 
 {{-- ═══════════════════════════════════════════════════════════════
-     SECTION 1: HERO — Slideshow with Cycling Text
+     SECTION 1: HERO — Dynamic Title + Product Slideshow
      ═══════════════════════════════════════════════════════════════ --}}
 @php
 $allPhrases = [
@@ -57,10 +57,32 @@ $allPhrases = [
     'صالونكِ المتكامل... من الفكرة إلى الواقع مع خبراء جنين للتجميل.',
     'منتجات أصلية، أجهزة احترافية، تجهيز متكامل... في مكان واحد.',
 ];
-shuffle($allPhrases);
-$phraseCount = count($allPhrases);
 
-$slideshowCats = $categories->filter(fn($c) => $c->products_count > 0)->shuffle()->take(5);
+// Product slides with matching titles
+$slidesData = [];
+foreach ($categories->filter(fn($c) => $c->products_count > 0)->shuffle()->take(5) as $cat) {
+    $p = \App\Models\Product::where('category_id', $cat->id)->where('status', 'active')->inRandomOrder()->first();
+    if (!$p) continue;
+    $catName = $cat->display_name ?? $cat->name_ar;
+    $isDevices = str_contains($catName, 'جهاز') || str_contains($catName, 'ليزر');
+    $isSalon = str_contains($catName, 'صالون') || str_contains($catName, 'تجهيز');
+    $slidesData[] = [
+        'product' => $p,
+        'category' => $cat,
+        'title_line1' => $isDevices ? 'تقنيات متطورة' : ($isSalon ? 'صالونك المثالي' : 'منتجات أصلية'),
+        'title_line2' => $isDevices ? 'نتائج احترافية.' : ($isSalon ? 'فخامة متناهية.' : 'جمال لا يُقاوم.'),
+        'color' => $isDevices ? '#06b6d4' : ($isSalon ? '#d4af37' : '#ec4899'),
+    ];
+}
+if (empty($slidesData) && $featuredProducts->isNotEmpty()) {
+    $slidesData[] = [
+        'product' => $featuredProducts->first(),
+        'category' => null,
+        'title_line1' => 'منتجات أصلية',
+        'title_line2' => 'نتائج مبهرة.',
+        'color' => '#ec4899',
+    ];
+}
 @endphp
 
 <section id="hero" class="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -74,19 +96,26 @@ $slideshowCats = $categories->filter(fn($c) => $c->products_count > 0)->shuffle(
     <div class="relative z-10 w-full max-w-7xl mx-auto px-4 pt-24 pb-16">
         <div class="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
 
-            {{-- Right: Static Title + Cycling Text --}}
             <div class="w-full lg:w-[45%] text-right">
                 <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-500/20 bg-brand-500/5 mb-6">
                     <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse shadow-neon"></span>
                     <span class="text-xs tracking-widest text-brand-500 uppercase font-bold">جنين للتجميل</span>
                 </div>
 
-                <h1 class="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black mb-8 leading-[0.85] tracking-tight">
-                    <span class="block text-ink">منتجات أصلية</span>
-                    <span class="gradient-text bg-[length:300%_auto] block mt-2">نتائج مبهرة.</span>
-                </h1>
+                {{-- Dynamic Title --}}
+                <div id="heroTitleContainer" class="relative mb-8" style="min-height:180px;">
+                    @foreach($slidesData as $i => $slide)
+                    <div class="hero-title absolute w-full text-right" style="top:0;right:0;opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '30px' }});transition:opacity 0.8s ease,transform 0.8s ease;" data-title="{{ $i }}">
+                        <h1 class="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black leading-[0.85] tracking-tight">
+                            <span class="block text-ink">{{ $slide['title_line1'] }}</span>
+                            <span class="block mt-2" style="background:linear-gradient(135deg,{{ $slide['color'] }},{{ $slide['color'] }}cc);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;background-size:200% auto;">{{ $slide['title_line2'] }}</span>
+                        </h1>
+                    </div>
+                    @endforeach
+                </div>
 
-                <div id="heroPhraseContainer" class="relative mb-10 overflow-hidden" style="min-height:120px;">
+                {{-- Cycling Phrases --}}
+                <div id="heroPhraseContainer" class="relative mb-10 overflow-hidden" style="min-height:100px;">
                     @foreach($allPhrases as $i => $phrase)
                     <p class="hero-phrase text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-ink-dim font-bold leading-snug absolute w-full text-right"
                        style="top:0;right:0;opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '20px' }});transition:opacity 0.8s ease,transform 0.8s ease;"
@@ -104,24 +133,19 @@ $slideshowCats = $categories->filter(fn($c) => $c->products_count > 0)->shuffle(
                 </div>
 
                 <div class="flex gap-1.5 mt-10 justify-end">
-                    @for($i = 0; $i < 6; $i++)
+                    @for($i = 0; $i < min(count($allPhrases), 6); $i++)
                     <span class="phrase-dot block w-1.5 h-1.5 rounded-full transition-all duration-300 {{ $i === 0 ? 'bg-brand-500 w-6' : 'bg-ink-dim/20' }}"></span>
                     @endfor
                 </div>
             </div>
 
-            {{-- Left: Product Slideshow --}}
+            {{-- Product Slides --}}
             <div class="w-full lg:w-[55%] relative flex justify-center">
                 <div class="relative w-full max-w-lg">
-                    @foreach($slideshowCats as $index => $cat)
-                    @php
-                    $catProducts = \App\Models\Product::where('category_id', $cat->id)->where('status', 'active')->inRandomOrder()->take(2)->get();
-                    $main = $catProducts->first();
-                    if (!$main) { $main = $featuredProducts->first(); $catProducts = $featuredProducts->take(2); }
-                    if (!$main) continue;
-                    @endphp
+                    @foreach($slidesData as $index => $slide)
+                    @php $main = $slide['product']; $cat = $slide['category']; @endphp
                     <div class="hero-slide glass-panel rounded-3xl overflow-hidden p-3 {{ $index === 0 ? '' : 'hidden' }}" data-slide="{{ $index }}">
-                        <a href="{{ route('product.show', $main->slug) }}" class="block relative rounded-2xl overflow-hidden h-[340px] md:h-[400px] bg-surface-alt group">
+                        <a href="{{ route('product.show', $main->slug) }}" class="block relative rounded-2xl overflow-hidden bg-surface-alt group" style="height:380px;">
                             @if($main->main_image_url)
                             <img src="{{ $main->main_image_url }}" alt="{{ $main->name_ar }}"
                                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="{{ $index === 0 ? 'eager' : 'lazy' }}">
@@ -129,17 +153,15 @@ $slideshowCats = $categories->filter(fn($c) => $c->products_count > 0)->shuffle(
                             <div class="w-full h-full flex items-center justify-center"><i class="fa-solid fa-flask text-5xl text-ink-dim/15"></i></div>
                             @endif
                             <div class="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-surface/95 via-surface/70 to-transparent">
-                                <span class="inline-block px-2.5 py-1 rounded-full bg-brand-500 text-white text-[11px] font-bold mb-2">{{ $cat->display_name ?? $cat->name_ar }}</span>
+                                @if($cat)<span class="inline-block px-2.5 py-1 rounded-full text-white text-[11px] font-bold mb-2" style="background:{{ $slide['color'] }};">{{ $cat->display_name ?? $cat->name_ar }}</span>@endif
                                 <h3 class="text-lg font-black text-white mb-1">{{ $main->name_ar }}</h3>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-brand-400 font-black">{{ number_format($main->final_b2c_price ?? $main->b2c_price, 0) }} ₪</span>
-                                    <span class="text-white/50 text-xs flex items-center gap-1">تفاصيل <i class="fa-solid fa-arrow-left"></i></span>
-                                </div>
+                                <span class="text-white/80 font-black text-xl">{{ number_format($main->final_b2c_price ?? $main->b2c_price, 0) }} ₪</span>
                             </div>
                         </a>
-                        @if($catProducts->count() > 1)
+                        @php $subProducts = \App\Models\Product::where('category_id', $cat->id)->where('status', 'active')->where('id', '!=', $main->id)->inRandomOrder()->take(2)->get(); @endphp
+                        @if($subProducts->isNotEmpty())
                         <div class="grid grid-cols-2 gap-2 mt-2">
-                            @foreach($catProducts as $sub)
+                            @foreach($subProducts as $sub)
                             <a href="{{ route('product.show', $sub->slug) }}" class="glass-panel rounded-xl overflow-hidden hover:-translate-y-1 transition-all duration-300">
                                 <div class="h-16 bg-surface-alt">
                                     @if($sub->main_image_url)<img src="{{ $sub->main_image_url }}" alt="" class="w-full h-full object-cover" loading="lazy">@endif
@@ -168,21 +190,20 @@ $slideshowCats = $categories->filter(fn($c) => $c->products_count > 0)->shuffle(
 <script>
 (function() {
     var phrases = document.querySelectorAll('.hero-phrase');
-    var dots = document.querySelectorAll('.phrase-dot');
+    var phraseDots = document.querySelectorAll('.phrase-dot');
+    var titles = document.querySelectorAll('.hero-title');
     var slides = document.querySelectorAll('.hero-slide');
     var totalP = phrases.length;
     var totalS = slides.length;
-    var currentP = 0;
-    var currentS = 0;
-    var pInterval, sInterval;
+    var currentP = 0, currentS = 0, pInterval, sInterval;
 
     function showPhrase(idx) {
         phrases.forEach(function(p, i) {
             p.style.opacity = i === idx ? '1' : '0';
-            p.style.transform = i === idx ? 'translateY(0)' : 'translateY(16px)';
+            p.style.transform = i === idx ? 'translateY(0)' : 'translateY(20px)';
         });
-        dots.forEach(function(d, i) {
-            d.className = i === idx ? 'phrase-dot block w-5 h-1.5 rounded-full bg-brand-500 transition-all duration-300' : 'phrase-dot block w-1.5 h-1.5 rounded-full bg-ink-dim/20 transition-all duration-300';
+        phraseDots.forEach(function(d, i) {
+            d.className = i === idx % phraseDots.length ? 'phrase-dot block w-6 h-1.5 rounded-full bg-brand-500 transition-all duration-300' : 'phrase-dot block w-1.5 h-1.5 rounded-full bg-ink-dim/20 transition-all duration-300';
         });
         currentP = idx;
     }
@@ -191,6 +212,10 @@ $slideshowCats = $categories->filter(fn($c) => $c->products_count > 0)->shuffle(
         slides.forEach(function(s) { s.classList.add('hidden'); });
         var s = document.querySelector('.hero-slide[data-slide="' + idx + '"]');
         if (s) s.classList.remove('hidden');
+        titles.forEach(function(t, i) {
+            t.style.opacity = i === idx ? '1' : '0';
+            t.style.transform = i === idx ? 'translateY(0)' : 'translateY(30px)';
+        });
         currentS = idx;
     }
 
@@ -200,7 +225,7 @@ $slideshowCats = $categories->filter(fn($c) => $c->products_count > 0)->shuffle(
     pInterval = setInterval(nextPhrase, 4000);
     if (totalS > 1) sInterval = setInterval(nextSlide, 6000);
 
-    document.querySelectorAll('.hero-slide').forEach(function(s) {
+    slides.forEach(function(s) {
         s.addEventListener('mouseenter', function() { clearInterval(sInterval); });
         s.addEventListener('mouseleave', function() { if (totalS > 1) sInterval = setInterval(nextSlide, 6000); });
     });
