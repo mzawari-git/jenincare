@@ -195,8 +195,6 @@ if (!empty($slideProductIds)) {
                             @else
                             <div class="w-full h-full flex items-center justify-center"><i class="fa-solid fa-flask text-5xl text-ink-dim/15"></i></div>
 @endif
-
-<div class="flex flex-col">
                             <div class="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-surface/95 via-surface/70 to-transparent">
                                 @if($cat)<span class="inline-block px-2.5 py-1 rounded-full text-white text-[11px] font-bold mb-2" style="background:{{ $slide['color'] }};">{{ $cat->display_name ?? $cat->name_ar }}</span>@endif
                                 <h3 class="text-lg font-black text-white mb-1">{{ $main->name_ar }}</h3>
@@ -295,6 +293,8 @@ if (!empty($slideProductIds)) {
     });
 })();
 </script>
+
+<div class="flex flex-col">
 
 {{-- ═══════════════════════════════════════════════════════════════
       SECTION 2: Categories — All Categories Centered
