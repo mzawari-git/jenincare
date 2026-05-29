@@ -86,10 +86,10 @@ $slideshowCats = $categories->filter(fn($c) => $c->products_count > 0)->shuffle(
                     <span class="gradient-text bg-[length:300%_auto] block mt-2">نتائج مبهرة.</span>
                 </h1>
 
-                <div id="heroPhraseContainer" class="relative h-24 md:h-20 mb-10 overflow-hidden">
+                <div id="heroPhraseContainer" class="relative mb-10 overflow-hidden" style="min-height:120px;">
                     @foreach($allPhrases as $i => $phrase)
-                    <p class="hero-phrase text-xl md:text-2xl text-ink-dim max-w-xl font-light leading-relaxed absolute w-full text-right"
-                       style="top:0;right:0;opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '16px' }});transition:opacity 0.7s ease,transform 0.7s ease;"
+                    <p class="hero-phrase text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-ink-dim font-bold leading-snug absolute w-full text-right"
+                       style="top:0;right:0;opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '20px' }});transition:opacity 0.8s ease,transform 0.8s ease;"
                        data-phrase="{{ $i }}">{{ $phrase }}</p>
                     @endforeach
                 </div>
