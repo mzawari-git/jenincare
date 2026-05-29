@@ -33,8 +33,16 @@
     </div>
 </section>
 
+<style>
+    @media (max-width: 1023px) {
+        .shop-wrapper {
+            flex-direction: column-reverse !important;
+        }
+    }
+</style>
+
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20">
-    <div class="flex flex-col-reverse lg:flex-row gap-8">
+    <div class="shop-wrapper flex flex-col-reverse lg:flex-row gap-8">
 
         {{-- Sidebar Filters --}}
         @if(isset($categories))
