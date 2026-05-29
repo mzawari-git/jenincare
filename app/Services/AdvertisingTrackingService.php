@@ -13,7 +13,7 @@ class AdvertisingTrackingService
     private bool $trackingEnabled;
     private bool $testMode;
     private bool $asyncMode;
-    private bool $gdprOptOut;
+    private bool $gdprOptOut = false;
 
     private bool $fbPixelEnabled;
     private bool $fbCapiEnabled;
