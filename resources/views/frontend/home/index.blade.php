@@ -32,8 +32,61 @@
 @section('content')
 
 {{-- ═══════════════════════════════════════════════════════════════
-     SECTION 1: HERO — Dark Sci-Fi Immersive Experience
+     SECTION 1: HERO — Professional Slideshow
      ═══════════════════════════════════════════════════════════════ --}}
+@php
+$heroPhrases = [
+    'beauty' => [
+        'لمسات ساحرة تبدأ بمنتجات استثنائية... اختاري الأفضل مع جنين.',
+        'جودة لا تُضاهى لجمال يدوم... مستحضرات صُممت لتبرز إشراقتكِ.',
+        'ألوان غنية وتركيبات آمنة، لتجربة جمال تفوق التوقعات.',
+        'سر الإطلالة المثالية يبدأ من هنا... دعي الجودة تتحدث عنكِ.',
+        'منتجات أصلية 100%... لأن بشرتك تستحق الأفضل دائماً.',
+        'اكتشفي أسرار الجمال مع أفخر الماركات العالمية الأصلية.',
+    ],
+    'devices' => [
+        'أحدث التقنيات العالمية بين يديكِ، لنتائج احترافية تبهر عملائكِ.',
+        'ارتقي بمستوى خدماتكِ مع أجهزة الجيل الجديد من جنين للتجميل.',
+        'دقة الأداء، وسرعة النتائج... التكنولوجيا الذكية في خدمة الجمال.',
+        'استثمري في نجاحكِ مع أجهزة صُممت لتدوم وتقدم الأفضل.',
+        'أجهزة احترافية متطورة... لأن التميز هو معيارنا الوحيد.',
+    ],
+    'salon' => [
+        'من التصميم إلى التنفيذ... نجهز صالونكِ ليكون وجهة الفخامة الأولى.',
+        'أثاث عصري ومعدات متكاملة، نبني لكِ مساحة تعكس رقي أعمالكِ.',
+        'راحة لعملائكِ وتميز لمشروعكِ، مع حلول جنين الشاملة لتجهيز الصالونات.',
+        'لا تساومي على أناقة مكانكِ... دعينا نصنع لكِ صالون أحلامكِ.',
+        'صالونكِ المتكامل... من الفكرة إلى الواقع مع خبراء جنين للتجميل.',
+    ],
+    'general' => [
+        'جنين للتجميل: خيار المحترفين الأول.',
+        'كل ما يخص عالم الجمال والأناقة... تحت سقف واحد.',
+        'شريككِ الموثوق لرحلة نجاح وتألق مستمرة.',
+        'جودة نثق بها، وخدمة تلبي تطلعاتكم.',
+        'منتجات أصلية، أجهزة احترافية، تجهيز متكامل... في مكان واحد.',
+    ],
+];
+$phraseCat = array_rand($heroPhrases);
+$phrase = $heroPhrases[$phraseCat][array_rand($heroPhrases[$phraseCat])];
+$fallbackTitle = match($phraseCat) {
+    'beauty' => 'جمالكِ<br><span class="gradient-text bg-[length:200%_auto]">أولاً.</span>',
+    'devices' => 'تقنيات<br><span class="gradient-text bg-[length:200%_auto]">الثورة.</span>',
+    'salon' => 'صالونكِ<br><span class="gradient-text bg-[length:200%_auto]">المثالي.</span>',
+    'general' => 'جنين<br><span class="gradient-text bg-[length:200%_auto]">للتجميل.</span>',
+};
+$fallbackBadge = match($phraseCat) {
+    'beauty' => 'مستحضرات أصلية',
+    'devices' => 'أجهزة احترافية',
+    'salon' => 'تجهيز الصالونات',
+    'general' => 'الحل المتكامل',
+};
+$fallbackBtn = match($phraseCat) {
+    'beauty' => 'تسوقي الآن',
+    'devices' => 'اكتشفي الأجهزة',
+    'salon' => 'صممي صالونك',
+    'general' => 'ابدئي الآن',
+};
+@endphp
 <section id="hero" class="relative min-h-screen flex items-center justify-center overflow-hidden">
 
     {{-- Background Image + Gradient Overlay --}}
@@ -48,143 +101,90 @@
         @if($slides->isNotEmpty())
             @php $slide = $slides->first(); @endphp
             <div class="flex flex-col lg:flex-row items-center justify-between gap-12">
-
-                {{-- Right: Text Content (RTL) --}}
                 <div class="w-full lg:w-1/2 text-right">
-                    {{-- System Status Badge --}}
-                    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 glass-panel mb-6">
-                        <span class="w-2 h-2 rounded-full bg-brand-500 shadow-neon animate-pulse"></span>
-                        <span class="text-xs tracking-widest text-white/80 uppercase font-bold">
-                            {{ $slide->badge_text_ar ?: 'V 4.0 Online' }}
+                    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-500/20 bg-brand-500/5 mb-6">
+                        <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse shadow-neon"></span>
+                        <span class="text-xs tracking-widest text-brand-500 uppercase font-bold">
+                            {{ $slide->badge_text_ar ?: $fallbackBadge }}
                         </span>
                     </div>
-
-                    {{-- Main Heading --}}
-                    <h1 class="text-5xl md:text-7xl lg:text-8xl font-black mb-6 leading-none tracking-tighter">
+                    <h1 class="text-4xl md:text-6xl lg:text-7xl font-black mb-6 leading-tight tracking-tight">
                         @if($slide->title_ar)
-                            <span class="text-white">{!! nl2br(e($slide->title_ar)) !!}</span>
+                            <span class="text-ink">{!! nl2br(e($slide->title_ar)) !!}</span>
                         @else
-                            <span class="text-white">جمالك</span><br>
-                            <span class="gradient-text bg-[length:200%_auto]">المُحوسب.</span>
+                            <span class="text-ink">{!! $fallbackTitle !!}</span>
                         @endif
                     </h1>
-
-                    {{-- Description --}}
                     <p class="text-lg md:text-xl text-ink-dim mb-10 max-w-lg font-light leading-relaxed">
-                        {{ $slide->description_ar ?: 'اكتشفي أرقى منتجات العناية بالبشرة والشعر من الماركات العالمية الأصلية. مختارة بعناية لتبرز جمالك الطبيعي.' }}
+                        {{ $slide->description_ar ?: $phrase }}
                     </p>
-
-                    {{-- CTA Buttons --}}
                     <div class="flex items-center gap-6 flex-wrap">
-                        <a href="{{ $slide->button_url ?? route('shop') }}"
-                           class="group relative px-8 py-4 rounded-full overflow-hidden bg-white text-surface font-black tracking-wide inline-flex items-center gap-2">
-                            <span class="relative z-10">{{ $slide->button_text_ar ?: 'تسوقي الآن' }} <i class="fa-solid fa-arrow-left mr-2"></i></span>
-                            <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style="background: var(--gradient-primary);"></div>
-                            <span class="relative z-10 opacity-0 group-hover:opacity-100 absolute inset-0 flex items-center justify-center text-white transition-opacity duration-500">{{ $slide->button_text_ar ?: 'تسوقي الآن' }} <i class="fa-solid fa-arrow-left mr-2"></i></span>
+                        <a href="{{ $slide->button_url ?? route('shop') }}" class="group relative px-8 py-4 rounded-full overflow-hidden font-black tracking-wide inline-flex items-center gap-2 shadow-neon hover:shadow-neon-strong transition-all" style="background:var(--gradient-primary);color:#fff;">
+                            <span class="relative z-10">{{ $slide->button_text_ar ?: $fallbackBtn }} <i class="fa-solid fa-arrow-left mr-2"></i></span>
                         </a>
-                        <a href="{{ route('shop') }}?sort=newest"
-                           class="text-white/60 hover:text-white border-b border-white/15 pb-1 hover:border-brand-500 transition-all font-bold text-sm">
+                        <a href="{{ route('shop') }}?sort=newest" class="text-ink-dim hover:text-brand-500 border-b border-ink-dim/20 pb-1 hover:border-brand-500 transition-all font-bold text-sm">
                             استكشاف المنتجات
                         </a>
                     </div>
                 </div>
-
-                {{-- Left: Hologram / Scanner Visual --}}
                 <div class="w-full lg:w-1/2 relative flex justify-center mt-8 lg:mt-0">
-                    <div class="relative w-[280px] h-[400px] md:w-[380px] md:h-[520px] rounded-[2.5rem] border border-white/5 glass-panel overflow-hidden group">
-
-                        {{-- Scanner Line Animation --}}
+                    <div class="relative w-[280px] h-[400px] md:w-[380px] md:h-[520px] rounded-3xl glass-panel overflow-hidden group border-2 border-brand-500/10">
                         <div class="scanner-line"></div>
-
-                        {{-- Main Image --}}
                         @if($slide->image_url)
                             <img src="{{ $slide->image_url }}" alt="{{ $slide->title_ar ?? '' }}"
-                                 class="w-full h-full object-cover filter grayscale sepia-[.1] hue-rotate-[170deg] opacity-60 group-hover:opacity-90 transition-opacity duration-700"
-                                 loading="eager">
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="eager">
                         @elseif($slide->product && $slide->product->main_image_url)
                             <img src="{{ $slide->product->main_image_url }}" alt="{{ $slide->product->name_ar }}"
-                                 class="w-full h-full object-cover filter grayscale sepia-[.1] hue-rotate-[170deg] opacity-60 group-hover:opacity-90 transition-opacity duration-700"
-                                 loading="eager">
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="eager">
                         @elseif($featuredProducts->isNotEmpty())
                             <img src="{{ $featuredProducts->first()->main_image_url }}" alt=""
-                                 class="w-full h-full object-cover filter grayscale sepia-[.1] hue-rotate-[170deg] opacity-60 group-hover:opacity-90 transition-opacity duration-700"
-                                 loading="eager">
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="eager">
                         @else
-                            <div class="w-full h-full flex items-center justify-center">
-                                <i class="fa-solid fa-flask text-6xl text-white/10"></i>
+                            <div class="w-full h-full flex items-center justify-center bg-surface-alt">
+                                <i class="fa-solid fa-flask text-6xl text-ink-dim/10"></i>
                             </div>
                         @endif
-
-                        {{-- Grid Overlay --}}
-                        <div class="absolute inset-0 bg-grid opacity-40 pointer-events-none"></div>
-
-                        {{-- Floating HUD Nodes --}}
-                        <div class="absolute top-[20%] right-4 bg-black/80 border border-brand-500/30 text-brand-500 text-[10px] px-3 py-1.5 rounded-full font-mono animate-float-slow backdrop-blur-md">
-                            <i class="fa-solid fa-droplet mr-1"></i> تحليل البشرة: نشط
-                        </div>
-                        <div class="absolute bottom-[25%] left-4 bg-black/80 border border-accent-500/30 text-accent-500 text-[10px] px-3 py-1.5 rounded-full font-mono animate-float-fast backdrop-blur-md">
-                            <i class="fa-solid fa-shield-halved mr-1"></i> أصلي 100%
-                        </div>
-                        <div class="absolute top-[55%] left-2 md:left-6 bg-black/80 border border-white/10 text-white/60 text-[10px] px-3 py-1.5 rounded-full font-mono animate-float-slow backdrop-blur-md" style="animation-delay: 2s;">
-                            <i class="fa-solid fa-box mr-1"></i> شحن سريع
-                        </div>
-
-                        {{-- Center Target Ping --}}
-                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-14 h-14 border border-white/10 rounded-full flex items-center justify-center">
-                            <div class="w-1.5 h-1.5 bg-brand-500 rounded-full animate-ping-neon shadow-neon-strong"></div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-surface/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 border-2 border-brand-500/20 rounded-full flex items-center justify-center">
+                            <div class="w-2 h-2 bg-brand-500 rounded-full animate-ping-neon shadow-neon-strong"></div>
                         </div>
                     </div>
                 </div>
             </div>
         @else
-            {{-- Fallback: No slides --}}
             <div class="flex flex-col lg:flex-row items-center justify-between gap-12">
                 <div class="w-full lg:w-1/2 text-right">
-                    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 glass-panel mb-6">
-                        <span class="w-2 h-2 rounded-full bg-brand-500 shadow-neon animate-pulse"></span>
-                        <span class="text-xs tracking-widest text-white/80 uppercase font-bold">V 4.0 Online</span>
+                    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-500/20 bg-brand-500/5 mb-6">
+                        <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse shadow-neon"></span>
+                        <span class="text-xs tracking-widest text-brand-500 uppercase font-bold">{{ $fallbackBadge }}</span>
                     </div>
-                    <h1 class="text-5xl md:text-7xl lg:text-8xl font-black mb-6 leading-none tracking-tighter">
-                        <span class="text-white">جمالك</span><br>
-                        <span class="gradient-text bg-[length:200%_auto]">المُحوسب.</span>
+                    <h1 class="text-4xl md:text-6xl lg:text-7xl font-black mb-6 leading-tight tracking-tight">
+                        <span class="text-ink">{!! $fallbackTitle !!}</span>
                     </h1>
-                    <p class="text-lg md:text-xl text-ink-dim mb-10 max-w-lg font-light leading-relaxed">
-                        اكتشفي أرقى منتجات العناية بالبشرة والشعر من الماركات العالمية الأصلية. مختارة بعناية لتبرز جمالك الطبيعي.
-                    </p>
+                    <p class="text-lg md:text-xl text-ink-dim mb-10 max-w-lg font-light leading-relaxed">{{ $phrase }}</p>
                     <div class="flex items-center gap-6 flex-wrap">
-                        <a href="{{ route('shop') }}"
-                           class="group relative px-8 py-4 rounded-full overflow-hidden bg-white text-surface font-black tracking-wide inline-flex items-center gap-2">
-                            <span class="relative z-10">تسوقي الآن <i class="fa-solid fa-arrow-left mr-2"></i></span>
-                            <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style="background: var(--gradient-primary);"></div>
-                            <span class="relative z-10 opacity-0 group-hover:opacity-100 absolute inset-0 flex items-center justify-center text-white transition-opacity duration-500">تسوقي الآن <i class="fa-solid fa-arrow-left mr-2"></i></span>
+                        <a href="{{ route('shop') }}" class="group relative px-8 py-4 rounded-full overflow-hidden font-black tracking-wide inline-flex items-center gap-2 shadow-neon hover:shadow-neon-strong transition-all" style="background:var(--gradient-primary);color:#fff;">
+                            <span class="relative z-10">{{ $fallbackBtn }} <i class="fa-solid fa-arrow-left mr-2"></i></span>
                         </a>
-                        <a href="{{ route('shop') }}?sort=newest"
-                           class="text-white/60 hover:text-white border-b border-white/15 pb-1 hover:border-brand-500 transition-all font-bold text-sm">
+                        <a href="{{ route('shop') }}?sort=newest" class="text-ink-dim hover:text-brand-500 border-b border-ink-dim/20 pb-1 hover:border-brand-500 transition-all font-bold text-sm">
                             استكشاف المنتجات
                         </a>
                     </div>
                 </div>
                 <div class="w-full lg:w-1/2 relative flex justify-center mt-8 lg:mt-0">
-                    <div class="relative w-[280px] h-[400px] md:w-[380px] md:h-[520px] rounded-[2.5rem] border border-white/5 glass-panel overflow-hidden group">
+                    <div class="relative w-[280px] h-[400px] md:w-[380px] md:h-[520px] rounded-3xl glass-panel overflow-hidden group border-2 border-brand-500/10">
                         <div class="scanner-line"></div>
                         @if($featuredProducts->isNotEmpty() && $featuredProducts->first()->main_image_url)
                             <img src="{{ $featuredProducts->first()->main_image_url }}" alt=""
-                                 class="w-full h-full object-cover filter grayscale sepia-[.1] hue-rotate-[170deg] opacity-60 group-hover:opacity-90 transition-opacity duration-700"
-                                 loading="eager">
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="eager">
                         @else
-                            <div class="w-full h-full flex items-center justify-center">
-                                <i class="fa-solid fa-flask text-6xl text-white/10"></i>
+                            <div class="w-full h-full flex items-center justify-center bg-surface-alt">
+                                <i class="fa-solid fa-flask text-6xl text-ink-dim/10"></i>
                             </div>
                         @endif
-                        <div class="absolute inset-0 bg-grid opacity-40 pointer-events-none"></div>
-                        <div class="absolute top-[20%] right-4 bg-black/80 border border-brand-500/30 text-brand-500 text-[10px] px-3 py-1.5 rounded-full font-mono animate-float-slow backdrop-blur-md">
-                            <i class="fa-solid fa-droplet mr-1"></i> تحليل البشرة: نشط
-                        </div>
-                        <div class="absolute bottom-[25%] left-4 bg-black/80 border border-accent-500/30 text-accent-500 text-[10px] px-3 py-1.5 rounded-full font-mono animate-float-fast backdrop-blur-md">
-                            <i class="fa-solid fa-shield-halved mr-1"></i> أصلي 100%
-                        </div>
-                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-14 h-14 border border-white/10 rounded-full flex items-center justify-center">
-                            <div class="w-1.5 h-1.5 bg-brand-500 rounded-full animate-ping-neon shadow-neon-strong"></div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-surface/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 border-2 border-brand-500/20 rounded-full flex items-center justify-center">
+                            <div class="w-2 h-2 bg-brand-500 rounded-full animate-ping-neon shadow-neon-strong"></div>
                         </div>
                     </div>
                 </div>
@@ -194,8 +194,8 @@
 
     {{-- Scroll Indicator --}}
     <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 opacity-40">
-        <span class="text-[10px] uppercase tracking-[0.3em] text-white/50">مرر</span>
-        <div class="w-px h-12 bg-gradient-to-b from-white/30 to-transparent"></div>
+        <span class="text-[10px] uppercase tracking-[0.3em] text-ink-dim">مرر</span>
+        <div class="w-px h-12 bg-gradient-to-b from-ink-dim/30 to-transparent"></div>
     </div>
 </section>
 
