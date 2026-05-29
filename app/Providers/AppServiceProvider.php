@@ -146,6 +146,10 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(MetaCapiService::class)
             );
         });
+
+        if (class_exists(\Laravel\Pulse\PulseServiceProvider::class)) {
+            $this->app->register(\Laravel\Pulse\PulseServiceProvider::class);
+        }
     }
 
     public function boot(): void
