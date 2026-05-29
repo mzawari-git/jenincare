@@ -81,7 +81,7 @@ $allPhrases = [
 // Product slides with matching titles
 $slidesData = [];
 $slideProductIds = [];
-$catIds = $categories->filter(fn($c) => $c->products_count > 0)->shuffle()->take(5);
+$catIds = $categories->filter(fn($c) => $c->products_count > 0)->shuffle()->take(8);
 foreach ($catIds as $cat) {
     $p = \App\Models\Product::where('category_id', $cat->id)->where('status', 'active')->inRandomOrder()->first();
     if (!$p) continue;
@@ -137,7 +137,7 @@ if (!empty($slideProductIds)) {
                 {{-- Logo — clean, no border --}}
                 <div class="mb-8 flex justify-center">
                     @if(!empty($siteSettings['site_logo_url']))
-                    <img src="{{ $siteSettings['site_logo_url'] }}" alt="جنين للتجميل" class="h-16 md:h-20 w-auto object-contain drop-shadow-lg">
+                    <img src="{{ $siteSettings['site_logo_url'] }}" alt="جنين للتجميل" class="h-12 md:h-16 w-auto object-contain drop-shadow-lg">
                     @else
                     <span class="text-2xl md:text-3xl tracking-wider text-white font-black" style="letter-spacing:0.12em;">جنين للتجميل</span>
                     @endif
@@ -175,10 +175,10 @@ if (!empty($slideProductIds)) {
                 </div>
 
                 {{-- Phrase dots — centered --}}
-                <div class="flex gap-1.5 justify-center">
-                    @for($i = 0; $i < min(count($allPhrases), 6); $i++)
+                <div class="flex gap-1.5 justify-center flex-wrap">
+                    @foreach($allPhrases as $i => $phrase)
                     <span class="phrase-dot block w-1.5 h-1.5 rounded-full transition-all duration-300 {{ $i === 0 ? 'bg-white/90 w-5' : 'bg-white/15' }}"></span>
-                    @endfor
+                    @endforeach
                 </div>
             </div>
 
