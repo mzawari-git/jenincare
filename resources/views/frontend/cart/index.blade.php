@@ -133,6 +133,39 @@
                 <span class="flex items-center gap-1"><i class="ph ph-arrow-counter-clockwise text-amber-400"></i> استرجاع سهل</span>
             </div>
         </div>
+
+        @php
+        $cartCategoryIds = $cart->items->pluck('product.category_id')->unique()->take(4);
+        $relatedProducts = \App\Models\Product::where('status', 'active')
+            ->whereIn('category_id', $cartCategoryIds)
+            ->whereNotIn('id', $cart->items->pluck('product_id'))
+            ->inRandomOrder()->take(8)->get();
+        @endphp
+        @if($relatedProducts->isNotEmpty())
+        <div class="mt-16">
+            <div class="text-center mb-8">
+                <h3 class="text-xl font-black text-ink mb-2">قد يعجبك أيضاً</h3>
+                <p class="text-ink-dim text-sm">منتجات مقترحة من نفس الأقسام التي تهمك</p>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                @foreach($relatedProducts as $rp)
+                <a href="{{ route('product.show', $rp->slug) }}" class="glass-panel rounded-xl overflow-hidden group hover:-translate-y-1 transition-all duration-300">
+                    <div class="h-36 bg-surface-alt overflow-hidden">
+                        @if($rp->main_image_url)
+                        <img src="{{ $rp->main_image_url }}" alt="{{ $rp->name_ar }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                        @else
+                        <div class="w-full h-full flex items-center justify-center"><i class="fa-solid fa-box text-3xl text-ink-dim/15"></i></div>
+                        @endif
+                    </div>
+                    <div class="p-3 text-center">
+                        <p class="text-xs font-bold text-ink truncate mb-1">{{ $rp->name_ar }}</p>
+                        <span class="text-brand-500 font-bold text-sm">{{ number_format($rp->final_b2c_price ?? $rp->b2c_price, 0) }} ₪</span>
+                    </div>
+                </a>
+                @endforeach
+            </div>
+        </div>
+        @endif
     </div>
     @else
     <div class="text-center max-w-md mx-auto py-16">

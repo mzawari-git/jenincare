@@ -82,7 +82,7 @@
                         <div>
                             <label class="block mb-1.5 font-semibold text-sm text-white">المدينة <span class="text-red-400">*</span></label>
                             <select name="shipping_city" required
-                                class="w-full px-4 py-3 border border-white/10 bg-white/5 text-white rounded-xl text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none transition-all cursor-pointer [&>option]:bg-surface-alt [&>option]:text-white">
+                                 class="w-full px-4 py-3 border border-white/10 bg-white/5 text-white rounded-xl text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none transition-all cursor-pointer [&>option]:bg-white [&>option]:text-black">
                                 <option value="">اختر المدينة</option>
                                 @foreach(['رام الله','نابلس','الخليل','بيت لحم','جنين','طولكرم','قلقيلية','طوباس','سلفيت','القدس','أريحا','غزة'] as $city)
                                 <option value="{{ $city }}" {{ old('shipping_city') == $city ? 'selected' : '' }}>{{ $city }}</option>
