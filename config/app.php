@@ -48,8 +48,8 @@ return [
         Illuminate\View\ViewServiceProvider::class,
         App\Providers\AppServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-        App\Providers\HorizonServiceProvider::class,
-        Laravel\Pulse\PulseServiceProvider::class,
+        class_exists(\Laravel\Horizon\HorizonServiceProvider::class) ? App\Providers\HorizonServiceProvider::class : null,
+        class_exists(\Laravel\Pulse\PulseServiceProvider::class) ? Laravel\Pulse\PulseServiceProvider::class : null,
     ],
     'aliases' => Illuminate\Support\Facades\Facade::defaultAliases()->merge([
     ])->toArray(),
