@@ -273,7 +273,7 @@ if (empty($slidesData) && $featuredProducts->isNotEmpty()) {
 {{-- ═══════════════════════════════════════════════════════════════
      SECTION 3: Trust Bar — Social Proof & Quick Stats
      ═══════════════════════════════════════════════════════════════ --}}
-<section class="py-12 border-b border-white/5">
+<section class="py-12 border-b border-ink/10">
     <div class="max-w-7xl mx-auto px-4">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <div class="glass-panel rounded-2xl p-6">
