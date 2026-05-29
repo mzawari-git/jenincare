@@ -88,7 +88,7 @@
             <div class="lg:col-span-5 text-right">
                 <div class="flex items-center gap-3 mb-6 justify-end">
                     @if(!empty($siteSettings['site_logo_url']))
-                        <img src="{{ $siteSettings['site_logo_url'] }}" alt="{{ $siteSettings['site_name'] ?? 'JeniCare' }}" class="h-10 w-auto object-contain brightness-0 invert">
+                        <img src="{{ $siteSettings['site_logo_url'] }}" alt="{{ $siteSettings['site_name'] ?? 'JeniCare' }}" class="h-10 w-auto object-contain">
                     @else
                         <span class="text-3xl font-extrabold tracking-tight text-white">{{ $siteSettings['site_name'] ?? 'JeniCare' }}<span class="text-brand-500">.</span></span>
                     @endif

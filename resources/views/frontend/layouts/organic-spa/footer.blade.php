@@ -36,7 +36,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 mb-12">
             <div class="lg:col-span-5 text-right">
                 <div class="flex items-center gap-3 mb-6 justify-end">
-                    @if(!empty($siteSettings['site_logo_url']))<img src="{{ $siteSettings['site_logo_url'] }}" alt="{{ $siteSettings['site_name'] ?? 'JeniCare' }}" class="h-10 w-auto object-contain brightness-0 invert">@else<span class="text-3xl font-extrabold text-white">{{ $siteSettings['site_name'] ?? 'JeniCare' }}<span class="text-brand-500">.</span></span>@endif
+                    @if(!empty($siteSettings['site_logo_url']))<img src="{{ $siteSettings['site_logo_url'] }}" alt="{{ $siteSettings['site_name'] ?? 'JeniCare' }}" class="h-10 w-auto object-contain">@else<span class="text-3xl font-extrabold text-white">{{ $siteSettings['site_name'] ?? 'JeniCare' }}<span class="text-brand-500">.</span></span>@endif
                 </div>
                 <p class="text-ink-dim text-sm leading-relaxed mb-6 max-w-md ml-auto">{{ $siteSettings['site_description'] ?? 'وجهتك الفاخرة لمنتجات العناية الطبيعية.' }}</p>
                 <div class="flex gap-4 justify-end">

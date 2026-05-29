@@ -21,7 +21,7 @@
             {{-- Logo --}}
             <a href="{{ route('home') }}" class="flex items-center gap-2 text-xl font-black tracking-tight flex-shrink-0" style="color: var(--ink);">
                 @if(!empty($siteSettings['site_logo_url']))
-                    <img src="{{ $siteSettings['site_logo_url'] }}" alt="{{ $siteSettings['site_name'] ?? 'JeniCare' }}" class="h-9 w-auto object-contain brightness-0 invert">
+                    <img src="{{ $siteSettings['site_logo_url'] }}" alt="{{ $siteSettings['site_name'] ?? 'JeniCare' }}" class="h-9 w-auto object-contain">
                 @else
                     {{ $siteSettings['site_name_ar'] ?? $siteSettings['site_name'] ?? 'JeniCare' }}<span class="text-brand-500">.</span>
                 @endif
