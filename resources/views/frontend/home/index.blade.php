@@ -113,6 +113,34 @@ $allPhrases = [
     'نعيد تعريف الجمال في فلسطين... جودة عالمية بأيدٍ محلية.',
 ];
 
+// Hero two-line headlines (independent from product slides)
+$heroHeadlines = [
+    ['line1' => 'منتجات أصلية 100%', 'line2' => 'جمال لا يُقاوم.'],
+    ['line1' => 'بشرتكِ تستحق الأفضل', 'line2' => 'اختاري من جنين.'],
+    ['line1' => 'أحدث الماركات العالمية', 'line2' => 'بين يديكِ الآن.'],
+    ['line1' => 'صالونكِ المثالي', 'line2' => 'فخامة متناهية.'],
+    ['line1' => 'تقنيات متطورة', 'line2' => 'نتائج احترافية.'],
+    ['line1' => 'تجهيزات متكاملة', 'line2' => 'لأفضل صالون.'],
+    ['line1' => 'جودة عالمية', 'line2' => 'خدمة محلية.'],
+    ['line1' => 'اكتشفي سر الإشراقة', 'line2' => 'مع منتجات جنين.'],
+    ['line1' => 'أجهزة احترافية', 'line2' => 'لمستقبل صالونكِ.'],
+    ['line1' => 'مستحضرات طبيعية', 'line2' => 'بنتائج مضمونة.'],
+    ['line1' => 'تألقي بثقة', 'line2' => 'كل يوم مع جنين.'],
+    ['line1' => 'شحن سريع', 'line2' => 'لكل فلسطين.'],
+    ['line1' => 'دفع عند الاستلام', 'line2' => 'ثقة وأمان.'],
+    ['line1' => 'أفضل الأسعار', 'line2' => 'لأجود المنتجات.'],
+    ['line1' => 'خبراء الجمال', 'line2' => 'يختارون لكِ.'],
+    ['line1' => 'روتين العناية', 'line2' => 'يتحول إلى سحر.'],
+    ['line1' => 'كل منتج يروي', 'line2' => 'قصة تميز.'],
+    ['line1' => 'استثمري في جمالكِ', 'line2' => 'واجني الثناء.'],
+    ['line1' => 'لمسة واحدة تكفي', 'line2' => 'لتغيير كل شيء.'],
+    ['line1' => 'جنين... وجهتكِ', 'line2' => 'لعالم الجمال.'],
+    ['line1' => 'إطلالة النجمات', 'line2' => 'في منزلكِ.'],
+    ['line1' => 'نبني لكِ قصة نجاح', 'line2' => 'من الصفر إلى القمة.'],
+    ['line1' => 'منتجات اخترناها', 'line2' => 'بكل حب ودقة.'],
+    ['line1' => 'نعيد تعريف الجمال', 'line2' => 'في فلسطين.'],
+];
+
 // Product slides with matching titles
 $slidesData = [];
 $slideProductIds = [];
@@ -178,23 +206,48 @@ if (!empty($slideProductIds)) {
                     @endif
                 </div>
 
-                {{-- Dynamic Title --}}
-                <div id="heroTitleContainer" class="relative mb-5 overflow-hidden" style="height:130px;">
-                    @foreach($slidesData as $i => $slide)
-                    <div class="hero-title absolute w-full text-center" style="top:0;left:0;opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '20px' }});transition:opacity 0.8s ease,transform 0.8s ease;pointer-events:{{ $i === 0 ? 'auto' : 'none' }};" data-title="{{ $i }}">
-                        <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-[1.05] tracking-tight">
-                            <span class="block" style="color:#ffffff;text-shadow:0 2px 10px rgba(255,255,255,0.1);">{{ $slide['title_line1'] }}</span>
-                            <span class="block mt-2" style="color:#ffffff;text-shadow:0 0 40px rgba(255,255,255,0.35),0 4px 8px rgba(0,0,0,0.3);">{{ $slide['title_line2'] }}</span>
-                        </h1>
+                {{-- Hero Title Rotator Card --}}
+                <div id="heroTitleContainer" class="relative mb-6">
+                    {{-- Card wrapper --}}
+                    <div class="relative overflow-hidden rounded-3xl p-6 sm:p-8" style="background:linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02));border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);box-shadow:0 8px 32px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.05);">
+                        {{-- Glow accent --}}
+                        <div class="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-20" style="background:radial-gradient(circle,var(--brand-500),transparent 70%);filter:blur(40px);"></div>
+                        <div class="absolute -bottom-20 -left-20 w-40 h-40 rounded-full opacity-10" style="background:radial-gradient(circle,#06b6d4,transparent 70%);filter:blur(40px);"></div>
+
+                        {{-- Badge --}}
+                        <div class="flex justify-center mb-4">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase" style="background:rgba(var(--brand-500-rgb,255,42,133),0.12);color:var(--brand-500);border:1px solid rgba(var(--brand-500-rgb,255,42,133),0.2);">
+                                <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
+                                عروض حصرية
+                            </span>
+                        </div>
+
+                        {{-- Rotating Headlines --}}
+                        <div class="relative overflow-hidden" style="height:110px;">
+                            @foreach($heroHeadlines as $i => $headline)
+                            <div class="hero-headline absolute w-full text-center" style="top:0;left:0;opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '24px' }});transition:opacity 0.7s cubic-bezier(0.4,0,0.2,1),transform 0.7s cubic-bezier(0.4,0,0.2,1);pointer-events:{{ $i === 0 ? 'auto' : 'none' }};" data-headline="{{ $i }}">
+                                <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black leading-[1.08] tracking-tight">
+                                    <span class="block" style="color:#ffffff;text-shadow:0 2px 12px rgba(255,255,255,0.12);">{{ $headline['line1'] }}</span>
+                                    <span class="block mt-1.5" style="color:#ffffff;text-shadow:0 0 30px rgba(255,255,255,0.25),0 4px 8px rgba(0,0,0,0.25);">{{ $headline['line2'] }}</span>
+                                </h1>
+                            </div>
+                            @endforeach
+                        </div>
+
+                        {{-- Headline dots --}}
+                        <div class="flex gap-1.5 justify-center mt-4 flex-wrap">
+                            @foreach($heroHeadlines as $i => $h)
+                            <span class="headline-dot block h-1 rounded-full transition-all duration-300 {{ $i === 0 ? 'bg-white/90 w-5' : 'bg-white/15 w-1' }}"></span>
+                            @endforeach
+                        </div>
                     </div>
-                    @endforeach
                 </div>
 
-                {{-- Cycling Phrases --}}
+                {{-- Cycling Marketing Phrases --}}
                 <div id="heroPhraseContainer" class="relative mb-6 overflow-hidden" style="height:64px;">
                     @foreach($allPhrases as $i => $phrase)
-                    <p class="hero-phrase text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold leading-snug absolute w-full text-center"
-                       style="top:0;left:0;color:rgba(255,255,255,0.85);text-shadow:0 2px 16px rgba(255,255,255,0.1);opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '16px' }});transition:opacity 0.8s ease,transform 0.8s ease;pointer-events:{{ $i === 0 ? 'auto' : 'none' }};"
+                    <p class="hero-phrase text-base sm:text-lg md:text-xl lg:text-2xl font-bold leading-snug absolute w-full text-center"
+                       style="top:0;left:0;color:rgba(255,255,255,0.75);text-shadow:0 2px 12px rgba(255,255,255,0.08);opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '14px' }});transition:opacity 0.7s ease,transform 0.7s ease;pointer-events:{{ $i === 0 ? 'auto' : 'none' }};"
                        data-phrase="{{ $i }}">{{ $phrase }}</p>
                     @endforeach
                 </div>
@@ -286,40 +339,64 @@ if (!empty($slideProductIds)) {
 
 <script>
 (function() {
+    // Headline rotator
+    var headlines = document.querySelectorAll('.hero-headline');
+    var headlineDots = document.querySelectorAll('.headline-dot');
+    var totalH = headlines.length;
+    var currentH = 0, hInterval;
+
+    function showHeadline(idx) {
+        headlines.forEach(function(h, i) {
+            h.style.opacity = i === idx ? '1' : '0';
+            h.style.transform = i === idx ? 'translateY(0)' : 'translateY(24px)';
+            h.style.pointerEvents = i === idx ? 'auto' : 'none';
+        });
+        headlineDots.forEach(function(d, i) {
+            d.className = i === idx ? 'headline-dot block h-1 rounded-full bg-white/90 w-5 transition-all duration-300' : 'headline-dot block h-1 rounded-full bg-white/15 w-1 transition-all duration-300';
+        });
+        currentH = idx;
+    }
+    function nextHeadline() { showHeadline((currentH + 1) % totalH); }
+    hInterval = setInterval(nextHeadline, 3500);
+
+    // Pause on hover over title card
+    var titleCard = document.getElementById('heroTitleContainer');
+    if (titleCard) {
+        titleCard.addEventListener('mouseenter', function() { clearInterval(hInterval); });
+        titleCard.addEventListener('mouseleave', function() { hInterval = setInterval(nextHeadline, 3500); });
+    }
+
+    // Phrase rotator
     var phrases = document.querySelectorAll('.hero-phrase');
     var phraseDots = document.querySelectorAll('.phrase-dot');
-    var titles = document.querySelectorAll('.hero-title');
-    var slides = document.querySelectorAll('.hero-slide');
     var totalP = phrases.length;
-    var totalS = slides.length;
-    var currentP = 0, currentS = 0, pInterval, sInterval;
+    var currentP = 0, pInterval;
 
     function showPhrase(idx) {
         phrases.forEach(function(p, i) {
             p.style.opacity = i === idx ? '1' : '0';
-            p.style.transform = i === idx ? 'translateY(0)' : 'translateY(16px)';
+            p.style.transform = i === idx ? 'translateY(0)' : 'translateY(14px)';
         });
         phraseDots.forEach(function(d, i) {
             d.className = i === idx % phraseDots.length ? 'phrase-dot block w-5 h-1.5 rounded-full bg-white/90 transition-all duration-300' : 'phrase-dot block w-1.5 h-1.5 rounded-full bg-white/15 transition-all duration-300';
         });
         currentP = idx;
     }
+    function nextPhrase() { showPhrase((currentP + 1) % totalP); }
+    pInterval = setInterval(nextPhrase, 4000);
+
+    // Slide rotator (products only, independent from titles)
+    var slides = document.querySelectorAll('.hero-slide');
+    var totalS = slides.length;
+    var currentS = 0, sInterval;
 
     function showSlide(idx) {
         slides.forEach(function(s) { s.classList.add('hidden'); });
         var s = document.querySelector('.hero-slide[data-slide="' + idx + '"]');
         if (s) s.classList.remove('hidden');
-        titles.forEach(function(t, i) {
-            t.style.opacity = i === idx ? '1' : '0';
-            t.style.transform = i === idx ? 'translateY(0)' : 'translateY(20px)';
-        });
         currentS = idx;
     }
-
-    function nextPhrase() { showPhrase((currentP + 1) % totalP); }
     function nextSlide() { showSlide((currentS + 1) % totalS); }
-
-    pInterval = setInterval(nextPhrase, 4000);
     if (totalS > 1) sInterval = setInterval(nextSlide, 6000);
 
     slides.forEach(function(s) {
