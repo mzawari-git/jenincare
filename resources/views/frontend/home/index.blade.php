@@ -194,7 +194,9 @@ if (!empty($slideProductIds)) {
                                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="{{ $index === 0 ? 'eager' : 'lazy' }}"{{ $index === 0 ? ' fetchpriority="high"' : '' }}>
                             @else
                             <div class="w-full h-full flex items-center justify-center"><i class="fa-solid fa-flask text-5xl text-ink-dim/15"></i></div>
-                            @endif
+@endif
+
+<div class="flex flex-col">
                             <div class="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-surface/95 via-surface/70 to-transparent">
                                 @if($cat)<span class="inline-block px-2.5 py-1 rounded-full text-white text-[11px] font-bold mb-2" style="background:{{ $slide['color'] }};">{{ $cat->display_name ?? $cat->name_ar }}</span>@endif
                                 <h3 class="text-lg font-black text-white mb-1">{{ $main->name_ar }}</h3>
@@ -295,10 +297,10 @@ if (!empty($slideProductIds)) {
 </script>
 
 {{-- ═══════════════════════════════════════════════════════════════
-     SECTION 2: Categories — All Categories Centered
+      SECTION 2: Categories — All Categories Centered
      ═══════════════════════════════════════════════════════════════ --}}
 @if($categories->isNotEmpty())
-<section class="py-16 bg-surface">
+<section class="py-16 bg-surface order-2 md:order-1">
     <div class="max-w-7xl mx-auto px-4">
         <div class="text-center mb-12">
             <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-500/20 bg-brand-500/5 mb-4">
@@ -335,7 +337,7 @@ if (!empty($slideProductIds)) {
 {{-- ═══════════════════════════════════════════════════════════════
      SECTION 3: Trust Bar — Social Proof & Quick Stats
      ═══════════════════════════════════════════════════════════════ --}}
-<section class="py-12 border-b border-ink/10">
+<section class="py-12 border-b border-ink/10 order-3 md:order-2">
     <div class="max-w-7xl mx-auto px-4">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <div class="glass-panel rounded-2xl p-6">
@@ -361,7 +363,7 @@ if (!empty($slideProductIds)) {
 {{-- ═══════════════════════════════════════════════════════════════
      SECTION 3: Brand USP — Optimized for Facebook & Google Ads
      ═══════════════════════════════════════════════════════════════ --}}
-<section class="py-16 relative overflow-hidden">
+<section class="py-16 relative overflow-hidden order-4 md:order-3">
     <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_50%,rgba(var(--brand-500-rgb,255,42,133),0.04),transparent_60%)] pointer-events-none"></div>
     <div class="max-w-7xl mx-auto px-4 relative z-10">
         <div class="text-center mb-14">
@@ -403,9 +405,9 @@ if (!empty($slideProductIds)) {
 </section>
 
 {{-- ═══════════════════════════════════════════════════════════════
-     SECTION 4: Why شركة جنين للتجميل? — Premium Value Cards
-     ═══════════════════════════════════════════════════════════════ --}}
-<section class="py-24 relative overflow-hidden">
+      SECTION 4: Why شركة جنين للتجميل? — Premium Value Cards
+      ═══════════════════════════════════════════════════════════════ --}}
+<section class="py-24 relative overflow-hidden order-5 md:order-4">
     <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_50%,rgba(var(--brand-500-rgb,255,42,133),0.03),transparent_70%)] pointer-events-none"></div>
     <div class="max-w-7xl mx-auto px-4 relative z-10">
         <div class="mb-16 text-center">
@@ -452,9 +454,9 @@ if (!empty($slideProductIds)) {
 </style>
 
 {{-- ═══════════════════════════════════════════════════════════════
-     SECTION 3: Product Lab — Asymmetric Grid
-     ═══════════════════════════════════════════════════════════════ --}}
-<section id="products" class="py-20 relative">
+      SECTION 3: Product Lab — Asymmetric Grid
+      ═══════════════════════════════════════════════════════════════ --}}
+<section id="products" class="py-20 relative order-1 md:order-5">
     <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_50%,rgba(var(--brand-500-rgb,255,42,133),0.04),transparent_60%)] pointer-events-none"></div>
     <div class="max-w-7xl mx-auto px-4 relative z-10">
         <div class="mb-16 text-center">
@@ -595,6 +597,8 @@ if (!empty($slideProductIds)) {
         @endif
     </div>
 </section>
+
+</div>
 
 {{-- ═══════════════════════════════════════════════════════════════
      SECTION 4: Tech Marquee Ticker
