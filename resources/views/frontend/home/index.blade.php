@@ -124,57 +124,60 @@ if (!empty($slideProductIds)) {
 <section id="hero" class="relative min-h-screen flex items-center justify-center overflow-hidden">
     <div class="absolute inset-0 z-0">
         <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop"
-             class="w-full h-full object-cover opacity-15 mix-blend-luminosity"
+             class="w-full h-full object-cover opacity-10 mix-blend-luminosity"
              alt="" aria-hidden="true" loading="eager" fetchpriority="high">
-        <div class="absolute inset-0 bg-gradient-to-b from-surface/60 via-surface/88 to-surface"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-[#1a0533] via-[#2d0a5c]/95 to-[#0f172a]/90"></div>
     </div>
 
-    <div class="relative z-10 w-full max-w-7xl mx-auto px-4 pt-28 md:pt-24 pb-8">
-        <div class="flex flex-col lg:flex-row items-center gap-6 lg:gap-10">
+    <div class="relative z-10 w-full max-w-7xl mx-auto px-4 pt-32 md:pt-28 pb-20 md:pb-28">
+        <div class="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
 
-            <div class="w-full lg:w-[45%] text-right">
-                <div class="flex items-center gap-2 px-6 py-4 rounded-full border border-white/25 bg-white/10 mb-5 w-full" style="backdrop-filter:blur(20px);justify-content:center;">
+            <div class="w-full lg:w-[45%] text-center">
+
+                {{-- Logo — clean, no border --}}
+                <div class="mb-8 flex justify-center">
                     @if(!empty($siteSettings['site_logo_url']))
-                    <img src="{{ $siteSettings['site_logo_url'] }}" alt="جنين للتجميل" class="h-24 md:h-32 w-auto object-contain">
+                    <img src="{{ $siteSettings['site_logo_url'] }}" alt="جنين للتجميل" class="h-16 md:h-20 w-auto object-contain drop-shadow-lg">
                     @else
-                    <span class="w-5 h-5 rounded-full bg-white animate-pulse" style="box-shadow:0 0 22px rgba(255,255,255,0.9);"></span>
                     <span class="text-2xl md:text-3xl tracking-wider text-white font-black" style="letter-spacing:0.12em;">جنين للتجميل</span>
                     @endif
                 </div>
 
                 {{-- Dynamic Title --}}
-                <div id="heroTitleContainer" class="relative mb-4 overflow-hidden" style="height:140px;">
+                <div id="heroTitleContainer" class="relative mb-5 overflow-hidden" style="height:130px;">
                     @foreach($slidesData as $i => $slide)
-                    <div class="hero-title absolute w-full text-right" style="top:0;right:0;opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '30px' }});transition:opacity 0.8s ease,transform 0.8s ease;pointer-events:{{ $i === 0 ? 'auto' : 'none' }};" data-title="{{ $i }}">
-                        <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-[0.95] tracking-tight">
+                    <div class="hero-title absolute w-full text-center" style="top:0;left:0;opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '20px' }});transition:opacity 0.8s ease,transform 0.8s ease;pointer-events:{{ $i === 0 ? 'auto' : 'none' }};" data-title="{{ $i }}">
+                        <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-[1.05] tracking-tight">
                             <span class="block" style="color:#ffffff;text-shadow:0 2px 10px rgba(255,255,255,0.1);">{{ $slide['title_line1'] }}</span>
-                            <span class="block mt-2" style="color:#ffffff;text-shadow:0 0 40px rgba(255,255,255,0.4),0 0 80px rgba(255,255,255,0.2),0 4px 8px rgba(0,0,0,0.3);">{{ $slide['title_line2'] }}</span>
+                            <span class="block mt-2" style="color:#ffffff;text-shadow:0 0 40px rgba(255,255,255,0.35),0 4px 8px rgba(0,0,0,0.3);">{{ $slide['title_line2'] }}</span>
                         </h1>
                     </div>
                     @endforeach
                 </div>
 
                 {{-- Cycling Phrases --}}
-                <div id="heroPhraseContainer" class="relative mb-5 overflow-hidden" style="height:70px;">
+                <div id="heroPhraseContainer" class="relative mb-6 overflow-hidden" style="height:64px;">
                     @foreach($allPhrases as $i => $phrase)
-                    <p class="hero-phrase text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-snug absolute w-full text-right"
-                       style="top:0;right:0;color:#ffffff;text-shadow:0 2px 20px rgba(255,255,255,0.15);opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '20px' }});transition:opacity 0.8s ease,transform 0.8s ease;pointer-events:{{ $i === 0 ? 'auto' : 'none' }};"
+                    <p class="hero-phrase text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold leading-snug absolute w-full text-center"
+                       style="top:0;left:0;color:rgba(255,255,255,0.85);text-shadow:0 2px 16px rgba(255,255,255,0.1);opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '16px' }});transition:opacity 0.8s ease,transform 0.8s ease;pointer-events:{{ $i === 0 ? 'auto' : 'none' }};"
                        data-phrase="{{ $i }}">{{ $phrase }}</p>
                     @endforeach
                 </div>
 
-                <div class="flex items-center gap-4 flex-wrap">
-                    <a href="{{ route('shop') }}" class="px-8 py-3.5 rounded-full font-black text-sm tracking-wide inline-flex items-center gap-2 shadow-lg hover:shadow-xl transition-all hover:scale-105" style="background:var(--gradient-primary);color:#fff;">
+                {{-- CTA Buttons — stacked, centered --}}
+                <div class="flex flex-col items-center gap-3 mb-6">
+                    <a href="{{ route('shop') }}" class="w-full sm:w-72 px-8 py-4 rounded-full font-black text-sm tracking-wide inline-flex items-center justify-center gap-2 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-0.5" style="background:#ffffff;color:#0f172a;">
                         تسوقي الآن <i class="fa-solid fa-arrow-left mr-1"></i>
                     </a>
-                    <a href="{{ route('shop') }}" class="text-white/70 hover:text-white border-b-2 border-white/20 pb-1 hover:border-white transition-all font-bold text-sm">
+                    <a href="{{ route('shop') }}" class="text-white/60 hover:text-white transition-colors font-medium text-sm">
                         تصفحي جميع المنتجات
                     </a>
                 </div>
 
-                <div class="flex gap-1.5 mt-5 justify-end">
+                {{-- Phrase dots — centered --}}
+                <div class="flex gap-1.5 justify-center">
                     @for($i = 0; $i < min(count($allPhrases), 6); $i++)
-                    <span class="phrase-dot block w-1.5 h-1.5 rounded-full transition-all duration-300 {{ $i === 0 ? 'bg-brand-500 w-6' : 'bg-ink-dim/20' }}"></span>
+                    <span class="phrase-dot block w-1.5 h-1.5 rounded-full transition-all duration-300 {{ $i === 0 ? 'bg-white/90 w-5' : 'bg-white/15' }}"></span>
                     @endfor
                 </div>
             </div>
@@ -220,12 +223,31 @@ if (!empty($slideProductIds)) {
             </div>
         </div>
     </div>
-
-    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 opacity-30">
-        <span class="text-[10px] uppercase tracking-[0.3em] text-ink-dim">مرر</span>
-        <div class="w-px h-10 bg-gradient-to-b from-ink-dim/30 to-transparent"></div>
-    </div>
 </section>
+
+{{-- WhatsApp FAB --}}
+@if(!empty($siteSettings['whatsapp_number']))
+<a href="https://wa.me/{{ preg_replace('/[^0-9]/','',$siteSettings['whatsapp_number']) }}" target="_blank" rel="noopener"
+   class="fixed z-[999] flex items-center justify-center shadow-2xl hover:shadow-3xl transition-all duration-300 hover:-translate-y-1 hover:scale-105"
+   style="bottom:24px;right:20px;width:56px;height:56px;background:#25D366;border-radius:50%;" aria-label="واتساب">
+    <i class="ph-fill ph-whatsapp-logo text-white text-2xl"></i>
+</a>
+@endif
+
+{{-- Hide floating social sidebar & theme switcher on homepage --}}
+@push('styles')
+<style>
+    @media (max-width:1024px) {
+        .floating-social-v3, #themeSwitcher { display: none !important; }
+    }
+    @media (min-width:1025px) {
+        .floating-social-v3 { opacity: 0.4; transition: opacity 0.3s; }
+        .floating-social-v3:hover { opacity: 1; }
+        #themeSwitcher { opacity: 0.4; transition: opacity 0.3s; }
+        #themeSwitcher:hover { opacity: 1; }
+    }
+</style>
+@endpush
 
 <script>
 (function() {
@@ -240,10 +262,10 @@ if (!empty($slideProductIds)) {
     function showPhrase(idx) {
         phrases.forEach(function(p, i) {
             p.style.opacity = i === idx ? '1' : '0';
-            p.style.transform = i === idx ? 'translateY(0)' : 'translateY(20px)';
+            p.style.transform = i === idx ? 'translateY(0)' : 'translateY(16px)';
         });
         phraseDots.forEach(function(d, i) {
-            d.className = i === idx % phraseDots.length ? 'phrase-dot block w-6 h-1.5 rounded-full bg-brand-500 transition-all duration-300' : 'phrase-dot block w-1.5 h-1.5 rounded-full bg-ink-dim/20 transition-all duration-300';
+            d.className = i === idx % phraseDots.length ? 'phrase-dot block w-5 h-1.5 rounded-full bg-white/90 transition-all duration-300' : 'phrase-dot block w-1.5 h-1.5 rounded-full bg-white/15 transition-all duration-300';
         });
         currentP = idx;
     }
@@ -254,7 +276,7 @@ if (!empty($slideProductIds)) {
         if (s) s.classList.remove('hidden');
         titles.forEach(function(t, i) {
             t.style.opacity = i === idx ? '1' : '0';
-            t.style.transform = i === idx ? 'translateY(0)' : 'translateY(30px)';
+            t.style.transform = i === idx ? 'translateY(0)' : 'translateY(20px)';
         });
         currentS = idx;
     }
@@ -276,7 +298,7 @@ if (!empty($slideProductIds)) {
      SECTION 2: Categories — All Categories Centered
      ═══════════════════════════════════════════════════════════════ --}}
 @if($categories->isNotEmpty())
-<section class="py-16">
+<section class="py-16 bg-surface">
     <div class="max-w-7xl mx-auto px-4">
         <div class="text-center mb-12">
             <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-500/20 bg-brand-500/5 mb-4">
