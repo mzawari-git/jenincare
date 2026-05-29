@@ -294,13 +294,176 @@ if (!empty($slideProductIds)) {
 })();
 </script>
 
-<div class="flex md:block" style="flex-direction:column-reverse;">
+<style>
+    .value-card:hover { transform: translateY(-6px); border-color: rgba(255,42,133,0.15); box-shadow: 0 12px 40px rgba(0,0,0,0.3), var(--neon-glow); }
+    @media (max-width: 767px) {
+        .home-sections { display: flex; flex-direction: column; }
+    }
+    @media (min-width: 768px) {
+        .home-sections { display: flex; flex-direction: column; }
+        .home-sections .products-section { order: 2; }
+        .home-sections .categories-section { order: 1; }
+    }
+</style>
+
+<div class="home-sections">
 
 {{-- ═══════════════════════════════════════════════════════════════
-      SECTION 2: Categories — All Categories Centered
+     SECTION: Products FIRST on mobile
+     ═══════════════════════════════════════════════════════════════ --}}
+<section id="products" class="products-section py-20 relative">
+
+    {{-- Mobile: visual separator --}}
+    <div class="md:hidden -mt-20 mb-8 text-center">
+        <div class="inline-flex items-center gap-2 px-5 py-2 rounded-full font-black text-sm shadow-lg" style="background:var(--gradient-primary);color:#fff;">
+            <i class="fa-solid fa-star text-xs"></i> منتجاتنا المميزة <i class="fa-solid fa-star text-xs"></i>
+        </div>
+    </div>
+
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_50%,rgba(var(--brand-500-rgb,255,42,133),0.04),transparent_60%)] pointer-events-none"></div>
+    <div class="max-w-7xl mx-auto px-4 relative z-10">
+        <div class="mb-16 text-center">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-500/20 bg-brand-500/5 mb-6">
+                <span class="text-xs text-brand-500 font-bold tracking-widest uppercase">مختبر الجمال</span>
+            </div>
+            <h2 class="text-3xl md:text-5xl font-black mb-4">منتجات مختارة <span class="gradient-text bg-[length:200%_auto]">بعناية فائقة</span></h2>
+            <p class="text-ink-dim max-w-2xl mx-auto text-lg font-light">كل منتج في متجرنا تم انتقاؤه بعناية من أفضل الماركات العالمية ليكون جزءاً من روتين عنايتك الشخصي. منتجات أصلية، نتائج مضمونة.</p>
+        </div>
+
+        @if($featuredProducts->isNotEmpty() || $newProducts->isNotEmpty())
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
+
+            @php $bigProduct = $featuredProducts->first(); @endphp
+            @if($bigProduct)
+            {{-- Large Featured Product Card (col-span-8) --}}
+            <div class="md:col-span-7 lg:col-span-8 group relative rounded-[2rem] overflow-hidden glass-panel border border-white/5 h-[450px] cursor-pointer"
+                 onclick="window.location='{{ route('product.show', $bigProduct->slug) }}'">
+                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent z-10"></div>
+                @if($bigProduct->main_image_url)
+                <img src="{{ $bigProduct->optimizedImageUrl(800, 450) }}" alt="{{ $bigProduct->name_ar }}" width="800" height="450"
+                     class="absolute inset-0 w-full h-full object-cover filter grayscale mix-blend-luminosity group-hover:scale-105 transition-transform duration-700"
+                     loading="lazy">
+                @else
+                <div class="absolute inset-0 flex items-center justify-center text-white/10"><i class="fa-solid fa-flask text-8xl"></i></div>
+                @endif
+
+                <div class="absolute top-6 right-6 z-20 flex gap-2">
+                    <span class="bg-black/50 backdrop-blur px-3 py-1 rounded-full text-xs border border-white/10 text-ink/70">منتجات مميزة</span>
+                    <span class="pill-brand backdrop-blur text-xs">الأكثر مبيعاً</span>
+                </div>
+
+                <div class="absolute bottom-8 right-8 z-20 text-right">
+                    <h3 class="text-3xl font-black mb-2 text-white">{{ $bigProduct->name_ar }}</h3>
+                    @if($bigProduct->brand)
+                    <p class="text-ink-dim text-sm mb-3">{{ $bigProduct->brand->name }}</p>
+                    @endif
+                    <div class="flex items-center justify-end gap-4">
+                        <span class="text-2xl font-bold text-brand-500">{{ number_format($bigProduct->b2c_price, 0) }} ₪</span>
+                        <button onclick="event.stopPropagation(); addToCart({{ $bigProduct->id }})"
+                                class="w-12 h-12 rounded-full bg-white style="color:#0f172a;" flex items-center justify-center hover:shadow-neon transition-all"
+                                aria-label="إضافة للسلة">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            @php $secondProduct = $newProducts->first() ?? $featuredProducts->skip(1)->first(); @endphp
+            @if($secondProduct)
+            <div class="md:col-span-5 lg:col-span-4 group relative rounded-[2rem] overflow-hidden glass-panel border border-white/5 h-[450px] cursor-pointer"
+                 onclick="window.location='{{ route('product.show', $secondProduct->slug) }}'">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent z-10"></div>
+                <div class="absolute inset-0 bg-accent-500/5 mix-blend-overlay z-10 group-hover:bg-accent-500/10 transition-colors"></div>
+                @if($secondProduct->main_image_url)
+                <img src="{{ $secondProduct->optimizedImageUrl(600, 450) }}" alt="{{ $secondProduct->name_ar }}" width="600" height="450"
+                     class="absolute inset-0 w-full h-full object-cover filter contrast-125 group-hover:scale-105 transition-transform duration-700"
+                     loading="lazy">
+                @else
+                <div class="absolute inset-0 flex items-center justify-center text-white/10"><i class="fa-solid fa-droplet text-8xl"></i></div>
+                @endif
+
+                <div class="absolute top-6 right-6 z-20">
+                    <span class="pill-accent backdrop-blur text-xs">وصل حديثاً</span>
+                </div>
+
+                <div class="absolute bottom-8 right-8 z-20 text-right">
+                    <h3 class="text-xl font-black mb-1 text-white">{{ $secondProduct->name_ar }}</h3>
+                    @if($secondProduct->brand)
+                    <p class="text-ink-dim text-xs mb-4">{{ $secondProduct->brand->name }}</p>
+                    @endif
+                    <div class="flex items-center justify-between">
+                        <button onclick="event.stopPropagation(); addToCart({{ $secondProduct->id }})"
+                                class="text-xs font-bold uppercase tracking-wider border-b border-white/30 hover:text-brand-500 hover:border-brand-500 transition-colors pb-1 text-white/70">
+                            تفاصيل
+                        </button>
+                        <span class="font-bold text-white">{{ number_format($secondProduct->b2c_price, 0) }} ₪</span>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            {{-- Info/Value Card (col-span-5) --}}
+            <div class="md:col-span-5 rounded-[2rem] glass-panel border border-white/5 p-10 flex flex-col justify-between relative overflow-hidden group cursor-default">
+                <div class="absolute -left-20 -top-20 w-64 h-64 bg-brand-500/8 rounded-full blur-3xl group-hover:bg-brand-500/12 transition-colors"></div>
+                <div class="absolute top-0 right-8 left-8 h-[2px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" style="background: var(--gradient-primary);"></div>
+                <div class="relative z-10 text-center">
+                    <div class="w-14 h-14 rounded-2xl bg-accent-500/10 flex items-center justify-center mb-6 shadow-accent-neon mx-auto">
+                        <i class="fa-solid fa-microchip text-2xl text-accent-500"></i>
+                    </div>
+                    <h3 class="text-2xl font-black mb-4" style="color: var(--ink);">روتين عناية<br>مصمم خصيصاً لكِ.</h3>
+                    <p class="text-ink-dim text-sm leading-relaxed">
+                        نختار لكِ أفضل المنتجات المناسبة لنوع بشرتك واحتياجاتك. تصفحي مجموعتنا المميزة من منتجات العناية بالبشرة والشعر، وتمتعي بتجربة تسوق فريدة مع شحن سريع ودفع آمن.
+                    </p>
+                </div>
+                <div class="mt-8 text-center">
+                    <a href="{{ route('shop') }}" class="text-accent-500 font-bold flex items-center justify-center gap-2 hover:gap-4 transition-all group/link">
+                        تصفحي المتجر <i class="fa-solid fa-arrow-left text-sm group-hover/link:-translate-x-1 transition-transform"></i>
+                    </a>
+                </div>
+            </div>
+
+            @php $thirdProduct = $featuredProducts->skip(1)->first() ?? $newProducts->skip(1)->first() ?? $featuredProducts->skip(2)->first(); @endphp
+            @if($thirdProduct)
+            <div class="md:col-span-7 group relative rounded-[2rem] overflow-hidden glass-panel border border-white/5 h-[300px] cursor-pointer"
+                 onclick="window.location='{{ route('product.show', $thirdProduct->slug) }}'">
+                <div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent z-10"></div>
+                @if($thirdProduct->main_image_url)
+                <img src="{{ $thirdProduct->optimizedImageUrl(600, 300) }}" alt="{{ $thirdProduct->name_ar }}" width="600" height="300"
+                     class="absolute inset-0 w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-1000"
+                     loading="lazy">
+                @else
+                <div class="absolute inset-0 flex items-center justify-center text-white/10"><i class="fa-solid fa-box-open text-8xl"></i></div>
+                @endif
+
+                <div class="absolute top-1/2 transform -translate-y-1/2 right-12 z-20 text-right max-w-sm">
+                    <h3 class="text-2xl font-black mb-2 text-white">{{ $thirdProduct->name_ar }}</h3>
+                    @if($thirdProduct->brand)
+                    <p class="text-ink-dim text-xs mb-5">{{ $thirdProduct->brand->name }}</p>
+                    @endif
+                    <button onclick="event.stopPropagation(); addToCart({{ $thirdProduct->id }})"
+                            class="px-6 py-2.5 bg-white style="color:#0f172a;" rounded-full font-bold transition-all text-sm hover:shadow-neon hover:scale-105 inline-flex items-center gap-2">
+                        <i class="fa-solid fa-plus text-xs"></i> إضافة للمختبر — {{ number_format($thirdProduct->b2c_price, 0) }} ₪
+                    </button>
+                </div>
+            </div>
+            @endif
+
+        </div>
+        @else
+        <div class="text-center py-20 text-ink-dim">
+            <i class="fa-solid fa-flask text-5xl mb-6 opacity-20"></i>
+            <p class="text-lg">لم يتم إضافة منتجات بعد.</p>
+        </div>
+        @endif
+    </div>
+</section>
+
+{{-- ═══════════════════════════════════════════════════════════════
+     SECTION: Categories
      ═══════════════════════════════════════════════════════════════ --}}
 @if($categories->isNotEmpty())
-<section class="py-16 bg-surface">
+<section class="categories-section py-16 bg-surface">
 
     {{-- Mobile: section label --}}
     <div class="md:hidden text-center mb-6">
@@ -454,163 +617,6 @@ if (!empty($slideProductIds)) {
             </div>
             @endforeach
         </div>
-    </div>
-</section>
-
-<style>
-.value-card:hover { transform: translateY(-6px); border-color: rgba(255,42,133,0.15); box-shadow: 0 12px 40px rgba(0,0,0,0.3), var(--neon-glow); }
-</style>
-
-{{-- ═══════════════════════════════════════════════════════════════
-      SECTION 3: Product Lab — Asymmetric Grid
-      ═══════════════════════════════════════════════════════════════ --}}
-<section id="products" class="py-20 relative">
-
-    {{-- Mobile: visual separator to make reordering obvious --}}
-    <div class="md:hidden -mt-20 mb-8 text-center">
-        <div class="inline-flex items-center gap-2 px-5 py-2 rounded-full font-black text-sm shadow-lg" style="background:var(--gradient-primary);color:#fff;">
-            <i class="fa-solid fa-star text-xs"></i> منتجاتنا المميزة <i class="fa-solid fa-star text-xs"></i>
-        </div>
-    </div>
-
-    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_50%,rgba(var(--brand-500-rgb,255,42,133),0.04),transparent_60%)] pointer-events-none"></div>
-    <div class="max-w-7xl mx-auto px-4 relative z-10">
-        <div class="mb-16 text-center">
-            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-500/20 bg-brand-500/5 mb-6">
-                <span class="text-xs text-brand-500 font-bold tracking-widest uppercase">مختبر الجمال</span>
-            </div>
-            <h2 class="text-3xl md:text-5xl font-black mb-4">منتجات مختارة <span class="gradient-text bg-[length:200%_auto]">بعناية فائقة</span></h2>
-            <p class="text-ink-dim max-w-2xl mx-auto text-lg font-light">كل منتج في متجرنا تم انتقاؤه بعناية من أفضل الماركات العالمية ليكون جزءاً من روتين عنايتك الشخصي. منتجات أصلية، نتائج مضمونة.</p>
-        </div>
-
-        @if($featuredProducts->isNotEmpty() || $newProducts->isNotEmpty())
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
-
-            @php $bigProduct = $featuredProducts->first(); @endphp
-            @if($bigProduct)
-            {{-- Large Featured Product Card (col-span-8) --}}
-            <div class="md:col-span-7 lg:col-span-8 group relative rounded-[2rem] overflow-hidden glass-panel border border-white/5 h-[450px] cursor-pointer"
-                 onclick="window.location='{{ route('product.show', $bigProduct->slug) }}'">
-                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent z-10"></div>
-                @if($bigProduct->main_image_url)
-                <img src="{{ $bigProduct->optimizedImageUrl(800, 450) }}" alt="{{ $bigProduct->name_ar }}" width="800" height="450"
-                     class="absolute inset-0 w-full h-full object-cover filter grayscale mix-blend-luminosity group-hover:scale-105 transition-transform duration-700"
-                     loading="lazy">
-                @else
-                <div class="absolute inset-0 flex items-center justify-center text-white/10"><i class="fa-solid fa-flask text-8xl"></i></div>
-                @endif
-
-                <div class="absolute top-6 right-6 z-20 flex gap-2">
-                    <span class="bg-black/50 backdrop-blur px-3 py-1 rounded-full text-xs border border-white/10 text-ink/70">منتجات مميزة</span>
-                    <span class="pill-brand backdrop-blur text-xs">الأكثر مبيعاً</span>
-                </div>
-
-                <div class="absolute bottom-8 right-8 z-20 text-right">
-                    <h3 class="text-3xl font-black mb-2 text-white">{{ $bigProduct->name_ar }}</h3>
-                    @if($bigProduct->brand)
-                    <p class="text-ink-dim text-sm mb-3">{{ $bigProduct->brand->name }}</p>
-                    @endif
-                    <div class="flex items-center justify-end gap-4">
-                        <span class="text-2xl font-bold text-brand-500">{{ number_format($bigProduct->b2c_price, 0) }} ₪</span>
-                        <button onclick="event.stopPropagation(); addToCart({{ $bigProduct->id }})"
-                                class="w-12 h-12 rounded-full bg-white style="color:#0f172a;" flex items-center justify-center hover:shadow-neon transition-all"
-                                aria-label="إضافة للسلة">
-                            <i class="fa-solid fa-plus"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            @endif
-
-            @php $secondProduct = $newProducts->first() ?? $featuredProducts->skip(1)->first(); @endphp
-            @if($secondProduct)
-            {{-- Tall Product Card (col-span-4) --}}
-            <div class="md:col-span-5 lg:col-span-4 group relative rounded-[2rem] overflow-hidden glass-panel border border-white/5 h-[450px] cursor-pointer"
-                 onclick="window.location='{{ route('product.show', $secondProduct->slug) }}'">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent z-10"></div>
-                <div class="absolute inset-0 bg-accent-500/5 mix-blend-overlay z-10 group-hover:bg-accent-500/10 transition-colors"></div>
-                @if($secondProduct->main_image_url)
-                <img src="{{ $secondProduct->optimizedImageUrl(600, 450) }}" alt="{{ $secondProduct->name_ar }}" width="600" height="450"
-                     class="absolute inset-0 w-full h-full object-cover filter contrast-125 group-hover:scale-105 transition-transform duration-700"
-                     loading="lazy">
-                @else
-                <div class="absolute inset-0 flex items-center justify-center text-white/10"><i class="fa-solid fa-droplet text-8xl"></i></div>
-                @endif
-
-                <div class="absolute top-6 right-6 z-20">
-                    <span class="pill-accent backdrop-blur text-xs">وصل حديثاً</span>
-                </div>
-
-                <div class="absolute bottom-8 right-8 z-20 text-right">
-                    <h3 class="text-xl font-black mb-1 text-white">{{ $secondProduct->name_ar }}</h3>
-                    @if($secondProduct->brand)
-                    <p class="text-ink-dim text-xs mb-4">{{ $secondProduct->brand->name }}</p>
-                    @endif
-                    <div class="flex items-center justify-between">
-                        <button onclick="event.stopPropagation(); addToCart({{ $secondProduct->id }})"
-                                class="text-xs font-bold uppercase tracking-wider border-b border-white/30 hover:text-brand-500 hover:border-brand-500 transition-colors pb-1 text-white/70">
-                            تفاصيل
-                        </button>
-                        <span class="font-bold text-white">{{ number_format($secondProduct->b2c_price, 0) }} ₪</span>
-                    </div>
-                </div>
-            </div>
-            @endif
-
-            {{-- Info/Value Card (col-span-5) --}}
-            <div class="md:col-span-5 rounded-[2rem] glass-panel border border-white/5 p-10 flex flex-col justify-between relative overflow-hidden group cursor-default">
-                <div class="absolute -left-20 -top-20 w-64 h-64 bg-brand-500/8 rounded-full blur-3xl group-hover:bg-brand-500/12 transition-colors"></div>
-                <div class="absolute top-0 right-8 left-8 h-[2px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" style="background: var(--gradient-primary);"></div>
-                <div class="relative z-10 text-center">
-                    <div class="w-14 h-14 rounded-2xl bg-accent-500/10 flex items-center justify-center mb-6 shadow-accent-neon mx-auto">
-                        <i class="fa-solid fa-microchip text-2xl text-accent-500"></i>
-                    </div>
-                    <h3 class="text-2xl font-black mb-4" style="color: var(--ink);">روتين عناية<br>مصمم خصيصاً لكِ.</h3>
-                    <p class="text-ink-dim text-sm leading-relaxed">
-                        نختار لكِ أفضل المنتجات المناسبة لنوع بشرتك واحتياجاتك. تصفحي مجموعتنا المميزة من منتجات العناية بالبشرة والشعر، وتمتعي بتجربة تسوق فريدة مع شحن سريع ودفع آمن.
-                    </p>
-                </div>
-                <div class="mt-8 text-center">
-                    <a href="{{ route('shop') }}" class="text-accent-500 font-bold flex items-center justify-center gap-2 hover:gap-4 transition-all group/link">
-                        تصفحي المتجر <i class="fa-solid fa-arrow-left text-sm group-hover/link:-translate-x-1 transition-transform"></i>
-                    </a>
-                </div>
-            </div>
-
-            @php $thirdProduct = $featuredProducts->skip(1)->first() ?? $newProducts->skip(1)->first() ?? $featuredProducts->skip(2)->first(); @endphp
-            @if($thirdProduct)
-            {{-- Wide Bottom Card (col-span-7) --}}
-            <div class="md:col-span-7 group relative rounded-[2rem] overflow-hidden glass-panel border border-white/5 h-[300px] cursor-pointer"
-                 onclick="window.location='{{ route('product.show', $thirdProduct->slug) }}'">
-                <div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent z-10"></div>
-                @if($thirdProduct->main_image_url)
-                <img src="{{ $thirdProduct->optimizedImageUrl(600, 300) }}" alt="{{ $thirdProduct->name_ar }}" width="600" height="300"
-                     class="absolute inset-0 w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-1000"
-                     loading="lazy">
-                @else
-                <div class="absolute inset-0 flex items-center justify-center text-white/10"><i class="fa-solid fa-box-open text-8xl"></i></div>
-                @endif
-
-                <div class="absolute top-1/2 transform -translate-y-1/2 right-12 z-20 text-right max-w-sm">
-                    <h3 class="text-2xl font-black mb-2 text-white">{{ $thirdProduct->name_ar }}</h3>
-                    @if($thirdProduct->brand)
-                    <p class="text-ink-dim text-xs mb-5">{{ $thirdProduct->brand->name }}</p>
-                    @endif
-                    <button onclick="event.stopPropagation(); addToCart({{ $thirdProduct->id }})"
-                            class="px-6 py-2.5 bg-white style="color:#0f172a;" rounded-full font-bold transition-all text-sm hover:shadow-neon hover:scale-105 inline-flex items-center gap-2">
-                        <i class="fa-solid fa-plus text-xs"></i> إضافة للمختبر — {{ number_format($thirdProduct->b2c_price, 0) }} ₪
-                    </button>
-                </div>
-            </div>
-            @endif
-
-        </div>
-        @else
-        <div class="text-center py-20 text-ink-dim">
-            <i class="fa-solid fa-flask text-5xl mb-6 opacity-20"></i>
-            <p class="text-lg">لم يتم إضافة منتجات بعد.</p>
-        </div>
-        @endif
     </div>
 </section>
 
