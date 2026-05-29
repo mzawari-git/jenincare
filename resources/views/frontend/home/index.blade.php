@@ -86,11 +86,11 @@ $slideshowCats = $categories->filter(fn($c) => $c->products_count > 0)->shuffle(
                     <span class="gradient-text bg-[length:200%_auto]">نتائج مبهرة.</span>
                 </h1>
 
-                <div class="relative h-20 md:h-16 mb-8 overflow-hidden">
+                <div id="heroPhraseContainer" class="relative h-20 md:h-16 mb-8 overflow-hidden">
                     @foreach($allPhrases as $i => $phrase)
-                    <p class="hero-phrase text-lg md:text-xl text-ink-dim max-w-lg font-light leading-relaxed absolute inset-0 transition-all duration-700 {{ $i === 0 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4' }}" data-phrase="{{ $i }}">
-                        {{ $phrase }}
-                    </p>
+                    <p class="hero-phrase text-lg md:text-xl text-ink-dim max-w-lg font-light leading-relaxed absolute w-full text-right"
+                       style="top:0;right:0;opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '16px' }});transition:opacity 0.7s ease,transform 0.7s ease;"
+                       data-phrase="{{ $i }}">{{ $phrase }}</p>
                     @endforeach
                 </div>
 
@@ -180,10 +180,8 @@ $slideshowCats = $categories->filter(fn($c) => $c->products_count > 0)->shuffle(
 
     function showPhrase(idx) {
         phrases.forEach(function(p, i) {
-            p.classList.toggle('opacity-100', i === idx);
-            p.classList.toggle('translate-y-0', i === idx);
-            p.classList.toggle('opacity-0', i !== idx);
-            p.classList.toggle('translate-y-4', i !== idx);
+            p.style.opacity = i === idx ? '1' : '0';
+            p.style.transform = i === idx ? 'translateY(0)' : 'translateY(16px)';
         });
         dots.forEach(function(d, i) {
             d.className = i === idx ? 'phrase-dot block w-5 h-1.5 rounded-full bg-brand-500 transition-all duration-300' : 'phrase-dot block w-1.5 h-1.5 rounded-full bg-ink-dim/20 transition-all duration-300';
