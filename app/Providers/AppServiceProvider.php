@@ -183,7 +183,7 @@ class AppServiceProvider extends ServiceProvider
             'currency_symbol' => '₪',
             'shipping_cost' => 25,
             'free_shipping_min' => 200,
-            'site_theme' => 'rose',
+            'site_theme' => 'minimal',
             'facebook_pixel_enabled' => '1',
             'payment_bank_enabled' => '0',
             'payment_jawwal_enabled' => '0',
