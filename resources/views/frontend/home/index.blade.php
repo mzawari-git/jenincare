@@ -32,7 +32,7 @@
 @section('content')
 
 {{-- ═══════════════════════════════════════════════════════════════
-     SECTION 1: HERO — Professional Slideshow
+     SECTION 1: HERO — Professional Slideshow Cycling Categories
      ═══════════════════════════════════════════════════════════════ --}}
 @php
 $heroPhrases = [
@@ -66,138 +66,154 @@ $heroPhrases = [
         'منتجات أصلية، أجهزة احترافية، تجهيز متكامل... في مكان واحد.',
     ],
 ];
-$phraseCat = array_rand($heroPhrases);
-$phrase = $heroPhrases[$phraseCat][array_rand($heroPhrases[$phraseCat])];
-$fallbackTitle = match($phraseCat) {
-    'beauty' => 'جمالكِ<br><span class="gradient-text bg-[length:200%_auto]">أولاً.</span>',
-    'devices' => 'تقنيات<br><span class="gradient-text bg-[length:200%_auto]">الثورة.</span>',
-    'salon' => 'صالونكِ<br><span class="gradient-text bg-[length:200%_auto]">المثالي.</span>',
-    'general' => 'جنين<br><span class="gradient-text bg-[length:200%_auto]">للتجميل.</span>',
-};
-$fallbackBadge = match($phraseCat) {
-    'beauty' => 'مستحضرات أصلية',
-    'devices' => 'أجهزة احترافية',
-    'salon' => 'تجهيز الصالونات',
-    'general' => 'الحل المتكامل',
-};
-$fallbackBtn = match($phraseCat) {
-    'beauty' => 'تسوقي الآن',
-    'devices' => 'اكتشفي الأجهزة',
-    'salon' => 'صممي صالونك',
-    'general' => 'ابدئي الآن',
-};
-@endphp
-<section id="hero" class="relative min-h-screen flex items-center justify-center overflow-hidden">
 
-    {{-- Background Image + Gradient Overlay --}}
+// Pick 3-5 random categories that have products
+$slideshowCategories = $categories->filter(fn($c) => $c->products_count > 0)->shuffle()->take(5);
+if ($slideshowCategories->isEmpty() && $featuredProducts->isNotEmpty()) {
+    $slideshowCategories = collect([null]);
+}
+@endphp
+
+<section id="hero" class="relative min-h-screen flex items-center justify-center overflow-hidden">
     <div class="absolute inset-0 z-0">
         <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop"
-             class="w-full h-full object-cover opacity-30 mix-blend-luminosity filter contrast-125"
+             class="w-full h-full object-cover opacity-20 mix-blend-luminosity"
              alt="" aria-hidden="true" loading="eager" fetchpriority="high">
-        <div class="absolute inset-0 bg-gradient-to-b from-surface/50 via-surface/85 to-surface"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-surface/60 via-surface/85 to-surface"></div>
     </div>
 
     <div class="relative z-10 w-full max-w-7xl mx-auto px-4 pt-28 pb-16">
-        @if($slides->isNotEmpty())
-            @php $slide = $slides->first(); @endphp
-            <div class="flex flex-col lg:flex-row items-center justify-between gap-12">
-                <div class="w-full lg:w-1/2 text-right">
-                    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-500/20 bg-brand-500/5 mb-6">
-                        <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse shadow-neon"></span>
-                        <span class="text-xs tracking-widest text-brand-500 uppercase font-bold">
-                            {{ $slide->badge_text_ar ?: $fallbackBadge }}
-                        </span>
-                    </div>
-                    <h1 class="text-4xl md:text-6xl lg:text-7xl font-black mb-6 leading-tight tracking-tight">
-                        @if($slide->title_ar)
-                            <span class="text-ink">{!! nl2br(e($slide->title_ar)) !!}</span>
-                        @else
-                            <span class="text-ink">{!! $fallbackTitle !!}</span>
-                        @endif
-                    </h1>
-                    <p class="text-lg md:text-xl text-ink-dim mb-10 max-w-lg font-light leading-relaxed">
-                        {{ $slide->description_ar ?: $phrase }}
-                    </p>
-                    <div class="flex items-center gap-6 flex-wrap">
-                        <a href="{{ $slide->button_url ?? route('shop') }}" class="group relative px-8 py-4 rounded-full overflow-hidden font-black tracking-wide inline-flex items-center gap-2 shadow-neon hover:shadow-neon-strong transition-all" style="background:var(--gradient-primary);color:#fff;">
-                            <span class="relative z-10">{{ $slide->button_text_ar ?: $fallbackBtn }} <i class="fa-solid fa-arrow-left mr-2"></i></span>
-                        </a>
-                        <a href="{{ route('shop') }}?sort=newest" class="text-ink-dim hover:text-brand-500 border-b border-ink-dim/20 pb-1 hover:border-brand-500 transition-all font-bold text-sm">
-                            استكشاف المنتجات
-                        </a>
-                    </div>
+        <div class="flex flex-col lg:flex-row items-center justify-between gap-12">
+
+            {{-- Right: Text Content --}}
+            <div class="w-full lg:w-1/2 text-right">
+                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-500/20 bg-brand-500/5 mb-6">
+                    <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse shadow-neon"></span>
+                    <span class="text-xs tracking-widest text-brand-500 uppercase font-bold">جنين للتجميل</span>
                 </div>
-                <div class="w-full lg:w-1/2 relative flex justify-center mt-8 lg:mt-0">
-                    <div class="relative w-[280px] h-[400px] md:w-[380px] md:h-[520px] rounded-3xl glass-panel overflow-hidden group border-2 border-brand-500/10">
-                        <div class="scanner-line"></div>
-                        @if($slide->image_url)
-                            <img src="{{ $slide->image_url }}" alt="{{ $slide->title_ar ?? '' }}"
-                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="eager">
-                        @elseif($slide->product && $slide->product->main_image_url)
-                            <img src="{{ $slide->product->main_image_url }}" alt="{{ $slide->product->name_ar }}"
-                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="eager">
-                        @elseif($featuredProducts->isNotEmpty())
-                            <img src="{{ $featuredProducts->first()->main_image_url }}" alt=""
-                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="eager">
-                        @else
-                            <div class="w-full h-full flex items-center justify-center bg-surface-alt">
-                                <i class="fa-solid fa-flask text-6xl text-ink-dim/10"></i>
-                            </div>
-                        @endif
-                        <div class="absolute inset-0 bg-gradient-to-t from-surface/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 border-2 border-brand-500/20 rounded-full flex items-center justify-center">
-                            <div class="w-2 h-2 bg-brand-500 rounded-full animate-ping-neon shadow-neon-strong"></div>
-                        </div>
-                    </div>
+
+                <h1 class="text-4xl md:text-5xl lg:text-7xl font-black mb-6 leading-tight tracking-tight">
+                    <span class="text-ink">منتجات أصلية</span><br>
+                    <span class="gradient-text bg-[length:200%_auto]">نتائج مبهرة.</span>
+                </h1>
+
+                <p id="heroPhrase" class="text-lg md:text-xl text-ink-dim mb-10 max-w-lg font-light leading-relaxed transition-all duration-500">
+                    {{ $heroPhrases['general'][array_rand($heroPhrases['general'])] }}
+                </p>
+
+                <div class="flex items-center gap-6 flex-wrap">
+                    <a href="{{ route('shop') }}" class="group relative px-8 py-4 rounded-full overflow-hidden font-black tracking-wide inline-flex items-center gap-2 shadow-neon hover:shadow-neon-strong transition-all" style="background:var(--gradient-primary);color:#fff;">
+                        <span class="relative z-10">تسوقي الآن <i class="fa-solid fa-arrow-left mr-2"></i></span>
+                    </a>
+                    <a href="{{ route('shop') }}" class="text-ink-dim hover:text-brand-500 border-b border-ink-dim/20 pb-1 hover:border-brand-500 transition-all font-bold text-sm">
+                        جميع المنتجات
+                    </a>
                 </div>
             </div>
-        @else
-            <div class="flex flex-col lg:flex-row items-center justify-between gap-12">
-                <div class="w-full lg:w-1/2 text-right">
-                    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-500/20 bg-brand-500/5 mb-6">
-                        <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse shadow-neon"></span>
-                        <span class="text-xs tracking-widest text-brand-500 uppercase font-bold">{{ $fallbackBadge }}</span>
-                    </div>
-                    <h1 class="text-4xl md:text-6xl lg:text-7xl font-black mb-6 leading-tight tracking-tight">
-                        <span class="text-ink">{!! $fallbackTitle !!}</span>
-                    </h1>
-                    <p class="text-lg md:text-xl text-ink-dim mb-10 max-w-lg font-light leading-relaxed">{{ $phrase }}</p>
-                    <div class="flex items-center gap-6 flex-wrap">
-                        <a href="{{ route('shop') }}" class="group relative px-8 py-4 rounded-full overflow-hidden font-black tracking-wide inline-flex items-center gap-2 shadow-neon hover:shadow-neon-strong transition-all" style="background:var(--gradient-primary);color:#fff;">
-                            <span class="relative z-10">{{ $fallbackBtn }} <i class="fa-solid fa-arrow-left mr-2"></i></span>
-                        </a>
-                        <a href="{{ route('shop') }}?sort=newest" class="text-ink-dim hover:text-brand-500 border-b border-ink-dim/20 pb-1 hover:border-brand-500 transition-all font-bold text-sm">
-                            استكشاف المنتجات
-                        </a>
-                    </div>
-                </div>
-                <div class="w-full lg:w-1/2 relative flex justify-center mt-8 lg:mt-0">
-                    <div class="relative w-[280px] h-[400px] md:w-[380px] md:h-[520px] rounded-3xl glass-panel overflow-hidden group border-2 border-brand-500/10">
-                        <div class="scanner-line"></div>
-                        @if($featuredProducts->isNotEmpty() && $featuredProducts->first()->main_image_url)
-                            <img src="{{ $featuredProducts->first()->main_image_url }}" alt=""
-                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="eager">
-                        @else
-                            <div class="w-full h-full flex items-center justify-center bg-surface-alt">
-                                <i class="fa-solid fa-flask text-6xl text-ink-dim/10"></i>
+
+            {{-- Left: Product Slideshow --}}
+            <div class="w-full lg:w-1/2 relative flex justify-center mt-8 lg:mt-0">
+                <div class="relative w-full max-w-md">
+                    @foreach($slideshowCategories as $index => $cat)
+                    @php
+                    $catProducts = $cat ? \App\Models\Product::where('category_id', $cat->id)->where('status', 'active')->inRandomOrder()->take(3)->get() : $featuredProducts->take(3);
+                    $primaryProduct = $catProducts->first();
+                    if (!$primaryProduct) continue;
+                    $catType = $cat ? (str_contains($cat->name_ar, 'جهاز') || str_contains($cat->name_ar, 'ليزر') ? 'devices' : (str_contains($cat->name_ar, 'صالون') || str_contains($cat->name_ar, 'تجهيز') ? 'salon' : 'beauty')) : 'general';
+                    $phrase = $heroPhrases[$catType][array_rand($heroPhrases[$catType])];
+                    @endphp
+                    <div class="hero-slide glass-panel rounded-3xl overflow-hidden p-4 border-2 border-brand-500/10 {{ $index === 0 ? '' : 'hidden' }}" data-slide="{{ $index }}">
+                        <a href="{{ route('product.show', $primaryProduct->slug) }}" class="block">
+                            <div class="relative rounded-2xl overflow-hidden h-[350px] md:h-[420px] bg-surface-alt">
+                                @if($primaryProduct->main_image_url)
+                                <img src="{{ $primaryProduct->main_image_url }}" alt="{{ $primaryProduct->name_ar }}"
+                                     class="w-full h-full object-cover hover:scale-105 transition-transform duration-700" loading="{{ $index === 0 ? 'eager' : 'lazy' }}">
+                                @else
+                                <div class="w-full h-full flex items-center justify-center">
+                                    <i class="fa-solid fa-flask text-6xl text-ink-dim/10"></i>
+                                </div>
+                                @endif
+                                <div class="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-surface/90 to-transparent">
+                                    <span class="inline-block px-3 py-1 rounded-full bg-brand-500 text-white text-xs font-bold mb-2">{{ $cat ? ($cat->display_name ?? $cat->name_ar) : 'منتجات مميزة' }}</span>
+                                    <h3 class="text-xl font-black text-white mb-1">{{ $primaryProduct->name_ar }}</h3>
+                                    <p class="text-white/70 text-sm mb-2">{{ $phrase }}</p>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-brand-400 font-black text-lg">{{ number_format($primaryProduct->final_b2c_price ?? $primaryProduct->b2c_price, 0) }} ₪</span>
+                                        <span class="text-white/60 text-xs flex items-center gap-1">اضغط للتفاصيل <i class="fa-solid fa-arrow-left"></i></span>
+                                    </div>
+                                </div>
                             </div>
-                        @endif
-                        <div class="absolute inset-0 bg-gradient-to-t from-surface/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 border-2 border-brand-500/20 rounded-full flex items-center justify-center">
-                            <div class="w-2 h-2 bg-brand-500 rounded-full animate-ping-neon shadow-neon-strong"></div>
+                        </a>
+                        @if($catProducts->count() > 1)
+                        <div class="flex gap-3 mt-3">
+                            @foreach($catProducts as $subProduct)
+                            <a href="{{ route('product.show', $subProduct->slug) }}" class="flex-1 glass-panel rounded-xl overflow-hidden hover:-translate-y-1 transition-all duration-300">
+                                <div class="relative h-20 bg-surface-alt">
+                                    @if($subProduct->main_image_url)
+                                    <img src="{{ $subProduct->main_image_url }}" alt="{{ $subProduct->name_ar }}" class="w-full h-full object-cover" loading="lazy">
+                                    @endif
+                                </div>
+                                <div class="p-2 text-center">
+                                    <p class="text-xs font-bold text-ink truncate">{{ $subProduct->name_ar }}</p>
+                                    <span class="text-brand-500 font-bold text-xs">{{ number_format($subProduct->final_b2c_price ?? $subProduct->b2c_price, 0) }} ₪</span>
+                                </div>
+                            </a>
+                            @endforeach
                         </div>
+                        @endif
                     </div>
+                    @endforeach
+
+                    @if($slideshowCategories->isEmpty())
+                    <div class="hero-slide glass-panel rounded-3xl overflow-hidden p-4 border-2 border-brand-500/10 text-center py-16">
+                        <i class="fa-solid fa-store text-5xl text-ink-dim/20 mb-4 block"></i>
+                        <p class="text-ink-dim text-lg">تصفحي منتجاتنا المميزة</p>
+                        <a href="{{ route('shop') }}" class="inline-block mt-4 px-6 py-2.5 rounded-full font-bold" style="background:var(--gradient-primary);color:#fff;">تسوقي الآن</a>
+                    </div>
+                    @endif
                 </div>
+
+                @if($slideshowCategories->count() > 1)
+                {{-- Slide Navigation Dots --}}
+                <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-20">
+                    @foreach($slideshowCategories as $index => $cat)
+                    <button onclick="showHeroSlide({{ $index }})" class="hero-dot w-2.5 h-2.5 rounded-full transition-all duration-300 {{ $index === 0 ? 'bg-brand-500 w-6' : 'bg-ink-dim/30 hover:bg-ink-dim/60' }}" aria-label="شريحة {{ $index + 1 }}"></button>
+                    @endforeach
+                </div>
+                @endif
             </div>
-        @endif
+        </div>
     </div>
 
-    {{-- Scroll Indicator --}}
     <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 opacity-40">
         <span class="text-[10px] uppercase tracking-[0.3em] text-ink-dim">مرر</span>
         <div class="w-px h-12 bg-gradient-to-b from-ink-dim/30 to-transparent"></div>
     </div>
 </section>
+
+@if($slideshowCategories->count() > 1)
+<script>
+let currentHeroSlide = 0;
+const totalHeroSlides = {{ $slideshowCategories->count() }};
+let heroInterval;
+
+function showHeroSlide(index) {
+    document.querySelectorAll('.hero-slide').forEach(s => s.classList.add('hidden'));
+    const slide = document.querySelector('.hero-slide[data-slide="'+index+'"]');
+    if (slide) slide.classList.remove('hidden');
+    document.querySelectorAll('.hero-dot').forEach((d, i) => {
+        d.className = i === index ? 'hero-dot w-6 h-2.5 rounded-full bg-brand-500 transition-all duration-300' : 'hero-dot w-2.5 h-2.5 rounded-full bg-ink-dim/30 hover:bg-ink-dim/60 transition-all duration-300';
+    });
+    currentHeroSlide = index;
+}
+
+function nextHeroSlide() {
+    showHeroSlide((currentHeroSlide + 1) % totalHeroSlides);
+}
+
+heroInterval = setInterval(nextHeroSlide, 5000);
+</script>
+@endif
 
 {{-- ═══════════════════════════════════════════════════════════════
      SECTION 2: Categories — Compact Professional Grid
