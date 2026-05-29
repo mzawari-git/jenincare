@@ -294,7 +294,7 @@ if (!empty($slideProductIds)) {
 })();
 </script>
 
-<div class="flex flex-col-reverse md:flex-col">
+<div class="flex md:block" style="flex-direction:column-reverse;">
 
 {{-- ═══════════════════════════════════════════════════════════════
       SECTION 2: Categories — All Categories Centered
