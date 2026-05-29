@@ -206,67 +206,75 @@ if (!empty($slideProductIds)) {
                     @endif
                 </div>
 
-                {{-- Hero Title Rotator Card --}}
-                <div id="heroTitleContainer" class="relative mb-6">
-                    {{-- Card wrapper --}}
-                    <div class="relative overflow-hidden rounded-3xl p-6 sm:p-8" style="background:linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02));border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);box-shadow:0 8px 32px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.05);">
-                        {{-- Glow accent --}}
-                        <div class="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-20" style="background:radial-gradient(circle,var(--brand-500),transparent 70%);filter:blur(40px);"></div>
-                        <div class="absolute -bottom-20 -left-20 w-40 h-40 rounded-full opacity-10" style="background:radial-gradient(circle,#06b6d4,transparent 70%);filter:blur(40px);"></div>
+                {{-- ═══════════════════════════════════════════
+                     UNIFIED HERO CARD — Headline + Phrase rotate together
+                     ═══════════════════════════════════════════ --}}
+                <div id="heroCard" class="relative mb-6">
+                    <div class="relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-8 md:p-10" style="background:linear-gradient(145deg,rgba(255,255,255,0.07) 0%,rgba(255,255,255,0.02) 50%,rgba(var(--brand-500-rgb,255,42,133),0.04) 100%);border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(20px);box-shadow:0 20px 60px rgba(0,0,0,0.25),inset 0 1px 0 rgba(255,255,255,0.08),0 0 80px rgba(var(--brand-500-rgb,255,42,133),0.08);">
 
-                        {{-- Badge --}}
-                        <div class="flex justify-center mb-4">
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase" style="background:rgba(var(--brand-500-rgb,255,42,133),0.12);color:var(--brand-500);border:1px solid rgba(var(--brand-500-rgb,255,42,133),0.2);">
-                                <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
+                        {{-- Ambient glows --}}
+                        <div class="absolute -top-24 -right-24 w-48 h-48 rounded-full opacity-25 pointer-events-none" style="background:radial-gradient(circle,var(--brand-500),transparent 70%);filter:blur(50px);"></div>
+                        <div class="absolute -bottom-24 -left-24 w-48 h-48 rounded-full opacity-15 pointer-events-none" style="background:radial-gradient(circle,#06b6d4,transparent 70%);filter:blur(50px);"></div>
+
+                        {{-- Animated border shimmer --}}
+                        <div class="absolute inset-0 rounded-[2rem] sm:rounded-[2.5rem] pointer-events-none" style="background:linear-gradient(135deg,transparent 40%,rgba(255,255,255,0.03) 50%,transparent 60%);background-size:200% 200%;animation:borderShimmer 4s ease-in-out infinite;"></div>
+
+                        {{-- Top badge --}}
+                        <div class="flex justify-center mb-5 relative z-10">
+                            <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-black tracking-widest uppercase" style="background:rgba(var(--brand-500-rgb,255,42,133),0.15);color:var(--brand-500);border:1px solid rgba(var(--brand-500-rgb,255,42,133),0.25);box-shadow:0 0 20px rgba(var(--brand-500-rgb,255,42,133),0.15);">
+                                <span class="relative flex h-2 w-2">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
+                                </span>
                                 عروض حصرية
                             </span>
                         </div>
 
-                        {{-- Rotating Headlines --}}
-                        <div class="relative overflow-hidden" style="height:110px;">
+                        {{-- Rotating Headline (Line 1 + Line 2) --}}
+                        <div class="relative overflow-hidden mb-4" style="height:95px;">
                             @foreach($heroHeadlines as $i => $headline)
-                            <div class="hero-headline absolute w-full text-center" style="top:0;left:0;opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '24px' }});transition:opacity 0.7s cubic-bezier(0.4,0,0.2,1),transform 0.7s cubic-bezier(0.4,0,0.2,1);pointer-events:{{ $i === 0 ? 'auto' : 'none' }};" data-headline="{{ $i }}">
-                                <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black leading-[1.08] tracking-tight">
-                                    <span class="block" style="color:#ffffff;text-shadow:0 2px 12px rgba(255,255,255,0.12);">{{ $headline['line1'] }}</span>
-                                    <span class="block mt-1.5" style="color:#ffffff;text-shadow:0 0 30px rgba(255,255,255,0.25),0 4px 8px rgba(0,0,0,0.25);">{{ $headline['line2'] }}</span>
+                            <div class="hero-headline absolute w-full text-center" style="top:0;left:0;opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '20px' }});transition:opacity 0.6s cubic-bezier(0.4,0,0.2,1),transform 0.6s cubic-bezier(0.4,0,0.2,1);pointer-events:{{ $i === 0 ? 'auto' : 'none' }};" data-headline="{{ $i }}">
+                                <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-[2.75rem] font-black leading-[1.1] tracking-tight">
+                                    <span class="block" style="color:#ffffff;text-shadow:0 2px 16px rgba(255,255,255,0.15);">{{ $headline['line1'] }}</span>
+                                    <span class="block mt-1" style="color:rgba(255,255,255,0.92);text-shadow:0 0 30px rgba(255,255,255,0.2),0 4px 10px rgba(0,0,0,0.3);">{{ $headline['line2'] }}</span>
                                 </h1>
                             </div>
                             @endforeach
                         </div>
 
-                        {{-- Headline dots --}}
-                        <div class="flex gap-1.5 justify-center mt-4 flex-wrap">
+                        {{-- Divider --}}
+                        <div class="flex items-center gap-3 justify-center mb-4 relative z-10">
+                            <div class="h-px flex-1 max-w-[60px]" style="background:linear-gradient(to left,transparent,rgba(255,255,255,0.2));"></div>
+                            <i class="ph-fill ph-sparkle text-brand-500/60 text-sm"></i>
+                            <div class="h-px flex-1 max-w-[60px]" style="background:linear-gradient(to right,transparent,rgba(255,255,255,0.2));"></div>
+                        </div>
+
+                        {{-- Rotating Marketing Phrase --}}
+                        <div class="relative overflow-hidden" style="height:52px;">
+                            @foreach($allPhrases as $i => $phrase)
+                            <p class="hero-phrase absolute w-full text-center text-sm sm:text-base md:text-lg font-bold leading-relaxed"
+                               style="top:0;left:0;color:rgba(255,255,255,0.65);opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '12px' }});transition:opacity 0.6s ease,transform 0.6s ease;pointer-events:{{ $i === 0 ? 'auto' : 'none' }};"
+                               data-phrase="{{ $i }}">{{ $phrase }}</p>
+                            @endforeach
+                        </div>
+
+                        {{-- Progress dots --}}
+                        <div class="flex gap-2 justify-center mt-5 relative z-10">
                             @foreach($heroHeadlines as $i => $h)
-                            <span class="headline-dot block h-1 rounded-full transition-all duration-300 {{ $i === 0 ? 'bg-white/90 w-5' : 'bg-white/15 w-1' }}"></span>
+                            <span class="hero-dot block h-1.5 rounded-full transition-all duration-500 {{ $i === 0 ? 'bg-white/80 w-6' : 'bg-white/20 w-1.5' }}"></span>
                             @endforeach
                         </div>
                     </div>
                 </div>
 
-                {{-- Cycling Marketing Phrases --}}
-                <div id="heroPhraseContainer" class="relative mb-6 overflow-hidden" style="height:64px;">
-                    @foreach($allPhrases as $i => $phrase)
-                    <p class="hero-phrase text-base sm:text-lg md:text-xl lg:text-2xl font-bold leading-snug absolute w-full text-center"
-                       style="top:0;left:0;color:rgba(255,255,255,0.75);text-shadow:0 2px 12px rgba(255,255,255,0.08);opacity:{{ $i === 0 ? '1' : '0' }};transform:translateY({{ $i === 0 ? '0' : '14px' }});transition:opacity 0.7s ease,transform 0.7s ease;pointer-events:{{ $i === 0 ? 'auto' : 'none' }};"
-                       data-phrase="{{ $i }}">{{ $phrase }}</p>
-                    @endforeach
-                </div>
-
-                {{-- CTA Buttons — stacked, centered --}}
-                <div class="flex flex-col items-center gap-3 mb-6">
+                {{-- CTA Buttons --}}
+                <div class="flex flex-col items-center gap-3 mb-8">
                     <a href="{{ route('shop') }}" class="w-full sm:w-72 px-8 py-4 rounded-full font-black text-sm tracking-wide inline-flex items-center justify-center gap-2 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-0.5" style="background:#ffffff;color:#0f172a;">
                         تسوقي الآن <i class="fa-solid fa-arrow-left mr-1"></i>
                     </a>
                     <a href="{{ route('shop') }}" class="text-white/60 hover:text-white transition-colors font-medium text-sm">
                         تصفحي جميع المنتجات
                     </a>
-                </div>
-
-                {{-- Phrase dots — centered --}}
-                <div class="flex gap-1.5 justify-center flex-wrap">
-                    @foreach($allPhrases as $i => $phrase)
-                    <span class="phrase-dot block w-1.5 h-1.5 rounded-full transition-all duration-300 {{ $i === 0 ? 'bg-white/90 w-5' : 'bg-white/15' }}"></span>
-                    @endforeach
                 </div>
             </div>
 
@@ -339,74 +347,70 @@ if (!empty($slideProductIds)) {
 
 <script>
 (function() {
-    // Headline rotator
+    // Unified rotator: headline + phrase + dot change together
     var headlines = document.querySelectorAll('.hero-headline');
-    var headlineDots = document.querySelectorAll('.headline-dot');
+    var phrases = document.querySelectorAll('.hero-phrase');
+    var heroDots = document.querySelectorAll('.hero-dot');
     var totalH = headlines.length;
-    var currentH = 0, hInterval;
+    var totalP = phrases.length;
+    var currentIdx = 0, interval;
 
-    function showHeadline(idx) {
+    function showSlide(idx) {
+        // Headlines
         headlines.forEach(function(h, i) {
             h.style.opacity = i === idx ? '1' : '0';
-            h.style.transform = i === idx ? 'translateY(0)' : 'translateY(24px)';
+            h.style.transform = i === idx ? 'translateY(0)' : 'translateY(20px)';
             h.style.pointerEvents = i === idx ? 'auto' : 'none';
         });
-        headlineDots.forEach(function(d, i) {
-            d.className = i === idx ? 'headline-dot block h-1 rounded-full bg-white/90 w-5 transition-all duration-300' : 'headline-dot block h-1 rounded-full bg-white/15 w-1 transition-all duration-300';
-        });
-        currentH = idx;
-    }
-    function nextHeadline() { showHeadline((currentH + 1) % totalH); }
-    hInterval = setInterval(nextHeadline, 3500);
-
-    // Pause on hover over title card
-    var titleCard = document.getElementById('heroTitleContainer');
-    if (titleCard) {
-        titleCard.addEventListener('mouseenter', function() { clearInterval(hInterval); });
-        titleCard.addEventListener('mouseleave', function() { hInterval = setInterval(nextHeadline, 3500); });
-    }
-
-    // Phrase rotator
-    var phrases = document.querySelectorAll('.hero-phrase');
-    var phraseDots = document.querySelectorAll('.phrase-dot');
-    var totalP = phrases.length;
-    var currentP = 0, pInterval;
-
-    function showPhrase(idx) {
+        // Phrases (cycle through independently mapped to headline index)
+        var phraseIdx = idx % totalP;
         phrases.forEach(function(p, i) {
-            p.style.opacity = i === idx ? '1' : '0';
-            p.style.transform = i === idx ? 'translateY(0)' : 'translateY(14px)';
+            p.style.opacity = i === phraseIdx ? '1' : '0';
+            p.style.transform = i === phraseIdx ? 'translateY(0)' : 'translateY(12px)';
         });
-        phraseDots.forEach(function(d, i) {
-            d.className = i === idx % phraseDots.length ? 'phrase-dot block w-5 h-1.5 rounded-full bg-white/90 transition-all duration-300' : 'phrase-dot block w-1.5 h-1.5 rounded-full bg-white/15 transition-all duration-300';
+        // Dots
+        heroDots.forEach(function(d, i) {
+            d.className = i === idx ? 'hero-dot block h-1.5 rounded-full bg-white/80 w-6 transition-all duration-500' : 'hero-dot block h-1.5 rounded-full bg-white/20 w-1.5 transition-all duration-500';
         });
-        currentP = idx;
+        currentIdx = idx;
     }
-    function nextPhrase() { showPhrase((currentP + 1) % totalP); }
-    pInterval = setInterval(nextPhrase, 4000);
 
-    // Slide rotator (products only, independent from titles)
+    function next() { showSlide((currentIdx + 1) % totalH); }
+    interval = setInterval(next, 4000);
+
+    // Pause on hover
+    var heroCard = document.getElementById('heroCard');
+    if (heroCard) {
+        heroCard.addEventListener('mouseenter', function() { clearInterval(interval); });
+        heroCard.addEventListener('mouseleave', function() { interval = setInterval(next, 4000); });
+    }
+
+    // Product slides rotator (independent)
     var slides = document.querySelectorAll('.hero-slide');
     var totalS = slides.length;
     var currentS = 0, sInterval;
 
-    function showSlide(idx) {
+    function showProductSlide(idx) {
         slides.forEach(function(s) { s.classList.add('hidden'); });
         var s = document.querySelector('.hero-slide[data-slide="' + idx + '"]');
         if (s) s.classList.remove('hidden');
         currentS = idx;
     }
-    function nextSlide() { showSlide((currentS + 1) % totalS); }
-    if (totalS > 1) sInterval = setInterval(nextSlide, 6000);
+    function nextProductSlide() { showProductSlide((currentS + 1) % totalS); }
+    if (totalS > 1) sInterval = setInterval(nextProductSlide, 6000);
 
     slides.forEach(function(s) {
         s.addEventListener('mouseenter', function() { clearInterval(sInterval); });
-        s.addEventListener('mouseleave', function() { if (totalS > 1) sInterval = setInterval(nextSlide, 6000); });
+        s.addEventListener('mouseleave', function() { if (totalS > 1) sInterval = setInterval(nextProductSlide, 6000); });
     });
 })();
 </script>
 
 <style>
+    @keyframes borderShimmer {
+        0% { background-position: 200% 200%; }
+        100% { background-position: -200% -200%; }
+    }
     .value-card:hover { transform: translateY(-6px); border-color: rgba(255,42,133,0.15); box-shadow: 0 12px 40px rgba(0,0,0,0.3), var(--neon-glow); }
     @media (max-width: 767px) {
         .home-sections { display: flex; flex-direction: column; }
