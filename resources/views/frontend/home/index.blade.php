@@ -223,7 +223,7 @@ if (!empty($slideProductIds)) {
                 {{-- Logo — clean, no border --}}
                 <div class="mb-5 flex justify-center">
                     @if(!empty($siteSettings['site_logo_url']))
-                    <img src="{{ $siteSettings['site_logo_url'] }}" alt="جنين للتجميل" class="h-12 sm:h-14 md:h-28 lg:h-32 w-auto object-contain drop-shadow-lg">
+                    <img src="{{ $siteSettings['site_logo_url'] }}" alt="جنين للتجميل" class="h-14 sm:h-16 md:h-32 lg:h-36 w-auto object-contain drop-shadow-lg">
                     @else
                     <span class="text-xl sm:text-2xl md:text-3xl tracking-wider text-white font-black" style="letter-spacing:0.12em;">جنين للتجميل</span>
                     @endif
