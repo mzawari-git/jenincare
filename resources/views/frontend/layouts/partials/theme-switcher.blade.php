@@ -165,13 +165,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var savedArch = localStorage.getItem('شركة جنين للتجميل_architecture') || 'cyber-lab';
     var savedColor = localStorage.getItem('شركة جنين للتجميل_color') || 'rose';
     var savedFont = localStorage.getItem('شركة جنين للتجميل_font') || 'Tajawal';
-    var savedMode = localStorage.getItem('شركة جنين للتجميل_mode') || getCookie('شركة جنين للتجميل_mode') || 'dark';
-
-    // Apply dark/light mode
-    if (savedMode === 'light') {
-        document.documentElement.setAttribute('data-theme-mode', 'light');
-        updateDarkLightIcon(true);
-    }
+    // Server controls theme mode — do NOT auto-apply client-side light/dark
+    var savedMode = 'dark';
 
     var archBtns = document.querySelectorAll('.arch-btn');
     archBtns.forEach(function(b) { b.classList.remove('border-white/40','bg-white/10'); b.classList.add('border-white/5','bg-white/5'); });

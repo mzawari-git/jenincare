@@ -40,20 +40,24 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 
     <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
-    <link rel="stylesheet" href="{{ asset('css/tailwind.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('css/tailwind.css') }}?v=4">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="manifest" href="{{ asset('manifest.json') }}"><meta name="theme-color" content="var(--surface, #050a08)">
+    <link rel="manifest" href="{{ asset('manifest.json') }}?v=4"><meta name="theme-color" content="var(--surface, #050a08)">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="شركة جنين للتجميل">
     <meta name="application-name" content="شركة جنين للتجميل">
     <meta name="msapplication-TileColor" content="#050a08">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
 
-    <link rel="stylesheet" href="{{ asset('css/themes/' . $activeTheme . '.css') }}?v=3">
-    <link rel="stylesheet" href="{{ asset('css/light-mode.css') }}?v=3">
-    <script>(function(){localStorage.removeItem('شركة جنين للتجميل_mode');document.cookie='شركة جنين للتجميل_mode=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;';document.documentElement.removeAttribute('data-theme-mode');})();</script>
+    <link rel="stylesheet" href="{{ asset('css/themes/' . $activeTheme . '.css') }}?v=4">
+    @if($isLightTheme)
+    <link rel="stylesheet" href="{{ asset('css/light-mode.css') }}?v=4">
+    @endif
 
     @php $tracking = app(\App\Services\AdvertisingTrackingService::class); @endphp
 
@@ -158,8 +162,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <script src="{{ asset('js/behavioral-analysis.js') }}" defer></script>
-    <script src="{{ asset('js/app.js') }}"></script>
+    <script src="{{ asset('js/behavioral-analysis.js') }}?v=4" defer></script>
+    <script src="{{ asset('js/app.js') }}?v=4"></script>
     @if($tracking->isEnabled()) {!! $tracking->getBrowserPixelScript() !!} @endif
     @stack('scripts')
 
