@@ -43,7 +43,15 @@ class BlogPost extends Model
 
     public function getImageUrlAttribute(): ?string
     {
-        if (!$this->image) return null;
+        if (!$this->image) {
+            $defaults = [
+                'articles' => 'uploads/blog/defaults/articles.svg',
+                'tips' => 'uploads/blog/defaults/tips.svg',
+                'news' => 'uploads/blog/defaults/news.svg',
+                'guides' => 'uploads/blog/defaults/guides.svg',
+            ];
+            return asset($defaults[$this->category] ?? 'uploads/blog/defaults/articles.svg');
+        }
         if (Str::startsWith($this->image, ['http://', 'https://'])) return $this->image;
         if (Str::startsWith($this->image, 'uploads/')) return asset($this->image);
         return asset('storage/' . $this->image);

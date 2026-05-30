@@ -195,7 +195,7 @@
                     <div style="font-size:.65rem;">{{ $post->created_at->format('H:i') }}</div>
                 </td>
                 <td>
-                    <form action="{{ route('admin.blog.toggle', $post) }}" method="POST" class="d-inline">
+                    <form action="{{ route('admin.blog.toggle', $post->id) }}" method="POST" class="d-inline">
                         @csrf @method('PATCH')
                         @if($post->is_published)
                             <button class="status-badge" style="background:#DCFCE7;color:#16a34a;">
@@ -210,7 +210,7 @@
                 </td>
                 <td>
                     <div class="d-flex align-items-center gap-1" style="direction:ltr;">
-                        <a href="{{ route('admin.blog.edit', $post) }}" class="action-btn-icon edit" title="تعديل">
+                        <a href="{{ route('admin.blog.edit', $post->id) }}" class="action-btn-icon edit" title="تعديل">
                             <i class="fas fa-pen"></i>
                         </a>
                         @if($post->trashed())
@@ -219,7 +219,7 @@
                                 <button class="action-btn-icon restore" title="استعادة"><i class="fas fa-trash-restore"></i></button>
                             </form>
                         @else
-                            <form action="{{ route('admin.blog.destroy', $post) }}" method="POST" class="d-inline" onsubmit="return confirm('متأكد من حذف هذا المقال؟')">
+                            <form action="{{ route('admin.blog.destroy', $post->id) }}" method="POST" class="d-inline" onsubmit="return confirm('متأكد من حذف هذا المقال؟')">
                                 @csrf @method('DELETE')
                                 <button class="action-btn-icon delete" title="حذف"><i class="fas fa-trash"></i></button>
                             </form>

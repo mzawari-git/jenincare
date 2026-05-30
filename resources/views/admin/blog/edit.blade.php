@@ -9,12 +9,12 @@
     <h2 class="text-xl font-black">تعديل: {{ $post->title_ar }}</h2>
 </div>
 
-<form action="{{ route('admin.blog.update', $post) }}" method="POST" enctype="multipart/form-data">
+<form action="{{ route('admin.blog.update', $post->id) }}" method="POST" enctype="multipart/form-data">
     @csrf @method('PUT')
     @include('admin.blog._form')
     <div class="mt-6 flex gap-3">
         <button type="submit" class="btn-primary"><i class="fas fa-save ml-1"></i> حفظ التعديلات</button>
-        <form action="{{ route('admin.blog.destroy', $post) }}" method="POST" onsubmit="return confirm('متأكد من الحذف؟')">@csrf @method('DELETE')
+        <form action="{{ route('admin.blog.destroy', $post->id) }}" method="POST" onsubmit="return confirm('متأكد من الحذف؟')">@csrf @method('DELETE')
             <button class="btn-ghost text-red-400"><i class="fas fa-trash ml-1"></i> حذف</button>
         </form>
     </div>
