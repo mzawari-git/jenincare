@@ -51,8 +51,8 @@
     <meta name="application-name" content="شركة جنين للتجميل">
     <meta name="msapplication-TileColor" content="#050a08">
 
-    <link rel="stylesheet" href="{{ asset('css/themes/' . $activeTheme . '.css') }}?v=2">
-    <link rel="stylesheet" href="{{ asset('css/light-mode.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('css/themes/' . $activeTheme . '.css') }}?v=3">
+    <link rel="stylesheet" href="{{ asset('css/light-mode.css') }}?v=3">
     <script>(function(){var m=localStorage.getItem('شركة جنين للتجميل_mode');if(!m){var c=document.cookie.match('شركة جنين للتجميل_mode=([^;]+)');m=c?c[1]:null;}if(m==='light')document.documentElement.setAttribute('data-theme-mode','light');})();</script>
 
     @php $tracking = app(\App\Services\AdvertisingTrackingService::class); @endphp

@@ -33,7 +33,7 @@
 }
 
 body {
-  background-color: var(--surface);
+  background-color: var(--surface) !important;
   background-image: var(--bg-pattern), radial-gradient(ellipse at 30% 20%, rgba(236,72,153,0.03) 0%, transparent 55%), radial-gradient(ellipse at 70% 80%, rgba(192,38,211,0.02) 0%, transparent 55%);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
