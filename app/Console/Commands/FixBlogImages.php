@@ -27,7 +27,11 @@ class FixBlogImages extends Command
             $newName = 'uploads/blog/' . basename($oldPath);
             $newPath = public_path($newName);
 
-            if (File::exists($oldFile)) {
+            if (File::exists($newPath)) {
+                $post->update(['image' => $newName]);
+                $this->info("Already exists, updated DB: {$oldPath} -> {$newName}");
+                $count++;
+            } elseif (File::exists($oldFile)) {
                 File::ensureDirectoryExists(dirname($newPath));
                 File::copy($oldFile, $newPath);
                 $post->update(['image' => $newName]);
