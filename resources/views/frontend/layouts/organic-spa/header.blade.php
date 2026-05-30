@@ -5,8 +5,8 @@
         <div class="flex items-center gap-8 flex-1">
             <a href="{{ route('home') }}" class="flex items-center gap-2 flex-shrink-0 group" style="color: var(--ink);">
                 @if(!empty($siteSettings['site_logo_url']))
-                <div class="relative flex items-center justify-center rounded-xl p-1.5 transition-all duration-300 group-hover:scale-105" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);box-shadow:0 2px 12px rgba(0,0,0,0.15);">
-                    <img src="{{ $siteSettings['site_logo_url'] }}" alt="{{ $siteSettings['site_name']??'شركة جنين للتجميل' }}" class="h-6 md:h-8 w-auto object-contain drop-shadow-md">
+                <div class="relative flex items-center justify-center rounded-lg p-1 transition-all duration-300 group-hover:scale-105" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);">
+                    <img src="{{ $siteSettings['site_logo_url'] }}" alt="{{ $siteSettings['site_name']??'شركة جنين للتجميل' }}" class="h-5 md:h-6 w-auto object-contain">
                 </div>
                 @else
                 <span class="text-lg md:text-xl font-black tracking-tight">{{ $siteSettings['site_name_ar']??$siteSettings['site_name']??'شركة جنين للتجميل' }}<span class="text-brand-500">.</span></span>
