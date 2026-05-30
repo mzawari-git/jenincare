@@ -194,8 +194,8 @@ class AppServiceProvider extends ServiceProvider
             $settings = SettingsHelper::getAll();
             $s = array_merge($defaultSettings, $settings);
 
-            // ── Architecture (which layout to load) — independent of color ──
-            $activeTheme = $s['site_theme'] ?? 'rose';
+            // ── Force rose theme for consistency across all environments ──
+            $activeTheme = 'rose';
             // Default: derive architecture from the active theme color
             $layoutArchitecture = match($activeTheme) {
                 'rose', 'midnight' => 'cyber-lab',
@@ -210,18 +210,6 @@ class AppServiceProvider extends ServiceProvider
                 if (in_array($ca, ['cyber-lab','organic-spa','editorial','luxury-boutique'])) {
                     $layoutArchitecture = $ca;
                 }
-            }
-            // ── Color (which CSS file) — independent of architecture ──
-            if (isset($_COOKIE['شركة جنين للتجميل_color'])) {
-                $cc = $_COOKIE['شركة جنين للتجميل_color'];
-                if (in_array($cc, ['rose','midnight','natural','forest','minimal','ocean','sunset','luxury'])) {
-                    $activeTheme = $cc;
-                }
-            }
-            // If no color cookie but architecture cookie exists, set default color for that arch
-            if (!isset($_COOKIE['شركة جنين للتجميل_color']) && isset($_COOKIE['شركة جنين للتجميل_arch'])) {
-                $defaultColors = ['cyber-lab'=>'rose','organic-spa'=>'natural','editorial'=>'minimal','luxury-boutique'=>'sunset'];
-                $activeTheme = $defaultColors[$ca] ?? 'rose';
             }
 
             $view->with('layoutArchitecture', $layoutArchitecture);

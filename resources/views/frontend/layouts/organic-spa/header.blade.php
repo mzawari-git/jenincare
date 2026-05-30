@@ -1,6 +1,6 @@
 @php if(!isset($headerCategories)){$headerCategories=\App\Models\Category::active()->withCount(['products'=>fn($q)=>$q->where('is_active',true)])->having('products_count','>',0)->orderBy('sort_order')->get()->map(function($cat){$arName=preg_replace('/[a-zA-Z&\-\(\)]+/','',$cat->name_ar);$arName=preg_replace('/\s{2,}/',' ',trim($arName));$cat->ar_label=!empty($arName)?$arName:$cat->name_ar;return $cat;});} @endphp
 
-<header class="fixed top-0 w-full z-50 border-b-2" id="mainHeaderV3" style="background: var(--header-bg); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-color: var(--glass-border); border-radius: 0 0 2rem 2rem; transition: background 0.3s, border-radius 0.3s;">
+<header class="fixed top-0 w-full z-50 border-b-2" id="mainHeaderV3" style="background: rgba(12, 10, 12, 0.92) !important; backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-color: var(--glass-border); border-radius: 0 0 2rem 2rem; transition: background 0.3s, border-radius 0.3s;">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 md:h-16 flex items-center justify-between">
         <div class="flex items-center gap-8 flex-1">
             <a href="{{ route('home') }}" class="flex items-center gap-2 flex-shrink-0 group" style="color: var(--ink);">
@@ -178,6 +178,6 @@
 function toggleSearchV3(){var o=document.getElementById('searchOverlayV3');o.classList.contains('hidden')?(o.classList.remove('hidden'),o.classList.add('flex'),o.querySelector('input')?.focus()):(o.classList.add('hidden'),o.classList.remove('flex'));}
 document.getElementById('searchOverlayV3')?.addEventListener('click',function(e){if(e.target===this)toggleSearchV3();});
 function toggleMobileMenuV3(){var m=document.getElementById('mobileMenuV3'),p=document.getElementById('mobileMenuPanelV3'),i=document.getElementById('mobileMenuIconV3');m.classList.contains('hidden')?(m.classList.remove('hidden'),setTimeout(function(){p.style.transform='translateX(0)'},10),i.className='ph ph-x text-xl'):(p.style.transform='translateX(100%)',setTimeout(function(){m.classList.add('hidden')},300),i.className='ph ph-list text-xl');}
-window.addEventListener('scroll',function(){var h=document.getElementById('mainHeaderV3');if(!h)return;h.style.background=window.scrollY>50?'rgba(5,10,8,0.95)':'var(--header-bg)';h.style.borderRadius=window.scrollY>50?'0':'0 0 2rem 2rem';});
+window.addEventListener('scroll',function(){var h=document.getElementById('mainHeaderV3');if(!h)return;h.style.background=window.scrollY>50?'rgba(5,10,8,0.95)':'rgba(12,10,12,0.92)';h.style.borderRadius=window.scrollY>50?'0':'0 0 2rem 2rem';});
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){var s=document.getElementById('searchOverlayV3');if(s&&!s.classList.contains('hidden'))toggleSearchV3();var m=document.getElementById('mobileMenuV3');if(m&&!m.classList.contains('hidden'))toggleMobileMenuV3();}});
 </script>

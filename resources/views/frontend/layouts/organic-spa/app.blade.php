@@ -135,7 +135,7 @@
     </script>
     <script>window.basePath="{{ rtrim(url('/'), '/') }}";</script>
 </head>
-<body class="antialiased" style="background-color: var(--surface); color: var(--ink);">
+<body class="antialiased" style="background-color: var(--surface) !important; color: var(--ink);">
 
     {{-- Floating Leaf Particles --}}
     <div class="leaf-particle" style="top:15%; right:10%; animation-delay:0s;">🍃</div>
