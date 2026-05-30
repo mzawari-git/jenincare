@@ -223,7 +223,7 @@ if (!empty($slideProductIds)) {
                 {{-- Logo — clean, no border --}}
                 <div class="mb-5 flex justify-center">
                     @if(!empty($siteSettings['site_logo_url']))
-                    <img src="{{ $siteSettings['site_logo_url'] }}" alt="جنين للتجميل" class="h-14 sm:h-18 md:h-22 w-auto object-contain drop-shadow-lg">
+                    <img src="{{ $siteSettings['site_logo_url'] }}" alt="جنين للتجميل" class="h-20 sm:h-28 md:h-36 w-auto object-contain drop-shadow-lg">
                     @else
                     <span class="text-xl sm:text-2xl md:text-3xl tracking-wider text-white font-black" style="letter-spacing:0.12em;">جنين للتجميل</span>
                     @endif
@@ -233,7 +233,7 @@ if (!empty($slideProductIds)) {
                      PREMIUM HERO CARD — Animated gradient + floating elements
                      ═══════════════════════════════════════════ --}}
                 <div id="heroCard" class="relative mb-6 select-none">
-                    <div class="relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-8 md:p-10" style="background:linear-gradient(145deg,rgba(255,255,255,0.06) 0%,rgba(255,255,255,0.015) 40%,rgba(var(--brand-500-rgb,255,42,133),0.05) 100%);border:1.5px solid rgba(255,255,255,0.12);backdrop-filter:blur(24px);box-shadow:0 24px 80px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.1),0 0 100px rgba(var(--brand-500-rgb,255,42,133),0.06);">
+                    <div class="relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-8 md:p-10" style="background:linear-gradient(145deg,rgba(255,255,255,0.08) 0%,rgba(255,255,255,0.02) 40%,rgba(var(--brand-500-rgb,255,42,133),0.08) 100%);border:1.5px solid rgba(255,255,255,0.15);backdrop-filter:blur(24px);box-shadow:0 24px 80px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.1),0 0 120px rgba(var(--brand-500-rgb,255,42,133),0.1);">
 
                         {{-- Ambient glow orbs --}}
                         <div class="absolute -top-28 -right-28 w-56 h-56 rounded-full opacity-20 pointer-events-none" style="background:radial-gradient(circle,var(--brand-500),transparent 70%);filter:blur(60px);animation:glowPulse 5s ease-in-out infinite;"></div>
