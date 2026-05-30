@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BlogPost;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 
 class BlogController extends Controller
@@ -42,7 +43,7 @@ class BlogController extends Controller
         $data['is_featured'] = $request->boolean('is_featured');
 
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('uploads/blog', 'public');
+            $data['image'] = $this->saveImage($request->file('image'));
         }
 
         BlogPost::create($data);
@@ -81,8 +82,8 @@ class BlogController extends Controller
         $data['is_featured'] = $request->boolean('is_featured');
 
         if ($request->hasFile('image')) {
-            if ($blog->image) Storage::disk('public')->delete($blog->image);
-            $data['image'] = $request->file('image')->store('uploads/blog', 'public');
+            $this->deleteImage($blog->image);
+            $data['image'] = $this->saveImage($request->file('image'));
         }
 
         $blog->update($data);
@@ -93,6 +94,9 @@ class BlogController extends Controller
     public function destroy($id)
     {
         $blog = BlogPost::withTrashed()->findOrFail($id);
+        if ($blog->trashed()) {
+            $this->deleteImage($blog->image);
+        }
         $blog->delete();
         return back()->with('success', 'تم حذف المقال.');
     }
@@ -112,6 +116,9 @@ class BlogController extends Controller
 
     public function emptyTrash()
     {
+        BlogPost::onlyTrashed()->get()->each(function ($post) {
+            $this->deleteImage($post->image);
+        });
         BlogPost::onlyTrashed()->forceDelete();
         return back()->with('success', 'تم إفراغ سلة المحذوفات.');
     }
@@ -122,14 +129,30 @@ class BlogController extends Controller
             'image' => 'required|image|max:5120',
         ]);
 
-        $path = $request->file('image')->store('uploads/blog/inline', 'public');
-        $url = asset('storage/' . $path);
+        $path = $this->saveImage($request->file('image'), 'uploads/blog/inline');
+        $url = asset($path);
 
         return response()->json([
             'success' => true,
             'url' => $url,
             'html' => '<img src="' . $url . '" alt="" class="rounded-xl max-w-full mx-auto block" loading="lazy">',
         ]);
+    }
+
+    private function saveImage($file, string $subdir = 'uploads/blog'): string
+    {
+        $dir = public_path($subdir);
+        if (!File::exists($dir)) File::makeDirectory($dir, 0755, true);
+        $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+        $file->move($dir, $filename);
+        return $subdir . '/' . $filename;
+    }
+
+    private function deleteImage(?string $path): void
+    {
+        if ($path && File::exists(public_path($path))) {
+            File::delete(public_path($path));
+        }
     }
 
     private function uniqueSlug(string $title, ?int $excludeId = null): string
