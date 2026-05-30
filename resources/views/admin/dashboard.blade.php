@@ -445,8 +445,10 @@
             <div class="card-body">
                 <div class="d-grid gap-2">
                     <a href="{{ route('admin.products.create') }}" class="btn btn-pink btn-sm"><i class="fas fa-plus"></i> إضافة منتج جديد</a>
+                    <a href="{{ route('admin.blog.create') }}" class="btn btn-pink btn-sm"><i class="fas fa-newspaper"></i> إضافة مقال جديد</a>
                     <a href="{{ route('admin.coupons.create') }}" class="btn btn-outline-pink btn-sm"><i class="fas fa-ticket"></i> إضافة كوبون خصم</a>
                     <a href="{{ route('admin.products.index') }}" class="btn btn-outline-pink btn-sm"><i class="fas fa-box"></i> إدارة المنتجات</a>
+                    <a href="{{ route('admin.blog.index') }}" class="btn btn-outline-pink btn-sm"><i class="fas fa-newspaper"></i> إدارة المقالات</a>
                     <a href="{{ route('admin.orders.index') }}" class="btn btn-outline-pink btn-sm"><i class="fas fa-shopping-bag"></i> إدارة الطلبات</a>
                     <a href="{{ route('admin.b2b.companies') }}" class="btn btn-outline-pink btn-sm"><i class="fas fa-building"></i> شركات B2B</a>
                 </div>
