@@ -6,7 +6,7 @@
             <a href="{{ route('home') }}" class="flex items-center gap-2 flex-shrink-0 group" style="color: var(--ink);">
                 @if(!empty($siteSettings['site_logo_url']))
                 <div class="relative flex items-center justify-center rounded-lg p-1 transition-all duration-300 group-hover:scale-105" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);">
-                    <img src="{{ $siteSettings['site_logo_url'] }}" alt="{{ $siteSettings['site_name']??'شركة جنين للتجميل' }}" class="h-6 md:h-10 w-auto object-contain">
+                    <img src="{{ $siteSettings['site_logo_url'] }}" alt="{{ $siteSettings['site_name']??'شركة جنين للتجميل' }}" class="h-6 md:h-10 w-auto object-contain" style="max-height:40px;max-width:120px;">
                 </div>
                 @else
                 <span class="text-lg md:text-xl font-black tracking-tight">{{ $siteSettings['site_name_ar']??$siteSettings['site_name']??'شركة جنين للتجميل' }}<span class="text-brand-500">.</span></span>
@@ -53,7 +53,7 @@
             <div class="flex items-center justify-between relative z-10">
                 <div class="flex items-center gap-2.5">
                     @if(!empty($siteSettings['site_logo_url']))
-                        <img src="{{ $siteSettings['site_logo_url'] }}" alt="شركة جنين للتجميل" class="h-8 w-auto object-contain">
+                        <img src="{{ $siteSettings['site_logo_url'] }}" alt="شركة جنين للتجميل" class="h-8 w-auto object-contain" style="max-height:32px;max-width:120px;">
                     @else
                         <span class="text-lg font-black" style="color:var(--ink);">{{ $siteSettings['site_name']??'شركة جنين للتجميل' }}</span>
                     @endif
