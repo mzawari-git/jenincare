@@ -370,7 +370,7 @@ if (!empty($slideProductIds)) {
                 </div>
                 {{-- Arabic name --}}
                 <h3 class="font-bold text-xs md:text-sm mb-0.5 leading-tight" style="color:#1a1a1a;">
-                    @if($emoji)<span class="ml-1">{{ $emoji }}</span>@endif{{ $arName }}
+                    {{ $arName }}
                 </h3>
                 {{-- English name --}}
                 @if($enName)
