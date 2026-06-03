@@ -42,6 +42,9 @@
 *.zip
 *.rar
 
+# SkinAnalyzer Android app (source runs directly on device, not via GitHub)
+/SkinAnalyzer/android-app/
+
 # IDE
 .idea/
 .vscode/

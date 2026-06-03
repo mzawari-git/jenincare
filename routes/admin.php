@@ -223,7 +223,8 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::post('/marketing/custom-api', [MarketingTrackingController::class, 'updateCustomApi'])->name('admin.marketing.custom-api');
     Route::post('/marketing/general', [MarketingTrackingController::class, 'updateGeneral'])->name('admin.marketing.general');
     Route::get('/marketing/test-facebook', [MarketingTrackingController::class, 'testFacebook'])->name('admin.marketing.test-facebook');
-    Route::post('/marketing/oauth-credentials', [MarketingTrackingController::class, 'saveOAuthCredentials'])->name('admin.marketing.oauth-credentials');    Route::get('/marketing/test-tiktok', [MarketingTrackingController::class, 'testTikTok'])->name('admin.marketing.test-tiktok');
+    Route::post('/marketing/oauth-credentials', [MarketingTrackingController::class, 'saveOAuthCredentials'])->name('admin.marketing.oauth-credentials');
+    Route::get('/marketing/test-tiktok', [MarketingTrackingController::class, 'testTikTok'])->name('admin.marketing.test-tiktok');
     Route::get('/marketing/test-google', [MarketingTrackingController::class, 'testGoogle'])->name('admin.marketing.test-google');
     Route::get('/marketing/test-snapchat', [MarketingTrackingController::class, 'testSnapchat'])->name('admin.marketing.test-snapchat');
     Route::get('/marketing/test-pinterest', [MarketingTrackingController::class, 'testPinterest'])->name('admin.marketing.test-pinterest');

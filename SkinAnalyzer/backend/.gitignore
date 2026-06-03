@@ -1,0 +1,76 @@
+# Environment
+.env
+.env.backup
+.env.production
+.env.staging
+.phpunit.result.cache
+
+# Composer
+/vendor/
+composer.lock
+
+# Laravel
+/bootstrap/cache/*
+storage/app/*
+storage/app/public/*
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/testing/*
+storage/framework/views/*
+storage/logs/*
+storage/debugbar/*
+storage/*.key
+
+# Public storage symlink
+public/storage
+public/hot
+
+# Node
+node_modules/
+
+# Built assets
+public/css/
+public/js/
+public/build/
+public/mix-manifest.json
+
+# IDE
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.project
+.settings/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PHPUnit
+.phpunit.cache/
+/coverage/
+coverage.xml
+.phpunit.result.cache
+
+# PHPStan
+.phpstan.cache/
+
+# Debug
+/phpinfo.php
+/debug.log
+
+# Image uploads (keep directory, ignore contents)
+public/uploads/scans/*
+!public/uploads/scans/.gitkeep
+
+# Backup files
+*.backup
+*.sql
+*.sql.gz
+dump/
+
+# Docker
+docker-compose.override.yml

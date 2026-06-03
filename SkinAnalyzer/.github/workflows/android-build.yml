@@ -1,0 +1,96 @@
+name: Android Build & Test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'android-app/**'
+      - '.github/workflows/android-build.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'android-app/**'
+      - '.github/workflows/android-build.yml'
+
+env:
+  JAVA_VERSION: '17'
+  GRADLE_CACHE_KEY: gradle-${{ runner.os }}-${{ hashFiles('android-app/**/*.gradle*', 'android-app/**/gradle-wrapper.properties') }}
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Setup Gradle cache
+        uses: gradle/gradle-build-action@v3
+        with:
+          build-root-directory: android-app
+          gradle-home-cache-cleanup: true
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x android-app/gradlew
+
+      - name: Run Android Lint
+        run: ./gradlew lint
+        working-directory: android-app
+        continue-on-error: false
+
+      - name: Run Unit Tests
+        run: ./gradlew test
+        working-directory: android-app
+        continue-on-error: false
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
+        working-directory: android-app
+
+      - name: Upload Debug APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: skinanalyzer-debug
+          path: android-app/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+
+      - name: Decode Keystore
+        if: github.ref == 'refs/heads/main'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > android-app/release.keystore
+
+      - name: Build Release APK
+        if: github.ref == 'refs/heads/main'
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=release.keystore \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
+        working-directory: android-app
+
+      - name: Upload Release APK Artifact
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: skinanalyzer-release
+          path: android-app/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
+
+      - name: Cleanup Keystore
+        if: github.ref == 'refs/heads/main'
+        run: rm -f android-app/release.keystore

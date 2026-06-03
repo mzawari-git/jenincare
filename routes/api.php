@@ -3,6 +3,53 @@
 use Illuminate\Support\Facades\Route;
 use Modules\CustomAdmin\Http\Controllers\MetaWebhookController;
 
+/*
+|--------------------------------------------------------------------------
+| Mobile App API v1 - SkinAnalyzer
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1')->group(function () {
+
+    // Public endpoints
+    Route::get('/app-config', [\App\Http\Controllers\Api\V1\AppConfigController::class, 'index']);
+
+    Route::prefix('auth')->group(function () {
+        Route::post('/login', [\App\Http\Controllers\Api\V1\AuthController::class, 'login']);
+        Route::post('/register', [\App\Http\Controllers\Api\V1\AuthController::class, 'register']);
+    });
+
+    // Device registration (public, associates with user if authenticated)
+    Route::post('/device/register', [\App\Http\Controllers\Api\V1\DeviceController::class, 'register']);
+
+    // Authenticated endpoints
+    Route::middleware('auth:sanctum')->group(function () {
+
+        // Profile
+        Route::get('/profile', [\App\Http\Controllers\Api\V1\AuthController::class, 'profile']);
+        Route::put('/profile', [\App\Http\Controllers\Api\V1\AuthController::class, 'updateProfile']);
+        Route::post('/logout', [\App\Http\Controllers\Api\V1\AuthController::class, 'logout']);
+
+        // Device
+        Route::post('/device/fcm', [\App\Http\Controllers\Api\V1\DeviceController::class, 'updateFcm']);
+
+        // Scans
+        Route::get('/scans', [\App\Http\Controllers\Api\V1\ScanController::class, 'index']);
+        Route::get('/scans/history', [\App\Http\Controllers\Api\V1\ScanController::class, 'history']);
+        Route::post('/scans/upload', [\App\Http\Controllers\Api\V1\ScanController::class, 'upload']);
+        Route::post('/scans/upload/with-progress', [\App\Http\Controllers\Api\V1\ScanController::class, 'uploadWithMetadata']);
+        Route::post('/scans/upload/chunk', [\App\Http\Controllers\Api\V1\ScanController::class, 'uploadChunk']);
+        Route::get('/scans/{scanId}/status', [\App\Http\Controllers\Api\V1\ScanController::class, 'status']);
+        Route::post('/scans/{scanId}/unlock', [\App\Http\Controllers\Api\V1\ScanController::class, 'unlock']);
+        Route::get('/scans/{scanId}/report', [\App\Http\Controllers\Api\V1\ScanController::class, 'report']);
+        Route::get('/scans/{scanId}/timeline', [\App\Http\Controllers\Api\V1\ScanController::class, 'timeline']);
+        Route::get('/scans/{id}', [\App\Http\Controllers\Api\V1\ScanController::class, 'show']);
+
+        // Products
+        Route::get('/products/recommended/{scanId}', [\App\Http\Controllers\Api\V1\ProductController::class, 'recommended']);
+    });
+});
+
+// Existing API routes
 Route::get('/health', function () {
     return response()->json(['status' => 'ok', 'time' => now()]);
 });

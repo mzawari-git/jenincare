@@ -1,0 +1,67 @@
+# ============================================
+# SkinAnalyzer .gitignore
+# Keep only source code, docs, and configs
+# Exclude decompiled APK artifacts, builds, and large binaries
+# ============================================
+
+# APK files
+*.apk
+*.apk.*
+
+# Decompiled smali / reverse-engineered code
+smali/
+zmskin_os_decompiled/
+v8_decompiled/
+
+# Original APK contents
+original/
+unknown/
+
+# Native libraries
+lib/
+
+# Android resources (decompiled)
+res/
+assets/
+
+# Images
+IMAGE/
+
+# Android app (entire source - run directly on device, not via GitHub)
+android-app/
+
+# Admin panel builds and deps
+admin-panel/node_modules/
+admin-panel/dist/
+admin-panel/build/
+
+# Backend vendor and storage
+backend/vendor/
+backend/storage/
+backend/bootstrap/cache/
+
+# Build directory
+build/
+
+# Keystore (contains private keys)
+*.keystore
+debug.keystore
+
+# APK decompilation tools
+apktool
+apktool.bat
+apktool.jar
+apktool.yml
+AndroidManifest.xml
+
+# Personal notes / sensitive files
+roadmap.txt
+tasnef_kamil.md
+user.txt
+
+# API collections (may contain keys)
+*Zyla Api Hub*
+
+# OS files
+.DS_Store
+Thumbs.db
