@@ -12,6 +12,8 @@ Route::prefix('v1')->group(function () {
 
     // Public endpoints
     Route::get('/app-config', [\App\Http\Controllers\Api\V1\AppConfigController::class, 'index']);
+    Route::get('/app-update', [\App\Http\Controllers\Api\V1\AppUpdateController::class, 'check']);
+    Route::get('/app-update/download', [\App\Http\Controllers\Api\V1\AppUpdateController::class, 'download']);
 
     Route::prefix('auth')->group(function () {
         Route::post('/login', [\App\Http\Controllers\Api\V1\AuthController::class, 'login']);

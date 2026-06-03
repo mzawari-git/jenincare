@@ -10,6 +10,10 @@ return [
     'locale' => env('APP_LOCALE', 'ar'),
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'ar'),
     'faker_locale' => env('APP_FAKER_LOCALE', 'ar_SA'),
+    'update_version' => env('APP_UPDATE_VERSION', '1.0.1'),
+    'update_version_code' => env('APP_UPDATE_VERSION_CODE', 2),
+    'update_release_notes' => env('APP_UPDATE_RELEASE_NOTES', ''),
+    'update_force' => env('APP_UPDATE_FORCE', false),
     'key' => env('APP_KEY'),
     'cipher' => 'AES-256-CBC',
     'maintenance' => [
