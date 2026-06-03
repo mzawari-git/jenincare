@@ -91,16 +91,16 @@ class AIProviderController extends Controller
         }
 
         $credentials = $provider->api_credentials ?? [];
-        if ($request->filled('api_key')) {
+        if ($request->has('api_key')) {
             $credentials['api_key'] = $request->input('api_key');
         }
-        if ($request->filled('endpoint')) {
+        if ($request->has('endpoint')) {
             $credentials['endpoint_url'] = $request->input('endpoint');
         }
         $provider->api_credentials = $credentials;
 
         $config = $provider->config ?? [];
-        if ($request->filled('model_id')) {
+        if ($request->has('model_id')) {
             $config['model'] = $request->input('model_id');
         }
         $provider->config = $config;
@@ -184,15 +184,21 @@ class AIProviderController extends Controller
         }
 
         try {
+            $apiKey = $provider->api_credentials['api_key'] ?? '';
             $endpoint = $provider->api_credentials['endpoint_url']
                 ?? $this->getDefaultEndpoint($provider->driver_key);
 
-            $response = Http::timeout(15)
-                ->withHeaders([
-                    'Authorization' => 'Bearer ' . ($provider->api_credentials['api_key'] ?? ''),
-                    'Accept' => 'application/json',
-                ])
-                ->get($endpoint);
+            $http = Http::timeout(15)
+                ->withHeaders(['Accept' => 'application/json']);
+
+            if ($provider->driver_key === 'zyla') {
+                $separator = str_contains($endpoint, '?') ? '&' : '?';
+                $response = $http->get($endpoint . $separator . 'apikey=' . urlencode($apiKey));
+            } else {
+                $response = $http->withHeaders([
+                    'Authorization' => 'Bearer ' . $apiKey,
+                ])->get($endpoint);
+            }
 
             $provider->update(['last_check_at' => now()]);
 
@@ -232,6 +238,9 @@ class AIProviderController extends Controller
                 : 0,
             'has_quota' => $p->hasQuotaAvailable(),
             'has_credentials' => !empty($p->api_credentials),
+            'api_key' => $p->api_credentials['api_key'] ?? null,
+            'endpoint' => $p->api_credentials['endpoint_url'] ?? null,
+            'model_id' => $p->config['model'] ?? null,
             'last_check_at' => $p->last_check_at,
             'created_at' => $p->created_at,
             'updated_at' => $p->updated_at,
@@ -255,6 +264,7 @@ class AIProviderController extends Controller
             'claude' => 'https://api.anthropic.com/v1/messages',
             'gemini' => 'https://generativelanguage.googleapis.com/v1beta/models',
             'huggingface' => 'https://api-inference.huggingface.co/models',
+            'zyla' => 'https://zylalabs.com/api/1991/skin+analysis+api',
             'native' => config('app.url') . '/api/health',
             default => config('app.url') . '/api/health',
         };
