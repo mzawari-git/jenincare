@@ -5,6 +5,7 @@ import Components from 'unplugin-vue-components/vite'
 import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
+  base: '/skin-admin/',
   plugins: [
     vue(),
     AutoImport({

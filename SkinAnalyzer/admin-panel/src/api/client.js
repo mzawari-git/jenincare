@@ -2,7 +2,7 @@ import axios from 'axios'
 import Swal from 'sweetalert2'
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost/jenincare/public/api/admin',
+  baseURL: '/api/admin',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',

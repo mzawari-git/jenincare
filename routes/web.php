@@ -108,3 +108,11 @@ Route::get('/thumbnails/{path}', [\App\Http\Controllers\Frontend\OptimizedImageC
 // Serve storage files directly (avoid "storage" in URL - some hosts block it)
 Route::get('/storage/{path}', [\App\Http\Controllers\Frontend\ServeStorageController::class, 'show'])->where('path', '.*');
 Route::get('/files/{path}', [\App\Http\Controllers\Frontend\ServeStorageController::class, 'show'])->where('path', '.*');
+
+// SkinAnalyzer Admin Panel SPA
+Route::get('/skin-admin', function () {
+    return response()->file(public_path('skin-admin/index.html'));
+});
+Route::get('/skin-admin/{any}', function () {
+    return response()->file(public_path('skin-admin/index.html'));
+})->where('any', '.*');

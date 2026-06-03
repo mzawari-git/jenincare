@@ -75,6 +75,52 @@ Route::post('/track/behavior', [\App\Http\Controllers\Api\BehavioralController::
 Route::get('/track/behavior/score', [\App\Http\Controllers\Api\BehavioralController::class, 'score'])
     ->name('api.behavioral.score');
 
+// Admin API - SkinAnalyzer Management
+use App\Http\Controllers\Admin\Api\AuthController as AdminAuthController;
+use App\Http\Controllers\Admin\Api\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\Api\ScanManagementController;
+use App\Http\Controllers\Admin\Api\UserController as AdminUserController;
+
+Route::prefix('admin')->group(function () {
+
+    // Auth (public)
+    Route::post('/auth/login', [AdminAuthController::class, 'login']);
+
+    // Authenticated admin routes
+    Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+        // Auth
+        Route::get('/auth/me', [AdminAuthController::class, 'me']);
+        Route::post('/auth/logout', [AdminAuthController::class, 'logout']);
+        Route::put('/auth/profile', [AdminAuthController::class, 'updateProfile']);
+
+        // Dashboard
+        Route::get('/dashboard/stats', [AdminDashboardController::class, 'stats']);
+        Route::get('/dashboard/recent-scans', [AdminDashboardController::class, 'recentScans']);
+        Route::get('/dashboard/charts', [AdminDashboardController::class, 'charts']);
+        Route::get('/dashboard/quota-usage', [AdminDashboardController::class, 'quotaUsage']);
+
+        // Scans
+        Route::get('/scans/stats', [ScanManagementController::class, 'stats']);
+        Route::get('/scans/export', [ScanManagementController::class, 'export']);
+        Route::get('/scans/pending', [ScanManagementController::class, 'pending']);
+        Route::get('/scans/all', [ScanManagementController::class, 'allScans']);
+        Route::post('/scans/batch-approve', [ScanManagementController::class, 'batchApprove']);
+        Route::post('/scans/{id}/approve', [ScanManagementController::class, 'approve']);
+        Route::post('/scans/{id}/reject', [ScanManagementController::class, 'reject']);
+        Route::post('/scans/{id}/pin', [ScanManagementController::class, 'generatePin']);
+        Route::post('/scans/{id}/broadcast', [ScanManagementController::class, 'broadcast']);
+        Route::get('/scans/{id}', [ScanManagementController::class, 'show']);
+        Route::get('/scans', [ScanManagementController::class, 'index']);
+
+        // Users
+        Route::get('/users', [AdminUserController::class, 'index']);
+        Route::get('/users/{id}', [AdminUserController::class, 'show']);
+        Route::post('/users', [AdminUserController::class, 'store']);
+        Route::put('/users/{id}', [AdminUserController::class, 'update']);
+        Route::post('/users/{id}/toggle-active', [AdminUserController::class, 'toggleActive']);
+    });
+});
+
 Route::post('/track/fingerprint', [\App\Http\Controllers\Api\FingerprintController::class, 'store'])
     ->name('api.fingerprint');
 
