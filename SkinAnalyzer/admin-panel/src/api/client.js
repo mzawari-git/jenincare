@@ -29,10 +29,7 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('admin_token')
-      const currentPath = window.location.pathname
-      if (currentPath !== '/login') {
-        window.location.href = '/login'
-      }
+      window.location.href = '/skin-admin/#/login'
     }
 
     if (error.response?.status === 429) {
