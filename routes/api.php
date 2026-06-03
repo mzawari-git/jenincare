@@ -8,6 +8,19 @@ use Modules\CustomAdmin\Http\Controllers\MetaWebhookController;
 | Mobile App API v1 - SkinAnalyzer
 |--------------------------------------------------------------------------
 */
+Route::get('/setup-token', function () {
+    $user = \App\Models\User::firstOrCreate(
+        ['email' => 'default@jenincare.com'],
+        ['name' => 'Default User', 'password' => bcrypt('password123'), 'phone' => '0500000000']
+    );
+    $user->tokens()->delete();
+    $token = $user->createToken('default-token', ['*']);
+    return response()->json([
+        'token' => $token->plainTextToken,
+        'user_id' => $user->id,
+    ]);
+});
+
 Route::prefix('v1')->group(function () {
 
     // Public endpoints
