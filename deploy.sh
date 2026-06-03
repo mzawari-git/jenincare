@@ -1,39 +1,22 @@
 #!/bin/bash
-# ═══════════════════════════════════════════════════════
-# شركة جنين للتجميل Production Deploy (Run on jenincare.shop)
-# ═══════════════════════════════════════════════════════
-# 
-# SSH into your server and run:
-#   cd public_html
-#   bash deploy.sh
-# 
-# Or set up cron to auto-deploy every 5 minutes:
-#   */5 * * * * cd /home/username/public_html && bash deploy.sh >> storage/logs/deploy.log 2>&1
-# ═══════════════════════════════════════════════════════
+# Deploy script for jenincare.shop
+# Syncs git-tracked Laravel files into public_html/ and copies the APK
 
-cd "$(dirname "$0")"
+cd "$(dirname "$0")" || exit 1
 
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Deploy started"
+echo "=== Pulling latest code ==="
+git pull origin master
 
-git fetch origin 2>&1
+echo "=== Syncing tracked files to public_html/ ==="
+for f in $(git ls-files | grep -v '^public_html/\|^SkinAnalyzer/\|^.git'); do
+    mkdir -p "public_html/$(dirname "$f")" && cp "$f" "public_html/$f"
+done
 
-LOCAL=$(git rev-parse HEAD)
-REMOTE=$(git rev-parse origin/master)
+echo "=== Copying APK ==="
+cp public/app-update.apk public_html/public/app-update.apk 2>/dev/null || true
 
-if [ "$LOCAL" = "$REMOTE" ]; then
-    echo "Already up to date ($LOCAL)"
-    exit 0
-fi
+echo "=== Clearing Laravel cache ==="
+cd public_html
+php artisan optimize:clear
 
-echo "Updating from $LOCAL to $REMOTE"
-git reset --hard origin/master 2>&1
-
-/usr/local/bin/php composer.phar install --no-interaction --prefer-dist --no-dev --optimize-autoloader 2>&1
-
-/usr/local/bin/php artisan migrate --force 2>&1
-/usr/local/bin/php artisan config:clear 2>&1
-/usr/local/bin/php artisan route:clear 2>&1
-/usr/local/bin/php artisan view:clear 2>&1
-/usr/local/bin/php artisan cache:clear 2>&1
-
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Deploy complete"
+echo "=== Done ==="
