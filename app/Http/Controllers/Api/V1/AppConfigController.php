@@ -21,8 +21,8 @@ class AppConfigController extends Controller
                 'accent_color' => '#81C784',
                 'logo_url' => url('/android-chrome-512x512.png'),
                 'server_url' => url('/'),
-                'min_app_version' => '1.0.0',
-                'latest_app_version' => '1.0.0',
+                'min_app_version' => '1.0.1',
+                'latest_app_version' => config('app.update_version', '1.0.1'),
             ],
         ]);
     }
