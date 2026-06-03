@@ -36,5 +36,11 @@ return [
             'driver' => 'monolog',
             'handler' => Monolog\Handler\NullHandler::class,
         ],
+        'ai_requests' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/ai_requests.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 90,
+        ],
     ],
 ];

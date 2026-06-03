@@ -26,9 +26,11 @@ class AIProviderController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'name_ar' => 'sometimes|nullable|string|max:255',
             'driver_key' => 'required|string|unique:ai_providers,driver_key',
             'engine_type' => 'required|in:structured,generative,hybrid',
             'quota_limit' => 'sometimes|integer|min:0',
+            'priority' => 'sometimes|integer|min:0|max:255',
             'description' => 'sometimes|string|max:500',
         ]);
 
@@ -44,11 +46,13 @@ class AIProviderController extends Controller
 
         $provider = AIProvider::create([
             'name' => $validated['name'],
+            'name_ar' => $validated['name_ar'] ?? null,
             'driver_key' => $validated['driver_key'],
             'engine_type' => $validated['engine_type'],
             'api_credentials' => !empty($apiCredentials) ? $apiCredentials : null,
             'config' => !empty($config) ? $config : null,
             'quota_limit' => $validated['quota_limit'] ?? 0,
+            'priority' => $validated['priority'] ?? 0,
         ]);
 
         return response()->json([
@@ -71,8 +75,10 @@ class AIProviderController extends Controller
 
         $request->validate([
             'name' => 'sometimes|string|max:255',
+            'name_ar' => 'sometimes|nullable|string|max:255',
             'engine_type' => 'sometimes|in:structured,generative,hybrid',
             'quota_limit' => 'sometimes|integer|min:0',
+            'priority' => 'sometimes|integer|min:0|max:255',
             'api_key' => 'sometimes|nullable|string',
             'endpoint' => 'sometimes|nullable|string',
             'model_id' => 'sometimes|nullable|string',
@@ -82,12 +88,20 @@ class AIProviderController extends Controller
             $provider->name = $request->input('name');
         }
 
+        if ($request->has('name_ar')) {
+            $provider->name_ar = $request->input('name_ar');
+        }
+
         if ($request->has('engine_type')) {
             $provider->engine_type = $request->input('engine_type');
         }
 
         if ($request->has('quota_limit')) {
             $provider->quota_limit = $request->input('quota_limit');
+        }
+
+        if ($request->has('priority')) {
+            $provider->priority = $request->input('priority');
         }
 
         $credentials = $provider->api_credentials ?? [];
@@ -227,6 +241,8 @@ class AIProviderController extends Controller
         return [
             'id' => $p->id,
             'name' => $p->name,
+            'name_ar' => $p->name_ar,
+            'priority' => $p->priority,
             'driver_key' => $p->driver_key,
             'engine_type' => $p->engine_type,
             'engine_type_label' => EngineType::from($p->engine_type)->label(),

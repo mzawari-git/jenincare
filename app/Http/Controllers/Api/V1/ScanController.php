@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\AnalysisStatus;
 use App\Http\Controllers\Controller;
+use App\Jobs\GenerateProductRecommendations;
+use App\Jobs\ProcessSkinScan;
 use App\Models\ScanDefect;
 use App\Models\ScanGeneralTip;
 use App\Models\ScanHeatmapPoint;
@@ -30,7 +33,9 @@ class ScanController extends Controller
             'user_id' => $user->id,
             'status' => 'pending',
             'image_url' => Storage::url($path),
+            'image_path' => $path,
             'is_locked' => false,
+            'analysis_status' => AnalysisStatus::PENDING,
         ]);
 
         $scan->timelineEvents()->create([
@@ -39,6 +44,8 @@ class ScanController extends Controller
             'description_ar' => 'تم رفع الفحص بنجاح',
             'created_at' => now(),
         ]);
+
+        ProcessSkinScan::dispatch($scan);
 
         return response()->json([
             'scan' => $this->formatScan($scan),
@@ -62,11 +69,14 @@ class ScanController extends Controller
             'user_id' => $user->id,
             'status' => 'pending',
             'image_url' => Storage::url($path),
+            'image_path' => $path,
             'is_locked' => false,
+            'analysis_status' => AnalysisStatus::PENDING,
             'lighting_quality' => $metadata['lighting_quality'] ?? null,
             'face_confidence' => $metadata['face_confidence'] ?? null,
             'image_width' => $metadata['image_width'] ?? null,
             'image_height' => $metadata['image_height'] ?? null,
+            'metadata' => $metadata,
         ]);
 
         $scan->timelineEvents()->create([
@@ -75,6 +85,8 @@ class ScanController extends Controller
             'description_ar' => 'تم رفع الفحص بنجاح',
             'created_at' => now(),
         ]);
+
+        ProcessSkinScan::dispatch($scan);
 
         return response()->json([
             'scan_id' => $scan->id,
@@ -117,7 +129,9 @@ class ScanController extends Controller
         return response()->json([
             'scan_id' => $scan->id,
             'status' => $scan->status,
-            'message' => 'Scan is ' . $scan->status,
+            'analysis_status' => $scan->analysis_status,
+            'analysis_status_label' => $scan->analysis_status_label,
+            'message' => 'Scan is ' . $scan->analysis_status,
         ]);
     }
 
@@ -179,24 +193,33 @@ class ScanController extends Controller
 
         $scan->load(['heatmapPoints', 'defects.products', 'generalTips']);
 
+        $analysisData = $scan->analysis_data ?? [];
+
         return response()->json([
             'scan' => [
                 'id' => $scan->id,
                 'user_id' => (string) $scan->user_id,
                 'image_url' => $scan->image_url,
                 'status' => $scan->status,
-                'overall_score' => (int) $scan->overall_health_score,
+                'analysis_status' => $scan->analysis_status,
+                'overall_score' => (int) ($analysisData['overall_health_score'] ?? $scan->overall_health_score),
+                'confidence' => $scan->confidence_score,
+                'analyzed_by' => $scan->analyzed_by_provider,
                 'created_at' => $scan->created_at->toISOString(),
                 'reviewed_at' => $scan->reviewed_at?->toISOString(),
+                'analyzed_at' => $scan->analyzed_at?->toISOString(),
             ],
-            'metrics' => [
+            'metrics' => $analysisData['radar_metrics'] ?? [
                 'hydration' => $scan->hydration,
                 'sebum' => $scan->sebum,
                 'pigmentation' => $scan->pigmentation,
                 'pores' => $scan->pores,
                 'elasticity' => $scan->elasticity,
             ],
-            'heatmap_points' => $scan->heatmapPoints->map(fn($p) => [
+            'advanced_metrics' => $analysisData['advanced_metrics'] ?? [],
+            'spectral_analysis' => $analysisData['spectral_analysis'] ?? [],
+            'facial_zone_analysis' => $analysisData['facial_zone_analysis'] ?? [],
+            'heatmap_points' => $analysisData['heatmap_coordinates'] ?? $scan->heatmapPoints->map(fn($p) => [
                 'x' => $p->x,
                 'y' => $p->y,
                 'severity' => $p->severity,
@@ -205,7 +228,7 @@ class ScanController extends Controller
                 'description' => $p->description,
                 'description_ar' => $p->description_ar,
             ]),
-            'defects' => $scan->defects->map(fn($d) => [
+            'defects' => $analysisData['defects'] ?? $scan->defects->map(fn($d) => [
                 'id' => $d->id,
                 'name_ar' => $d->name_ar,
                 'name_en' => $d->name_en,
@@ -213,21 +236,13 @@ class ScanController extends Controller
                 'tip_ar' => $d->tip_ar,
                 'tip_en' => $d->tip_en,
                 'icon_name' => $d->icon_name,
-                'recommended_products' => $d->products->map(fn($p) => [
-                    'id' => (string) $p->id,
-                    'name_ar' => $p->name_ar ?? $p->name,
-                    'name_en' => $p->name,
-                    'price' => (float) $p->price,
-                    'image_url' => $p->image_url ? Storage::url($p->image_url) : null,
-                    'shop_url' => url('/product/' . $p->slug),
-                    'matching_reason' => $p->pivot->matching_reason,
-                    'matching_reason_ar' => $p->pivot->matching_reason_ar,
-                ]),
             ]),
-            'general_tips' => $scan->generalTips->map(fn($t) => [
+            'recommended_products' => $analysisData['recommended_products'] ?? $scan->recommended_products ?? [],
+            'general_tips' => $analysisData['expert_free_tips'] ?? $scan->generalTips->map(fn($t) => [
                 'ar' => $t->tip_ar,
                 'en' => $t->tip_en,
             ]),
+            'custom_arabic_analysis' => $analysisData['custom_arabic_analysis_text'] ?? $scan->custom_arabic_analysis,
         ]);
     }
 
@@ -263,9 +278,12 @@ class ScanController extends Controller
                 'user_id' => (string) $s->user_id,
                 'image_url' => $s->image_url,
                 'status' => $s->status,
+                'analysis_status' => $s->analysis_status,
                 'overall_score' => (int) $s->overall_health_score,
+                'confidence' => $s->confidence_score,
                 'created_at' => $s->created_at->toISOString(),
                 'reviewed_at' => $s->reviewed_at?->toISOString(),
+                'analyzed_at' => $s->analyzed_at?->toISOString(),
             ]),
         ]);
     }
@@ -326,7 +344,10 @@ class ScanController extends Controller
 
         $scan = SkinScan::find($scanId);
         if ($scan) {
-            $scan->update(['image_url' => Storage::url($finalPath)]);
+            $scan->update([
+                'image_url' => Storage::url($finalPath),
+                'image_path' => $finalPath,
+            ]);
         }
 
         return $finalPath;
@@ -334,28 +355,37 @@ class ScanController extends Controller
 
     private function formatScan(SkinScan $scan): array
     {
+        $analysisData = $scan->analysis_data ?? [];
+
         return [
             'id' => $scan->id,
             'status' => $scan->status,
+            'analysis_status' => $scan->analysis_status,
+            'analysis_status_label' => $scan->analysis_status_label,
             'image_url' => $scan->image_url,
-            'overall_health_score' => $scan->overall_health_score,
-            'radar_metrics' => [
+            'overall_health_score' => $analysisData['overall_health_score'] ?? $scan->overall_health_score,
+            'radar_metrics' => $analysisData['radar_metrics'] ?? [
                 'hydration' => $scan->hydration,
                 'sebum' => $scan->sebum,
                 'pigmentation' => $scan->pigmentation,
                 'pores' => $scan->pores,
                 'elasticity' => $scan->elasticity,
             ],
-            'heatmap_coordinates' => $scan->heatmapPoints->map(fn($p) => [
+            'advanced_metrics' => $analysisData['advanced_metrics'] ?? [],
+            'defects' => $analysisData['defects'] ?? [],
+            'heatmap_coordinates' => $analysisData['heatmap_coordinates'] ?? $scan->heatmapPoints->map(fn($p) => [
                 'x' => $p->x,
                 'y' => $p->y,
                 'label' => $p->label ?? '',
                 'severity' => (string) $p->severity,
             ]),
-            'custom_arabic_analysis' => $scan->custom_arabic_analysis,
-            'expert_free_tips' => $scan->expert_free_tips ?? [],
-            'recommended_products' => [],
+            'custom_arabic_analysis' => $analysisData['custom_arabic_analysis_text'] ?? $scan->custom_arabic_analysis,
+            'expert_free_tips' => $analysisData['expert_free_tips'] ?? $scan->expert_free_tips ?? [],
+            'recommended_products' => $analysisData['recommended_products'] ?? [],
+            'confidence' => $scan->confidence_score,
+            'analyzed_by' => $scan->analyzed_by_provider,
             'created_at' => $scan->created_at->toISOString(),
+            'analyzed_at' => $scan->analyzed_at?->toISOString(),
             'approved_at' => $scan->reviewed_at?->toISOString(),
             'is_locked' => $scan->is_locked,
             'pin_required' => !is_null($scan->pin_code),

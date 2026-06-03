@@ -15,6 +15,7 @@ class AIProvider extends Model
 
     protected $fillable = [
         'name',
+        'name_ar',
         'driver_key',
         'engine_type',
         'api_credentials',
@@ -22,6 +23,7 @@ class AIProvider extends Model
         'quota_limit',
         'quota_used',
         'config',
+        'priority',
         'last_check_at',
     ];
 
@@ -31,6 +33,7 @@ class AIProvider extends Model
         'is_active' => 'boolean',
         'quota_limit' => 'integer',
         'quota_used' => 'integer',
+        'priority' => 'integer',
         'last_check_at' => 'datetime',
     ];
 
@@ -46,6 +49,11 @@ class AIProvider extends Model
     public function scopeByType(Builder $query, EngineType $type): void
     {
         $query->where('engine_type', $type->value);
+    }
+
+    public function scopeOrdered(Builder $query): void
+    {
+        $query->orderBy('priority')->orderBy('name');
     }
 
     public function hasQuotaAvailable(): bool
@@ -66,6 +74,6 @@ class AIProvider extends Model
     {
         return $this->is_active
             && $this->hasQuotaAvailable()
-            && ! empty($this->api_credentials);
+            && !empty($this->api_credentials);
     }
 }
