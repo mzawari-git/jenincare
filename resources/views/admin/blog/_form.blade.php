@@ -219,7 +219,7 @@
                                 <i class="fab fa-google" style="color: #3b82f6;"></i> معاينة نتائج البحث (Google Preview)
                             </label>
                             <div id="seoPreview" class="p-3 rounded-2" style="background: #fff; border: 1px solid var(--gray-200);">
-                                <div id="seoUrl" style="color: #166534; font-size: .75rem;">https://jenincare.shop/blog/<span id="seoSlug">post-slug</span></div>
+                                <div id="seoUrl" style="color: #166534; font-size: .75rem;">{{ config('app.url') }}/blog/<span id="seoSlug">post-slug</span></div>
                                 <div id="seoTitle" style="color: #1a56db; font-size: .85rem; font-weight: 500; cursor: pointer; margin-top: 2px;">{{ Str::limit($post->meta_title ?? $post->title_ar ?? 'عنوان المقال', 60) }}</div>
                                 <div id="seoDesc" style="color: #4b5563; font-size: .75rem; margin-top: 2px;">{{ Str::limit(strip_tags($post->meta_description ?? $post->excerpt_ar ?? $post->content_ar ?? ''), 160) }}</div>
                             </div>

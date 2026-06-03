@@ -388,7 +388,8 @@ HTML;
     // ─── Article 6: Complete Device Comparison ──────────────────────
     private function post6Content(): string
     {
-        return <<<'HTML'
+        $url = config('app.url');
+        return <<<HTML
 <div class="blog-section">
     <h2><i class="fas fa-balance-scale"></i> لماذا تحتاج إلى دليل مقارنة شامل؟</h2>
     <p>مع تعدد أجهزة العناية بالبشرة والليزر في السوق، قد يكون من الصعب على أصحاب الصالونات والعيادات تحديد الجهاز الأنسب لاحتياجاتهم. في هذا الدليل الشامل، نقدم مقارنة موضوعية بين <strong>أفضل 5 أجهزة</strong> متوفرة لدى شركة جنين للتجميل، لمساعدتك في اتخاذ القرار الصحيح.</p>
@@ -491,7 +492,7 @@ HTML;
     <div style="background:linear-gradient(135deg,#D97706,#F59E0B);color:#fff;padding:30px;border-radius:16px;text-align:center;margin-top:30px;">
         <h3 style="font-size:1.4rem;font-weight:700;margin-bottom:10px;color:#fff;">هل تحتاج إلى استشارة شخصية؟</h3>
         <p style="margin-bottom:20px;">فريقنا المتخصص جاهز لمساعدتك في اختيار الجهاز الأنسب لصالونك أو عيادتك</p>
-        <a href="https://jenincare.shop/contact" style="background:#fff;color:#D97706;padding:12px 35px;border-radius:30px;font-weight:600;text-decoration:none;display:inline-block;">تواصل معنا الآن</a>
+        <a href="{$url}/contact" style="background:#fff;color:#D97706;padding:12px 35px;border-radius:30px;font-weight:600;text-decoration:none;display:inline-block;">تواصل معنا الآن</a>
     </div>
 </div>
 HTML;

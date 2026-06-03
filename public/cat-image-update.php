@@ -1,7 +1,7 @@
 <?php
 /**
  * RUN THIS FILE ON YOUR PRODUCTION SERVER
- * Place it in public_html/ and visit: https://jenincare.shop/fix-cat-images.php
+ * Place it in public_html/ and visit: https://www.jenincare.shop/fix-cat-images.php
  * Then DELETE it after running.
  */
 

@@ -7,6 +7,8 @@ $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 use App\Models\BlogPost;
 use Illuminate\Support\Facades\File;
 
+$siteUrl = config('app.url');
+
 $articles = [
     // ============================================================
     // ARTICLE 1: Candela GentleMax Pro Plus
@@ -361,7 +363,7 @@ HTML
     <div style="background:linear-gradient(135deg,#D97706,#F59E0B);color:#fff;padding:30px;border-radius:16px;text-align:center;margin-top:30px;">
         <h3 style="font-size:1.4rem;font-weight:700;margin-bottom:10px;color:#fff;">هل تحتاج إلى استشارة حول الترخيص؟</h3>
         <p style="margin-bottom:20px;">فريقنا المتخصص جاهز لمساعدتك في اختيار الأجهزة المناسبة لمتطلبات الترخيص</p>
-        <a href="https://jenincare.shop/contact" style="background:#fff;color:#D97706;padding:12px 35px;border-radius:30px;font-weight:600;text-decoration:none;display:inline-block;">تواصل معنا الآن</a>
+        <a href="{$siteUrl}/contact" style="background:#fff;color:#D97706;padding:12px 35px;border-radius:30px;font-weight:600;text-decoration:none;display:inline-block;">تواصل معنا الآن</a>
     </div>
 </div>
 HTML
