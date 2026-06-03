@@ -1,6 +1,26 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Artisan;
+use App\Models\AIProvider;
+
+Route::get('/add-zyla-provider', function () {
+    $provider = AIProvider::firstOrCreate(
+        ['driver_key' => 'zyla'],
+        [
+            'name' => 'Zyla Labs Skin Analysis',
+            'driver_key' => 'zyla',
+            'engine_type' => 'structured',
+            'is_active' => false,
+            'quota_limit' => 0,
+            'api_credentials' => [
+                'api_key' => '14115|QBle6CDkqNtsfd9eKazqa88CylHZlibuX97PEThw',
+                'endpoint_url' => 'https://zylalabs.com/api/1991/skin+analysis+api',
+            ],
+        ]
+    );
+    return 'Zyla Labs provider ' . ($provider->wasRecentlyCreated ? 'created' : 'already exists') . '!';
+});
 use App\Http\Controllers\Frontend\HomeController;
 use App\Http\Controllers\Frontend\ShopController;
 use App\Http\Controllers\Frontend\ProductController;
