@@ -76,6 +76,7 @@ Route::get('/track/behavior/score', [\App\Http\Controllers\Api\BehavioralControl
     ->name('api.behavioral.score');
 
 // Admin API - SkinAnalyzer Management
+use App\Http\Controllers\Admin\Api\AIProviderController;
 use App\Http\Controllers\Admin\Api\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\Api\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\Api\ScanManagementController;
@@ -118,6 +119,15 @@ Route::prefix('admin')->group(function () {
         Route::post('/users', [AdminUserController::class, 'store']);
         Route::put('/users/{id}', [AdminUserController::class, 'update']);
         Route::post('/users/{id}/toggle-active', [AdminUserController::class, 'toggleActive']);
+
+        // AI Providers
+        Route::get('/ai-providers', [AIProviderController::class, 'index']);
+        Route::post('/ai-providers', [AIProviderController::class, 'store']);
+        Route::get('/ai-providers/quota-status', [AIProviderController::class, 'quotaStatus']);
+        Route::get('/ai-providers/{id}', [AIProviderController::class, 'show']);
+        Route::put('/ai-providers/{id}', [AIProviderController::class, 'update']);
+        Route::post('/ai-providers/{id}/toggle', [AIProviderController::class, 'toggle']);
+        Route::post('/ai-providers/{id}/test', [AIProviderController::class, 'testConnection']);
     });
 });
 
