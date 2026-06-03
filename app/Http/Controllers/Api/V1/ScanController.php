@@ -19,12 +19,12 @@ class ScanController extends Controller
     public function upload(Request $request): JsonResponse
     {
         $request->validate([
-            'image' => 'required|image|max:10240',
+            'file' => 'required|file|max:10240',
         ]);
 
         $user = $request->user();
 
-        $path = $request->file('image')->store('scans/' . $user->id, 'public');
+        $path = $request->file('file')->store('scans/' . $user->id, 'public');
 
         $scan = SkinScan::create([
             'user_id' => $user->id,
@@ -49,14 +49,14 @@ class ScanController extends Controller
     public function uploadWithMetadata(Request $request): JsonResponse
     {
         $request->validate([
-            'image' => 'required|image|max:10240',
+            'file' => 'required|file|max:10240',
             'metadata' => 'required|json',
         ]);
 
         $user = $request->user();
         $metadata = json_decode($request->metadata, true);
 
-        $path = $request->file('image')->store('scans/' . $user->id, 'public');
+        $path = $request->file('file')->store('scans/' . $user->id, 'public');
 
         $scan = SkinScan::create([
             'user_id' => $user->id,
