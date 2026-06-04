@@ -1,0 +1,92 @@
+/* ═══ FOREST — Deep Emerald Professional ═══ */
+:root {
+  --brand-50: #040a06; --brand-100: #081410; --brand-200: #0d2418;
+  --brand-300: #153d28; --brand-400: #1f5c3c; --brand-500: #22c55e;
+  --brand-600: #4ade80; --brand-700: #86efac; --brand-800: #bbf7d0; --brand-900: #dcfce7;
+  --accent-50: #060a04; --accent-100: #0e1408; --accent-200: #18240d;
+  --accent-300: #283d15; --accent-400: #3c5c1f; --accent-500: #16a34a;
+  --accent-600: #22c55e; --accent-700: #4ade80; --accent-800: #86efac; --accent-900: #bbf7d0;
+  --surface: #0a0f0b; --surface-alt: #101510;
+  --ink: #f0fdf4; --ink-muted: #95a898; --ink-dim: #607868;
+  --header-bg: rgba(14, 22, 16, 0.82);
+  --glass-bg: rgba(18, 26, 22, 0.48);
+  --glass-border: rgba(34, 197, 94, 0.1);
+  --glass-shadow: 0 4px 32px rgba(0,0,0,0.45), 0 1px 2px rgba(255,255,255,0.03) inset;
+  --neon-glow: 0 0 18px rgba(34,197,94,0.3);
+  --neon-glow-strong: 0 0 36px rgba(34,197,94,0.45);
+  --neon-text-shadow: 0 0 12px rgba(34,197,94,0.25);
+  --accent-glow: 0 0 16px rgba(22,163,74,0.25);
+  --accent-glow-strong: 0 0 32px rgba(22,163,74,0.4);
+  --gradient-primary: linear-gradient(135deg, #22c55e, #16a34a);
+  --gradient-hero: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #4ade80 100%);
+  --card-radius: 1.25rem;
+  --card-border: 1px solid var(--glass-border);
+  --bg-pattern: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 Q45 15 30 30 Q15 15 30 5' fill='none' stroke='rgba(34,197,94,0.025)' stroke-width='0.5'/%3E%3C/svg%3E");
+  --glass-blur: blur(18px);
+  --glass-opacity: 0.48;
+  --animation-accent: floatSlow;
+  --hero-overlay: radial-gradient(ellipse at 40% 0%, rgba(34,197,94,0.05), transparent 65%);
+  --btn-radius: 0.75rem;
+  --input-radius: 0.75rem;
+  --transition-fast: 150ms ease;
+  --transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  background-color: var(--surface);
+  background-image: var(--bg-pattern), radial-gradient(ellipse at 50% 0%, rgba(34,197,94,0.025) 0%, transparent 55%);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color var(--transition-smooth), color var(--transition-smooth);
+}
+
+::selection { background: var(--brand-500); color: #fff; }
+::-moz-selection { background: var(--brand-500); color: #fff; }
+:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--surface-alt); }
+::-webkit-scrollbar-thumb { background: var(--ink-dim); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-muted); }
+
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--glass-shadow);
+  transition: background var(--transition-smooth), border-color var(--transition-fast), box-shadow var(--transition-smooth);
+}
+.glass-panel:hover { border-color: rgba(34,197,94,0.18); }
+
+a { color: var(--brand-500); transition: color var(--transition-fast); text-decoration: none; }
+a:hover { color: var(--brand-400); }
+
+input, select, textarea {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--input-radius);
+  color: var(--ink);
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  transition: all var(--transition-fast);
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
+  outline: none;
+}
+input::placeholder { color: var(--ink-dim); }
+
+.gradient-text {
+  background: var(--gradient-primary);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.shadow-neon { box-shadow: var(--neon-glow); }
+.shadow-neon-strong { box-shadow: var(--neon-glow-strong); }

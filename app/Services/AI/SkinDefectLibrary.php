@@ -1116,6 +1116,11 @@ class SkinDefectLibrary
         return $detected;
     }
 
+    public function getIngredientsForType(string $type): array
+    {
+        return $this->getIngredientRecommendations([$type]);
+    }
+
     public function getIngredientRecommendations(array $defectKeys): array
     {
         $ingredients = [];

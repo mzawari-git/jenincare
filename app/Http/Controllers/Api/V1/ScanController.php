@@ -6,6 +6,7 @@ use App\Enums\AnalysisStatus;
 use App\Http\Controllers\Controller;
 use App\Jobs\GenerateProductRecommendations;
 use App\Jobs\ProcessSkinScan;
+use App\Models\ScanAuditLog;
 use App\Models\ScanDefect;
 use App\Models\ScanGeneralTip;
 use App\Models\ScanHeatmapPoint;
@@ -13,12 +14,22 @@ use App\Models\ScanTimelineEvent;
 use App\Models\SkinScan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class ScanController extends Controller
 {
+    protected function storeEncrypted($file, string $path): string
+    {
+        $raw = file_get_contents($file->getRealPath());
+        $encrypted = Crypt::encryptString($raw);
+        $encPath = $path . '.enc';
+        Storage::disk('public')->put($encPath, $encrypted);
+        return $encPath;
+    }
+
     public function upload(Request $request): JsonResponse
     {
         $request->validate([
@@ -105,7 +116,7 @@ class ScanController extends Controller
             ->paginate(20, ['*'], 'page', $page);
 
         return response()->json([
-            'scans' => $scans->items(),
+            'scans' => array_map(fn($s) => $this->formatScan($s), $scans->items()),
             'total' => $scans->total(),
             'page' => $scans->currentPage(),
         ]);
@@ -191,6 +202,10 @@ class ScanController extends Controller
             return response()->json(['message' => 'Scan is locked. Unlock first.'], 403);
         }
 
+        ScanAuditLog::record($scan->id, 'report_viewed', [
+            'client_ip' => $request->ip(),
+        ]);
+
         $scan->load(['heatmapPoints', 'defects.products', 'generalTips']);
 
         $analysisData = $scan->analysis_data ?? [];
@@ -236,6 +251,16 @@ class ScanController extends Controller
                 'tip_ar' => $d->tip_ar,
                 'tip_en' => $d->tip_en,
                 'icon_name' => $d->icon_name,
+                'recommended_products' => $d->products->map(fn($p) => [
+                    'id' => $p->id,
+                    'name_ar' => $p->name_ar,
+                    'name_en' => $p->name_en,
+                    'price' => (float) $p->final_b2c_price,
+                    'image_url' => $p->main_image_url ?? '',
+                    'shop_url' => '',
+                    'matching_reason' => $p->pivot->matching_reason,
+                    'matching_reason_ar' => $p->pivot->matching_reason_ar,
+                ]),
             ]),
             'recommended_products' => $analysisData['recommended_products'] ?? $scan->recommended_products ?? [],
             'general_tips' => $analysisData['expert_free_tips'] ?? $scan->generalTips->map(fn($t) => [

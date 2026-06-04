@@ -6,9 +6,9 @@
         <p class="page-desc">مراقبة وإدارة تحاليل البشرة الواردة في الوقت الفعلي</p>
       </div>
       <div class="header-right">
-        <div class="ws-indicator" :class="{ connected: wsConnected }">
-          <span class="status-dot" :class="wsConnected ? 'online' : 'offline'"></span>
-          <span>{{ wsConnected ? 'متصل' : 'غير متصل' }}</span>
+        <div class="ws-indicator" :class="{ connected: connected }">
+          <span class="status-dot" :class="connected ? 'online' : 'offline'"></span>
+          <span>{{ connected ? 'متصل' : 'غير متصل' }}</span>
         </div>
         <select v-model="filterStatus" class="filter-select" @change="refreshScans">
           <option value="">الكل</option>
@@ -30,7 +30,7 @@
       </div>
     </div>
 
-    <div v-if="wsConnected" class="new-scan-alert" v-show="showNewScanAlert">
+    <div v-if="connected" class="new-scan-alert" v-show="showNewScanAlert">
       <span>🔔</span> تحليل جديد تم استلامه!
     </div>
 
@@ -84,7 +84,6 @@ import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useScansStore } from '@/stores/scans'
 import { scansApi } from '@/api/endpoints'
-import dayjs from 'dayjs'
 import Swal from 'sweetalert2'
 import ScanRow from '@/components/ScanRow.vue'
 import PinDisplayModal from '@/components/PinDisplayModal.vue'
@@ -93,14 +92,14 @@ const router = useRouter()
 const scansStore = useScansStore()
 
 const loading = ref(false)
-const wsConnected = ref(false)
+const connected = ref(true)
 const showNewScanAlert = ref(false)
 const filterStatus = ref('')
 const searchQuery = ref('')
 const currentPage = ref(1)
 const perPage = 15
 const allScans = ref([])
-let ws = null
+let pollTimer = null
 
 const pinModal = reactive({
   show: false,
@@ -155,45 +154,23 @@ function filterScans() {
   currentPage.value = 1
 }
 
-function connectWebSocket() {
-  try {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const host = window.location.host
-    ws = new WebSocket(`${protocol}//${host}/ws/admin/scans`)
-
-    ws.onopen = () => {
-      wsConnected.value = true
-    }
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        if (data.type === 'new_scan' && data.scan) {
-          allScans.value.unshift(data.scan)
+function startPolling() {
+  connected.value = true
+  pollTimer = setInterval(async () => {
+    try {
+      const params = { per_page: 5, sort: 'latest' }
+      const { data } = await scansApi.list(params)
+      const latest = data.data || data.scans || []
+      for (const scan of latest) {
+        const existing = allScans.value.find(s => s.id === scan.id)
+        if (!existing) {
+          allScans.value.unshift(scan)
           showNewScanAlert.value = true
-          setTimeout(() => {
-            showNewScanAlert.value = false
-          }, 3000)
-        } else if (data.type === 'scan_updated' && data.scan) {
-          const idx = allScans.value.findIndex(s => s.id === data.scan.id)
-          if (idx >= 0) {
-            allScans.value[idx] = { ...allScans.value[idx], ...data.scan }
-          }
+          setTimeout(() => { showNewScanAlert.value = false }, 3000)
         }
-      } catch {}
-    }
-
-    ws.onclose = () => {
-      wsConnected.value = false
-      setTimeout(connectWebSocket, 5000)
-    }
-
-    ws.onerror = () => {
-      wsConnected.value = false
-    }
-  } catch {
-    wsConnected.value = false
-  }
+      }
+    } catch {}
+  }, 5000)
 }
 
 async function refreshScans() {
@@ -281,15 +258,13 @@ function handleRefresh() {
 
 onMounted(() => {
   refreshScans()
-  connectWebSocket()
+  startPolling()
   window.addEventListener('admin-refresh', handleRefresh)
 })
 
 onUnmounted(() => {
   window.removeEventListener('admin-refresh', handleRefresh)
-  if (ws) {
-    ws.close()
-  }
+  if (pollTimer) clearInterval(pollTimer)
 })
 </script>
 

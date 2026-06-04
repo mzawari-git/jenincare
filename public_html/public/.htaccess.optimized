@@ -1,0 +1,343 @@
+# Jenin Care Optimized .htaccess for Maximum Performance
+# Enhanced version for production deployment
+
+# Force HTTPS
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Performance Headers
+<IfModule mod_headers.c>
+    # Force HTTPS
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    
+    # Prevent XSS attacks
+    Header always set X-XSS-Protection "1; mode=block"
+    
+    # Prevent MIME-type sniffing
+    Header always set X-Content-Type-Options "nosniff"
+    
+    # Prevent clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+    
+    # Content Security Policy (Enhanced)
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.facebook.com https://connect.facebook.net https://analytics.tiktok.com https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com https://fonts.googleapis.com https://static.ads-twitter.com https://snap.licdn.com https://s.pinimg.com https://ct.pinterest.com https://tr.snapchat.com https://sc-static.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.tailwindcss.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; img-src 'self' data: https: http:; connect-src 'self' https://www.facebook.com https://graph.facebook.com https://analytics.tiktok.com https://cdn.tailwindcss.com https://unpkg.com https://ct.pinterest.com https://tr.snapchat.com https://snap.licdn.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://static.ads-twitter.com https://analytics.twitter.com; frame-src 'self' https://www.facebook.com https://connect.facebook.net https://www.youtube.com https://player.vimeo.com; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self';"
+    
+    # Referrer Policy
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # Permissions Policy (Enhanced)
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), interest-cohort=(), browsing-topics=()"
+    
+    # Cache Control for Static Assets (Enhanced)
+    <FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico|svg|webp|woff|woff2|ttf|eot)$">
+        Header set Cache-Control "public, max-age=31536000, immutable, stale-while-revalidate=86400"
+        Header set Vary "Accept-Encoding"
+    </FilesMatch>
+    
+    # Cache Control for Optimized Images
+    <FilesMatch "\.(webp|avif)$">
+        Header set Cache-Control "public, max-age=31536000, immutable, stale-while-revalidate=86400"
+        Header set Vary "Accept"
+    </FilesMatch>
+    
+    # Cache Control for API responses
+    <FilesMatch "\.(json)$">
+        Header set Cache-Control "no-cache, must-revalidate, stale-while-revalidate=60"
+        Header set Vary "Accept-Encoding"
+    </FilesMatch>
+    
+    # Cache Control for HTML pages
+    <FilesMatch "\.(html|htm)$">
+        Header set Cache-Control "public, max-age=3600, stale-while-revalidate=300"
+        Header set Vary "Accept-Encoding"
+    </FilesMatch>
+    
+    # Enable Gzip compression
+    Header set Vary "Accept-Encoding"
+    
+    # Preload critical resources
+    Header set Link "</css/main.css>; rel=preload; as=style"
+    Header set Link "</js/app.js>; rel=preload; as=script"
+    Header set Link "</js/performance-optimizations.js>; rel=preload; as=script"
+    
+    # Preconnect to external domains
+    Header set Link "<https://fonts.googleapis.com>; rel=preconnect"
+    Header set Link "<https://fonts.gstatic.com>; rel=preconnect"
+    Header set Link "<https://cdn.jsdelivr.net>; rel=preconnect"
+    Header set Link "<https://cdnjs.cloudflare.com>; rel=preconnect"
+    Header set Link "<https://www.facebook.com>; rel=preconnect"
+    Header set Link "<https://connect.facebook.net>; rel=preconnect"
+</IfModule>
+
+# Enable Gzip Compression (Enhanced)
+<IfModule mod_deflate.c>
+    # Compress HTML, CSS, JavaScript, Text, XML and fonts
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/vnd.ms-fontobject
+    AddOutputFilterByType DEFLATE application/x-font
+    AddOutputFilterByType DEFLATE application/x-font-opentype
+    AddOutputFilterByType DEFLATE application/x-font-truetype
+    AddOutputFilterByType DEFLATE application/x-javascript
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE font/opentype
+    AddOutputFilterByType DEFLATE font/otf
+    AddOutputFilterByType DEFLATE font/ttf
+    AddOutputFilterByType DEFLATE image/svg+xml
+    AddOutputFilterByType DEFLATE image/x-icon
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/javascript
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/xml
+    
+    # Remove browser bugs (only needed for really old browsers)
+    BrowserMatch ^Mozilla/4 gzip-only-text/html
+    BrowserMatch ^Mozilla/4\.0[678] no-gzip
+    BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
+    Header append Vary User-Agent
+</IfModule>
+
+# Brotli Compression (if available)
+<IfModule mod_brotli.c>
+    AddOutputFilterByType BROTLI application/javascript
+    AddOutputFilterByType BROTLI application/rss+xml
+    AddOutputFilterByType BROTLI application/vnd.ms-fontobject
+    AddOutputFilterByType BROTLI application/x-font
+    AddOutputFilterByType BROTLI application/x-font-opentype
+    AddOutputFilterByType BROTLI application/x-font-truetype
+    AddOutputFilterByType BROTLI application/x-javascript
+    AddOutputFilterByType BROTLI application/xhtml+xml
+    AddOutputFilterByType BROTLI application/xml
+    AddOutputFilterByType BROTLI font/opentype
+    AddOutputFilterByType BROTLI font/otf
+    AddOutputFilterByType BROTLI font/ttf
+    AddOutputFilterByType BROTLI image/svg+xml
+    AddOutputFilterByType BROTLI image/x-icon
+    AddOutputFilterByType BROTLI text/css
+    AddOutputFilterByType BROTLI text/html
+    AddOutputFilterByType BROTLI text/javascript
+    AddOutputFilterByType BROTLI text/plain
+    AddOutputFilterByType BROTLI text/xml
+</IfModule>
+
+# Laravel Default Configuration
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Redirect Trailing Slashes If Not A Folder...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Send Requests To Front Controller...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Image Optimization Rules
+<IfModule mod_rewrite.c>
+    # Serve WebP images to supported browsers
+    RewriteCond %{HTTP_ACCEPT} image/webp
+    RewriteCond %{DOCUMENT_ROOT}/$1.webp -f
+    RewriteRule (.+)\.(jpe?g|png)$ $1.webp [T=image/webp]
+    
+    # Serve AVIF images to supported browsers
+    RewriteCond %{HTTP_ACCEPT} image/avif
+    RewriteCond %{DOCUMENT_ROOT}/$1.avif -f
+    RewriteRule (.+)\.(jpe?g|png|webp)$ $1.avif [T=image/avif]
+    
+    # Image type handler
+    <FilesMatch ".+\.(jpe?g|png|webp|avif)$">
+        AddType image/webp .webp
+        AddType image/avif .avif
+    </FilesMatch>
+</IfModule>
+
+# Security Settings
+<Files ".env*">
+    Require all denied
+</Files>
+
+<Files "composer.json">
+    Require all denied
+</Files>
+
+<Files "composer.lock">
+    Require all denied
+</Files>
+
+<Files "*.log">
+    Require all denied
+</Files>
+
+<Files "*.php">
+    Require all denied
+</Files>
+
+# Allow access to specific PHP files
+<Files "index.php">
+    Require all granted
+</Files>
+
+<Files "artisan">
+    Require all denied
+</Files>
+
+# PHP Settings (if applicable)
+<IfModule mod_php.c>
+    php_flag display_errors Off
+    php_value max_execution_time 300
+    php_value memory_limit 512M
+    php_value upload_max_filesize 64M
+    php_value post_max_size 64M
+    php_value max_input_vars 3000
+    php_value opcache.enable 1
+    php_value opcache.memory_consumption 256
+    php_value opcache.max_accelerated_files 10000
+    php_value opcache.revalidate_freq 2
+    php_value opcache.validate_timestamps 0
+    php_value opcache.enable_cli 0
+    php_value opcache.fast_shutdown 1
+    php_flag opcache.enable_file_override 0
+</IfModule>
+
+# Error Pages
+ErrorDocument 404 /index.php
+ErrorDocument 500 /index.php
+ErrorDocument 503 /index.php
+
+# MIME Types (Enhanced)
+<IfModule mod_mime.c>
+    AddType image/webp .webp
+    AddType image/avif .avif
+    AddType image/svg+xml .svg
+    AddType application/font-woff .woff
+    AddType application/font-woff2 .woff2
+    AddType application/x-font-ttf .ttf
+    AddType application/x-font-eot .eot
+    AddType application/json .json
+    AddType application/ld+json .jsonld
+    AddType text/cache-manifest .webmanifest
+</IfModule>
+
+# CORS Settings (Enhanced)
+<IfModule mod_headers.c>
+    SetEnvIf Origin "^https://jenincare\.shop$" CORS_ALLOW_ORIGIN
+    Header set Access-Control-Allow-Origin "%{CORS_ALLOW_ORIGIN}e" env=CORS_ALLOW_ORIGIN
+    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN, Accept"
+    Header set Access-Control-Allow-Credentials "true"
+    Header set Access-Control-Max-Age "86400"
+    
+    # Preflight requests
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^(.*)$ $1 [R=200,L]
+</IfModule>
+
+# Rate Limiting (if mod_ratelimit is available)
+<IfModule mod_ratelimit.c>
+    # Limit API requests
+    <Location "/api">
+        SetEnvIf Rate-Limit-Exceeded yes ratelimited
+        RateLimitBurst 30
+        RateLimitInterval 1
+        ErrorDocument 429 "Rate limit exceeded"
+    </Location>
+</IfModule>
+
+# Connection Keep Alive
+<IfModule mod_headers.c>
+    Header set Connection keep-alive
+    Header set Keep-Alive "timeout=5, max=100"
+</IfModule>
+
+# ETags
+<IfModule mod_headers.c>
+    FileETag MTime Size
+    Header unset ETag
+</IfModule>
+
+# Remove ETags for better caching
+<FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico|svg|webp|woff|woff2|ttf|eot)$">
+    FileETag None
+    Header unset ETag
+    Header unset Last-Modified
+</FilesMatch>
+
+# Browser Caching Rules
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/avif "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/x-icon "access plus 1 year"
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType application/x-javascript "access plus 1 year"
+    ExpiresByType application/font-woff "access plus 1 year"
+    ExpiresByType application/font-woff2 "access plus 1 year"
+    ExpiresByType application/x-font-ttf "access plus 1 year"
+    ExpiresByType application/x-font-eot "access plus 1 year"
+    ExpiresByType application/json "access plus 0 seconds"
+    ExpiresByType text/html "access plus 1 hour"
+    ExpiresByType text/plain "access plus 1 hour"
+</IfModule>
+
+# HTTP/2 Server Push (if available)
+<IfModule mod_http2.c>
+    Protocols h2 h2c http/1.1
+    H2Push on
+    H2PushResource /css/main.css style
+    H2PushResource /js/app.js script
+    H2PushResource /js/performance-optimizations.js script
+    H2PushResource /favicon_io/android-chrome-192x192.png image
+</IfModule>
+
+# Security Headers for API
+<IfModule mod_headers.c>
+    <Location "/api">
+        Header set X-Content-Type-Options "nosniff"
+        Header set X-Frame-Options "DENY"
+        Header set X-XSS-Protection "1; mode=block"
+        Header set Referrer-Policy "strict-origin-when-cross-origin"
+        Header set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';"
+    </Location>
+</IfModule>
+
+# Performance Monitoring (if available)
+<IfModule mod_status.c>
+    ExtendedStatus On
+    <Location "/server-status">
+        SetHandler server-status
+        Require ip 127.0.0.1 ::1
+    </Location>
+</IfModule>
+
+# Final optimizations
+<IfModule mod_headers.c>
+    # Remove unnecessary headers
+    Header unset Server
+    Header unset X-Powered-By
+    Header unset X-Pingback
+    
+    # Add custom headers
+    Header set X-CDN-Cache "HIT"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>

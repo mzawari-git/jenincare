@@ -1,0 +1,103 @@
+{
+  "name": "Jenin Care - منصة العناية بالبشرة",
+  "short_name": "شركة جنين للتجميل",
+  "description": "منصة العناية بالشعر والبشرة الأولى في فلسطين - منتجات أصلية 100%",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf9f8",
+  "theme_color": "#d97a8c",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "ar",
+  "dir": "rtl",
+  "categories": ["beauty", "health", "shopping", "lifestyle"],
+  "icons": [
+    {
+      "src": "/favicon_io/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon_io/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/public/screenshots/home-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "الصفحة الرئيسية - Jenin Care"
+    },
+    {
+      "src": "/public/screenshots/admin-dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "لوحة تحكم الإدارة"
+    },
+    {
+      "src": "/public/screenshots/marketing-dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "لوحة التسويق الرقمي"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "المتجر",
+      "short_name": "تسوق",
+      "description": "تصفح المنتجات",
+      "url": "/shop",
+      "icons": [
+        {
+          "src": "/assets/icons/shop-icon.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "الحساب",
+      "short_name": "حسابي",
+      "description": "إدارة حسابك",
+      "url": "/account",
+      "icons": [
+        {
+          "src": "/assets/icons/account-icon.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "العروض",
+      "short_name": "عروض",
+      "description": "أحدث العروض والخصومات",
+      "url": "/shop?sort=discount",
+      "icons": [
+        {
+          "src": "/assets/icons/deals-icon.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  }
+}

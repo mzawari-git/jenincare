@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\SkinScan;
+use App\Notifications\ScanCompleted;
 use App\Services\AI\AIOrchestrator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -52,6 +53,15 @@ class ProcessSkinScan implements ShouldQueue
                 'defects' => count($result->defects),
                 'provider' => $result->provider,
             ]);
+
+            try {
+                $this->skinScan->user?->notify(new ScanCompleted($this->skinScan));
+            } catch (\Throwable $e) {
+                Log::warning('Failed to send scan completion notification', [
+                    'scan_id' => $this->skinScan->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
         } catch (\Throwable $e) {
             Log::error('ProcessSkinScan failed', [

@@ -33,10 +33,33 @@ class AIOrchestrator
         $unifiedData = UnifiedSkinData::fromProviderResponse($rawResponse, $provider->getProviderName());
 
         $this->enrichDefectsWithLibrary($unifiedData);
+        $this->calculateCrossChannelConsistency($unifiedData, $imageData);
 
         $this->saveAnalysisResults($scan, $unifiedData, $provider);
 
         return $unifiedData;
+    }
+
+    protected function calculateCrossChannelConsistency(UnifiedSkinData $data, array $imageData): void
+    {
+        $spectralModes = $imageData['spectral_modes'] ?? [];
+        if (count($spectralModes) < 2) {
+            $data->crossChannelConsistency = 100;
+            return;
+        }
+
+        if ($data->crossChannelConsistency === 0 && !empty($data->spectralAnalysis)) {
+            $scores = array_column($data->spectralAnalysis, 'score');
+            if (count($scores) > 1) {
+                $avg = array_sum($scores) / count($scores);
+                $variance = 0;
+                foreach ($scores as $s) {
+                    $variance += abs($s - $avg);
+                }
+                $variance /= count($scores);
+                $data->crossChannelConsistency = (int) max(0, 100 - ($variance * 2));
+            }
+        }
     }
 
     public function analyzeWithAllProviders(SkinScan $scan): array

@@ -50,9 +50,12 @@ Route::prefix('v1')->group(function () {
         // Scans
         Route::get('/scans', [\App\Http\Controllers\Api\V1\ScanController::class, 'index']);
         Route::get('/scans/history', [\App\Http\Controllers\Api\V1\ScanController::class, 'history']);
-        Route::post('/scans/upload', [\App\Http\Controllers\Api\V1\ScanController::class, 'upload']);
-        Route::post('/scans/upload/with-progress', [\App\Http\Controllers\Api\V1\ScanController::class, 'uploadWithMetadata']);
-        Route::post('/scans/upload/chunk', [\App\Http\Controllers\Api\V1\ScanController::class, 'uploadChunk']);
+        Route::post('/scans/upload', [\App\Http\Controllers\Api\V1\ScanController::class, 'upload'])
+            ->middleware('throttle:scan-upload');
+        Route::post('/scans/upload/with-progress', [\App\Http\Controllers\Api\V1\ScanController::class, 'uploadWithMetadata'])
+            ->middleware('throttle:scan-upload');
+        Route::post('/scans/upload/chunk', [\App\Http\Controllers\Api\V1\ScanController::class, 'uploadChunk'])
+            ->middleware('throttle:scan-upload');
         Route::get('/scans/{scanId}/status', [\App\Http\Controllers\Api\V1\ScanController::class, 'status']);
         Route::post('/scans/{scanId}/unlock', [\App\Http\Controllers\Api\V1\ScanController::class, 'unlock']);
         Route::get('/scans/{scanId}/report', [\App\Http\Controllers\Api\V1\ScanController::class, 'report']);
@@ -61,13 +64,25 @@ Route::prefix('v1')->group(function () {
 
         // Products
         Route::get('/products/recommended/{scanId}', [\App\Http\Controllers\Api\V1\ProductController::class, 'recommended']);
+
+        // QR & Report
+        Route::get('/scans/{scanId}/report-qr', [\App\Http\Controllers\Api\ReportExportController::class, 'generateQr']);
+        Route::post('/scans/{scanId}/add-to-cart', function (\Illuminate\Http\Request $request, string $scanId) {
+            $service = app(\App\Services\CartIntegrationService::class);
+            return response()->json($service->addRecommendedProducts($scanId, $request->user()->id));
+        });
     });
 });
+
+// Public report view (no auth required — uses encrypted token)
+Route::get('/report/{token}', [\App\Http\Controllers\Api\ReportExportController::class, 'viewReport']);
 
 // Existing API routes
 Route::get('/health', function () {
     return response()->json(['status' => 'ok', 'time' => now()]);
 });
+
+
 
 Route::any('/meta/webhook', [MetaWebhookController::class, 'receiveWebhook'])->name('api.meta.webhook');
 
@@ -90,12 +105,16 @@ Route::post('/track/behavior', [\App\Http\Controllers\Api\BehavioralController::
 Route::get('/track/behavior/score', [\App\Http\Controllers\Api\BehavioralController::class, 'score'])
     ->name('api.behavioral.score');
 
+// Realtime & Dashboard
+use App\Http\Controllers\Api\V1\RealtimeController;
+
 // Admin API - SkinAnalyzer Management
 use App\Http\Controllers\Admin\Api\AIProviderController;
 use App\Http\Controllers\Admin\Api\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\Api\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\Api\ScanManagementController;
 use App\Http\Controllers\Admin\Api\UserController as AdminUserController;
+use App\Http\Controllers\Admin\Api\WhiteLabelController;
 
 Route::prefix('admin')->group(function () {
 
@@ -103,6 +122,11 @@ Route::prefix('admin')->group(function () {
     Route::post('/auth/login', [AdminAuthController::class, 'login']);
 
     // Authenticated admin routes
+    // Realtime (SSE)
+    Route::get('/realtime/stream', [RealtimeController::class, 'stream']);
+    Route::get('/realtime/stats', [RealtimeController::class, 'stats']);
+    Route::get('/realtime/trends', [RealtimeController::class, 'trends']);
+
     Route::middleware(['auth:sanctum', 'admin'])->group(function () {
         // Auth
         Route::get('/auth/me', [AdminAuthController::class, 'me']);
@@ -117,6 +141,7 @@ Route::prefix('admin')->group(function () {
 
         // Scans
         Route::get('/scans/stats', [ScanManagementController::class, 'stats']);
+        Route::get('/scans/stream', [ScanManagementController::class, 'stream']);
         Route::get('/scans/export', [ScanManagementController::class, 'export']);
         Route::get('/scans/pending', [ScanManagementController::class, 'pending']);
         Route::get('/scans/all', [ScanManagementController::class, 'allScans']);
@@ -146,6 +171,25 @@ Route::prefix('admin')->group(function () {
         Route::put('/ai-providers/{id}', [AIProviderController::class, 'update']);
         Route::post('/ai-providers/{id}/toggle', [AIProviderController::class, 'toggle']);
         Route::post('/ai-providers/{id}/test', [AIProviderController::class, 'testConnection']);
+
+        // White Label
+        Route::get('/white-label', [WhiteLabelController::class, 'index']);
+        Route::put('/white-label', [WhiteLabelController::class, 'update']);
+        Route::post('/white-label/logo', [WhiteLabelController::class, 'uploadLogo']);
+
+        // Prompts
+        Route::get('/prompts', [\App\Http\Controllers\Admin\Api\PromptController::class, 'index']);
+        Route::post('/prompts', [\App\Http\Controllers\Admin\Api\PromptController::class, 'store']);
+        Route::post('/prompts/preview', [\App\Http\Controllers\Admin\Api\PromptController::class, 'preview']);
+        Route::get('/prompts/{id}', [\App\Http\Controllers\Admin\Api\PromptController::class, 'show']);
+        Route::put('/prompts/{id}', [\App\Http\Controllers\Admin\Api\PromptController::class, 'update']);
+        Route::delete('/prompts/{id}', [\App\Http\Controllers\Admin\Api\PromptController::class, 'destroy']);
+        Route::get('/prompts/{id}/history', [\App\Http\Controllers\Admin\Api\PromptController::class, 'history']);
+
+        // Settings
+        Route::get('/settings/skinanalyzer', [\App\Http\Controllers\Admin\Api\SettingsController::class, 'getSkinAnalyzer']);
+        Route::post('/settings/skinanalyzer', [\App\Http\Controllers\Admin\Api\SettingsController::class, 'updateSkinAnalyzer']);
+        Route::post('/settings/clear-cache', [\App\Http\Controllers\Admin\Api\SettingsController::class, 'clearCache']);
     });
 });
 

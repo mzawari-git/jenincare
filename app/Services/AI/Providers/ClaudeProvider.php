@@ -28,11 +28,9 @@ class ClaudeProvider extends BaseAIProvider
                 throw new \RuntimeException('Claude API key not configured.');
             }
 
-            $imageBase64 = $this->getImagePayload($imageData);
-            $mediaType = $this->getImageMediaType($imageData);
-
             $systemPrompt = $this->buildSystemPrompt();
             $userPrompt = $this->buildUserPrompt($imageData);
+            $content = $this->buildContent($userPrompt, $imageData);
 
             $response = Http::withHeaders([
                 'x-api-key' => $apiKey,
@@ -42,25 +40,7 @@ class ClaudeProvider extends BaseAIProvider
                     'model' => $this->config('model', 'claude-3-5-sonnet-20241022'),
                     'max_tokens' => (int) ($this->config('max_tokens', 4096)),
                     'system' => $systemPrompt,
-                    'messages' => [
-                        [
-                            'role' => 'user',
-                            'content' => [
-                                [
-                                    'type' => 'image',
-                                    'source' => [
-                                        'type' => 'base64',
-                                        'media_type' => $mediaType,
-                                        'data' => $imageBase64,
-                                    ],
-                                ],
-                                [
-                                    'type' => 'text',
-                                    'text' => $userPrompt,
-                                ],
-                            ],
-                        ],
-                    ],
+                    'messages' => [['role' => 'user', 'content' => $content]],
                 ]);
 
             if ($response->failed()) {
@@ -163,18 +143,60 @@ Return valid JSON only (no markdown, no code fences) with this structure:
   "spectral_analysis": [{"mode": "rgb|cross|parallel|uv", "score": 0-100, "findings": "...", "findings_ar": "..."}],
   "custom_arabic_analysis_text": "...",
   "expert_free_tips": [{"en": "...", "ar": "..."}],
-  "confidence": 0-1
+  "confidence": 0-1,
+  "cross_channel_consistency": 0-100
 }
 PROMPT;
     }
 
+    protected function buildContent(string $userPrompt, array $imageData): array
+    {
+        $content = [];
+        $spectralModes = $imageData['spectral_modes'] ?? [];
+
+        if (count($spectralModes) > 1) {
+            foreach ($spectralModes as $mode => $path) {
+                $tempData = array_merge($imageData, ['path' => $path]);
+                $base64 = $this->getImagePayload($tempData);
+                $mediaType = $this->getImageMediaType($tempData);
+                $content[] = [
+                    'type' => 'image',
+                    'source' => [
+                        'type' => 'base64',
+                        'media_type' => $mediaType,
+                        'data' => $base64,
+                    ],
+                ];
+            }
+        } else {
+            $imageBase64 = $this->getImagePayload($imageData);
+            $mediaType = $this->getImageMediaType($imageData);
+            $content[] = [
+                'type' => 'image',
+                'source' => [
+                    'type' => 'base64',
+                    'media_type' => $mediaType,
+                    'data' => $imageBase64,
+                ],
+            ];
+        }
+
+        $content[] = ['type' => 'text', 'text' => $userPrompt];
+        return $content;
+    }
+
     protected function buildUserPrompt(array $imageData): string
     {
-        $prompt = 'Analyze this facial skin image comprehensively. Include overall health score, radar and advanced metrics, all detected defects with severity, heatmap coordinates, per-zone analysis, and Arabic text.';
+        $spectralModes = $imageData['spectral_modes'] ?? [];
+        $hasMultiImage = count($spectralModes) > 1;
 
-        if (!empty($imageData['spectral_modes'])) {
-            $modes = implode(', ', array_keys($imageData['spectral_modes']));
-            $prompt .= " Available spectral modes: {$modes}. Analyze each mode separately.";
+        if ($hasMultiImage) {
+            $modes = implode(', ', array_keys($spectralModes));
+            $prompt = "MULTI-CHANNEL ANALYSIS: I am providing {$modes} spectral images of the same face.";
+            $prompt .= " Cross-analyze across all channels. Match surface findings (RGB) with subsurface findings (Cross-Polarized).";
+            $prompt .= " Overlay UV sebum/pigmentation data on RGB findings. Set cross_channel_consistency.";
+        } else {
+            $prompt = 'Analyze this facial skin image comprehensively. Include overall health score, radar and advanced metrics, all detected defects with severity, heatmap coordinates, per-zone analysis, and Arabic text.';
         }
 
         if (!empty($imageData['features'])) {

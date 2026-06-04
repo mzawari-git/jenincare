@@ -1,0 +1,131 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: شركة جنين للتجميل-app
+    restart: unless-stopped
+    volumes:
+      - ./storage:/var/www/storage
+    networks:
+      - شركة جنين للتجميل-network
+    depends_on:
+      - db
+      - redis
+    environment:
+      - APP_ENV=production
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=شركة جنين للتجميل
+      - DB_USERNAME=شركة جنين للتجميل
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - QUEUE_CONNECTION=redis
+
+  nginx:
+    image: nginx:alpine
+    container_name: شركة جنين للتجميل-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - .:/var/www
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - شركة جنين للتجميل-network
+    depends_on:
+      - app
+
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: شركة جنين للتجميل-queue
+    restart: unless-stopped
+    command: php artisan horizon
+    volumes:
+      - ./storage:/var/www/storage
+    networks:
+      - شركة جنين للتجميل-network
+    depends_on:
+      - db
+      - redis
+    environment:
+      - APP_ENV=production
+      - QUEUE_CONNECTION=redis
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_DATABASE=شركة جنين للتجميل
+      - DB_USERNAME=شركة جنين للتجميل
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=redis
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: شركة جنين للتجميل-scheduler
+    restart: unless-stopped
+    command: php artisan schedule:work
+    volumes:
+      - ./storage:/var/www/storage
+    networks:
+      - شركة جنين للتجميل-network
+    depends_on:
+      - db
+      - redis
+    environment:
+      - APP_ENV=production
+      - QUEUE_CONNECTION=redis
+      - DB_CONNECTION=pgsql
+      - DB_DATABASE=شركة جنين للتجميل
+      - DB_USERNAME=شركة جنين للتجميل
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=redis
+
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: شركة جنين للتجميل-ml
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    networks:
+      - شركة جنين للتجميل-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: شركة جنين للتجميل-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - شركة جنين للتجميل-network
+
+  db:
+    image: postgres:16-alpine
+    container_name: شركة جنين للتجميل-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=شركة جنين للتجميل
+      - POSTGRES_USER=شركة جنين للتجميل
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - شركة جنين للتجميل-network
+
+volumes:
+  postgres_data:
+
+networks:
+  شركة جنين للتجميل-network:
+    driver: bridge
