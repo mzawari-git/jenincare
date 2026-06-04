@@ -41,7 +41,7 @@ class ProcessSkinScan implements ShouldQueue
             ]);
 
             $this->skinScan->updateQuietly([
-                'analysis_status' => \App\Enums\AnalysisStatus::PROCESSING,
+                'analysis_status' => \App\Enums\AnalysisStatus::PROCESSING->value,
                 'analyzed_at' => null,
             ]);
 
@@ -71,7 +71,7 @@ class ProcessSkinScan implements ShouldQueue
             ]);
 
             $this->skinScan->updateQuietly([
-                'analysis_status' => \App\Enums\AnalysisStatus::FAILED,
+                'analysis_status' => \App\Enums\AnalysisStatus::FAILED->value,
                 'analysis_data' => [
                     'error' => true,
                     'message' => $e->getMessage(),
@@ -91,7 +91,7 @@ class ProcessSkinScan implements ShouldQueue
         ]);
 
         $this->skinScan->updateQuietly([
-            'analysis_status' => \App\Enums\AnalysisStatus::FAILED,
+            'analysis_status' => \App\Enums\AnalysisStatus::FAILED->value,
         ]);
     }
 }

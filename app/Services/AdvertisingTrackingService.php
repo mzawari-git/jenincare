@@ -890,4 +890,6 @@ JS;
     public function isTestMode(): bool { return $this->testMode; }
     public function getFbPixelId(): ?string { return $this->fbPixelId; }
     public function getTtPixelId(): ?string { return $this->ttPixelId; }
+    public function getFbAccessToken(): ?string { return $this->fbAccessToken; }
+    public function getTtAccessToken(): ?string { return $this->ttAccessToken; }
 }

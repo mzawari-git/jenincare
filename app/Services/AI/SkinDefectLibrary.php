@@ -1004,9 +1004,24 @@ class SkinDefectLibrary
         return self::CONDITIONS;
     }
 
+    public function getAll(): array
+    {
+        $grouped = [];
+        foreach (self::CONDITIONS as $type => $info) {
+            $category = $info['category'] ?? 'uncategorized';
+            $grouped[$category][$type] = $info;
+        }
+        return $grouped;
+    }
+
     public function getCondition(string $key): ?array
     {
         return self::CONDITIONS[$key] ?? null;
+    }
+
+    public function find(string $type): ?array
+    {
+        return self::CONDITIONS[$type] ?? null;
     }
 
     public function getCategories(): array

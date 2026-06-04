@@ -2,7 +2,6 @@
 
 namespace App\Services\AI\Providers;
 
-use App\Enums\EngineType;
 use App\Models\AIProvider;
 use App\Services\AI\BaseAIProvider;
 use Illuminate\Support\Facades\Http;

@@ -4,7 +4,6 @@ namespace App\Services\AI;
 
 use App\Models\AIProvider;
 use Illuminate\Contracts\Filesystem\Filesystem;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -59,21 +58,6 @@ abstract class BaseAIProvider implements AIProviderInterface
                 throw new \InvalidArgumentException("Image file not found at path: {$imageData['path']}");
             }
         }
-    }
-
-    protected function encryptImage(string $path): string
-    {
-        $rawContent = $this->disk->get($path);
-        $encrypted = Crypt::encryptString($rawContent);
-        $encryptedPath = $path . '.enc';
-        $this->disk->put($encryptedPath, $encrypted);
-        return $encryptedPath;
-    }
-
-    protected function decryptImage(string $path): string
-    {
-        $encrypted = $this->disk->get($path);
-        return Crypt::decryptString($encrypted);
     }
 
     protected function logRequest(array $response): void

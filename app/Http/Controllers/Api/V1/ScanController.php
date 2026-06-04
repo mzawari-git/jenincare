@@ -33,48 +33,26 @@ class ScanController extends Controller
     public function upload(Request $request): JsonResponse
     {
         $request->validate([
-            'file' => 'required|file|max:10240',
+            'file' => 'required|file|mimes:jpeg,png,jpg|max:102400',
+            'metadata' => 'nullable|json',
         ]);
 
         $user = $request->user();
-
         $path = $request->file('file')->store('scans/' . $user->id, 'public');
 
-        $scan = SkinScan::create([
-            'user_id' => $user->id,
-            'status' => 'pending',
-            'image_url' => Storage::url($path),
-            'image_path' => $path,
-            'is_locked' => false,
-            'analysis_status' => AnalysisStatus::PENDING,
+        $spectralImages = [];
+        for ($i = 0; $i < 3; $i++) {
+            if ($request->hasFile("spectral_$i")) {
+                $specPath = $request->file("spectral_$i")->store('scans/' . $user->id . '/spectral', 'public');
+                $spectralImages["spectral_$i"] = Storage::url($specPath);
+            }
+        }
+
+        $metadata = $request->metadata ? json_decode($request->metadata, true) : [];
+        $mergedMetadata = array_merge($metadata, [
+            'spectral_images' => $spectralImages,
+            'has_spectral_captures' => !empty($spectralImages),
         ]);
-
-        $scan->timelineEvents()->create([
-            'status' => 'pending',
-            'description' => 'Scan uploaded successfully',
-            'description_ar' => 'تم رفع الفحص بنجاح',
-            'created_at' => now(),
-        ]);
-
-        ProcessSkinScan::dispatch($scan);
-
-        return response()->json([
-            'scan' => $this->formatScan($scan),
-            'message' => 'Scan uploaded successfully',
-        ], 201);
-    }
-
-    public function uploadWithMetadata(Request $request): JsonResponse
-    {
-        $request->validate([
-            'file' => 'required|file|max:10240',
-            'metadata' => 'required|json',
-        ]);
-
-        $user = $request->user();
-        $metadata = json_decode($request->metadata, true);
-
-        $path = $request->file('file')->store('scans/' . $user->id, 'public');
 
         $scan = SkinScan::create([
             'user_id' => $user->id,
@@ -87,7 +65,7 @@ class ScanController extends Controller
             'face_confidence' => $metadata['face_confidence'] ?? null,
             'image_width' => $metadata['image_width'] ?? null,
             'image_height' => $metadata['image_height'] ?? null,
-            'metadata' => $metadata,
+            'metadata' => $mergedMetadata,
         ]);
 
         $scan->timelineEvents()->create([
@@ -98,6 +76,62 @@ class ScanController extends Controller
         ]);
 
         ProcessSkinScan::dispatch($scan);
+        $scan->refresh();
+
+        return response()->json([
+            'scan_id' => $scan->id,
+            'scan' => $this->formatScan($scan),
+            'status' => 'pending',
+            'message' => 'Scan uploaded successfully',
+        ], 201);
+    }
+
+    public function uploadWithMetadata(Request $request): JsonResponse
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:jpeg,png,jpg|max:102400',
+            'metadata' => 'required|json',
+        ]);
+
+        $user = $request->user();
+        $metadata = json_decode($request->metadata, true);
+
+        $path = $request->file('file')->store('scans/' . $user->id, 'public');
+
+        $spectralImages = [];
+        for ($i = 0; $i < 3; $i++) {
+            if ($request->hasFile("spectral_$i")) {
+                $specPath = $request->file("spectral_$i")->store('scans/' . $user->id . '/spectral', 'public');
+                $spectralImages["spectral_$i"] = Storage::url($specPath);
+            }
+        }
+
+        $scan = SkinScan::create([
+            'user_id' => $user->id,
+            'status' => 'pending',
+            'image_url' => Storage::url($path),
+            'image_path' => $path,
+            'is_locked' => false,
+            'analysis_status' => AnalysisStatus::PENDING,
+            'lighting_quality' => $metadata['lighting_quality'] ?? null,
+            'face_confidence' => $metadata['face_confidence'] ?? null,
+            'image_width' => $metadata['image_width'] ?? null,
+            'image_height' => $metadata['image_height'] ?? null,
+            'metadata' => array_merge($metadata, [
+                'spectral_images' => $spectralImages,
+                'has_spectral_captures' => !empty($spectralImages),
+            ]),
+        ]);
+
+        $scan->timelineEvents()->create([
+            'status' => 'pending',
+            'description' => 'Scan uploaded successfully',
+            'description_ar' => 'تم رفع الفحص بنجاح',
+            'created_at' => now(),
+        ]);
+
+        ProcessSkinScan::dispatch($scan);
+        $scan->refresh();
 
         return response()->json([
             'scan_id' => $scan->id,
@@ -210,14 +244,17 @@ class ScanController extends Controller
 
         $analysisData = $scan->analysis_data ?? [];
 
+        $spectralImages = $scan->metadata['spectral_images'] ?? [];
+
         return response()->json([
             'scan' => [
                 'id' => $scan->id,
                 'user_id' => (string) $scan->user_id,
                 'image_url' => $scan->image_url,
+                'spectral_image_urls' => $spectralImages ? array_values($spectralImages) : [],
                 'status' => $scan->status,
                 'analysis_status' => $scan->analysis_status,
-                'overall_score' => (int) ($analysisData['overall_health_score'] ?? $scan->overall_health_score),
+                'overall_score' => (int) ($analysisData['overall_health_score'] ?? $scan->overall_health_score ?? 0),
                 'confidence' => $scan->confidence_score,
                 'analyzed_by' => $scan->analyzed_by_provider,
                 'created_at' => $scan->created_at->toISOString(),
@@ -225,16 +262,16 @@ class ScanController extends Controller
                 'analyzed_at' => $scan->analyzed_at?->toISOString(),
             ],
             'metrics' => $analysisData['radar_metrics'] ?? [
-                'hydration' => $scan->hydration,
-                'sebum' => $scan->sebum,
-                'pigmentation' => $scan->pigmentation,
-                'pores' => $scan->pores,
-                'elasticity' => $scan->elasticity,
+                'hydration' => (int) ($scan->hydration ?? 0),
+                'sebum' => (int) ($scan->sebum ?? 0),
+                'pigmentation' => (int) ($scan->pigmentation ?? 0),
+                'pores' => (int) ($scan->pores ?? 0),
+                'elasticity' => (int) ($scan->elasticity ?? 0),
             ],
             'advanced_metrics' => $analysisData['advanced_metrics'] ?? [],
             'spectral_analysis' => $analysisData['spectral_analysis'] ?? [],
             'facial_zone_analysis' => $analysisData['facial_zone_analysis'] ?? [],
-            'heatmap_points' => $analysisData['heatmap_coordinates'] ?? $scan->heatmapPoints->map(fn($p) => [
+            'heatmap_points' => $analysisData['heatmap_coordinates'] ?? $scan->heatmapPoints?->map(fn($p) => [
                 'x' => $p->x,
                 'y' => $p->y,
                 'severity' => $p->severity,
@@ -242,8 +279,8 @@ class ScanController extends Controller
                 'label_ar' => $p->label_ar,
                 'description' => $p->description,
                 'description_ar' => $p->description_ar,
-            ]),
-            'defects' => $analysisData['defects'] ?? $scan->defects->map(fn($d) => [
+            ])->values() ?? [],
+            'defects' => $analysisData['defects'] ?? $scan->defects?->map(fn($d) => [
                 'id' => $d->id,
                 'name_ar' => $d->name_ar,
                 'name_en' => $d->name_en,
@@ -251,7 +288,7 @@ class ScanController extends Controller
                 'tip_ar' => $d->tip_ar,
                 'tip_en' => $d->tip_en,
                 'icon_name' => $d->icon_name,
-                'recommended_products' => $d->products->map(fn($p) => [
+                'recommended_products' => $d->products?->map(fn($p) => [
                     'id' => $p->id,
                     'name_ar' => $p->name_ar,
                     'name_en' => $p->name_en,
@@ -260,13 +297,13 @@ class ScanController extends Controller
                     'shop_url' => '',
                     'matching_reason' => $p->pivot->matching_reason,
                     'matching_reason_ar' => $p->pivot->matching_reason_ar,
-                ]),
-            ]),
+                ]) ?? [],
+            ])->values() ?? [],
             'recommended_products' => $analysisData['recommended_products'] ?? $scan->recommended_products ?? [],
-            'general_tips' => $analysisData['expert_free_tips'] ?? $scan->generalTips->map(fn($t) => [
+            'general_tips' => $analysisData['expert_free_tips'] ?? $scan->generalTips?->map(fn($t) => [
                 'ar' => $t->tip_ar,
                 'en' => $t->tip_en,
-            ]),
+            ])->values() ?? [],
             'custom_arabic_analysis' => $analysisData['custom_arabic_analysis_text'] ?? $scan->custom_arabic_analysis,
         ]);
     }
@@ -302,10 +339,12 @@ class ScanController extends Controller
                 'id' => $s->id,
                 'user_id' => (string) $s->user_id,
                 'image_url' => $s->image_url,
+                'spectral_image_urls' => array_values($s->metadata['spectral_images'] ?? []),
                 'status' => $s->status,
                 'analysis_status' => $s->analysis_status,
                 'overall_score' => (int) $s->overall_health_score,
                 'confidence' => $s->confidence_score,
+                'analyzed_by' => $s->analyzed_by_provider,
                 'created_at' => $s->created_at->toISOString(),
                 'reviewed_at' => $s->reviewed_at?->toISOString(),
                 'analyzed_at' => $s->analyzed_at?->toISOString(),
@@ -320,7 +359,7 @@ class ScanController extends Controller
             'chunk_index' => 'required|integer|min:0',
             'total_chunks' => 'required|integer|min:1',
             'is_last_chunk' => 'required|boolean',
-            'chunk' => 'required|file|max:5120',
+            'chunk' => 'required|file|max:102400',
         ]);
 
         $scanId = $request->scan_id;
@@ -388,6 +427,7 @@ class ScanController extends Controller
             'analysis_status' => $scan->analysis_status,
             'analysis_status_label' => $scan->analysis_status_label,
             'image_url' => $scan->image_url,
+            'spectral_image_urls' => array_values($scan->metadata['spectral_images'] ?? []),
             'overall_health_score' => $analysisData['overall_health_score'] ?? $scan->overall_health_score,
             'radar_metrics' => $analysisData['radar_metrics'] ?? [
                 'hydration' => $scan->hydration,
