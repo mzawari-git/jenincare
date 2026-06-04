@@ -405,7 +405,7 @@ class ScanController extends Controller
                 'severity' => (string) $p->severity,
             ]),
             'custom_arabic_analysis' => $analysisData['custom_arabic_analysis_text'] ?? $scan->custom_arabic_analysis,
-            'expert_free_tips' => $analysisData['expert_free_tips'] ?? $scan->expert_free_tips ?? [],
+            'expert_free_tips' => $this->normalizeExpertFreeTips($analysisData['expert_free_tips'] ?? $scan->expert_free_tips ?? []),
             'recommended_products' => $analysisData['recommended_products'] ?? [],
             'confidence' => $scan->confidence_score,
             'analyzed_by' => $scan->analyzed_by_provider,
@@ -415,5 +415,10 @@ class ScanController extends Controller
             'is_locked' => $scan->is_locked,
             'pin_required' => !is_null($scan->pin_code),
         ];
+    }
+
+    private function normalizeExpertFreeTips(array $tips): array
+    {
+        return array_map(fn($tip) => is_array($tip) ? ($tip['en'] ?? $tip['ar'] ?? '') : $tip, $tips);
     }
 }
