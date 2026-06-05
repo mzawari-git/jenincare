@@ -95,6 +95,36 @@
     </div>
 </div>
 
+{{-- Spin Code Display --}}
+@if($spinCode)
+<div id="spinCodeSection" style="max-width:560px;margin:-60px auto 40px;padding:0 16px;position:relative;z-index:2;">
+    <div style="background:linear-gradient(135deg,var(--brand-500),#c0266b);border-radius:20px;padding:24px;text-align:center;box-shadow:0 12px 40px rgba(var(--brand-500-rgb,255,42,133),.35);position:relative;overflow:hidden;">
+        <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.06);"></div>
+        <div style="position:absolute;bottom:-40px;left:-20px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.04);"></div>
+        <span style="display:inline-block;padding:4px 14px;border-radius:50px;background:rgba(255,255,255,.15);color:#fff;font-size:.75rem;font-weight:700;margin-bottom:10px;">🎁 كود الهدية المجانية</span>
+        <p style="color:rgba(255,255,255,.8);font-size:.85rem;margin:0 0 12px;">استخدمي كود الدولب أدناه للدوران وربح هدية مجانية مع طلبك!</p>
+        <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px dashed rgba(255,255,255,.25);">
+            <span id="spinCodeDisplay" dir="ltr" style="font-family:'Courier New',monospace;font-size:1.4rem;font-weight:900;color:#fff;letter-spacing:3px;text-shadow:0 2px 8px rgba(0,0,0,.2);">{{ $spinCode->code }}</span>
+            <button onclick="copySpinCode()" style="background:rgba(255,255,255,.15);border:none;color:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:.8rem;font-weight:600;transition:all .3s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,.25)'" onmouseout="this.style.background='rgba(255,255,255,.15)'">
+                <i class="fas fa-copy"></i> نسخ
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function copySpinCode() {
+    const code = document.getElementById('spinCodeDisplay').textContent.trim();
+    navigator.clipboard.writeText(code).then(() => {
+        const btn = event.currentTarget;
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> تم النسخ';
+        setTimeout(() => btn.innerHTML = orig, 2000);
+    });
+}
+</script>
+@endif
+
 {{-- Wheel of Fortune Modal --}}
 <div id="wheelModalOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:16px;">
     <div id="wheelModalCard" style="background:linear-gradient(145deg,#1a1a2e,#16213e);border-radius:32px;border:1px solid rgba(255,255,255,.08);width:100%;max-width:480px;padding:32px 24px;text-align:center;position:relative;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.5);transform:scale(0.9);opacity:0;transition:all .5s cubic-bezier(.34,1.56,.64,1);">
@@ -178,6 +208,8 @@
     let currentAngle = 0;
     let isSpinning = false;
     let velocity = 0;
+    let spinCodeUsed = false;
+    const spinCode = @json($spinCode->code ?? null);
 
     function drawWheel(angle) {
         ctx.clearRect(0, 0, size, size);
@@ -205,7 +237,6 @@
             ctx.fillText(gifts[i], radius - 16, 5);
             ctx.restore();
         }
-        // Outer ring
         ctx.beginPath();
         ctx.arc(center, center, radius, 0, 2 * Math.PI);
         ctx.strokeStyle = 'rgba(255,255,255,.15)';
@@ -215,6 +246,11 @@
 
     function spinWheel() {
         if (isSpinning) return;
+        if (spinCodeUsed) {
+            alert('لقد استخدمت الكود بالفعل!');
+            return;
+        }
+
         isSpinning = true;
         const btn = document.getElementById('spinButton');
         btn.disabled = true;
@@ -253,22 +289,31 @@
         document.getElementById('postSpinSection').style.display = 'block';
 
         launchConfetti();
+
+        // Mark spin code as used via API
+        if (spinCode) {
+            spinCodeUsed = true;
+            fetch('{{ url("api/spin-codes/mark-used") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ code: spinCode, gift: won })
+            }).catch(() => {});
+        }
     }
 
     function launchConfetti() {
-        const colors = ['#FF6B6B','#4ECDC4','#FFD93D','#6BCB77','#FFB6C1','#FFD700','var(--brand-500)','#9B59B6'];
+        const clrs = ['#FF6B6B','#4ECDC4','#FFD93D','#6BCB77','#FFB6C1','#FFD700','var(--brand-500)','#9B59B6'];
         for (let i = 0; i < 60; i++) {
             const el = document.createElement('div');
             el.style.cssText = `
                 position:fixed;width:${6 + Math.random()*8}px;height:${6 + Math.random()*8}px;
-                background:${colors[Math.floor(Math.random()*colors.length)]};
+                background:${clrs[Math.floor(Math.random()*clrs.length)]};
                 left:${Math.random()*100}vw;top:-10px;z-index:10000;
                 border-radius:${Math.random()>.5?'50%':'2px'};
                 pointer-events:none;
             `;
             document.body.appendChild(el);
             const dur = 2000 + Math.random() * 2000;
-            const drift = (Math.random() - 0.5) * 200;
             el.animate([
                 { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
                 { transform: `translateY(${window.innerHeight + 50}px) rotate(${720 + Math.random()*720}deg)`, opacity: 0 }
@@ -309,7 +354,7 @@
 
     // Initialize
     drawWheel(currentAngle);
-    setTimeout(openWheelModal, 800);
+    setTimeout(openWheelModal, 1200);
 })();
 </script>
 @endsection
