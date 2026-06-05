@@ -85,22 +85,7 @@ import { useRouter } from 'vue-router'
 import { useScansStore } from '@/stores/scans'
 import { scansApi } from '@/api/endpoints'
 import Swal from 'sweetalert2'
-import { io } from 'socket.io-client'
-import ScanRow from '@/components/ScanRow.vue'
-import PinDisplayModal from '@/components/PinDisplayModal.vue'
-
-const router = useRouter()
-const scansStore = useScansStore()
-
-const loading = ref(false)
 const connected = ref(false)
-const showNewScanAlert = ref(false)
-const filterStatus = ref('')
-const searchQuery = ref('')
-const currentPage = ref(1)
-const perPage = 15
-const allScans = ref([])
-const wsError = ref(null)
 let pollTimer = null
 let socket = null
 
@@ -157,55 +142,7 @@ function filterScans() {
   currentPage.value = 1
 }
 
-function setupWebSocket() {
-  const wsUrl = import.meta.env.VITE_WS_URL || 'wss://jenincare.shop'
-  try {
-    socket = io(wsUrl, {
-      path: '/ws',
-      transports: ['websocket'],
-      reconnection: true,
-      reconnectionDelay: 3000,
-      reconnectionAttempts: 5
-    })
-
-    socket.on('connect', () => {
-      connected.value = true
-      wsError.value = null
-      socket.emit('join-admin', { role: 'admin' })
-    })
-
-    socket.on('new-scan', (scan) => {
-      const existing = allScans.value.find(s => s.id === scan.id)
-      if (!existing) {
-        allScans.value.unshift(scan)
-        showNewScanAlert.value = true
-        setTimeout(() => { showNewScanAlert.value = false }, 3000)
-      }
-    })
-
-    socket.on('scan-updated', (updatedScan) => {
-      const idx = allScans.value.findIndex(s => s.id === updatedScan.id)
-      if (idx >= 0) {
-        allScans.value[idx] = { ...allScans.value[idx], ...updatedScan }
-      }
-    })
-
-    socket.on('disconnect', () => {
-      connected.value = false
-      startPolling()
-    })
-
-    socket.on('connect_error', (err) => {
-      wsError.value = err.message
-      connected.value = false
-      startPolling()
-    })
-  } catch {
-    startPolling()
-  }
-}
-
-function startPolling() {
+function setupPolling() {
   if (pollTimer) return
   pollTimer = setInterval(async () => {
     try {
@@ -309,13 +246,12 @@ function handleRefresh() {
 
 onMounted(() => {
   refreshScans()
-  setupWebSocket()
+  setupPolling()
   window.addEventListener('admin-refresh', handleRefresh)
 })
 
 onUnmounted(() => {
   window.removeEventListener('admin-refresh', handleRefresh)
-  if (socket) socket.disconnect()
   if (pollTimer) clearInterval(pollTimer)
 })
 </script>
