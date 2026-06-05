@@ -333,6 +333,7 @@
         @if(!empty($siteSettings['whatsapp_number']))
             <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $siteSettings['whatsapp_number']) }}" data-platform="whatsapp" style="background:#25D366;" target="_blank" title="واتساب" aria-label="واتساب"><i class="ph-fill ph-whatsapp-logo"></i></a>
         @endif
+        <a href="#" onclick="openSpinCodeEntry();return false;" style="background:linear-gradient(135deg,var(--brand-500),#c0266b);" title="كود دولب" aria-label="كود دولب"><i class="ph-fill ph-gift"></i></a>
     </div>
 
     {{-- Scroll to Top Button --}}

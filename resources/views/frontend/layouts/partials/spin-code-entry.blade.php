@@ -22,17 +22,6 @@
     $scColors = ['#FF6B6B','#4ECDC4','#FFD93D','#6BCB77','#9B59B6','#E8A87C','#3498DB','#F06292'];
 @endphp
 
-{{-- Floating button --}}
-<button id="spinCodeFloatingBtn"
-    style="position:fixed;bottom:90px;left:20px;z-index:9998;width:56px;height:56px;border-radius:50%;border:none;background:linear-gradient(135deg,var(--brand-500),#c0266b);color:#fff;font-size:1.5rem;cursor:pointer;box-shadow:0 4px 20px rgba(var(--brand-500-rgb,255,42,133),.4);transition:all .3s;display:flex;align-items:center;justify-content:center;"
-    onclick="openSpinCodeEntry()"
-    title="لديك كود دولب؟ أدخله هنا"
-    onmouseover="this.style.transform='scale(1.1)';this.style.boxShadow='0 6px 30px rgba(var(--brand-500-rgb,255,42,133),.5)'"
-    onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 4px 20px rgba(var(--brand-500-rgb,255,42,133),.4)'"
-    aria-label="فتح نافذة إدخال كود الدولب">
-    🎡
-</button>
-
 {{-- Spin Code Entry Modal + Wheel --}}
 <div id="scEntryOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:16px;">
     <div id="scEntryCard" style="background:linear-gradient(145deg,#1a1a2e,#16213e);border-radius:32px;border:1px solid rgba(255,255,255,.08);width:100%;max-width:480px;padding:32px 24px;text-align:center;position:relative;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.5);transform:scale(0.9);opacity:0;transition:all .5s cubic-bezier(.34,1.56,.64,1);">

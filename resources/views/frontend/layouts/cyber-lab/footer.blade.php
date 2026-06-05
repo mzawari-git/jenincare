@@ -114,6 +114,7 @@
                     <li><a href="{{ route('terms') }}" class="hover:text-brand-500 transition-colors">الشروط والأحكام</a></li>
                     <li><a href="{{ route('privacy') }}" class="hover:text-brand-500 transition-colors">حماية البيانات</a></li>
                     <li><a href="{{ route('contact') }}" class="hover:text-brand-500 transition-colors">تواصل معنا</a></li>
+                    <li><a href="#" onclick="openSpinCodeEntry();return false;" class="hover:text-brand-500 transition-colors"><i class="ph-fill ph-gift" style="margin-left:4px;"></i>كود دولب</a></li>
                 </ul>
             </div>
 

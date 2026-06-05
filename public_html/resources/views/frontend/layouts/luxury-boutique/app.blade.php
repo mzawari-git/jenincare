@@ -131,6 +131,7 @@
         @if(!empty($siteSettings['linkedin_url']))<a href="{{ $siteSettings['linkedin_url'] }}" data-platform="linkedin" style="background:#0A66C2;" target="_blank" aria-label="لينكد إن"><i class="ph-fill ph-linkedin-logo"></i></a>@endif
         @if(!empty($siteSettings['youtube_url']))<a href="{{ $siteSettings['youtube_url'] }}" data-platform="youtube" style="background:#FF0000;" target="_blank" aria-label="يوتيوب"><i class="ph-fill ph-youtube-logo"></i></a>@endif
         @if(!empty($siteSettings['whatsapp_number']))<a href="https://wa.me/{{ preg_replace('/[^0-9]/','',$siteSettings['whatsapp_number']) }}" data-platform="whatsapp" style="background:#25D366;" target="_blank" aria-label="واتساب"><i class="ph-fill ph-whatsapp-logo"></i></a>@endif
+<a href="#" onclick="openSpinCodeEntry();return false;" style="background:linear-gradient(135deg,var(--brand-500),#c0266b);" title="كود دولب" aria-label="كود دولب"><i class="ph-fill ph-gift"></i></a>
     </div>
 
     <style>.skip-link{position:absolute;top:-40px;left:0;background:var(--brand-500);color:var(--surface);padding:8px 16px;z-index:100;border-radius:0 0 8px 0;font-weight:700;}.skip-link:focus{top:0;}</style>
