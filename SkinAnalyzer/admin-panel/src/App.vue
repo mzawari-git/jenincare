@@ -117,6 +117,7 @@ const pageTitles = {
   PromptManager: 'إدارة التعليمات',
   WhiteLabel: 'العلامة التجارية',
   ProductManager: 'المنتجات',
+  SpinCodes: 'أكواد الدولب',
   AdminSettings: 'الإعدادات'
 }
 

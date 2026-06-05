@@ -150,6 +150,7 @@ Route::prefix('admin')->group(function () {
         Route::post('/scans/{id}/reject', [ScanManagementController::class, 'reject']);
         Route::post('/scans/{id}/pin', [ScanManagementController::class, 'generatePin']);
         Route::post('/scans/{id}/broadcast', [ScanManagementController::class, 'broadcast']);
+        Route::delete('/scans/{id}', [ScanManagementController::class, 'deleteScan']);
         Route::post('/scans/{id}/pin-scan', [ScanManagementController::class, 'pinScan']);
         Route::delete('/scans/{id}/pin-scan', [ScanManagementController::class, 'unpinScan']);
         Route::get('/scans/pinned', [ScanManagementController::class, 'pinnedScans']);

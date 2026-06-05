@@ -10,6 +10,7 @@ use App\Models\ScanDefect;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ScanManagementController extends Controller
 {
@@ -65,9 +66,11 @@ class ScanManagementController extends Controller
         $scan = SkinScan::findOrFail($id);
         $scan->update([
             'status' => 'approved',
-            'analysis_status' => AnalysisStatus::APPROVED,
+            'analysis_status' => AnalysisStatus::APPROVED->value,
             'reviewed_at' => now(),
         ]);
+
+        $scan->refresh();
 
         $scan->timelineEvents()->create([
             'status' => 'approved',
@@ -85,9 +88,11 @@ class ScanManagementController extends Controller
         $scan = SkinScan::findOrFail($id);
         $scan->update([
             'status' => 'rejected',
-            'analysis_status' => AnalysisStatus::REJECTED,
+            'analysis_status' => AnalysisStatus::REJECTED->value,
             'reviewed_at' => now(),
         ]);
+
+        $scan->refresh();
 
         $scan->timelineEvents()->create([
             'status' => 'rejected',
@@ -111,13 +116,27 @@ class ScanManagementController extends Controller
         return response()->json(['pin' => $pin, 'scan_id' => $scan->id, 'message' => 'تم إنشاء رمز PIN بنجاح']);
     }
 
+    public function deleteScan(Request $request, $id): JsonResponse
+    {
+        $scan = SkinScan::findOrFail($id);
+        $scan->defects()->delete();
+        $scan->heatmapPoints()->delete();
+        $scan->generalTips()->delete();
+        $scan->timelineEvents()->delete();
+        $scan->pins()->delete();
+        $scan->analysisImages()->delete();
+        $scan->delete();
+
+        return response()->json(['message' => 'تم حذف الفحص بنجاح']);
+    }
+
     public function batchApprove(Request $request): JsonResponse
     {
-        $request->validate(['ids' => 'required|array', 'ids.*' => 'string|exists:skin_scans,id']);
+        $request->validate(['ids' => 'required|array', 'ids.*' => 'exists:skin_scans,id']);
 
         SkinScan::whereIn('id', $request->ids)->update([
             'status' => 'approved',
-            'analysis_status' => AnalysisStatus::APPROVED,
+            'analysis_status' => AnalysisStatus::APPROVED->value,
             'reviewed_at' => now(),
         ]);
 
@@ -288,5 +307,47 @@ class ScanManagementController extends Controller
             'created_at' => $scan->created_at,
             'reviewed_at' => $scan->reviewed_at,
         ];
+    }
+
+    public function stream(): StreamedResponse
+    {
+        $response = new StreamedResponse(function () {
+            $lastMaxId = SkinScan::max('id') ?? '';
+
+            while (true) {
+                if (connection_aborted()) break;
+
+                $newScans = SkinScan::with('user')
+                    ->where('id', '>', $lastMaxId)
+                    ->orderBy('id')
+                    ->get();
+
+                foreach ($newScans as $scan) {
+                    $data = json_encode([
+                        'type' => 'new_scan',
+                        'scan' => $this->formatScan($scan),
+                    ]);
+                    echo "data: {$data}\n\n";
+                    ob_flush();
+                    flush();
+                    if ($scan->id > $lastMaxId) {
+                        $lastMaxId = $scan->id;
+                    }
+                }
+
+                echo ": heartbeat\n\n";
+                ob_flush();
+                flush();
+
+                sleep(2);
+            }
+        });
+
+        $response->headers->set('Content-Type', 'text/event-stream');
+        $response->headers->set('Cache-Control', 'no-cache');
+        $response->headers->set('Connection', 'keep-alive');
+        $response->headers->set('X-Accel-Buffering', 'no');
+
+        return $response;
     }
 }

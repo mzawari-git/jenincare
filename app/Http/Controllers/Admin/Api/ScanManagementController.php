@@ -116,9 +116,23 @@ class ScanManagementController extends Controller
         return response()->json(['pin' => $pin, 'scan_id' => $scan->id, 'message' => 'تم إنشاء رمز PIN بنجاح']);
     }
 
+    public function deleteScan(Request $request, $id): JsonResponse
+    {
+        $scan = SkinScan::findOrFail($id);
+        $scan->defects()->delete();
+        $scan->heatmapPoints()->delete();
+        $scan->generalTips()->delete();
+        $scan->timelineEvents()->delete();
+        $scan->pins()->delete();
+        $scan->analysisImages()->delete();
+        $scan->delete();
+
+        return response()->json(['message' => 'تم حذف الفحص بنجاح']);
+    }
+
     public function batchApprove(Request $request): JsonResponse
     {
-        $request->validate(['ids' => 'required|array', 'ids.*' => 'string|exists:skin_scans,id']);
+        $request->validate(['ids' => 'required|array', 'ids.*' => 'exists:skin_scans,id']);
 
         SkinScan::whereIn('id', $request->ids)->update([
             'status' => 'approved',
