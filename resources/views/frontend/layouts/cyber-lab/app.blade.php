@@ -364,5 +364,6 @@
     .skip-link { position:absolute; top:-40px; left:0; background:var(--ink); color:var(--surface); padding:8px; z-index:100; } .skip-link:focus { top:0; }
     </style>
 @include('frontend.layouts.partials.theme-switcher')
+@include('frontend.layouts.partials.spin-code-entry')
 </body>
 </html>

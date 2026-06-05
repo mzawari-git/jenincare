@@ -271,5 +271,6 @@
     })();
     </script>
 @include('frontend.layouts.partials.theme-switcher')
+@include('frontend.layouts.partials.spin-code-entry')
 </body>
 </html>
