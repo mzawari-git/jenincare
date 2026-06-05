@@ -209,7 +209,7 @@ function copySpinCode() {
     let isSpinning = false;
     let velocity = 0;
     let spinCodeUsed = false;
-    const spinCode = @json($spinCode->code ?? null);
+    const spinCode = @json($spinCode ? $spinCode->code : null);
 
     function drawWheel(angle) {
         ctx.clearRect(0, 0, size, size);
