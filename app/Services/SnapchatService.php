@@ -8,26 +8,35 @@ use Illuminate\Support\Facades\Log;
 
 class SnapchatService
 {
-    private bool $enabled;
-    private ?string $pixelId;
-    private ?string $apiToken;
+    private bool $enabled = false;
+    private ?string $pixelId = null;
+    private ?string $apiToken = null;
+    private bool $loaded = false;
 
     private const API_BASE = 'https://tr.snapchat.com/v2';
 
     public function __construct()
     {
-        $this->loadSettings();
     }
 
     public function loadSettings(): void
     {
-        $this->enabled = MarketingSetting::get('snapchat_pixel_enabled', false);
-        $this->pixelId = MarketingSetting::get('snapchat_pixel_id');
-        $this->apiToken = MarketingSetting::get('snapchat_api_token');
+        if ($this->loaded) return;
+        try {
+            $this->enabled = MarketingSetting::get('snapchat_pixel_enabled', false);
+            $this->pixelId = MarketingSetting::get('snapchat_pixel_id');
+            $this->apiToken = MarketingSetting::get('snapchat_api_token');
+        } catch (\Exception $e) {
+            $this->enabled = false;
+            $this->pixelId = null;
+            $this->apiToken = null;
+        }
+        $this->loaded = true;
     }
 
     public function isEnabled(): bool
     {
+        $this->loadSettings();
         return $this->enabled && $this->pixelId;
     }
 

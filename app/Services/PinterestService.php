@@ -8,28 +8,38 @@ use Illuminate\Support\Facades\Log;
 
 class PinterestService
 {
-    private bool $enabled;
-    private ?string $tagId;
-    private ?string $accessToken;
-    private ?string $adAccountId;
+    private bool $enabled = false;
+    private ?string $tagId = null;
+    private ?string $accessToken = null;
+    private ?string $adAccountId = null;
+    private bool $loaded = false;
 
     private const API_BASE = 'https://api.pinterest.com/v5';
 
     public function __construct()
     {
-        $this->loadSettings();
     }
 
     public function loadSettings(): void
     {
-        $this->enabled = MarketingSetting::get('pinterest_tag_enabled', false);
-        $this->tagId = MarketingSetting::get('pinterest_tag_id');
-        $this->accessToken = MarketingSetting::get('pinterest_access_token');
-        $this->adAccountId = MarketingSetting::get('pinterest_ad_account_id');
+        if ($this->loaded) return;
+        try {
+            $this->enabled = MarketingSetting::get('pinterest_tag_enabled', false);
+            $this->tagId = MarketingSetting::get('pinterest_tag_id');
+            $this->accessToken = MarketingSetting::get('pinterest_access_token');
+            $this->adAccountId = MarketingSetting::get('pinterest_ad_account_id');
+        } catch (\Exception $e) {
+            $this->enabled = false;
+            $this->tagId = null;
+            $this->accessToken = null;
+            $this->adAccountId = null;
+        }
+        $this->loaded = true;
     }
 
     public function isEnabled(): bool
     {
+        $this->loadSettings();
         return $this->enabled && $this->tagId;
     }
 

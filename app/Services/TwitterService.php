@@ -8,26 +8,35 @@ use Illuminate\Support\Facades\Log;
 
 class TwitterService
 {
-    private bool $enabled;
-    private ?string $pixelId;
-    private ?string $apiKey;
+    private bool $enabled = false;
+    private ?string $pixelId = null;
+    private ?string $apiKey = null;
+    private bool $loaded = false;
 
     private const API_BASE = 'https://ads-api.x.com';
 
     public function __construct()
     {
-        $this->loadSettings();
     }
 
     public function loadSettings(): void
     {
-        $this->enabled = MarketingSetting::get('twitter_pixel_enabled', false);
-        $this->pixelId = MarketingSetting::get('twitter_pixel_id');
-        $this->apiKey = MarketingSetting::get('twitter_api_key');
+        if ($this->loaded) return;
+        try {
+            $this->enabled = MarketingSetting::get('twitter_pixel_enabled', false);
+            $this->pixelId = MarketingSetting::get('twitter_pixel_id');
+            $this->apiKey = MarketingSetting::get('twitter_api_key');
+        } catch (\Exception $e) {
+            $this->enabled = false;
+            $this->pixelId = null;
+            $this->apiKey = null;
+        }
+        $this->loaded = true;
     }
 
     public function isEnabled(): bool
     {
+        $this->loadSettings();
         return $this->enabled && $this->pixelId;
     }
 

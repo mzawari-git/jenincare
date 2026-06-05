@@ -7,28 +7,43 @@ use Illuminate\Support\Facades\Log;
 
 class ShopifyService
 {
-    private ?string $shopDomain;
-    private ?string $accessToken;
-    private ?string $apiSecret;
-    private bool $enabled;
-    private string $apiVersion;
+    private ?string $shopDomain = null;
+    private ?string $accessToken = null;
+    private ?string $apiSecret = null;
+    private ?bool $enabled = null;
+    private string $apiVersion = '2024-10';
+    private bool $loaded = false;
+
+    private function loadSettings(): void
+    {
+        if ($this->loaded) return;
+        try {
+            $this->shopDomain = \App\Models\MarketingSetting::get('shopify_shop_domain');
+            $this->accessToken = \App\Models\MarketingSetting::get('shopify_access_token');
+            $this->apiSecret = \App\Models\MarketingSetting::get('shopify_api_secret');
+            $this->enabled = (bool) \App\Models\MarketingSetting::get('shopify_enabled', false);
+        } catch (\Exception $e) {
+            $this->shopDomain = null;
+            $this->accessToken = null;
+            $this->apiSecret = null;
+            $this->enabled = false;
+        }
+        $this->loaded = true;
+    }
 
     public function __construct()
     {
-        $this->shopDomain = \App\Models\MarketingSetting::get('shopify_shop_domain');
-        $this->accessToken = \App\Models\MarketingSetting::get('shopify_access_token');
-        $this->apiSecret = \App\Models\MarketingSetting::get('shopify_api_secret');
-        $this->enabled = (bool) \App\Models\MarketingSetting::get('shopify_enabled', false);
-        $this->apiVersion = '2024-10';
     }
 
     public function isEnabled(): bool
     {
+        $this->loadSettings();
         return $this->enabled && $this->shopDomain && $this->accessToken;
     }
 
     public function verifyWebhook(string $hmacHeader, string $rawBody): bool
     {
+        $this->loadSettings();
         if (!$this->apiSecret) {
             Log::warning('Shopify: No API secret configured for HMAC verification');
             return false;

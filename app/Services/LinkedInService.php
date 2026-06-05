@@ -8,28 +8,38 @@ use Illuminate\Support\Facades\Log;
 
 class LinkedInService
 {
-    private bool $enabled;
-    private ?string $partnerId;
-    private ?string $conversionRuleId;
-    private ?string $accessToken;
+    private bool $enabled = false;
+    private ?string $partnerId = null;
+    private ?string $conversionRuleId = null;
+    private ?string $accessToken = null;
+    private bool $loaded = false;
 
     private const API_BASE = 'https://api.linkedin.com/v2';
 
     public function __construct()
     {
-        $this->loadSettings();
     }
 
     public function loadSettings(): void
     {
-        $this->enabled = MarketingSetting::get('linkedin_insight_enabled', false);
-        $this->partnerId = MarketingSetting::get('linkedin_partner_id');
-        $this->conversionRuleId = MarketingSetting::get('linkedin_conversion_rule_id');
-        $this->accessToken = MarketingSetting::get('linkedin_access_token');
+        if ($this->loaded) return;
+        try {
+            $this->enabled = MarketingSetting::get('linkedin_insight_enabled', false);
+            $this->partnerId = MarketingSetting::get('linkedin_partner_id');
+            $this->conversionRuleId = MarketingSetting::get('linkedin_conversion_rule_id');
+            $this->accessToken = MarketingSetting::get('linkedin_access_token');
+        } catch (\Exception $e) {
+            $this->enabled = false;
+            $this->partnerId = null;
+            $this->conversionRuleId = null;
+            $this->accessToken = null;
+        }
+        $this->loaded = true;
     }
 
     public function isEnabled(): bool
     {
+        $this->loadSettings();
         return $this->enabled && $this->partnerId;
     }
 

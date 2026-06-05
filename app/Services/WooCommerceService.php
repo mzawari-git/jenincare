@@ -7,26 +7,42 @@ use Illuminate\Support\Facades\Log;
 
 class WooCommerceService
 {
-    private ?string $storeUrl;
-    private ?string $consumerKey;
-    private ?string $consumerSecret;
-    private bool $enabled;
+    private ?string $storeUrl = null;
+    private ?string $consumerKey = null;
+    private ?string $consumerSecret = null;
+    private ?bool $enabled = null;
+    private bool $loaded = false;
+
+    private function loadSettings(): void
+    {
+        if ($this->loaded) return;
+        try {
+            $this->storeUrl = \App\Models\MarketingSetting::get('woocommerce_store_url');
+            $this->consumerKey = \App\Models\MarketingSetting::get('woocommerce_consumer_key');
+            $this->consumerSecret = \App\Models\MarketingSetting::get('woocommerce_consumer_secret');
+            $this->enabled = (bool) \App\Models\MarketingSetting::get('woocommerce_enabled', false);
+        } catch (\Exception $e) {
+            $this->storeUrl = null;
+            $this->consumerKey = null;
+            $this->consumerSecret = null;
+            $this->enabled = false;
+        }
+        $this->loaded = true;
+    }
 
     public function __construct()
     {
-        $this->storeUrl = \App\Models\MarketingSetting::get('woocommerce_store_url');
-        $this->consumerKey = \App\Models\MarketingSetting::get('woocommerce_consumer_key');
-        $this->consumerSecret = \App\Models\MarketingSetting::get('woocommerce_consumer_secret');
-        $this->enabled = (bool) \App\Models\MarketingSetting::get('woocommerce_enabled', false);
     }
 
     public function isEnabled(): bool
     {
+        $this->loadSettings();
         return $this->enabled && $this->storeUrl && $this->consumerKey && $this->consumerSecret;
     }
 
     public function verifyWebhook(string $signatureHeader, string $rawBody): bool
     {
+        $this->loadSettings();
         if (!$this->consumerSecret) return false;
 
         $calculated = base64_encode(hash_hmac('sha256', $rawBody, $this->consumerSecret, true));
