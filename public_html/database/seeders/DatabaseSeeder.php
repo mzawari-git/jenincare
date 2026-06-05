@@ -20,6 +20,9 @@ class DatabaseSeeder extends Seeder
             ProductSeeder::class,
             BlogPostSeeder::class,
             AIProviderSeeder::class,
+            WarehouseSeeder::class,
+            TriggerWordSeeder::class,
+            DefaultUserSeeder::class,
         ]);
     }
 }

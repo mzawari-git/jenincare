@@ -33,8 +33,9 @@ class OfflineConversionService
 
     public function sendToMetaOffline(PosSale $sale): bool
     {
-        $pixelId = app(AdvertisingTrackingService::class)->getPixelId('facebook');
-        $token = app(AdvertisingTrackingService::class)->getAccessToken('facebook');
+        $tracking = app(AdvertisingTrackingService::class);
+        $pixelId = $tracking->getFbPixelId();
+        $token = $tracking->getFbAccessToken();
 
         if (empty($pixelId) || empty($token)) {
             return false;
@@ -78,8 +79,9 @@ class OfflineConversionService
 
     public function sendToTikTokOffline(PosSale $sale): bool
     {
-        $pixelId = app(AdvertisingTrackingService::class)->getPixelId('tiktok');
-        $token = app(AdvertisingTrackingService::class)->getAccessToken('tiktok');
+        $tracking = app(AdvertisingTrackingService::class);
+        $pixelId = $tracking->getTtPixelId();
+        $token = $tracking->getTtAccessToken();
 
         if (empty($pixelId) || empty($token)) {
             return false;

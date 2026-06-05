@@ -5,19 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SystemPrompt extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $table = 'system_prompts';
 
     protected $fillable = [
+        'key',
         'name',
-        'provider_key',
-        'system_instruction',
-        'tone',
+        'name_ar',
+        'content',
+        'content_ar',
+        'engine_type',
         'is_active',
         'version',
     ];
@@ -34,11 +35,11 @@ class SystemPrompt extends Model
 
     public function scopeByKey(Builder $query, string $key): void
     {
-        $query->where('provider_key', $key);
+        $query->where('key', $key);
     }
 
     public function scopeByEngine(Builder $query, string $engineType): void
     {
-        $query->where('tone', $engineType);
+        $query->where('engine_type', $engineType);
     }
 }

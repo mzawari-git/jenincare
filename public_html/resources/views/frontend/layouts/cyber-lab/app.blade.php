@@ -31,7 +31,6 @@
         <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
         <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
         <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
-        <link rel="manifest" href="{{ asset('site.webmanifest') }}">
     @endif
 
     {{-- Google Fonts: Tajawal (preconnect for perf) --}}
@@ -162,6 +161,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
     {{-- Alpine.js (deferred) --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="{{ asset('js/behavioral-analysis.js') }}" defer></script>
 
     {{-- Core App JS --}}
     <script src="{{ asset('js/app.js') }}" defer></script>

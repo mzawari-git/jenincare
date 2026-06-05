@@ -1,25 +1,52 @@
 #!/bin/bash
-# Deploy script for jenincare.shop
-# Syncs git-tracked Laravel files into public_html/ and copies the APK
+# SkinAnalyzer Deployment Script
+# Usage: bash deploy.sh [branch]
 
-cd "$(dirname "$0")" || exit 1
+set -e
 
-echo "=== Pulling latest code ==="
-git pull origin master
+BRANCH="${1:-main}"
+APP_DIR="$(cd "$(dirname "$0")" && pwd)"
+LOG_FILE="${APP_DIR}/storage/logs/deploy.log"
 
-echo "=== Syncing tracked files to public_html/ ==="
-for f in $(git ls-files | grep -v '^public_html/\|^SkinAnalyzer/\|^.git'); do
-    mkdir -p "public_html/$(dirname "$f")" && cp "$f" "public_html/$f"
-done
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting deployment of branch: $BRANCH" | tee -a "$LOG_FILE"
 
-echo "=== Copying APK ==="
-cp public/app-update.apk public_html/public/app-update.apk 2>/dev/null || true
+# 1. Enter maintenance mode
+echo "--> Entering maintenance mode..."
+php artisan down --retry=30
 
-echo "=== Clearing Laravel cache ==="
-cd public_html
-php artisan optimize:clear
+# 2. Pull latest code
+echo "--> Pulling latest code from $BRANCH..."
+git fetch origin
+git reset --hard "origin/$BRANCH"
 
-echo "=== Running migrations ==="
+# 3. Install PHP dependencies
+echo "--> Installing Composer dependencies..."
+composer install --no-dev --optimize-autoloader --no-interaction
+
+# 4. Install & build frontend (if package.json exists)
+if [ -f "package.json" ]; then
+    echo "--> Installing NPM dependencies..."
+    npm ci --production
+    echo "--> Building assets..."
+    npm run build
+fi
+
+# 5. Run migrations
+echo "--> Running database migrations..."
 php artisan migrate --force
 
-echo "=== Done ==="
+# 6. Cache configurations (NOT route:cache - web.php has Closures)
+echo "--> Caching configurations..."
+php artisan config:cache
+php artisan view:cache
+php artisan event:cache
+
+# 7. Restart queue workers
+echo "--> Restarting queue workers..."
+php artisan queue:restart
+
+# 8. Exit maintenance mode
+echo "--> Exiting maintenance mode..."
+php artisan up
+
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Deployment completed successfully!" | tee -a "$LOG_FILE"

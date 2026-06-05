@@ -12,6 +12,8 @@ use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\Frontend\ContactController;
 use App\Http\Controllers\Frontend\AffiliateController as FrontAffiliateController;
 use App\Http\Controllers\Frontend\BlogController as FrontBlogController;
+use App\Http\Controllers\Frontend\OptimizedImageController;
+use App\Http\Controllers\Frontend\ServeStorageController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/shop', [ShopController::class, 'index'])->name('shop');
@@ -31,7 +33,7 @@ Route::get('/b2b', function () {
 })->name('b2b');
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
-Route::post('/newsletter/subscribe', [\App\Http\Controllers\Frontend\ContactController::class, 'newsletter'])->name('newsletter.subscribe');
+Route::post('/newsletter/subscribe', [ContactController::class, 'newsletter'])->name('newsletter.subscribe');
 
 Route::get('/return-policy', function () {
     return view('frontend.pages.return-policy');
@@ -64,18 +66,18 @@ Route::post('/affiliate/register', [FrontAffiliateController::class, 'register']
 Route::post('/affiliate/payout', [FrontAffiliateController::class, 'requestPayout'])->name('affiliate.payout.request');
 
 Route::get('login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('login', [AuthController::class, 'login']);
+Route::post('login', [AuthController::class, 'login'])->name('login.submit');
 Route::get('admin/login', [AuthController::class, 'showAdminLogin'])->name('admin.login');
-Route::post('admin/login', [AuthController::class, 'adminLogin']);
+Route::post('admin/login', [AuthController::class, 'adminLogin'])->name('admin.login.submit');
 Route::get('register', [AuthController::class, 'showRegister'])->name('register');
-Route::post('register', [AuthController::class, 'register']);
+Route::post('register', [AuthController::class, 'register'])->name('register.submit');
 Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::get('forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
 Route::post('forgot-password', [AuthController::class, 'checkEmail'])->name('password.email');
 Route::get('security-question', [AuthController::class, 'showSecurityQuestion'])->name('password.security-question');
 Route::post('security-question', [AuthController::class, 'checkSecurityAnswer'])->name('password.check-answer');
-Route::get('reset-password', [AuthController::class, 'showResetForm'])->name('password.reset');
+Route::get('reset-password', [AuthController::class, 'showResetForm'])->name('password.reset.form');
 Route::post('reset-password', [AuthController::class, 'reset'])->name('password.update');
 
 Route::prefix('auth')->group(function () {
@@ -88,28 +90,21 @@ Route::middleware('auth')->group(function () {
     Route::get('/orders', [AccountController::class, 'orders'])->name('orders');
     Route::get('/orders/{id}', [AccountController::class, 'orderShow'])->name('orders.show');
     Route::get('/wishlist', [AccountController::class, 'wishlist'])->name('wishlist');
-    Route::post('/wishlist/toggle', [\App\Http\Controllers\Frontend\AccountController::class, 'toggleWishlist'])->name('wishlist.toggle');
+    Route::post('/wishlist/toggle', [AccountController::class, 'toggleWishlist'])->name('wishlist.toggle');
     Route::get('/addresses', [AccountController::class, 'addresses'])->name('addresses');
     Route::get('/account/security-question', [AuthController::class, 'showSecurityQuestionSetup'])->name('account.security-question');
     Route::post('/account/security-question', [AuthController::class, 'updateSecurityQuestion'])->name('account.security-question.update');
 });
 
-Route::get('/api/search', [\App\Http\Controllers\Frontend\ShopController::class, 'searchAjax'])->name('api.search');
-Route::get('/api/product/{id}/quickview', [\App\Http\Controllers\Frontend\ProductController::class, 'quickView'])->name('api.quickview');
+Route::get('/api/search', [ShopController::class, 'searchAjax'])->name('api.search');
+Route::get('/api/product/{id}/quickview', [ProductController::class, 'quickView'])->name('api.quickview');
 
-// Tracking endpoints (client-side analytics, no CSRF needed for sendBeacon)
-Route::post('/api/track/fingerprint', [\App\Http\Controllers\Api\FingerprintController::class, 'store'])->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
-Route::post('/api/track/behavior', [\App\Http\Controllers\Api\BehavioralController::class, 'store'])->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+Route::get('/images/{path}', [OptimizedImageController::class, 'show'])->where('path', '.*')->name('image.optimized');
+Route::get('/thumbnails/{path}', [OptimizedImageController::class, 'thumbnail'])->where('path', '.*');
 
-// Optimized image endpoints
-Route::get('/images/{path}', [\App\Http\Controllers\Frontend\OptimizedImageController::class, 'show'])->where('path', '.*')->name('image.optimized');
-Route::get('/thumbnails/{path}', [\App\Http\Controllers\Frontend\OptimizedImageController::class, 'thumbnail'])->where('path', '.*');
+Route::get('/storage/{path}', [ServeStorageController::class, 'show'])->where('path', '.*');
+Route::get('/files/{path}', [ServeStorageController::class, 'show'])->where('path', '.*');
 
-// Serve storage files directly (avoid "storage" in URL - some hosts block it)
-Route::get('/storage/{path}', [\App\Http\Controllers\Frontend\ServeStorageController::class, 'show'])->where('path', '.*');
-Route::get('/files/{path}', [\App\Http\Controllers\Frontend\ServeStorageController::class, 'show'])->where('path', '.*');
-
-// SkinAnalyzer Admin Panel SPA
 Route::get('/skin-admin', function () {
     return response()->file(public_path('skin-admin/index.html'));
 });

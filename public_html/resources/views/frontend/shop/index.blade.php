@@ -28,6 +28,7 @@
                     <i class="ph-fill ph-squares-four text-accent-500"></i>
                     <span class="text-sm font-bold text-white">{{ $categories->count() }}</span>
                     <span class="text-xs text-white-dim">قسم</span>
+                </div>
             </div>
         </div>
     </div>

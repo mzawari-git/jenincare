@@ -21,22 +21,22 @@
     <div class="max-w-7xl mx-auto px-4">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div class="flex flex-col items-center text-center p-5 rounded-2xl border" style="border-color:var(--glass-border);background:var(--glass-bg);">
-                <div class="w-12 h-12 rounded-full flex items-center justify-center mb-3" style="background:var(--brand-500);"><i class="fa-solid fa-shield-check text-xl text-white"></i></div>
+                <div class="w-12 h-12 rounded-full flex items-center justify-center mb-3" style="background:var(--brand-500);"><i class="ph-fill ph-shield-check text-xl text-white"></i></div>
                 <h3 class="font-bold text-white text-sm mb-1">أصلي 100%</h3>
                 <p class="text-ink-dim text-xs">منتجات أصلية ومستوردة</p>
             </div>
             <div class="flex flex-col items-center text-center p-5 rounded-2xl border" style="border-color:var(--glass-border);background:var(--glass-bg);">
-                <div class="w-12 h-12 rounded-full flex items-center justify-center mb-3" style="background:var(--brand-600);"><i class="fa-solid fa-truck-fast text-xl text-white"></i></div>
+                <div class="w-12 h-12 rounded-full flex items-center justify-center mb-3" style="background:var(--brand-600);"><i class="ph-fill ph-truck text-xl text-white"></i></div>
                 <h3 class="font-bold text-white text-sm mb-1">شحن لكل فلسطين</h3>
                 <p class="text-ink-dim text-xs">توصيل لجميع المناطق</p>
             </div>
             <div class="flex flex-col items-center text-center p-5 rounded-2xl border" style="border-color:var(--glass-border);background:var(--glass-bg);">
-                <div class="w-12 h-12 rounded-full flex items-center justify-center mb-3" style="background:var(--brand-500);"><i class="fa-solid fa-lock text-xl text-white"></i></div>
+                <div class="w-12 h-12 rounded-full flex items-center justify-center mb-3" style="background:var(--brand-500);"><i class="ph-fill ph-lock text-xl text-white"></i></div>
                 <h3 class="font-bold text-white text-sm mb-1">دفع آمن</h3>
                 <p class="text-ink-dim text-xs">الدفع عند الاستلام</p>
             </div>
             <div class="flex flex-col items-center text-center p-5 rounded-2xl border" style="border-color:var(--glass-border);background:var(--glass-bg);">
-                <div class="w-12 h-12 rounded-full flex items-center justify-center mb-3" style="background:var(--brand-600);"><i class="fa-solid fa-headset text-xl text-white"></i></div>
+                <div class="w-12 h-12 rounded-full flex items-center justify-center mb-3" style="background:var(--brand-600);"><i class="ph-fill ph-headset text-xl text-white"></i></div>
                 <h3 class="font-bold text-white text-sm mb-1">دعم فني</h3>
                 <p class="text-ink-dim text-xs">9 ص - 10 م يومياً</p>
             </div>

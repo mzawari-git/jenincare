@@ -2,6 +2,7 @@
 
 namespace App\Services\AI;
 
+use App\Models\AIProvider;
 use App\Models\SkinScan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -33,10 +34,33 @@ class AIOrchestrator
         $unifiedData = UnifiedSkinData::fromProviderResponse($rawResponse, $provider->getProviderName());
 
         $this->enrichDefectsWithLibrary($unifiedData);
+        $this->calculateCrossChannelConsistency($unifiedData, $imageData);
 
         $this->saveAnalysisResults($scan, $unifiedData, $provider);
 
         return $unifiedData;
+    }
+
+    protected function calculateCrossChannelConsistency(UnifiedSkinData $data, array $imageData): void
+    {
+        $spectralModes = $imageData['spectral_modes'] ?? [];
+        if (count($spectralModes) < 2) {
+            $data->crossChannelConsistency = 100;
+            return;
+        }
+
+        if ($data->crossChannelConsistency === 0 && !empty($data->spectralAnalysis)) {
+            $scores = array_column($data->spectralAnalysis, 'score');
+            if (count($scores) > 1) {
+                $avg = array_sum($scores) / count($scores);
+                $variance = 0;
+                foreach ($scores as $s) {
+                    $variance += abs($s - $avg);
+                }
+                $variance /= count($scores);
+                $data->crossChannelConsistency = (int) max(0, 100 - ($variance * 2));
+            }
+        }
     }
 
     public function analyzeWithAllProviders(SkinScan $scan): array
@@ -78,10 +102,16 @@ class AIOrchestrator
         }
 
         $spectralModes = [];
-        foreach (['rgb', 'cross', 'parallel', 'uv'] as $mode) {
-            $field = $mode . '_path';
-            if ($scan->$field) {
-                $spectralModes[$mode] = $scan->$field;
+        $metadata = $scan->metadata ?? [];
+        $spectralImages = $metadata['spectral_images'] ?? [];
+        $modeMap = ['rgb', 'uv', 'cross'];
+        foreach ($spectralImages as $key => $url) {
+            if (preg_match('/spectral_(\d+)/', $key, $matches)) {
+                $idx = (int) $matches[1];
+                $modeName = $modeMap[$idx] ?? "mode_$idx";
+                $parsed = parse_url($url, PHP_URL_PATH);
+                $relPath = ltrim(str_replace('/storage/', '', $parsed ?? ''), '/');
+                $spectralModes[$modeName] = $relPath ?: $url;
             }
         }
         $imageData['spectral_modes'] = $spectralModes;
@@ -128,7 +158,7 @@ class AIOrchestrator
             $scan->update([
                 'analysis_status' => \App\Enums\AnalysisStatus::COMPLETED,
                 'analysis_data' => $data->toArray(),
-                'overall_score' => $data->overallHealthScore,
+                'overall_health_score' => $data->overallHealthScore,
                 'radar_metrics' => $data->radarMetrics,
                 'advanced_metrics' => $data->advancedMetrics,
                 'defects' => $data->defects,

@@ -2,7 +2,6 @@
 
 namespace App\Services\AI\Providers;
 
-use App\Enums\EngineType;
 use App\Models\AIProvider;
 use App\Services\AI\BaseAIProvider;
 use Illuminate\Support\Facades\Http;
@@ -28,10 +27,9 @@ class OpenAIProvider extends BaseAIProvider
                 throw new \RuntimeException('OpenAI API key not configured.');
             }
 
-            $imageBase64 = $this->getImagePayload($imageData);
-
             $systemPrompt = $this->buildSystemPrompt();
             $userPrompt = $this->buildUserPrompt($imageData);
+            $content = $this->buildContent($userPrompt, $imageData);
 
             $response = Http::withToken($apiKey)
                 ->timeout(120)
@@ -39,22 +37,7 @@ class OpenAIProvider extends BaseAIProvider
                     'model' => $this->config('model', 'gpt-4o'),
                     'messages' => [
                         ['role' => 'system', 'content' => $systemPrompt],
-                        [
-                            'role' => 'user',
-                            'content' => [
-                                [
-                                    'type' => 'text',
-                                    'text' => $userPrompt,
-                                ],
-                                [
-                                    'type' => 'image_url',
-                                    'image_url' => [
-                                        'url' => "data:image/jpeg;base64,{$imageBase64}",
-                                        'detail' => $this->config('image_detail', 'high'),
-                                    ],
-                                ],
-                            ],
-                        ],
+                        ['role' => 'user', 'content' => $content],
                     ],
                     'response_format' => ['type' => 'json_object'],
                     'temperature' => (float) ($this->config('temperature', 0.3)),
@@ -128,8 +111,6 @@ class OpenAIProvider extends BaseAIProvider
             $zoneList[] = "- {$key}: {$zone['name']} / {$zone['name_ar']}";
         }
 
-        $spectralModes = $library->getSpectralModes();
-
         return <<<PROMPT
 You are a professional dermatological analysis AI. Your task is to analyze facial skin images and return structured JSON.
 
@@ -140,10 +121,10 @@ FACIAL ZONES (34-zone map):
 " . implode("\n", $zoneList) . "
 
 SPECTRAL MODES:
-- rgb: Standard visible light
-- cross: Cross-polarized (subsurface)
-- parallel: Parallel-polarized (surface texture)
-- uv: Ultraviolet (pigmentation)
+- rgb: Standard visible light (skin surface, texture, pores, redness)
+- cross: Cross-polarized (subsurface vessels, deep pigmentation, inflammation)
+- parallel: Parallel-polarized (surface texture, fine lines, wrinkles)
+- uv: Ultraviolet (pigmentation, sun damage, melanin distribution)
 
 Return valid JSON only, no markdown:
 {
@@ -156,18 +137,60 @@ Return valid JSON only, no markdown:
   "spectral_analysis": [{"mode": "rgb|cross|parallel|uv", "score": 0-100, "findings": "...", "findings_ar": "..."}],
   "custom_arabic_analysis_text": "...",
   "expert_free_tips": [{"en": "...", "ar": "..."}],
-  "confidence": 0-1
+  "confidence": 0-1,
+  "cross_channel_consistency": 0-100
 }
 PROMPT;
     }
 
+    protected function buildContent(string $userPrompt, array $imageData): array
+    {
+        $content = [['type' => 'text', 'text' => $userPrompt]];
+        $spectralModes = $imageData['spectral_modes'] ?? [];
+
+        if (count($spectralModes) > 1) {
+            foreach ($spectralModes as $mode => $path) {
+                $tempData = array_merge($imageData, ['path' => $path]);
+                $base64 = $this->getImagePayload($tempData);
+                $content[] = [
+                    'type' => 'image_url',
+                    'image_url' => [
+                        'url' => "data:image/jpeg;base64,{$base64}",
+                        'detail' => $this->config('image_detail', 'high'),
+                    ],
+                ];
+            }
+        } else {
+            $imageBase64 = $this->getImagePayload($imageData);
+            $content[] = [
+                'type' => 'image_url',
+                'image_url' => [
+                    'url' => "data:image/jpeg;base64,{$imageBase64}",
+                    'detail' => $this->config('image_detail', 'high'),
+                ],
+            ];
+        }
+
+        return $content;
+    }
+
     protected function buildUserPrompt(array $imageData): string
     {
-        $prompt = 'Analyze this facial skin image and return a comprehensive skin analysis in JSON format.';
+        $spectralModes = $imageData['spectral_modes'] ?? [];
+        $hasMultiImage = count($spectralModes) > 1;
+
+        if ($hasMultiImage) {
+            $modes = implode(', ', array_keys($spectralModes));
+            $prompt = "MULTI-CHANNEL ANALYSIS: I am providing {$modes} spectral images of the same face.";
+            $prompt .= " Cross-analyze across all channels. Match surface findings (RGB) with subsurface findings (Cross-Polarized).";
+            $prompt .= " Overlay UV sebum/pigmentation data on RGB findings. Report cross_channel_consistency score.";
+        } else {
+            $prompt = 'Analyze this facial skin image and return a comprehensive skin analysis in JSON format.';
+        }
 
         if (!empty($imageData['spectral_modes'])) {
             $modes = implode(', ', array_keys($imageData['spectral_modes']));
-            $prompt .= " Available spectral modes: {$modes}.";
+            $prompt .= " Available spectral modes: {$modes}. Provide per-mode spectral_analysis entries.";
         }
 
         if (!empty($imageData['features'])) {

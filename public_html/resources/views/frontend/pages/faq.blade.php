@@ -1,8 +1,8 @@
 ﻿@extends($layoutPath)
 
-@section('title', 'الأسئلة الشائعة - ' . ($siteSettings['site_name'] ?? 'شركة شركة جنين للتجميل'))
+@section('title', 'الأسئلة الشائعة - ' . ($siteSettings['site_name'] ?? 'شركة جنين للتجميل'))
 
-@section('meta_description', 'الأسئلة الشائعة حول خدمات شركة شركة جنين للتجميل. تعرف على نظام B2B، حماية البيانات، الشحن، والإرجاع.')
+@section('meta_description', 'الأسئلة الشائعة حول خدمات شركة جنين للتجميل. تعرف على نظام B2B، حماية البيانات، الشحن، والإرجاع.')
 
 @section('content')
 

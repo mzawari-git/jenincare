@@ -35,10 +35,9 @@ fi
 echo "--> Running database migrations..."
 php artisan migrate --force
 
-# 6. Cache configurations
+# 6. Cache configurations (NOT route:cache - web.php has Closures)
 echo "--> Caching configurations..."
 php artisan config:cache
-php artisan route:cache
 php artisan view:cache
 php artisan event:cache
 

@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\SkinScan;
+use App\Notifications\ScanCompleted;
 use App\Services\AI\AIOrchestrator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -40,7 +41,7 @@ class ProcessSkinScan implements ShouldQueue
             ]);
 
             $this->skinScan->updateQuietly([
-                'analysis_status' => \App\Enums\AnalysisStatus::PROCESSING,
+                'analysis_status' => \App\Enums\AnalysisStatus::PROCESSING->value,
                 'analyzed_at' => null,
             ]);
 
@@ -53,6 +54,15 @@ class ProcessSkinScan implements ShouldQueue
                 'provider' => $result->provider,
             ]);
 
+            try {
+                $this->skinScan->user?->notify(new ScanCompleted($this->skinScan));
+            } catch (\Throwable $e) {
+                Log::warning('Failed to send scan completion notification', [
+                    'scan_id' => $this->skinScan->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
         } catch (\Throwable $e) {
             Log::error('ProcessSkinScan failed', [
                 'scan_id' => $this->skinScan->id,
@@ -61,7 +71,7 @@ class ProcessSkinScan implements ShouldQueue
             ]);
 
             $this->skinScan->updateQuietly([
-                'analysis_status' => \App\Enums\AnalysisStatus::FAILED,
+                'analysis_status' => \App\Enums\AnalysisStatus::FAILED->value,
                 'analysis_data' => [
                     'error' => true,
                     'message' => $e->getMessage(),
@@ -81,7 +91,7 @@ class ProcessSkinScan implements ShouldQueue
         ]);
 
         $this->skinScan->updateQuietly([
-            'analysis_status' => \App\Enums\AnalysisStatus::FAILED,
+            'analysis_status' => \App\Enums\AnalysisStatus::FAILED->value,
         ]);
     }
 }

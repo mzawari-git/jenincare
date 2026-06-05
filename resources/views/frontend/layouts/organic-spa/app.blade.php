@@ -30,7 +30,6 @@
         <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
         <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
         <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
-        <link rel="manifest" href="{{ asset('site.webmanifest') }}">
     @endif
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -135,7 +134,6 @@
     @stack('styles')
 
     <script>if('serviceWorker' in navigator&&window.location.hostname!=='localhost'){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister()})}).then(function(){navigator.serviceWorker.register('{{ asset('sw.js') }}').catch(function(){})})}</script>
-    </script>
     <script>window.basePath="{{ rtrim(url('/'), '/') }}";</script>
     <style>html body{background-color:#09090b !important;color:#fafafa !important;}</style>
 </head>

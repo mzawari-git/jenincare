@@ -45,6 +45,8 @@ class UnifiedSkinData implements Arrayable, Jsonable
 
     public int $confidence = 0;
 
+    public int $crossChannelConsistency = 100;
+
     public static function fromProviderResponse(array $raw, string $provider): self
     {
         $instance = new self();
@@ -127,6 +129,10 @@ class UnifiedSkinData implements Arrayable, Jsonable
             $instance->confidence = (int) ($raw['confidence'] * 100);
         }
 
+        if (isset($raw['cross_channel_consistency'])) {
+            $instance->crossChannelConsistency = max(0, min(100, (int) $raw['cross_channel_consistency']));
+        }
+
         return $instance;
     }
 
@@ -146,6 +152,7 @@ class UnifiedSkinData implements Arrayable, Jsonable
             'raw_response' => $this->rawResponse,
             'provider' => $this->provider,
             'confidence' => $this->confidence,
+            'cross_channel_consistency' => $this->crossChannelConsistency,
         ];
     }
 

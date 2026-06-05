@@ -136,7 +136,7 @@ class ImageOptimizer
 
     private function sanitizeFileName(string $name): string
     {
-        $name = preg_replace('/[^\p{L\p{N}\s\-\_]/u', '', $name);
+        $name = preg_replace('/[^\p{L}\p{N}\s\-\_]/u', '', $name);
         $name = preg_replace('/[\s\_]+/', '-', $name);
         $name = trim($name, '-');
 

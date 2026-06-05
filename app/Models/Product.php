@@ -399,11 +399,6 @@ class Product extends Model
         return $query->where('stock_status', '!=', 'out_of_stock');
     }
 
-    public function scopeB2C($query)
-    {
-        return $query->where('show_in_b2c', true);
-    }
-
     public function scopeB2B($query)
     {
         return $query->where('show_in_b2b', true);

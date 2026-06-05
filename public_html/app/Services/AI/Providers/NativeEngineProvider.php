@@ -2,7 +2,6 @@
 
 namespace App\Services\AI\Providers;
 
-use App\Enums\EngineType;
 use App\Models\AIProvider;
 use App\Services\AI\BaseAIProvider;
 use App\Services\AI\SkinDefectLibrary;
@@ -35,6 +34,8 @@ class NativeEngineProvider extends BaseAIProvider
 
     protected float $brightnessScore = 0;
 
+    protected string $imageHash = '';
+
     protected array $pixelStatistics = [
         'width' => 0,
         'height' => 0,
@@ -54,9 +55,8 @@ class NativeEngineProvider extends BaseAIProvider
 
     public function analyze(array $imageData): array
     {
-        $this->validateImage($imageData);
-
         try {
+            $this->validateImage($imageData);
             $imagePath = $imageData['path'] ?? '';
             $fullPath = storage_path("app/public/{$imagePath}");
 
@@ -66,6 +66,8 @@ class NativeEngineProvider extends BaseAIProvider
                 ]);
                 return $this->generateSmartDefaults($imageData);
             }
+
+            $this->imageHash = md5_file($fullPath) ?: uniqid();
 
             $imageStats = $this->extractImageStatistics($fullPath);
 
@@ -80,9 +82,8 @@ class NativeEngineProvider extends BaseAIProvider
             $advancedMetrics = $this->computeAdvancedMetrics();
             $defects = $this->detectDefects($imageData);
             $zoneAnalysis = $this->analyzeFacialZones($imageData);
-            $spectralAnalysis = $this->analyzeSpectralModes($imageData);
-
             $overallScore = $this->computeOverallScore($radarMetrics, $advancedMetrics, $defects);
+            $spectralAnalysis = $this->analyzeSpectralModes($imageData, $overallScore);
 
             $this->logRequest([
                 'overall_health_score' => $overallScore,
@@ -210,29 +211,30 @@ class NativeEngineProvider extends BaseAIProvider
 
     protected function computeRadarMetrics(): array
     {
-        $hydrationBase = 100 - $this->textureScore;
+        $dither = $this->deterministicOffset('radar');
+
         $hydration = (int) round($this->clampMetric(
-            $hydrationBase + $this->normalRandomOffset(10),
+            100 - $this->textureScore + $dither,
             'hydration'
         ));
 
         $sebum = (int) round($this->clampMetric(
-            100 - $this->brightnessScore + $this->normalRandomOffset(8),
+            100 - $this->brightnessScore + $dither * 0.8,
             'sebum'
         ));
 
         $pigmentation = (int) round($this->clampMetric(
-            min(100, $this->averageRedness * 2 + $this->normalRandomOffset(10)),
+            min(100, $this->averageRedness * 2 + $dither),
             'pigmentation'
         ));
 
         $pores = (int) round($this->clampMetric(
-            $this->textureScore + $this->normalRandomOffset(8),
+            $this->textureScore + $dither * 0.8,
             'pores'
         ));
 
         $elasticity = (int) round($this->clampMetric(
-            100 - abs($this->textureScore - 50) + $this->normalRandomOffset(10),
+            100 - abs($this->textureScore - 50) + $dither,
             'elasticity'
         ));
 
@@ -241,37 +243,45 @@ class NativeEngineProvider extends BaseAIProvider
 
     protected function computeAdvancedMetrics(): array
     {
+        $dither = $this->deterministicOffset('advanced');
+
         $brightness = (int) round($this->clampMetric(
-            $this->brightnessScore + $this->normalRandomOffset(5),
+            $this->brightnessScore + $dither * 0.5,
             'brightness',
             true
         ));
 
         $texture = (int) round($this->clampMetric(
-            $this->textureScore + $this->normalRandomOffset(8),
+            $this->textureScore + $dither * 0.8,
             'texture',
             true
         ));
 
         $redness = (int) round($this->clampMetric(
-            max(0, ($this->averageRedness / 128) * 100 + $this->normalRandomOffset(5)),
+            max(0, ($this->averageRedness / 128) * 100 + $dither * 0.5),
             'redness',
             true
         ));
 
         $sensitivity = (int) round($this->clampMetric(
-            max(0, ($this->pixelStatistics['std_r'] / 64) * 50 + $this->normalRandomOffset(7)),
+            max(0, ($this->pixelStatistics['std_r'] / 64) * 50 + $dither * 0.7),
             'sensitivity',
             true
         ));
 
         $oiliness = (int) round($this->clampMetric(
-            100 - $this->brightnessScore + $this->normalRandomOffset(8),
+            100 - $this->brightnessScore + $dither * 0.8,
             'oiliness',
             true
         ));
 
         return compact('brightness', 'texture', 'redness', 'sensitivity', 'oiliness');
+    }
+
+    protected function deterministicOffset(string $seed): float
+    {
+        $hash = crc32($this->imageHash . $seed);
+        return (($hash % 21) - 10) * 0.5;
     }
 
     protected function detectDefects(array $imageData): array
@@ -430,11 +440,12 @@ class NativeEngineProvider extends BaseAIProvider
             'under_eye_right' => ['name' => 'Under Eye (R)', 'name_ar' => 'تحت العين اليمنى', 'x' => 0.65, 'y' => 0.28, 'w' => 0.2, 'h' => 0.08],
         ];
 
+        $dither = $this->deterministicOffset('zone');
         $analysis = [];
         foreach ($zoneDefinitions as $key => $zone) {
             $severity = (int) round(
                 ($this->textureScore * 0.4 + $this->averageRedness * 0.3 + $this->brightnessScore * 0.3)
-                + $this->normalRandomOffset(10)
+                + $dither * 0.5
             );
 
             $analysis[] = [
@@ -459,43 +470,81 @@ class NativeEngineProvider extends BaseAIProvider
         return $analysis;
     }
 
-    protected function analyzeSpectralModes(array $imageData): array
+    protected function analyzeSpectralModes(array $imageData, int $primaryScore = 50): array
     {
         $analysis = [];
 
         $spectralModes = $imageData['spectral_modes'] ?? [];
 
         if (empty($spectralModes)) {
-            $spectralModes = ['rgb' => $imageData['path'] ?? ''];
+            $rgbPath = $imageData['path'] ?? '';
+            if ($rgbPath) {
+                $spectralModes = ['rgb' => $rgbPath];
+            }
         }
+
+        $libraryModes = $this->defectLibrary->getSpectralModes();
 
         foreach ($spectralModes as $mode => $path) {
             if (empty($path)) {
                 continue;
             }
 
-            $libraryModes = $this->defectLibrary->getSpectralModes();
             $modeInfo = $libraryModes[$mode] ?? null;
 
-            if ($modeInfo && isset($modeInfo['analysis_focus'])) {
-                $focus = $modeInfo['analysis_focus'];
-            } else {
-                $focus = match ($mode) {
-                    'rgb' => 'Surface analysis',
-                    'cross' => 'Subsurface analysis',
-                    'parallel' => 'Surface texture analysis',
-                    'uv' => 'Pigmentation analysis',
-                    default => 'General analysis',
-                };
+            $fullPath = str_starts_with($path, '/')
+                ? $path
+                : storage_path("app/public/{$path}");
+
+            $modeScore = $primaryScore;
+
+            if (file_exists($fullPath)) {
+                switch ($mode) {
+                    case 'uv':
+                        $uvStats = $this->extractImageStatistics($fullPath);
+                        if ($uvStats) {
+                            $uvRedness = $uvStats['mean_r'] - 0.5 * ($uvStats['mean_g'] + $uvStats['mean_b']);
+                            $modeScore = (int) round(min(100, max(0, ($uvRedness / 40) * 100)));
+                        }
+                        break;
+                    case 'cross':
+                        $crossStats = $this->extractImageStatistics($fullPath);
+                        if ($crossStats) {
+                            $stdAvg = ($crossStats['std_r'] + $crossStats['std_g'] + $crossStats['std_b']) / 3;
+                            $modeScore = (int) round(min(100, max(0, ($stdAvg / 80) * 100)));
+                        }
+                        break;
+                    default:
+                        $otherStats = $this->extractImageStatistics($fullPath);
+                        if ($otherStats) {
+                            $lum = 0.299 * $otherStats['mean_r'] + 0.587 * $otherStats['mean_g'] + 0.114 * $otherStats['mean_b'];
+                            $modeScore = (int) round(min(100, max(0, ($lum / 255) * 100)));
+                        }
+                        break;
+                }
             }
 
             $analysis[] = [
                 'mode' => $mode,
-                'label' => $modeInfo['label'] ?? $mode,
-                'label_ar' => $modeInfo['label_ar'] ?? '',
-                'analysis_focus' => $focus,
+                'label' => $modeInfo['name'] ?? match ($mode) {
+                    'rgb' => 'RGB White Light',
+                    'cross' => 'Cross-Polarized',
+                    'parallel' => 'Parallel-Polarized',
+                    'uv' => 'UV Light',
+                    default => $mode,
+                },
+                'label_ar' => $modeInfo['name_ar'] ?? '',
+                'analysis_focus' => $modeInfo
+                    ? implode(', ', $modeInfo['detects'] ?? [])
+                    : match ($mode) {
+                        'rgb' => 'Surface analysis',
+                        'cross' => 'Subsurface analysis',
+                        'parallel' => 'Surface texture analysis',
+                        'uv' => 'Pigmentation analysis',
+                        default => 'General analysis',
+                    },
                 'path' => $path,
-                'score' => (int) round(50 + $this->normalRandomOffset(20)),
+                'score' => $modeScore,
             ];
         }
 
@@ -552,15 +601,22 @@ class NativeEngineProvider extends BaseAIProvider
     {
         $tips = [];
 
+        $defectTypes = [];
         foreach ($defects as $defect) {
-            $libraryDefect = $this->defectLibrary->find($defect['type'] ?? '');
-            if ($libraryDefect && !empty($libraryDefect['care_tips'])) {
-                foreach ($libraryDefect['care_tips'] as $tip) {
-                    if (count($tips) >= 5) {
-                        break 2;
-                    }
-                    $tips[] = $tip;
-                }
+            $type = $defect['type'] ?? '';
+            if ($type) {
+                $defectTypes[] = $type;
+            }
+        }
+        if (!empty($defectTypes)) {
+            $enTips = $this->defectLibrary->getCareTips($defectTypes, 'en');
+            $arTips = $this->defectLibrary->getCareTips($defectTypes, 'ar');
+            foreach ($enTips as $i => $enTip) {
+                if (count($tips) >= 5) break;
+                $tips[] = [
+                    'en' => $enTip,
+                    'ar' => $arTips[$i] ?? $enTip,
+                ];
             }
         }
 
@@ -587,14 +643,6 @@ class NativeEngineProvider extends BaseAIProvider
         }
 
         return max(0, min(100, $value));
-    }
-
-    protected function normalRandomOffset(float $range): float
-    {
-        $u1 = mt_rand() / mt_getrandmax();
-        $u2 = mt_rand() / mt_getrandmax();
-        $stdNormal = sqrt(-2 * log($u1)) * cos(2 * M_PI * $u2);
-        return $stdNormal * ($range / 3);
     }
 
     protected function generateSmartDefaults(array $imageData): array

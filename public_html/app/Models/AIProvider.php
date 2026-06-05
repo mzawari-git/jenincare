@@ -69,11 +69,4 @@ class AIProvider extends Model
     {
         $this->increment('quota_used');
     }
-
-    public function canFailover(): bool
-    {
-        return $this->is_active
-            && $this->hasQuotaAvailable()
-            && !empty($this->api_credentials);
-    }
 }

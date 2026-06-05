@@ -16,6 +16,10 @@ class SkinScan extends Model
 
     protected $table = 'skin_scans';
 
+    protected $attributes = [
+        'expert_free_tips' => '[]',
+    ];
+
     protected $fillable = [
         'user_id',
         'status',
@@ -176,13 +180,19 @@ class SkinScan extends Model
 
     public function getAnalysisStatusLabelAttribute(): ?string
     {
-        $status = AnalysisStatus::tryFrom($this->analysis_status);
-        return $status?->arabicLabel();
+        $value = $this->analysis_status instanceof AnalysisStatus
+            ? $this->analysis_status->value
+            : $this->analysis_status;
+        $status = AnalysisStatus::tryFrom($value);
+        return $status?->label();
     }
 
     public function getAnalysisStatusColorAttribute(): ?string
     {
-        $status = AnalysisStatus::tryFrom($this->analysis_status);
+        $value = $this->analysis_status instanceof AnalysisStatus
+            ? $this->analysis_status->value
+            : $this->analysis_status;
+        $status = AnalysisStatus::tryFrom($value);
         return $status?->color();
     }
 

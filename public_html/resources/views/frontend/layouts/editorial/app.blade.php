@@ -94,6 +94,7 @@
     @if($tracking->isEnabled()) {!! $tracking->getBrowserPixelNoscript() !!} @endif
 
     @include('frontend.layouts.editorial.header')
+    <div class="header-spacer"></div>
     <main id="main-content" style="min-height:60vh;">
         @yield('content')
     </main>

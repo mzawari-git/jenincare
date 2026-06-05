@@ -22,6 +22,18 @@ class Kernel extends ConsoleKernel
             ->onOneServer()
             ->runInBackground()
             ->appendOutputTo(storage_path('logs/ads-sync.log'));
+
+        $schedule->command('scans:cleanup --older-than=90')
+            ->weeklyOn(0, '02:00')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/scan-cleanup.log'));
+
+        $schedule->command('ai:benchmark')
+            ->weeklyOn(1, '04:00')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->appendOutputTo(storage_path('logs/ai-benchmark.log'));
     }
 
     protected function commands(): void
