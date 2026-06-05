@@ -72,7 +72,8 @@ const navItems = computed(() => [
   { to: '/prompts', icon: '📝', label: 'إدارة التعليمات', badge: null },
   { to: '/white-label', icon: '🎨', label: 'العلامة التجارية', badge: null },
   { to: '/scans/history', icon: '📋', label: 'سجل التحاليل', badge: null },
-  { to: '/products', icon: '🛍️', label: 'المنتجات', badge: null }
+  { to: '/products', icon: '🛍️', label: 'المنتجات', badge: null },
+  { to: '/spin-codes', icon: '🎡', label: 'أكواد الدولب', badge: null }
 ])
 
 function isActive(to) {

@@ -66,6 +66,14 @@ export const productsApi = {
   updateRecommendationRules: (payload) => apiClient.put('/products/recommendation-rules', payload)
 }
 
+export const userApi = {
+  list: (params = {}) => apiClient.get('/users', { params }),
+  show: (id) => apiClient.get(`/users/${id}`),
+  create: (payload) => apiClient.post('/users', payload),
+  update: (id, payload) => apiClient.put(`/users/${id}`, payload),
+  toggleActive: (id) => apiClient.post(`/users/${id}/toggle-active`)
+}
+
 export default {
   auth: authApi,
   scans: scansApi,
@@ -73,5 +81,6 @@ export default {
   prompts: promptsApi,
   whiteLabel: whiteLabelApi,
   dashboard: dashboardApi,
-  products: productsApi
+  products: productsApi,
+  users: userApi
 }

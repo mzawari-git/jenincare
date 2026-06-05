@@ -76,8 +76,14 @@ class DashboardController extends Controller
         }
 
         if ($request->filled('sort_by')) {
-            $direction = $request->input('sort_dir', 'desc');
-            $query->orderBy($request->input('sort_by'), $direction);
+            $sortableColumns = ['created_at', 'overall_health_score', 'status', 'id'];
+            $sortBy = in_array($request->input('sort_by'), $sortableColumns)
+                ? $request->input('sort_by')
+                : 'created_at';
+            $direction = in_array($request->input('sort_dir', 'desc'), ['asc', 'desc'])
+                ? $request->input('sort_dir')
+                : 'desc';
+            $query->orderBy($sortBy, $direction);
         } else {
             $query->orderByDesc('created_at');
         }

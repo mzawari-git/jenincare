@@ -118,45 +118,6 @@ class GeminiProvider extends BaseAIProvider implements AIProviderInterface
         return EngineType::GENERATIVE;
     }
 
-    private function extractBase64(array $imageData): string
-    {
-        if (! empty($imageData['base64'])) {
-            $base64 = $imageData['base64'];
-
-            if (str_contains($base64, 'base64,')) {
-                $parts = explode('base64,', $base64, 2);
-                return $parts[1];
-            }
-
-            return $base64;
-        }
-
-        if (! empty($imageData['path'])) {
-            $content = $this->disk->get($imageData['path']);
-            return base64_encode($content);
-        }
-
-        throw new \InvalidArgumentException('No valid image data provided.');
-    }
-
-    private function detectMediaType(array $imageData): string
-    {
-        if (! empty($imageData['base64']) && str_contains($imageData['base64'], 'data:')) {
-            if (preg_match('/data:(image\/\w+);base64,/', $imageData['base64'], $matches)) {
-                return $matches[1];
-            }
-        }
-
-        if (! empty($imageData['path'])) {
-            $mimeType = $this->disk->mimeType($imageData['path']);
-            if ($mimeType) {
-                return $mimeType;
-            }
-        }
-
-        return 'image/jpeg';
-    }
-
     private function buildSystemInstruction(): string
     {
         return <<<'PROMPT'

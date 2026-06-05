@@ -85,24 +85,18 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useScansStore } from '@/stores/scans'
-import { useDark, useToggle } from '@vueuse/core'
+import { useTheme } from '@/composables/useTheme'
 import SidebarLayout from '@/components/SidebarLayout.vue'
 
 const route = useRoute()
 const authStore = useAuthStore()
 const scansStore = useScansStore()
 
-const isDark = useDark({
-  selector: 'html',
-  attribute: 'data-theme',
-  valueDark: 'dark',
-  valueLight: 'light'
-})
-const toggleDark = useToggle(isDark)
+const { isDark, toggleDark } = useTheme()
 
 const sidebarCollapsed = ref(false)
 const showUserMenu = ref(false)

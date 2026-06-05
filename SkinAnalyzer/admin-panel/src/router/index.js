@@ -67,6 +67,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/spin-codes',
+    name: 'SpinCodes',
+    component: () => import('@/views/SpinCodesView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/settings',
     name: 'AdminSettings',
     component: () => import('@/views/AdminSettingsView.vue'),

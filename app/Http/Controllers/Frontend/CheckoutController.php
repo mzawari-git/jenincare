@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Setting;
+use App\Models\SpinCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -110,6 +111,13 @@ class CheckoutController extends Controller
                 'name' => $request->customer_name,
             ]);
 
+            SpinCode::create([
+                'order_id' => $order->id,
+                'customer_email' => $order->customer_email,
+                'code' => SpinCode::generateUniqueCode(),
+                'expires_at' => now()->addDays(30),
+            ]);
+
             return redirect()->route('checkout.success', $order->id);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -120,7 +128,8 @@ class CheckoutController extends Controller
     public function success($orderId)
     {
         $order = Order::findOrFail($orderId);
-        return view('frontend.checkout.success', compact('order'));
+        $spinCode = SpinCode::where('order_id', $order->id)->first();
+        return view('frontend.checkout.success', compact('order', 'spinCode'));
     }
 
     private function getActivePaymentMethods(array $settings): array

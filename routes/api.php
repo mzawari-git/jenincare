@@ -190,8 +190,18 @@ Route::prefix('admin')->group(function () {
         Route::get('/settings/skinanalyzer', [\App\Http\Controllers\Admin\Api\SettingsController::class, 'getSkinAnalyzer']);
         Route::post('/settings/skinanalyzer', [\App\Http\Controllers\Admin\Api\SettingsController::class, 'updateSkinAnalyzer']);
         Route::post('/settings/clear-cache', [\App\Http\Controllers\Admin\Api\SettingsController::class, 'clearCache']);
+
+        // Spin Codes (Wheel of Fortune)
+        Route::get('/spin-codes', [\App\Http\Controllers\Api\SpinCodeController::class, 'index']);
+        Route::post('/spin-codes/generate', [\App\Http\Controllers\Api\SpinCodeController::class, 'generate']);
+        Route::get('/spin-codes/{id}', [\App\Http\Controllers\Api\SpinCodeController::class, 'show']);
     });
 });
+
+// Spin Codes - Public endpoints (for store frontend)
+Route::post('/spin-codes/validate', [\App\Http\Controllers\Api\SpinCodeController::class, 'validateCode']);
+Route::post('/spin-codes/mark-used', [\App\Http\Controllers\Api\SpinCodeController::class, 'markUsed']);
+Route::post('/spin-codes/generate-for-order/{orderId}', [\App\Http\Controllers\Api\SpinCodeController::class, 'generateForOrder']);
 
 Route::post('/track/fingerprint', [\App\Http\Controllers\Api\FingerprintController::class, 'store'])
     ->name('api.fingerprint');

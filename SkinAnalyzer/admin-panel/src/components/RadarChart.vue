@@ -16,23 +16,25 @@ const props = defineProps({
 const chartRef = ref(null)
 let chartInstance = null
 
-const dimensionLabels = ['الترطيب', 'النقاء', 'المرونة', 'التصبغ', 'الحساسية']
-
 function initChart() {
   if (!chartRef.value) return
   if (chartInstance) chartInstance.dispose()
 
   chartInstance = echarts.init(chartRef.value)
 
-  const values = props.data?.length
-    ? props.data.map(d => d.value || 0)
+  const items = props.data?.length ? props.data : []
+  const labels = items.length
+    ? items.map(d => d.nameAr || d.name || '')
+    : ['الترطيب', 'النقاء', 'المرونة', 'التصبغ', 'الحساسية']
+  const values = items.length
+    ? items.map(d => d.value || 0)
     : [0, 0, 0, 0, 0]
 
   const option = {
     radar: {
       center: ['50%', '50%'],
       radius: '65%',
-      indicator: dimensionLabels.map((name) => ({
+      indicator: labels.map((name) => ({
         name,
         max: 100
       })),

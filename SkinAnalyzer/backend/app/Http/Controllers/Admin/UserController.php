@@ -18,7 +18,7 @@ class UserController extends Controller
         $query = User::withCount('skinAnalyses');
 
         if ($request->filled('search')) {
-            $search = $request->input('search');
+            $search = str_replace(['%', '_'], ['\\%', '\\_'], $request->input('search'));
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
@@ -166,17 +166,18 @@ class UserController extends Controller
     public function toggleActive(int $id, Request $request): JsonResponse
     {
         $user = User::findOrFail($id);
-        $user->update(['is_active' => ! $user->is_active]);
+        $newActive = ! $user->is_active;
+        $user->update(['is_active' => $newActive]);
 
         Log::info('Admin toggled user active status', [
             'admin_id' => $request->user()->id,
             'user_id' => $user->id,
-            'is_active' => $user->fresh()->is_active,
+            'is_active' => $newActive,
         ]);
 
         return response()->json([
-            'message' => $user->fresh()->is_active ? 'User activated.' : 'User deactivated.',
-            'data' => ['is_active' => $user->fresh()->is_active],
+            'message' => $newActive ? 'User activated.' : 'User deactivated.',
+            'data' => ['is_active' => $newActive],
         ]);
     }
 }

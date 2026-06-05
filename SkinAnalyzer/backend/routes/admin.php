@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ScanApprovalController;
 use App\Http\Controllers\Admin\AIProviderController;
@@ -7,7 +8,10 @@ use App\Http\Controllers\Admin\PromptController;
 use App\Http\Controllers\Admin\WhiteLabelController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'admin', 'throttle:admin'])->group(function () {
+    Route::get('/auth/me', [AuthController::class, 'verify'])->name('auth.me');
+    Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
+
     Route::get('/stats', [DashboardController::class, 'stats'])->name('dashboard.stats');
 
     Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');

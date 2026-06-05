@@ -14,6 +14,7 @@ return [
     'update_version_code' => env('APP_UPDATE_VERSION_CODE', 3),
     'update_release_notes' => env('APP_UPDATE_RELEASE_NOTES', ''),
     'update_force' => env('APP_UPDATE_FORCE', false),
+    'apk_filename' => env('APK_FILENAME', 'SkinAnalyzer.apk'),
     'key' => env('APP_KEY'),
     'cipher' => 'AES-256-CBC',
     'maintenance' => [

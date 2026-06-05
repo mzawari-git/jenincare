@@ -2,10 +2,10 @@
 
 namespace App\Jobs;
 
-use App\Enums\AnalysisStatus;
 use App\Events\QuotaExceeded;
 use App\Models\SkinAnalysis;
 use App\Services\AI\AIOrchestrator;
+use App\Http\Middleware\EncryptScanImages;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -13,7 +13,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use App\Http\Middleware\EncryptScanImages;
 
 class ProcessSkinScan implements ShouldQueue
 {
@@ -36,19 +35,11 @@ class ProcessSkinScan implements ShouldQueue
         try {
             $imageData = $this->decryptImage($scan->image_path);
 
-            $result = $orchestrator->processScan($imageData);
+            $processed = $orchestrator->processScan($imageData);
+            $result = $processed['result'];
+            $providerKey = $processed['provider'];
 
-            $normalizedResult = $this->normalizeResult($result, $scan);
-
-            $scan->update([
-                'radar_metrics' => $normalizedResult['radar_metrics'],
-                'heatmap_coordinates' => $normalizedResult['heatmap_coordinates'],
-                'overall_health_score' => $normalizedResult['overall_health_score'],
-                'custom_arabic_analysis' => $normalizedResult['custom_arabic_analysis'],
-                'expert_free_tips' => $normalizedResult['expert_free_tips'],
-                'raw_vendor_response' => $result,
-                'status' => AnalysisStatus::PENDING->value,
-            ]);
+            $orchestrator->persistScanResult($scan, $result, $providerKey);
 
             GenerateProductRecommendations::dispatch($scan->id);
         } catch (QuotaExceeded $e) {
@@ -92,43 +83,5 @@ class ProcessSkinScan implements ShouldQueue
             'contents' => EncryptScanImages::decryptFile($imagePath),
             'mime_type' => Storage::disk('local')->mimeType($imagePath) ?: 'image/jpeg',
         ];
-    }
-
-    private function normalizeResult(array $result, SkinAnalysis $scan): array
-    {
-        return [
-            'radar_metrics' => $result['radar_metrics'] ?? [
-                'brightness' => 0,
-                'texture' => 0,
-                'hydration' => 0,
-                'pigmentation' => 0,
-                'pores' => 0,
-                'sensitivity' => 0,
-            ],
-            'heatmap_coordinates' => $result['heatmap_coordinates'] ?? [],
-            'overall_health_score' => $result['overall_health_score']
-                ?? $result['health_score']
-                ?? $this->calculateScore($result['radar_metrics'] ?? []),
-            'custom_arabic_analysis' => $result['custom_arabic_analysis']
-                ?? $result['analysis_text']
-                ?? $result['arabic_analysis']
-                ?? '',
-            'expert_free_tips' => $result['expert_free_tips']
-                ?? $result['tips']
-                ?? $result['recommendations']
-                ?? [],
-        ];
-    }
-
-    private function calculateScore(array $metrics): int
-    {
-        if (empty($metrics)) {
-            return 0;
-        }
-
-        $total = array_sum(array_values($metrics));
-        $count = count($metrics);
-
-        return $count > 0 ? (int) round($total / $count) : 0;
     }
 }

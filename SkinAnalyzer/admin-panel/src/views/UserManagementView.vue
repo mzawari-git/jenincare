@@ -153,7 +153,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import apiClient from '@/api/client'
+import { userApi } from '@/api/endpoints'
 import Swal from 'sweetalert2'
 import dayjs from 'dayjs'
 
@@ -188,7 +188,7 @@ async function fetchUsers() {
   try {
     const params = { page: meta.current_page, per_page: meta.per_page }
     if (searchQuery.value) params.search = searchQuery.value
-    const { data } = await apiClient.get('/users', { params })
+    const { data } = await userApi.list(params)
     users.value = data.data || []
     meta.current_page = data.meta?.current_page || 1
     meta.last_page = data.meta?.last_page || 1
@@ -250,10 +250,10 @@ async function saveUser() {
     if (form.password) payload.password = form.password
 
     if (editingUser.value) {
-      await apiClient.put(`/users/${editingUser.value.id}`, payload)
+      await userApi.update(editingUser.value.id, payload)
       Swal.fire({ title: 'تم التحديث', icon: 'success', timer: 1500, showConfirmButton: false })
     } else {
-      await apiClient.post('/users', payload)
+      await userApi.create(payload)
       Swal.fire({ title: 'تمت الإضافة', icon: 'success', timer: 1500, showConfirmButton: false })
     }
     showModal.value = false
@@ -280,7 +280,7 @@ async function toggleActive(user) {
   if (!result.isConfirmed) return
 
   try {
-    await apiClient.post(`/users/${user.id}/toggle-active`)
+    await userApi.toggleActive(user.id)
     user.is_active = !user.is_active
     Swal.fire({ title: `تم ${action}`, icon: 'success', timer: 1500, showConfirmButton: false })
   } catch (err) {

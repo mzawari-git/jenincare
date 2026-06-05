@@ -122,4 +122,78 @@ abstract class BaseAIProvider implements AIProviderInterface
 
         return $config[$key] ?? $default;
     }
+
+    protected function extractBase64(array $imageData): string
+    {
+        if (! empty($imageData['base64'])) {
+            $base64 = $imageData['base64'];
+
+            if (str_contains($base64, 'base64,')) {
+                $parts = explode('base64,', $base64, 2);
+                return $parts[1];
+            }
+
+            return $base64;
+        }
+
+        if (! empty($imageData['path'])) {
+            $content = $this->disk->get($imageData['path']);
+            return base64_encode($content);
+        }
+
+        throw new \InvalidArgumentException('No valid image data provided.');
+    }
+
+    protected function detectMediaType(array $imageData): string
+    {
+        if (! empty($imageData['base64']) && str_contains($imageData['base64'], 'data:')) {
+            if (preg_match('/data:(image\/\w+);base64,/', $imageData['base64'], $matches)) {
+                return $matches[1];
+            }
+        }
+
+        if (! empty($imageData['path'])) {
+            $mimeType = $this->disk->mimeType($imageData['path']);
+            if ($mimeType) {
+                return $mimeType;
+            }
+        }
+
+        return 'image/jpeg';
+    }
+
+    protected function mapHeatmap(array $rawPoints, string $labelPrefix = ''): array
+    {
+        $coordinates = [];
+
+        foreach ($rawPoints as $point) {
+            if (isset($point['x'], $point['y'], $point['label'])) {
+                $coordinates[] = [
+                    'x' => (float) $point['x'],
+                    'y' => (float) $point['y'],
+                    'label' => $labelPrefix ? $labelPrefix . ' ' . $point['label'] : (string) $point['label'],
+                    'severity' => isset($point['severity']) ? (int) $point['severity'] : 0,
+                ];
+            }
+        }
+
+        return $coordinates;
+    }
+
+    protected function mapDefects(array $rawDefects, string $typeKey = 'type'): array
+    {
+        $defects = [];
+
+        foreach ($rawDefects as $defect) {
+            if (isset($defect[$typeKey])) {
+                $defects[] = [
+                    'type' => (string) $defect[$typeKey],
+                    'severity' => isset($defect['severity']) ? (int) $defect['severity'] : 0,
+                    'description' => $defect['description'] ?? '',
+                ];
+            }
+        }
+
+        return $defects;
+    }
 }

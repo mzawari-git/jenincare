@@ -53,7 +53,7 @@ class GenerateProductRecommendations implements ShouldQueue
             return;
         }
 
-        $existingProductIds = $scan->recommendedProducts->pluck('id')->toArray();
+        $existingProductIds = $scan->recommendedProducts()->pluck('product_id')->toArray();
 
         foreach ($products as $product) {
             if (in_array($product->id, $existingProductIds)) {
@@ -85,7 +85,7 @@ class GenerateProductRecommendations implements ShouldQueue
     {
         $defects = [];
 
-        if ($scan->radar_metrics) {
+        if (is_array($scan->radar_metrics) && ! empty($scan->radar_metrics)) {
             $metrics = $scan->radar_metrics;
 
             $lowScores = array_filter($metrics, fn ($v) => $v < 50);

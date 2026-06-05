@@ -13,11 +13,11 @@ class SystemPrompt extends Model
 
     protected $fillable = [
         'name',
-        'category',
-        'prompt_text',
+        'provider_key',
+        'system_instruction',
         'tone',
         'is_active',
-        'language',
+        'version',
     ];
 
     protected $casts = [
@@ -29,14 +29,9 @@ class SystemPrompt extends Model
         return $query->where('is_active', true);
     }
 
-    public function scopeForCategory($query, string $category)
+    public function scopeForProvider($query, string $providerKey)
     {
-        return $query->where('category', $category);
-    }
-
-    public function scopeForLanguage($query, string $language)
-    {
-        return $query->whereIn('language', [$language, 'both']);
+        return $query->where('provider_key', $providerKey);
     }
 
     public function getAvailableVariables(): array
@@ -57,7 +52,7 @@ class SystemPrompt extends Model
 
     public function render(array $variables): string
     {
-        $text = $this->prompt_text;
+        $text = $this->system_instruction;
 
         foreach ($variables as $key => $value) {
             $text = str_replace('{' . $key . '}', $value, $text);

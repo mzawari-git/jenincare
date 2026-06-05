@@ -17,11 +17,15 @@ class SkinAnalysisPin extends Model
         'pin_code',
         'is_used',
         'expires_at',
+        'pin_attempts',
+        'locked_until',
     ];
 
     protected $casts = [
         'is_used' => 'boolean',
         'expires_at' => 'datetime',
+        'locked_until' => 'datetime',
+        'pin_attempts' => 'integer',
     ];
 
     public function skinAnalysis(): BelongsTo
@@ -62,5 +66,29 @@ class SkinAnalysisPin extends Model
     public function markUsed(): void
     {
         $this->update(['is_used' => true]);
+    }
+
+    public function isLocked(): bool
+    {
+        return $this->locked_until !== null && $this->locked_until->isFuture();
+    }
+
+    public function recordFailedAttempt(): void
+    {
+        $maxAttempts = config('skinanalyzer.pin.max_attempts', 5);
+        $lockoutMinutes = config('skinanalyzer.pin.lockout_minutes', 15);
+
+        $this->increment('pin_attempts');
+
+        if ($this->pin_attempts >= $maxAttempts) {
+            $this->update(['locked_until' => now()->addMinutes($lockoutMinutes)]);
+        }
+    }
+
+    public function getRemainingAttempts(): int
+    {
+        $maxAttempts = config('skinanalyzer.pin.max_attempts', 5);
+
+        return max(0, $maxAttempts - $this->pin_attempts);
     }
 }

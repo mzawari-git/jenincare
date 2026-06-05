@@ -1,11 +1,14 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { fileURLToPath, URL } from 'node:url'
 
-export default defineConfig({
-  base: '/skin-admin/',
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+
+  return {
+  base: env.VITE_BASE_PATH || '/skin-admin/',
   plugins: [
     vue(),
     AutoImport({
@@ -27,24 +30,24 @@ export default defineConfig({
     }
   },
   server: {
-    port: 3000,
+    port: parseInt(env.VITE_DEV_PORT || '3000'),
     proxy: {
       '/api': {
-        target: 'https://jenincare.shop',
+        target: env.VITE_API_PROXY_TARGET || 'https://jenincare.shop',
         changeOrigin: true,
-        secure: true,
-        rewrite: (path) => path.replace(/^\/api/, '/api')
+        secure: true
       },
       '/ws': {
-        target: 'wss://jenincare.shop',
+        target: env.VITE_WS_URL || 'wss://jenincare.shop',
         ws: true,
         changeOrigin: true
       }
     }
   },
   build: {
-    outDir: 'dist',
+    outDir: env.VITE_OUT_DIR || 'dist',
     assetsDir: 'assets',
-    sourcemap: false
+    sourcemap: env.VITE_SOURCEMAP === 'true'
   }
+}
 })

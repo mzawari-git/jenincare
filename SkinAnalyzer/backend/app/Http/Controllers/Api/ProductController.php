@@ -26,7 +26,7 @@ class ProductController extends Controller
         }
 
         if ($request->filled('search')) {
-            $search = $request->input('search');
+            $search = str_replace(['%', '_'], ['\\%', '\\_'], $request->input('search'));
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('name_ar', 'like', "%{$search}%")
@@ -34,7 +34,12 @@ class ProductController extends Controller
             });
         }
 
-        $products = $query->orderBy($request->input('sort_by', 'name'))
+        $sortableColumns = ['name', 'name_ar', 'price', 'created_at', 'brand', 'category'];
+        $sortBy = in_array($request->input('sort_by'), $sortableColumns)
+            ? $request->input('sort_by')
+            : 'name';
+
+        $products = $query->orderBy($sortBy)
             ->paginate($request->input('per_page', 20));
 
         return response()->json($products);

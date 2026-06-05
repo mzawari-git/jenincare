@@ -2,7 +2,7 @@ import axios from 'axios'
 import Swal from 'sweetalert2'
 
 const apiClient = axios.create({
-  baseURL: '/api/admin',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/admin',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -29,7 +29,8 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('admin_token')
-      window.location.href = '/skin-admin/#/login'
+      const loginPath = import.meta.env.VITE_LOGIN_PATH || '/skin-admin/#/login'
+      window.location.href = loginPath
     }
 
     if (error.response?.status === 429) {

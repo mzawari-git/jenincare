@@ -20,14 +20,12 @@ class AIOrchestrator
 
     protected AIProviderFactory $factory;
 
-    protected ?string $lastProviderUsed = null;
-
     public function __construct(AIProviderFactory $factory)
     {
         $this->factory = $factory;
     }
 
-    public function processScan(string $imagePath, ?string $providerKey = null): UnifiedSkinData
+    public function processScan(string $imagePath, ?string $providerKey = null): array
     {
         Log::info('Starting scan processing', [
             'image_path' => $imagePath,
@@ -40,14 +38,13 @@ class AIOrchestrator
 
         try {
             $result = $this->routeToProvider($imagePath, $providerKey);
-            $this->lastProviderUsed = $providerKey;
 
             Log::info('Scan processing completed successfully', [
                 'provider' => $providerKey,
                 'overall_score' => $result->overallHealthScore,
             ]);
 
-            return $result;
+            return ['result' => $result, 'provider' => $providerKey];
         } catch (\Exception $e) {
             Log::warning('Primary provider failed, initiating failover', [
                 'provider' => $providerKey,
@@ -57,11 +54,11 @@ class AIOrchestrator
             $result = $this->handleFailover($imagePath);
 
             Log::info('Failover processing completed', [
-                'failover_provider' => $this->lastProviderUsed,
+                'failover_provider' => 'native',
                 'overall_score' => $result->overallHealthScore,
             ]);
 
-            return $result;
+            return ['result' => $result, 'provider' => 'native'];
         }
     }
 
@@ -152,7 +149,6 @@ class AIOrchestrator
         $nativeProvider = $this->factory->getProviderByKey('native');
 
         if ($nativeProvider && $nativeProvider->isAvailable()) {
-            $this->lastProviderUsed = 'native';
             $imageData = ['path' => $imagePath];
             $rawResponse = $nativeProvider->analyze($imageData);
             return UnifiedSkinData::fromProviderResponse($rawResponse, 'native');
@@ -169,7 +165,6 @@ class AIOrchestrator
         ]);
 
         $native = new \App\Services\AI\Providers\NativeEngineProvider($nativeModel);
-        $this->lastProviderUsed = 'native';
 
         $imageData = ['path' => $imagePath];
         $rawResponse = $native->analyze($imageData);
@@ -215,10 +210,8 @@ class AIOrchestrator
     public function persistScanResult(
         SkinAnalysis $scan,
         UnifiedSkinData $result,
-        ?string $providerKey = null
+        string $providerKey = 'native'
     ): SkinAnalysis {
-        $providerKey = $providerKey ?? $this->lastProviderUsed ?? 'native';
-
         $provider = AIProvider::where('driver_key', $providerKey)->first();
 
         DB::transaction(function () use ($scan, $result, $provider) {
@@ -237,20 +230,18 @@ class AIOrchestrator
                 $provider->incrementQuota();
             }
 
+            $pinExpiryMinutes = config('skinanalyzer.pin.expiry_minutes', 43200);
+            $pinExpiresAt = $pinExpiryMinutes === -1 ? null : now()->addMinutes($pinExpiryMinutes);
+
             SkinAnalysisPin::create([
                 'skin_analysis_id' => $scan->id,
                 'pin_code' => SkinAnalysisPin::generatePin(),
                 'is_used' => false,
-                'expires_at' => now()->addDays(30),
+                'expires_at' => $pinExpiresAt,
             ]);
         });
 
         return $scan->fresh();
-    }
-
-    public function getLastProviderUsed(): ?string
-    {
-        return $this->lastProviderUsed;
     }
 
     private function resolveProvider(string $providerKey): AIProviderInterface

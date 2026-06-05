@@ -78,8 +78,9 @@ return [
     */
 
     'pin' => [
-        'expiry_minutes' => env('SKIN_ANALYZER_PIN_EXPIRY_MINUTES', 30),
+        'expiry_minutes' => env('SKIN_ANALYZER_PIN_EXPIRY_MINUTES', 43200),
         'max_attempts' => env('SKIN_ANALYZER_PIN_MAX_ATTEMPTS', 5),
+        'lockout_minutes' => env('SKIN_ANALYZER_PIN_LOCKOUT_MINUTES', 15),
     ],
 
     /*

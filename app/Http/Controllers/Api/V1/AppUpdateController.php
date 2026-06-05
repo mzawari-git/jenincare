@@ -31,9 +31,11 @@ class AppUpdateController extends Controller
             abort(404, 'APK not found');
         }
 
+        $filename = config('app.apk_filename', 'SkinAnalyzer.apk');
+
         return response()->file($apkPath, [
             'Content-Type' => 'application/vnd.android.package-archive',
-            'Content-Disposition' => 'attachment; filename="JeninCare-SkinAnalyzer.apk"',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
     }
 }

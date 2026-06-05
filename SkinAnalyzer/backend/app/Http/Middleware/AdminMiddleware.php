@@ -16,13 +16,7 @@ class AdminMiddleware
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        $isAdmin = method_exists($user, 'isAdmin')
-            ? $user->isAdmin()
-            : (method_exists($user, 'hasRole')
-                ? $user->hasRole('admin')
-                : ($user->is_admin ?? $user->role === 'admin'));
-
-        if (! $isAdmin) {
+        if (! ($user->is_admin ?? false)) {
             return response()->json(['message' => 'Forbidden. Admin access required.'], 403);
         }
 
