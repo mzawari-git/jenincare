@@ -19,4 +19,7 @@ echo "=== Clearing Laravel cache ==="
 cd public_html
 php artisan optimize:clear
 
+echo "=== Running migrations ==="
+php artisan migrate --force
+
 echo "=== Done ==="
