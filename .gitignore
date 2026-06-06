@@ -59,3 +59,26 @@ blog*.txt
 
 # APK build artifacts
 app-debug.apk
+
+# Test/debug PHP files
+__*.php
+
+# Root-level screenshot PNGs
+/*.png
+
+# Temporary text files in root
+/.txt
+/FullSystemupdate.txt
+/SkinAnalyze.txt
+/SmartSkin.txt
+/reporterrors.txt
+
+# Suspicious directories
+/null/
+/PowerShell*/
+
+# PHPUnit cache
+.phpunit.result.cache
+
+# Temporary planning docs
+roadmapaffiliate.md

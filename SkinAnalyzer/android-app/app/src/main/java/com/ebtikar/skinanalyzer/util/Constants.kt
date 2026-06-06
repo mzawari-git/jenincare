@@ -1,0 +1,30 @@
+package com.ebtikar.skinanalyzer.util
+
+object Constants {
+    const val DEVICE_MODEL = "ZMLH02"
+    const val DEVICE_BRAND = "Bitmoji"
+    const val DEVICE_NAME = "AI Intelligent Skin Analyzer"
+    const val DEVICE_EDITION = "Max Edition"
+
+    const val SCREEN_WIDTH = 1920
+    const val SCREEN_HEIGHT = 1080
+
+    const val PREF_LANG_KEY = "app_language"
+    const val PREF_ANALYSIS_MODE_KEY = "analysis_mode"
+    const val PREF_BRIGHTNESS_KEY = "screen_brightness"
+
+    const val LANG_CHINESE = "zh"
+    const val LANG_ARABIC = "ar"
+    const val LANG_ENGLISH = "en"
+
+    const val ANALYSIS_LOCAL = "local"
+    const val ANALYSIS_CLOUD = "cloud"
+    const val ANALYSIS_AUTO = "auto"
+
+    const val DB_NAME = "skin_analyzer_db"
+    const val DB_VERSION = 1
+
+    const val SPLASH_DELAY_MS = 2500L
+
+    const val MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024
+}

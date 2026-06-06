@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Derma AI — لوحة التحكم الإدارية</title>
+<meta name="description" content="لوحة تحكم إدارية احترافية لتطبيق تحليل البشرة Derma AI">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   DERMA AI DASHBOARD — Premium Dark Design System
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --bg-0:         #020210;
+  --bg-1:         #05051a;
+  --bg-2:         #0a0a2e;
+  --bg-3:         #0d0d35;
+  --surface-1:    #0d1b3e;
+  --surface-2:    #111b3a;
+  --surface-3:    #152040;
+  --glass:        rgba(255,255,255,0.04);
+  --glass-border: rgba(255,255,255,0.08);
+  --glass-hover:  rgba(255,255,255,0.07);
+
+  --cyan:         #00d4ff;
+  --cyan-dim:     rgba(0,212,255,0.12);
+  --cyan-glow:    rgba(0,212,255,0.25);
+  --purple:       #7c3aed;
+  --purple-dim:   rgba(124,58,237,0.12);
+  --gold:         #f59e0b;
+  --gold-dim:     rgba(245,158,11,0.12);
+  --rose:         #f43f5e;
+  --rose-dim:     rgba(244,63,94,0.12);
+  --emerald:      #10b981;
+  --emerald-dim:  rgba(16,185,129,0.12);
+  --amber:        #f59e0b;
+  --orange:       #f97316;
+
+  --text-1:       #ffffff;
+  --text-2:       #94a3b8;
+  --text-3:       #64748b;
+  --text-4:       #334155;
+
+  --sidebar-w:    260px;
+  --header-h:     64px;
+  --radius-sm:    8px;
+  --radius-md:    12px;
+  --radius-lg:    16px;
+  --radius-xl:    20px;
+  --radius-2xl:   24px;
+
+  --font-ar:      'Cairo', sans-serif;
+  --font-en:      'Inter', sans-serif;
+  --shadow-glow:  0 0 40px rgba(0,212,255,0.08);
+  --shadow-card:  0 4px 24px rgba(0,0,0,0.4);
+  --transition:   0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-1);
+  color: var(--text-1);
+  font-family: var(--font-ar);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Scrollbars ─── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* ─── Layout Shell ─── */
+.app-shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════
+   SIDEBAR
+   ═══════════════════════════════════════ */
+.sidebar {
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--bg-2);
+  border-left: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+  z-index: 100;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.brand-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--cyan-dim);
+  border: 1px solid var(--cyan-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.brand-icon svg { width: 22px; height: 22px; }
+
+.brand-info h1 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+}
+.brand-info p {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 1px;
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 12px;
+}
+
+.nav-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--text-4);
+  text-transform: uppercase;
+  padding: 12px 8px 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition);
+  color: var(--text-3);
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 2px;
+  text-decoration: none;
+  border: 1px solid transparent;
+  position: relative;
+}
+
+.nav-item:hover {
+  background: var(--glass);
+  color: var(--text-2);
+  border-color: var(--glass-border);
+}
+
+.nav-item.active {
+  background: var(--cyan-dim);
+  color: var(--cyan);
+  border-color: rgba(0,212,255,0.2);
+  font-weight: 600;
+}
+
+.nav-item.active .nav-icon { color: var(--cyan); }
+
+.nav-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-badge {
+  margin-right: auto;
+  background: var(--cyan-dim);
+  color: var(--cyan);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.sidebar-footer {
+  border-top: 1px solid var(--glass-border);
+  padding: 16px;
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.user-card:hover { background: var(--glass-hover); }
+
+.user-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--cyan), var(--purple));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.user-info { flex: 1; min-width: 0; }
+.user-name { font-size: 13px; font-weight: 600; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-role { font-size: 11px; color: var(--text-3); }
+
+/* ═══════════════════════════════════════
+   MAIN CONTENT
+   ═══════════════════════════════════════ */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* ─── Top Header ─── */
+.top-header {
+  height: var(--header-h);
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 28px;
+  flex-shrink: 0;
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-1);
+  flex: 1;
+}
+.page-subtitle {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 1px;
+}
+
+.header-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  width: 260px;
+  transition: var(--transition);
+}
+
+.header-search:focus-within {
+  border-color: var(--cyan);
+  background: var(--cyan-dim);
+}
+
+.header-search svg { color: var(--text-3); flex-shrink: 0; }
+
+.header-search input {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-1);
+  font-family: var(--font-ar);
+  font-size: 13px;
+  width: 100%;
+}
+
+.header-search input::placeholder { color: var(--text-4); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-ar);
+  cursor: pointer;
+  transition: var(--transition);
+  border: 1px solid transparent;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--cyan);
+  color: var(--bg-0);
+  border-color: var(--cyan);
+}
+.btn-primary:hover { background: #00aacc; filter: brightness(1.1); }
+
+.btn-ghost {
+  background: var(--glass);
+  color: var(--text-2);
+  border-color: var(--glass-border);
+}
+.btn-ghost:hover { background: var(--glass-hover); color: var(--text-1); }
+
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+.btn-icon { padding: 8px; width: 36px; height: 36px; justify-content: center; }
+
+.header-actions { display: flex; align-items: center; gap: 8px; }
+
+.notif-dot {
+  position: relative;
+}
+.notif-dot::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 8px;
+  height: 8px;
+  background: var(--rose);
+  border-radius: 50%;
+  border: 2px solid var(--bg-2);
+}
+
+/* ─── Content Scroll Area ─── */
+.content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px 28px;
+}
+
+/* ─── Panels (tabs) ─── */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ═══════════════════════════════════════
+   STATS CARDS ROW
+   ═══════════════════════════════════════ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--surface-1);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--stat-color, var(--cyan));
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+
+.stat-card:hover {
+  border-color: var(--glass-border);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
+}
+
+.stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--stat-bg, var(--cyan-dim));
+  color: var(--stat-color, var(--cyan));
+}
+
+.stat-trend {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.trend-up { background: var(--emerald-dim); color: var(--emerald); }
+.trend-down { background: var(--rose-dim); color: var(--rose); }
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-1);
+  line-height: 1;
+  margin-bottom: 4px;
+  font-family: var(--font-en);
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+/* ═══════════════════════════════════════
+   CHARTS ROW
+   ═══════════════════════════════════════ */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.card {
+  background: var(--surface-1);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-1);
+}
+.card-subtitle { font-size: 12px; color: var(--text-3); margin-top: 1px; }
+
+.card-body { padding: 16px 20px; }
+
+.chart-wrap { position: relative; }
+
+/* ═══════════════════════════════════════
+   TABLE
+   ═══════════════════════════════════════ */
+.table-wrap { overflow-x: auto; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+thead th {
+  text-align: right;
+  padding: 10px 16px;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--glass-border);
+  white-space: nowrap;
+}
+
+tbody tr {
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: var(--transition);
+}
+
+tbody tr:hover { background: var(--glass); }
+tbody tr:last-child { border-bottom: none; }
+
+tbody td {
+  padding: 12px 16px;
+  color: var(--text-2);
+  vertical-align: middle;
+}
+
+.td-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.client-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.score-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.score-bar {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.score-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--cyan);
+}
+
+.score-num {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-1);
+  min-width: 28px;
+  text-align: left;
+  font-family: var(--font-en);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-good    { background: var(--emerald-dim); color: var(--emerald); }
+.badge-fair    { background: var(--gold-dim); color: var(--gold); }
+.badge-poor    { background: var(--rose-dim); color: var(--rose); }
+.badge-cyan    { background: var(--cyan-dim); color: var(--cyan); }
+.badge-purple  { background: var(--purple-dim); color: #a78bfa; }
+.badge-orange  { background: rgba(249,115,22,0.12); color: var(--orange); }
+
+.action-btns { display: flex; gap: 6px; }
+
+/* ═══════════════════════════════════════
+   INSIGHT CARDS
+   ═══════════════════════════════════════ */
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.insight-card {
+  background: var(--surface-1);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.insight-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.insight-text { flex: 1; }
+.insight-label { font-size: 11px; color: var(--text-3); margin-bottom: 3px; }
+.insight-value { font-size: 18px; font-weight: 700; color: var(--text-1); font-family: var(--font-en); }
+.insight-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE / UTILITIES
+   ═══════════════════════════════════════ */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.mt-2 { margin-top: 8px; }
+.mt-4 { margin-top: 16px; }
+.mt-6 { margin-top: 24px; }
+.text-sm { font-size: 12px; }
+.text-muted { color: var(--text-3); }
+.text-accent { color: var(--cyan); }
+.text-gold { color: var(--gold); }
+.font-bold { font-weight: 700; }
+.truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.divider {
+  height: 1px;
+  background: var(--glass-border);
+  margin: 16px 0;
+}
+
+/* Status dot */
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.dot-green { background: var(--emerald); box-shadow: 0 0 6px var(--emerald); }
+.dot-cyan  { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+.dot-red   { background: var(--rose); }
+.dot-gold  { background: var(--gold); }
+
+/* Metric pill in table */
+.concern-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  background: var(--glass);
+  color: var(--text-3);
+  border: 1px solid var(--glass-border);
+  margin: 2px;
+}
+
+/* ═══════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+
+.panel.active > * { animation: fadeInUp 0.3s ease both; }
+.panel.active > *:nth-child(2) { animation-delay: 0.04s; }
+.panel.active > *:nth-child(3) { animation-delay: 0.08s; }
+.panel.active > *:nth-child(4) { animation-delay: 0.12s; }
+
+.animate-pulse { animation: pulse 2s infinite; }
+</style>
+</head>
+
+<body>
+<div class="app-shell">
+
+  <!-- ═══════════════════════════════════
+       SIDEBAR
+       ═══════════════════════════════════ -->
+  <aside class="sidebar">
+
+    <!-- Brand -->
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--cyan)">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          <circle cx="19" cy="8" r="2.5" fill="none"/>
+          <path d="M21 6l1-1M22 8h1M21 10l1 1" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="brand-info">
+        <h1>DERMA AI</h1>
+        <p>لوحة التحكم الإدارية</p>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">الرئيسية</div>
+
+      <a class="nav-item active" onclick="showPanel('dashboard', this)">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+          </svg>
+        </span>
+        لوحة التحكم
+      </a>
+
+      <a class="nav-item" onclick="showPanel('clients', this)">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </span>
+        إدارة العملاء
+        <span class="nav-badge">247</span>
+      </a>
+
+      <a class="nav-item" onclick="showPanel('analyses', this)">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/>
+          </svg>
+        </span>
+        التحليلات
+        <span class="nav-badge">38</span>
+      </a>
+
+      <div class="nav-section-label" style="margin-top:8px">التقارير</div>
+
+      <a class="nav-item" onclick="showPanel('reports', this)">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+        </span>
+        تصدير التقارير
+      </a>
+
+      <div class="nav-section-label" style="margin-top:8px">النظام</div>
+
+      <a class="nav-item" onclick="showPanel('settings', this)">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </span>
+        الإعدادات
+      </a>
+    </nav>
+
+    <!-- User footer -->
+    <div class="sidebar-footer">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="dot dot-green animate-pulse"></span>
+        <span class="text-sm text-muted">الجهاز متصل — ZMLH02</span>
+      </div>
+      <div class="user-card">
+        <div class="user-avatar">م</div>
+        <div class="user-info">
+          <div class="user-name">المدير العام</div>
+          <div class="user-role">Admin • كل الصلاحيات</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="2">
+          <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
+        </svg>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════════════════
+       MAIN CONTENT
+       ═══════════════════════════════════ -->
+  <main class="main-content">
+
+    <!-- Top Header -->
+    <header class="top-header">
+      <div style="flex:1">
+        <div class="page-title" id="headerTitle">لوحة التحكم</div>
+        <div class="page-subtitle" id="headerSub">مرحباً بك — السبت، 7 يونيو 2026</div>
+      </div>
+
+      <div class="header-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" placeholder="ابحث عن عميل، تحليل...">
+      </div>
+
+      <div class="header-actions">
+        <button class="btn btn-ghost btn-icon notif-dot" title="الإشعارات">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+        </button>
+        <button class="btn btn-ghost btn-icon" title="تحديث">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="showPanel('analyses', document.querySelector('.nav-item:nth-child(3)'))">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          تحليل جديد
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable content -->
+    <div class="content-scroll">
+
+      <!-- ═══════ PANEL: DASHBOARD ═══════ -->
+      <div id="panel-dashboard" class="panel active">
+
+        <!-- Stats Row -->
+        <div class="stats-grid">
+
+          <div class="stat-card" style="--stat-color:var(--cyan);--stat-bg:var(--cyan-dim)">
+            <div class="stat-header">
+              <div class="stat-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18"/>
+                </svg>
+              </div>
+              <span class="stat-trend trend-up">↑ 18%</span>
+            </div>
+            <div class="stat-value" id="statToday">38</div>
+            <div class="stat-label">تحليل اليوم</div>
+          </div>
+
+          <div class="stat-card" style="--stat-color:var(--purple);--stat-bg:var(--purple-dim)">
+            <div class="stat-header">
+              <div class="stat-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                </svg>
+              </div>
+              <span class="stat-trend trend-up">↑ 7%</span>
+            </div>
+            <div class="stat-value">247</div>
+            <div class="stat-label">إجمالي العملاء</div>
+          </div>
+
+          <div class="stat-card" style="--stat-color:var(--gold);--stat-bg:var(--gold-dim)">
+            <div class="stat-header">
+              <div class="stat-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                  <polyline points="17 6 23 6 23 12"/>
+                </svg>
+              </div>
+              <span class="stat-trend trend-up">↑ 3%</span>
+            </div>
+            <div class="stat-value">82.4</div>
+            <div class="stat-label">متوسط النقاط</div>
+          </div>
+
+          <div class="stat-card" style="--stat-color:var(--emerald);--stat-bg:var(--emerald-dim)">
+            <div class="stat-header">
+              <div class="stat-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </div>
+              <span class="stat-trend trend-down">↓ 0.2s</span>
+            </div>
+            <div class="stat-value">1.3s</div>
+            <div class="stat-label">متوسط وقت التحليل</div>
+          </div>
+        </div>
+
+        <!-- Insight strip -->
+        <div class="insights-grid">
+          <div class="insight-card">
+            <div class="insight-icon" style="background:var(--cyan-dim); color:var(--cyan)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div class="insight-text">
+              <div class="insight-label">الحالة الأعلى شيوعاً</div>
+              <div class="insight-value">جفاف البشرة</div>
+              <div class="insight-sub">في 64% من العملاء</div>
+            </div>
+          </div>
+          <div class="insight-card">
+            <div class="insight-icon" style="background:var(--gold-dim); color:var(--gold)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+            </div>
+            <div class="insight-text">
+              <div class="insight-label">ذروة الاستخدام</div>
+              <div class="insight-value">10:00 — 12:00</div>
+              <div class="insight-sub">أكثر فترة نشاطاً</div>
+            </div>
+          </div>
+          <div class="insight-card">
+            <div class="insight-icon" style="background:var(--emerald-dim); color:var(--emerald)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <div class="insight-text">
+              <div class="insight-label">أفضل نتيجة اليوم</div>
+              <div class="insight-value">96 / 100</div>
+              <div class="insight-sub">سارة أحمد — بشرة مثالية</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="charts-grid">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">التحليلات اليومية</div>
+                <div class="card-subtitle">آخر 30 يوم</div>
+              </div>
+              <div class="flex gap-2">
+                <button class="btn btn-ghost btn-sm">أسبوع</button>
+                <button class="btn btn-primary btn-sm">شهر</button>
+                <button class="btn btn-ghost btn-sm">سنة</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="chart-wrap" style="height:220px">
+                <canvas id="chartAnalyses"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">توزيع المشكلات</div>
+                <div class="card-subtitle">هذا الشهر</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="chart-wrap" style="height:220px">
+                <canvas id="chartConcerns"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent analyses table -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">آخر التحليلات</div>
+              <div class="card-subtitle">نتائج اليوم</div>
+            </div>
+            <button class="btn btn-ghost btn-sm">عرض الكل</button>
+          </div>
+          <div class="table-wrap">
+            <table id="tableRecent"></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ PANEL: CLIENTS ═══════ -->
+      <div id="panel-clients" class="panel">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <div class="card-title" style="font-size:18px">إدارة العملاء</div>
+            <div class="card-subtitle">247 عميل مسجل</div>
+          </div>
+          <div class="flex gap-2">
+            <div class="header-search" style="width:220px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" placeholder="ابحث بالاسم...">
+            </div>
+            <button class="btn btn-ghost btn-sm">تصفية</button>
+            <button class="btn btn-primary btn-sm">+ عميل جديد</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table id="tableClients"></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ PANEL: ANALYSES ═══════ -->
+      <div id="panel-analyses" class="panel">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <div class="card-title" style="font-size:18px">سجل التحليلات</div>
+            <div class="card-subtitle">كافة نتائج الفحوصات</div>
+          </div>
+          <button class="btn btn-ghost btn-sm">تصدير CSV</button>
+        </div>
+        <div class="stats-grid" style="margin-bottom:20px">
+          <div class="stat-card" style="--stat-color:var(--cyan);--stat-bg:var(--cyan-dim)">
+            <div class="stat-header"><div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div></div>
+            <div class="stat-value">1,842</div><div class="stat-label">إجمالي التحليلات</div>
+          </div>
+          <div class="stat-card" style="--stat-color:var(--emerald);--stat-bg:var(--emerald-dim)">
+            <div class="stat-header"><div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+            <div class="stat-value">98.7%</div><div class="stat-label">معدل النجاح</div>
+          </div>
+          <div class="stat-card" style="--stat-color:var(--gold);--stat-bg:var(--gold-dim)">
+            <div class="stat-header"><div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div>
+            <div class="stat-value">1.3s</div><div class="stat-label">متوسط المدة</div>
+          </div>
+          <div class="stat-card" style="--stat-color:var(--purple);--stat-bg:var(--purple-dim)">
+            <div class="stat-header"><div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div></div>
+            <div class="stat-value">82.4</div><div class="stat-label">متوسط النقاط</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">جميع التحليلات</div>
+            <div class="flex gap-2">
+              <button class="btn btn-ghost btn-sm">اليوم</button>
+              <button class="btn btn-primary btn-sm">الكل</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table id="tableAnalyses"></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ PANEL: REPORTS ═══════ -->
+      <div id="panel-reports" class="panel">
+        <div class="card-title" style="font-size:18px;margin-bottom:20px">تصدير التقارير</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+          <div class="card" style="cursor:pointer" onmouseover="this.style.borderColor='var(--cyan)'" onmouseout="this.style.borderColor='var(--glass-border)'">
+            <div class="card-body" style="text-align:center;padding:32px 20px">
+              <div style="width:56px;height:56px;border-radius:16px;background:var(--cyan-dim);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;border:1px solid var(--cyan-glow)">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div style="font-size:16px;font-weight:700;margin-bottom:6px">تقرير PDF</div>
+              <div class="text-muted text-sm" style="margin-bottom:20px">تقرير مفصل قابل للطباعة</div>
+              <button class="btn btn-primary" style="width:100%">تصدير PDF</button>
+            </div>
+          </div>
+          <div class="card" style="cursor:pointer" onmouseover="this.style.borderColor='var(--emerald)'" onmouseout="this.style.borderColor='var(--glass-border)'">
+            <div class="card-body" style="text-align:center;padding:32px 20px">
+              <div style="width:56px;height:56px;border-radius:16px;background:var(--emerald-dim);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;border:1px solid rgba(16,185,129,0.3)">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+              </div>
+              <div style="font-size:16px;font-weight:700;margin-bottom:6px">ملف Excel</div>
+              <div class="text-muted text-sm" style="margin-bottom:20px">بيانات منظمة قابلة للتحليل</div>
+              <button class="btn" style="width:100%;background:var(--emerald-dim);color:var(--emerald);border-color:rgba(16,185,129,0.3)">تصدير Excel</button>
+            </div>
+          </div>
+          <div class="card" style="cursor:pointer" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--glass-border)'">
+            <div class="card-body" style="text-align:center;padding:32px 20px">
+              <div style="width:56px;height:56px;border-radius:16px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;border:1px solid rgba(245,158,11,0.3)">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.8"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              </div>
+              <div style="font-size:16px;font-weight:700;margin-bottom:6px">JSON / API</div>
+              <div class="text-muted text-sm" style="margin-bottom:20px">بيانات خام للمطورين</div>
+              <button class="btn" style="width:100%;background:var(--gold-dim);color:var(--gold);border-color:rgba(245,158,11,0.3)">تصدير JSON</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ PANEL: SETTINGS ═══════ -->
+      <div id="panel-settings" class="panel">
+        <div class="card-title" style="font-size:18px;margin-bottom:20px">الإعدادات</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card">
+            <div class="card-header"><div class="card-title">إعدادات الجهاز</div></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <div class="flex items-center justify-between">
+                  <div><div style="font-weight:600">رابط API الخادم</div><div class="text-muted text-sm">https://api.derma-ai.com</div></div>
+                  <button class="btn btn-ghost btn-sm">تعديل</button>
+                </div>
+                <div class="divider" style="margin:0"></div>
+                <div class="flex items-center justify-between">
+                  <div><div style="font-weight:600">محرك الذكاء الاصطناعي</div><div class="text-muted text-sm">TFLite Local Engine</div></div>
+                  <span class="badge badge-good">نشط</span>
+                </div>
+                <div class="divider" style="margin:0"></div>
+                <div class="flex items-center justify-between">
+                  <div><div style="font-weight:600">الدقة الكاملة للكاميرا</div><div class="text-muted text-sm">36 ميجابكسل — 8 أطياف</div></div>
+                  <span class="badge badge-cyan">ZMLH02</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">إعدادات التطبيق</div></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <div class="flex items-center justify-between">
+                  <div><div style="font-weight:600">اللغة</div><div class="text-muted text-sm">العربية</div></div>
+                  <button class="btn btn-ghost btn-sm">تغيير</button>
+                </div>
+                <div class="divider" style="margin:0"></div>
+                <div class="flex items-center justify-between">
+                  <div><div style="font-weight:600">حفظ التقارير تلقائياً</div><div class="text-muted text-sm">PDF + قاعدة البيانات</div></div>
+                  <span class="badge badge-good">مفعّل</span>
+                </div>
+                <div class="divider" style="margin:0"></div>
+                <div class="flex items-center justify-between">
+                  <div><div style="font-weight:600">إصدار التطبيق</div><div class="text-muted text-sm">v2.0.0 — Build 2406</div></div>
+                  <span class="badge badge-cyan">محدّث</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content-scroll -->
+  </main>
+</div><!-- /app-shell -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   DERMA AI DASHBOARD — JavaScript
+   ═══════════════════════════════════════════════════════════════ */
+
+// ── Mock data ──
+const mockAnalyses = [
+  { id:'#2406-038', name:'سارة أحمد',   age:28, score:96, status:'ممتاز',   concerns:['ترطيب ممتاز'],                      time:'08:12 م', provider:'TFLite' },
+  { id:'#2406-037', name:'منى الشهري',  age:34, score:74, status:'جيد',     concerns:['جفاف','مسام واسعة'],               time:'07:55 م', provider:'Cloud'  },
+  { id:'#2406-036', name:'ريم المطيري', age:22, score:88, status:'ممتاز',   concerns:['بقع بسيطة'],                       time:'07:40 م', provider:'TFLite' },
+  { id:'#2406-035', name:'هند القحطاني',age:41, score:61, status:'متوسط',   concerns:['تجاعيد','جفاف','UV'],              time:'07:20 م', provider:'Cloud'  },
+  { id:'#2406-034', name:'نورة السلمي', age:29, score:82, status:'جيد',     concerns:['دهنية بسيطة'],                     time:'06:55 م', provider:'TFLite' },
+  { id:'#2406-033', name:'لمياء العتيبي',age:37,score:55, status:'يحتاج عناية',concerns:['التهاب','حساسية','بقع'],        time:'06:30 م', provider:'Cloud'  },
+  { id:'#2406-032', name:'دانا الزهراني',age:25,score:91, status:'ممتاز',   concerns:['ممتازة'],                          time:'06:10 م', provider:'TFLite' },
+];
+
+const mockClients = [
+  { id:'C-001', name:'سارة أحمد',    age:28, lastVisit:'اليوم',       avgScore:92, totalAnalyses:14, type:'مختلطة' },
+  { id:'C-002', name:'منى الشهري',   age:34, lastVisit:'أمس',         avgScore:74, totalAnalyses:8,  type:'جافة'   },
+  { id:'C-003', name:'ريم المطيري',  age:22, lastVisit:'اليوم',       avgScore:88, totalAnalyses:6,  type:'عادية'  },
+  { id:'C-004', name:'هند القحطاني', age:41, lastVisit:'3 أيام',      avgScore:63, totalAnalyses:22, type:'جافة'   },
+  { id:'C-005', name:'نورة السلمي',  age:29, lastVisit:'اليوم',       avgScore:80, totalAnalyses:11, type:'دهنية'  },
+  { id:'C-006', name:'لمياء العتيبي',age:37, lastVisit:'أسبوع',       avgScore:58, totalAnalyses:5,  type:'حساسة'  },
+  { id:'C-007', name:'دانا الزهراني',age:25, lastVisit:'اليوم',       avgScore:91, totalAnalyses:9,  type:'عادية'  },
+  { id:'C-008', name:'أسماء الدوسري',age:32, lastVisit:'3 أيام',      avgScore:77, totalAnalyses:17, type:'مختلطة' },
+];
+
+// ── Badge helpers ──
+function scoreBadge(s) {
+  if(s >= 85) return `<span class="badge badge-good">ممتاز ${s}</span>`;
+  if(s >= 70) return `<span class="badge badge-cyan">جيد ${s}</span>`;
+  if(s >= 55) return `<span class="badge badge-fair">متوسط ${s}</span>`;
+  return `<span class="badge badge-poor">يحتاج عناية ${s}</span>`;
+}
+
+function scoreBar(s) {
+  const c = s>=85?'var(--emerald)':s>=70?'var(--cyan)':s>=55?'var(--gold)':'var(--rose)';
+  return `<div class="score-bar-wrap">
+    <div class="score-bar"><div class="score-bar-fill" style="width:${s}%;background:${c}"></div></div>
+    <span class="score-num">${s}</span>
+  </div>`;
+}
+
+const avatarColors = ['linear-gradient(135deg,#00d4ff,#7c3aed)','linear-gradient(135deg,#f59e0b,#f43f5e)',
+  'linear-gradient(135deg,#10b981,#06b6d4)','linear-gradient(135deg,#7c3aed,#ec4899)',
+  'linear-gradient(135deg,#f97316,#f59e0b)','linear-gradient(135deg,#06b6d4,#10b981)'];
+
+function avatar(name, i) {
+  return `<div class="client-avatar" style="background:${avatarColors[i%6]}">${name[0]}</div>`;
+}
+
+// ── Build tables ──
+function buildRecentTable() {
+  const t = document.getElementById('tableRecent');
+  t.innerHTML = `<thead><tr>
+    <th>رقم التحليل</th><th>العميلة</th><th>النقاط</th>
+    <th>المشكلات</th><th>المحرك</th><th>الوقت</th><th>إجراء</th>
+  </tr></thead>`;
+  const tbody = document.createElement('tbody');
+  mockAnalyses.forEach((a,i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="text-muted" style="font-family:var(--font-en);font-size:12px">${a.id}</span></td>
+      <td><div class="td-name">${avatar(a.name,i)}<span>${a.name}</span></div></td>
+      <td>${scoreBar(a.score)}</td>
+      <td>${a.concerns.map(c=>`<span class="concern-tag">${c}</span>`).join('')}</td>
+      <td><span class="badge ${a.provider==='TFLite'?'badge-cyan':'badge-purple'}">${a.provider}</span></td>
+      <td class="text-muted">${a.time}</td>
+      <td><div class="action-btns">
+        <button class="btn btn-ghost btn-icon btn-sm" title="عرض">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <button class="btn btn-ghost btn-icon btn-sm" title="طباعة">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        </button>
+      </div></td>`;
+    tbody.appendChild(tr);
+  });
+  t.appendChild(tbody);
+}
+
+function buildClientsTable() {
+  const t = document.getElementById('tableClients');
+  t.innerHTML = `<thead><tr>
+    <th>رقم العميل</th><th>الاسم</th><th>العمر</th><th>آخر زيارة</th>
+    <th>متوسط النقاط</th><th>عدد التحليلات</th><th>نوع البشرة</th><th>إجراء</th>
+  </tr></thead>`;
+  const tbody = document.createElement('tbody');
+  mockClients.forEach((c,i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="text-muted" style="font-family:var(--font-en);font-size:12px">${c.id}</span></td>
+      <td><div class="td-name">${avatar(c.name,i)}<strong>${c.name}</strong></div></td>
+      <td>${c.age}</td>
+      <td class="text-muted">${c.lastVisit}</td>
+      <td>${scoreBar(c.avgScore)}</td>
+      <td><span style="font-weight:700;color:var(--cyan);font-family:var(--font-en)">${c.totalAnalyses}</span></td>
+      <td><span class="badge badge-purple">${c.type}</span></td>
+      <td><div class="action-btns">
+        <button class="btn btn-ghost btn-icon btn-sm"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        <button class="btn btn-primary btn-sm" style="font-size:11px">تحليل جديد</button>
+      </div></td>`;
+    tbody.appendChild(tr);
+  });
+  t.appendChild(tbody);
+}
+
+function buildAnalysesTable() {
+  const all = [...mockAnalyses, ...mockAnalyses.slice(0,3).map(a=>({...a, id:'#2406-0'+(Math.random()*30|20), time:'أمس'}))];
+  const t = document.getElementById('tableAnalyses');
+  t.innerHTML = `<thead><tr>
+    <th>رقم التحليل</th><th>العميلة</th><th>النقاط</th><th>المشكلات</th><th>المحرك</th><th>التوقيت</th>
+  </tr></thead>`;
+  const tbody = document.createElement('tbody');
+  all.forEach((a,i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span style="font-family:var(--font-en);font-size:12px;color:var(--text-3)">${a.id}</span></td>
+      <td><div class="td-name">${avatar(a.name,i)}<span>${a.name}</span></div></td>
+      <td>${scoreBadge(a.score)}</td>
+      <td>${a.concerns.map(c=>`<span class="concern-tag">${c}</span>`).join('')}</td>
+      <td><span class="badge ${a.provider==='TFLite'?'badge-cyan':'badge-purple'}">${a.provider}</span></td>
+      <td class="text-muted">${a.time}</td>`;
+    tbody.appendChild(tr);
+  });
+  t.appendChild(tbody);
+}
+
+// ── Charts ──
+function buildCharts() {
+  const days = Array.from({length:30},(_,i)=>{
+    const d=new Date(); d.setDate(d.getDate()-29+i);
+    return d.toLocaleDateString('ar-SA',{day:'numeric',month:'short'});
+  });
+  const values = Array.from({length:30},()=>Math.floor(Math.random()*45+10));
+
+  const lineCtx = document.getElementById('chartAnalyses').getContext('2d');
+  new Chart(lineCtx, {
+    type: 'line',
+    data: {
+      labels: days,
+      datasets: [{
+        label: 'عدد التحليلات',
+        data: values,
+        borderColor: '#00d4ff',
+        backgroundColor: 'rgba(0,212,255,0.08)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 3,
+        pointHoverRadius: 6,
+        pointBackgroundColor: '#00d4ff',
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor:'#0d1b3e', borderColor:'rgba(255,255,255,0.1)',
+        borderWidth:1, titleColor:'#fff', bodyColor:'#94a3b8',
+        padding:10, cornerRadius:10,
+      }},
+      scales: {
+        x: { grid:{ color:'rgba(255,255,255,0.04)' }, ticks:{ color:'#475569', font:{size:10}, maxRotation:0, maxTicksLimit:8 } },
+        y: { grid:{ color:'rgba(255,255,255,0.04)' }, ticks:{ color:'#475569', font:{size:11} }, beginAtZero:true }
+      }
+    }
+  });
+
+  const pieCtx = document.getElementById('chartConcerns').getContext('2d');
+  new Chart(pieCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['جفاف','مسام واسعة','بقع داكنة','تجاعيد','حساسية','دهنية'],
+      datasets: [{
+        data: [64, 38, 27, 21, 15, 18],
+        backgroundColor: ['#00d4ff','#7c3aed','#f59e0b','#f43f5e','#f97316','#10b981'],
+        borderColor: '#0d1b3e',
+        borderWidth: 3,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: {
+        legend: {
+          position:'bottom',
+          labels: { color:'#94a3b8', padding:12, font:{size:11}, boxWidth:12, borderRadius:4 }
+        },
+        tooltip: {
+          backgroundColor:'#0d1b3e', borderColor:'rgba(255,255,255,0.1)',
+          borderWidth:1, titleColor:'#fff', bodyColor:'#94a3b8', padding:10, cornerRadius:10,
+        }
+      }
+    }
+  });
+}
+
+// ── Panel switching ──
+function showPanel(id, el) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  if(el) el.classList.add('active');
+
+  const titles = {
+    dashboard:['لوحة التحكم','نظرة عامة على الأداء'],
+    clients:['إدارة العملاء','كافة العملاء المسجلين'],
+    analyses:['سجل التحليلات','نتائج جميع الفحوصات'],
+    reports:['التقارير','تصدير البيانات'],
+    settings:['الإعدادات','إعدادات النظام والجهاز'],
+  };
+  document.getElementById('headerTitle').textContent = titles[id][0];
+  document.getElementById('headerSub').textContent = titles[id][1];
+}
+
+// ── Init ──
+document.addEventListener('DOMContentLoaded', () => {
+  buildRecentTable();
+  buildClientsTable();
+  buildAnalysesTable();
+  buildCharts();
+
+  // Live clock
+  const sub = document.getElementById('headerSub');
+  setInterval(() => {
+    const now = new Date();
+    sub.textContent = now.toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})
+      + ' — ' + now.toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'});
+  }, 1000);
+
+  // Animate stat values
+  document.querySelectorAll('.stat-value').forEach(el=>{
+    const target = parseFloat(el.textContent);
+    if(isNaN(target)) return;
+    let start = 0, step = target/40;
+    const isDecimal = el.textContent.includes('.');
+    const suffix = el.textContent.replace(/[\d.]/g,'');
+    const timer = setInterval(()=>{
+      start = Math.min(start+step, target);
+      el.textContent = (isDecimal ? start.toFixed(1) : Math.floor(start)) + suffix;
+      if(start>=target) clearInterval(timer);
+    }, 30);
+  });
+});
+</script>
+</body>
+</html>

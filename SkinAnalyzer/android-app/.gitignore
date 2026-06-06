@@ -1,24 +1,41 @@
+# Built application files
+*.apk
+*.ap_
+*.aab
 
-# Keystore
-release.keystore
+# Files for the ART/Dalvik VM
+*.dex
 
-# Gradle build artifacts
+# Java class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+
+# Gradle files
 .gradle/
 build/
+
+# Local configuration file
 local.properties
-*.iml
 
-# IDE
+# Android Studio
+*.iml
 .idea/
-*.iml
+.navigation/
+captures/
 
-# OS
+# Keystore files
+*.jks
+*.keystore
+
+# OS files
 .DS_Store
 Thumbs.db
 
-# APK outputs
-*.apk
-*.aab
-
-# Debug
-app/src/main/java/com/jenincare/skinanalyzer/ui/home/error.txt
+# Planning docs
+implementation_plan.md
+read.md
+roadmap.md
