@@ -42,8 +42,8 @@
 *.zip
 *.rar
 
-# SkinAnalyzer Android app (source runs directly on device, not via GitHub)
-/SkinAnalyzer/android-app/
+# SkinAnalyzer Android app source code (tracked for version control)
+# /SkinAnalyzer/android-app/
 
 # IDE
 .idea/

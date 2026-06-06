@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\Api\ScanManagementController;
 use App\Http\Controllers\Admin\Api\UserController as AdminUserController;
 use App\Http\Controllers\Admin\Api\WhiteLabelController;
 use App\Http\Controllers\Admin\Api\PromptController;
+use App\Http\Controllers\Admin\Api\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\Api\SettingsController;
 use App\Http\Controllers\Api\ReportExportController;
 use App\Http\Controllers\Api\SpinCodeController;
@@ -178,6 +179,14 @@ Route::prefix('admin')->group(function () {
         Route::get('/spin-codes', [SpinCodeController::class, 'index']);
         Route::post('/spin-codes/generate', [SpinCodeController::class, 'generate']);
         Route::get('/spin-codes/{id}', [SpinCodeController::class, 'show']);
+
+        Route::get('/products', [AdminProductController::class, 'index']);
+        Route::get('/products/recommendation-rules', [AdminProductController::class, 'recommendationRules']);
+        Route::put('/products/recommendation-rules', [AdminProductController::class, 'updateRecommendationRules']);
+        Route::post('/products', [AdminProductController::class, 'store']);
+        Route::get('/products/{id}', [AdminProductController::class, 'show']);
+        Route::put('/products/{id}', [AdminProductController::class, 'update']);
+        Route::delete('/products/{id}', [AdminProductController::class, 'destroy']);
     });
 });
 

@@ -1,0 +1,24 @@
+
+# Keystore
+release.keystore
+
+# Gradle build artifacts
+.gradle/
+build/
+local.properties
+*.iml
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# APK outputs
+*.apk
+*.aab
+
+# Debug
+app/src/main/java/com/jenincare/skinanalyzer/ui/home/error.txt

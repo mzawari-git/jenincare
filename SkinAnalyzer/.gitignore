@@ -28,7 +28,7 @@ assets/
 IMAGE/
 
 # Android app (entire source - run directly on device, not via GitHub)
-android-app/
+# android-app/
 
 # Admin panel builds and deps
 admin-panel/node_modules/
