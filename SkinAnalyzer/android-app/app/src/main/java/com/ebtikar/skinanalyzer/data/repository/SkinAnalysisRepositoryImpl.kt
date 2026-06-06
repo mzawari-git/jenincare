@@ -12,6 +12,7 @@ import com.ebtikar.skinanalyzer.model.AnalysisState
 import com.ebtikar.skinanalyzer.model.MetricSeverity
 import com.ebtikar.skinanalyzer.model.SkinAnalysisReport
 import com.ebtikar.skinanalyzer.model.SkinMetric
+import com.ebtikar.skinanalyzer.model.SkinProfile
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -78,11 +79,21 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                             details = "No data"
                         )
                     }
+                    val metricsMap = metrics.associateBy { it.type }
+                    val expertTips = mockEngine.generateExpertTips(metricsMap)
+                    val products = mockEngine.generateProductRecommendations(metricsMap)
+                    val skinProfile = mockEngine.generateSkinProfile(metricsMap)
                     SkinAnalysisReport(
                         providerName = analysisResult.providerName,
                         overallScore = metrics.map { it.score }.average().toFloat(),
                         metrics = metrics,
-                        executionTimeMs = analysisResult.executionTimeMs
+                        executionTimeMs = analysisResult.executionTimeMs,
+                        aiAnalysisTextAr = generateAIAnalysisText(metrics, skinProfile),
+                        expertTipsAr = expertTips,
+                        productRecommendations = products,
+                        skinProfile = skinProfile,
+                        confidence = analysisResult.confidence,
+                        scanId = analysisResult.scanId ?: ""
                     )
                 } else {
                     return Result.failure(RuntimeException(analysisResult.warnings.joinToString()))
@@ -97,11 +108,20 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                         details = "No data"
                     )
                 }
+                val metricsMap = metrics.associateBy { it.type }
+                val expertTips = mockEngine.generateExpertTips(metricsMap)
+                val products = mockEngine.generateProductRecommendations(metricsMap)
+                val skinProfile = mockEngine.generateSkinProfile(metricsMap)
                 SkinAnalysisReport(
                     providerName = mockResult.providerName,
                     overallScore = metrics.map { it.score }.average().toFloat(),
                     metrics = metrics,
-                    executionTimeMs = mockResult.executionTimeMs
+                    executionTimeMs = mockResult.executionTimeMs,
+                    aiAnalysisTextAr = generateAIAnalysisText(metrics, skinProfile),
+                    expertTipsAr = expertTips,
+                    productRecommendations = products,
+                    skinProfile = skinProfile,
+                    confidence = mockResult.confidence
                 )
             }
 
@@ -112,11 +132,69 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
         }
     }
 
+    private fun generateAIAnalysisText(metrics: List<SkinMetric>, profile: SkinProfile): String {
+        val score = metrics.map { it.score }.average().toFloat()
+        val excellent = metrics.count { it.severity == MetricSeverity.EXCELLENT || it.severity == MetricSeverity.GOOD }
+        val needsAttention = metrics.count { it.severity == MetricSeverity.POOR || it.severity == MetricSeverity.CRITICAL }
+        val topConcern = metrics.minByOrNull { it.score }
+
+        val sb = StringBuilder()
+        sb.append("تحليل شامل للبشرة — ")
+        sb.append("نوع البشرة: ${profile.skinTypeAr}")
+        if (profile.ageEstimate > 0) sb.append("، العمر التقديري: ${profile.ageEstimate} سنة")
+        sb.append("。\n\n")
+
+        sb.append("النتيجة الإجمالية: ${"%.1f".format(score)}/100 — ")
+        sb.append(when {
+            score >= 85f -> "حالة البشرة ممتازة بشكل عام"
+            score >= 70f -> "حالة البشرة جيدة مع بعض المؤشرات التي تحتاج متابعة"
+            score >= 55f -> "حالة البشرة متوسطة — هناك مجالات للتحسين"
+            else -> "البشرة تحتاج عناية مركزة في عدة مؤشرات"
+        })
+        sb.append("。\n\n")
+
+        sb.append("المؤشرات الإيجابية: $excellent من ${metrics.size} مؤشر في الحالة الجيدة أو الممتازة")
+        if (needsAttention > 0) {
+            sb.append("。\n")
+            sb.append("المؤشرات التي تحتاج اهتمام: $needsAttention مؤشر")
+            topConcern?.let {
+                sb.append("، أكثرها إلحاحاً: ${getArabicName(it.type)}")
+            }
+        }
+
+        if (profile.primaryConcernsAr.isNotEmpty()) {
+            sb.append("。\n\n")
+            sb.append("أبرز المخاوف: ${profile.primaryConcernsAr.joinToString("، ")}")
+        }
+
+        return sb.toString()
+    }
+
+    private fun getArabicName(type: SkinMetric.Type): String = when (type) {
+        SkinMetric.Type.MOISTURE -> "الرطوبة"
+        SkinMetric.Type.PORES -> "المسام"
+        SkinMetric.Type.SEBUM -> "الدهنية"
+        SkinMetric.Type.WRINKLES -> "التجاعيد"
+        SkinMetric.Type.TEXTURE -> "الملمس"
+        SkinMetric.Type.UV_SPOTS -> "البقع الضوئية"
+        SkinMetric.Type.VASCULAR -> "الأوعية الدموية"
+        SkinMetric.Type.PIGMENTATION -> "التصبغ"
+        SkinMetric.Type.DARK_CIRCLES -> "الهالات الداكنة"
+        SkinMetric.Type.BLACKHEADS -> "الرؤوس السوداء"
+        SkinMetric.Type.ACNE -> "حب الشباب"
+        SkinMetric.Type.COLLAGEN -> "الكولاجين"
+        SkinMetric.Type.SKIN_TONE -> "لون البشرة"
+        SkinMetric.Type.SENSITIVITY -> "الحساسية"
+    }
+
     override suspend fun saveReport(report: SkinAnalysisReport): Result<String> {
         return try {
             _analysisState.value = AnalysisState.Saving
 
             val metricsJson = json.encodeToString(report.metrics)
+            val tipsJson = json.encodeToString(report.expertTipsAr)
+            val productsJson = json.encodeToString(report.productRecommendations)
+            val profileJson = json.encodeToString(report.skinProfile)
 
             val entity = SkinReportEntity(
                 id = report.id,
@@ -126,7 +204,13 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                 executionTimeMs = report.executionTimeMs,
                 metricsJson = metricsJson,
                 deviceModel = report.deviceModel,
-                notes = report.notes
+                notes = report.notes,
+                aiAnalysisText = report.aiAnalysisTextAr,
+                expertTipsJson = tipsJson,
+                productsJson = productsJson,
+                skinProfileJson = profileJson,
+                confidence = report.confidence,
+                scanId = report.scanId
             )
 
             reportDao.insertReport(entity)

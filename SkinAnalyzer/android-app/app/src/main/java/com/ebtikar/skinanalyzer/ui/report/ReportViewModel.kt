@@ -7,7 +7,9 @@ import com.ebtikar.skinanalyzer.data.local.SkinReportEntity
 import com.ebtikar.skinanalyzer.data.repository.SkinAnalysisRepository
 import com.ebtikar.skinanalyzer.hardware.LightSpectrum
 import com.ebtikar.skinanalyzer.model.MetricSeverity
+import com.ebtikar.skinanalyzer.model.ProductRecommendation
 import com.ebtikar.skinanalyzer.model.SkinMetric
+import com.ebtikar.skinanalyzer.model.SkinProfile
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import timber.log.Timber
 import java.io.File
@@ -49,6 +52,36 @@ class ReportViewModel @Inject constructor(
     private val _capturedImages = MutableStateFlow<Map<LightSpectrum, File>>(emptyMap())
     val capturedImages: StateFlow<Map<LightSpectrum, File>> = _capturedImages.asStateFlow()
 
+    private val _aiAnalysisText = MutableStateFlow("")
+    val aiAnalysisText: StateFlow<String> = _aiAnalysisText.asStateFlow()
+
+    private val _expertTips = MutableStateFlow<List<String>>(emptyList())
+    val expertTips: StateFlow<List<String>> = _expertTips.asStateFlow()
+
+    private val _productRecommendations = MutableStateFlow<List<ProductRecommendation>>(emptyList())
+    val productRecommendations: StateFlow<List<ProductRecommendation>> = _productRecommendations.asStateFlow()
+
+    private val _skinProfile = MutableStateFlow(SkinProfile())
+    val skinProfile: StateFlow<SkinProfile> = _skinProfile.asStateFlow()
+
+    private val _confidence = MutableStateFlow(0.85f)
+    val confidence: StateFlow<Float> = _confidence.asStateFlow()
+
+    private val _radarValues = MutableStateFlow<List<Float>>(emptyList())
+    val radarValues: StateFlow<List<Float>> = _radarValues.asStateFlow()
+
+    private val _radarLabels = MutableStateFlow<List<String>>(emptyList())
+    val radarLabels: StateFlow<List<String>> = _radarLabels.asStateFlow()
+
+    private val _topConcerns = MutableStateFlow<List<SkinMetric>>(emptyList())
+    val topConcerns: StateFlow<List<SkinMetric>> = _topConcerns.asStateFlow()
+
+    private val _excellentMetrics = MutableStateFlow<List<SkinMetric>>(emptyList())
+    val excellentMetrics: StateFlow<List<SkinMetric>> = _excellentMetrics.asStateFlow()
+
+    private val _needsAttentionMetrics = MutableStateFlow<List<SkinMetric>>(emptyList())
+    val needsAttentionMetrics: StateFlow<List<SkinMetric>> = _needsAttentionMetrics.asStateFlow()
+
     private var currentReportId: String? = null
 
     fun loadReport(reportId: String) {
@@ -68,6 +101,8 @@ class ReportViewModel @Inject constructor(
                 val sampleMetrics = generateSampleMetrics()
                 _metrics.value = sampleMetrics
                 _overallScore.value = sampleMetrics.map { it.score }.average().toFloat()
+                _aiAnalysisText.value = "هذا تقرير تجريبي — يرجى إجراء تحليل حقيقي للحصول على نتائج دقيقة"
+                _expertTips.value = listOf("حافظي على روتين يومي ثابت", "اشربي كمية كافية من الماء", "استخدمي واقي شمس يومياً")
             }
         }
     }
@@ -78,13 +113,44 @@ class ReportViewModel @Inject constructor(
         _providerName.value = entity.providerName
         _analysisTime.value = entity.executionTimeMs
         _overallScore.value = entity.overallScore
+        _aiAnalysisText.value = entity.aiAnalysisText
+        _confidence.value = entity.confidence
 
         try {
-            val serializer = ListSerializer(SkinMetric.serializer())
-            _metrics.value = json.decodeFromString(serializer, entity.metricsJson)
+            val metricSerializer = ListSerializer(SkinMetric.serializer())
+            val metricsList = json.decodeFromString(metricSerializer, entity.metricsJson)
+            _metrics.value = metricsList
+
+            val metricsMap = metricsList.associateBy { it.type }
+            _radarValues.value = metricsList.map { it.score }
+            _radarLabels.value = metricsList.map { getArabicName(it.type) }
+            _topConcerns.value = metricsList.sortedBy { it.score }.take(3)
+            _excellentMetrics.value = metricsList.filter { it.severity == MetricSeverity.EXCELLENT || it.severity == MetricSeverity.GOOD }
+            _needsAttentionMetrics.value = metricsList.filter { it.severity == MetricSeverity.POOR || it.severity == MetricSeverity.CRITICAL }
         } catch (e: Exception) {
             Timber.e(e, "Failed to parse metrics JSON")
-            _metrics.value = generateSampleMetrics()
+            val sampleMetrics = generateSampleMetrics()
+            _metrics.value = sampleMetrics
+        }
+
+        try {
+            val tipsSerializer = ListSerializer(String.serializer())
+            _expertTips.value = json.decodeFromString(tipsSerializer, entity.expertTipsJson)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to parse tips JSON")
+        }
+
+        try {
+            val productsSerializer = ListSerializer(ProductRecommendation.serializer())
+            _productRecommendations.value = json.decodeFromString(productsSerializer, entity.productsJson)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to parse products JSON")
+        }
+
+        try {
+            _skinProfile.value = json.decodeFromString(SkinProfile.serializer(), entity.skinProfileJson)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to parse skin profile JSON")
         }
     }
 
@@ -102,8 +168,26 @@ class ReportViewModel @Inject constructor(
                 type = type,
                 score = (50..95).random().toFloat(),
                 severity = MetricSeverity.GOOD,
-                details = "Sample analysis data"
+                details = "Sample analysis data",
+                recommendations = listOf("حافظي على روتينك الحالي")
             )
         }
+    }
+
+    private fun getArabicName(type: SkinMetric.Type): String = when (type) {
+        SkinMetric.Type.MOISTURE -> "الرطوبة"
+        SkinMetric.Type.PORES -> "المسام"
+        SkinMetric.Type.SEBUM -> "الدهنية"
+        SkinMetric.Type.WRINKLES -> "التجاعيد"
+        SkinMetric.Type.TEXTURE -> "الملمس"
+        SkinMetric.Type.UV_SPOTS -> "البقع"
+        SkinMetric.Type.VASCULAR -> "الأوعية"
+        SkinMetric.Type.PIGMENTATION -> "التصبغ"
+        SkinMetric.Type.DARK_CIRCLES -> "الهالات"
+        SkinMetric.Type.BLACKHEADS -> "الرؤوس"
+        SkinMetric.Type.ACNE -> "الحب"
+        SkinMetric.Type.COLLAGEN -> "الكولاجين"
+        SkinMetric.Type.SKIN_TONE -> "اللون"
+        SkinMetric.Type.SENSITIVITY -> "الحساسية"
     }
 }

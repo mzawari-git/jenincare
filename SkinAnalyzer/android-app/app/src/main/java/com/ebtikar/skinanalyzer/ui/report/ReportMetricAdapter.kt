@@ -4,6 +4,7 @@ import android.animation.ValueAnimator
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
 import androidx.core.content.ContextCompat
@@ -13,12 +14,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.ebtikar.skinanalyzer.R
 import com.ebtikar.skinanalyzer.databinding.ItemMetricCardBinding
 import com.ebtikar.skinanalyzer.model.MetricSeverity
+import com.ebtikar.skinanalyzer.model.MetricTrend
 import com.ebtikar.skinanalyzer.model.SkinMetric
 
-/**
- * ReportMetricAdapter — Premium metric cards with animated progress, color-coded icons
- * and Arabic labels for Derma AI report screen.
- */
 class ReportMetricAdapter : ListAdapter<SkinMetric, ReportMetricAdapter.MetricViewHolder>(MetricDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MetricViewHolder {
@@ -32,33 +30,45 @@ class ReportMetricAdapter : ListAdapter<SkinMetric, ReportMetricAdapter.MetricVi
         holder.bind(getItem(position))
     }
 
-    // ─────────────────────────────────────
     class MetricViewHolder(
         private val binding: ItemMetricCardBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(metric: SkinMetric) {
-            val ctx = binding.root.context
-
-            // ── Name (Arabic) ──
             binding.tvMetricName.text = metric.type.arabicName()
 
-            // ── Icon ──
             val iconRes = metric.type.iconRes()
             binding.ivMetricIcon.setImageResource(iconRes)
 
-            // ── Score value ──
             binding.tvMetricValue.text = "%.0f".format(metric.score)
 
-            // ── Progress bar with animation ──
+            binding.tvMetricDetail.text = metric.details
+            binding.tvMetricDetail.visibility = if (metric.details.isNotEmpty()) View.VISIBLE else View.GONE
+
+            binding.tvConfidence.text = "${(metric.confidence * 100).toInt()}%"
+
+            if (metric.trendDelta != null) {
+                val delta = metric.trendDelta!!
+                val sign = if (delta >= 0) "+" else ""
+                binding.tvTrend.text = "${sign}${"%.0f".format(delta)}"
+                binding.tvTrend.visibility = View.VISIBLE
+                val trendColor = when (metric.trend) {
+                    MetricTrend.IMPROVING -> "#FF10B981"
+                    MetricTrend.DECLINING -> "#FFF43F5E"
+                    MetricTrend.STABLE -> "#FF94A3B8"
+                }
+                binding.tvTrend.setTextColor(Color.parseColor(trendColor))
+            } else {
+                binding.tvTrend.visibility = View.GONE
+            }
+
             binding.progressMetric.max = 100
-            binding.progressMetric.progress = 0  // start at 0 for animation
+            binding.progressMetric.progress = 0
 
             val scoreColor = metric.severity.colorHex()
             val colorInt = Color.parseColor(scoreColor)
             binding.progressMetric.setIndicatorColor(colorInt)
 
-            // Animate progress bar from 0 → score
             ValueAnimator.ofInt(0, metric.score.toInt()).apply {
                 duration = 800L
                 startDelay = adapterPosition * 60L
@@ -69,23 +79,30 @@ class ReportMetricAdapter : ListAdapter<SkinMetric, ReportMetricAdapter.MetricVi
                 start()
             }
 
-            // ── Icon container background color ──
             val iconBgColor = Color.parseColor(metric.type.iconBgHex())
             binding.cardMetricIcon.setCardBackgroundColor(iconBgColor)
             binding.ivMetricIcon.imageTintList = ColorStateList.valueOf(
                 Color.parseColor(metric.type.iconTintHex())
             )
 
-            // ── Status badge ──
             val (statusText, statusBg, statusText2) = metric.severity.statusInfo()
             binding.tvMetricStatus.text = statusText
             binding.tvMetricStatus.setTextColor(Color.parseColor(statusText2))
             binding.tvMetricStatus.setBackgroundResource(statusBg)
-        }
 
-        // ─────────────────────────────────
-        // Extension helpers
-        // ─────────────────────────────────
+            if (metric.recommendations.isNotEmpty()) {
+                binding.containerRecommendations.visibility = View.VISIBLE
+                binding.tvRecommendation1.text = "• ${metric.recommendations[0]}"
+                if (metric.recommendations.size > 1) {
+                    binding.tvRecommendation2.text = "• ${metric.recommendations[1]}"
+                    binding.tvRecommendation2.visibility = View.VISIBLE
+                } else {
+                    binding.tvRecommendation2.visibility = View.GONE
+                }
+            } else {
+                binding.containerRecommendations.visibility = View.GONE
+            }
+        }
 
         private fun SkinMetric.Type.arabicName(): String = when (this) {
             SkinMetric.Type.MOISTURE      -> "الرطوبة"
@@ -163,7 +180,6 @@ class ReportMetricAdapter : ListAdapter<SkinMetric, ReportMetricAdapter.MetricVi
             MetricSeverity.CRITICAL  -> "#FFF43F5E"
         }
 
-        /** Returns Triple(labelText, backgroundDrawableRes, textColorHex) */
         private fun MetricSeverity.statusInfo(): Triple<String, Int, String> = when (this) {
             MetricSeverity.EXCELLENT -> Triple("ممتاز",   R.drawable.bg_chip_green,  "#FF10B981")
             MetricSeverity.GOOD      -> Triple("جيد",     R.drawable.bg_chip_green,  "#FF34D399")
@@ -173,7 +189,6 @@ class ReportMetricAdapter : ListAdapter<SkinMetric, ReportMetricAdapter.MetricVi
         }
     }
 
-    // ─────────────────────────────────────
     class MetricDiffCallback : DiffUtil.ItemCallback<SkinMetric>() {
         override fun areItemsTheSame(oldItem: SkinMetric, newItem: SkinMetric) =
             oldItem.type == newItem.type

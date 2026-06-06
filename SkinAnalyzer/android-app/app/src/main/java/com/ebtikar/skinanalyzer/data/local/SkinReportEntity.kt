@@ -14,5 +14,11 @@ data class SkinReportEntity(
     val metricsJson: String,
     val capturedImagesJson: String = "[]",
     val deviceModel: String = "ZMLH02",
-    val notes: String = ""
+    val notes: String = "",
+    val aiAnalysisText: String = "",
+    val expertTipsJson: String = "[]",
+    val productsJson: String = "[]",
+    val skinProfileJson: String = "{}",
+    val confidence: Float = 0.85f,
+    val scanId: String = ""
 )

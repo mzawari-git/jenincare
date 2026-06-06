@@ -39,3 +39,6 @@ Thumbs.db
 implementation_plan.md
 read.md
 roadmap.md
+
+# Kotlin build artifacts
+.kotlin/

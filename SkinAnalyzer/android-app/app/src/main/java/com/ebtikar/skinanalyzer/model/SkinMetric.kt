@@ -18,6 +18,12 @@ enum class MetricSeverity {
     CRITICAL
 }
 
+enum class MetricTrend {
+    IMPROVING,
+    STABLE,
+    DECLINING
+}
+
 @Serializable
 data class SkinMetric(
     val type: Type,
@@ -25,8 +31,17 @@ data class SkinMetric(
     val severity: MetricSeverity,
     val zone: SkinZone = SkinZone.FULL_FACE,
     val details: String = "",
-    val recommendations: List<String> = emptyList()
+    val recommendations: List<String> = emptyList(),
+    val trend: MetricTrend = MetricTrend.STABLE,
+    val previousScore: Float? = null,
+    val confidence: Float = 0.85f
 ) {
+    val trendDelta: Float?
+        get() = previousScore?.let { score - it }
+
+    val isImproved: Boolean
+        get() = (trendDelta ?: 0f) > 0f
+
     @Serializable
     enum class Type {
         MOISTURE,
@@ -50,3 +65,30 @@ data class SkinMetric(
         const val TOTAL_METRICS = 14
     }
 }
+
+@Serializable
+data class ProductRecommendation(
+    val id: String = "",
+    val name: String,
+    val nameAr: String = "",
+    val brand: String = "",
+    val category: String = "",
+    val price: Float = 0f,
+    val currency: String = "SAR",
+    val imageUrl: String = "",
+    val matchScore: Float = 0f,
+    val reason: String = "",
+    val reasonAr: String = ""
+)
+
+@Serializable
+data class SkinProfile(
+    val skinType: String = "mixed",
+    val skinTypeAr: String = "مختلطة",
+    val fitzpatrickLevel: Int = 3,
+    val hydrationLevel: String = "moderate",
+    val sensitivityLevel: String = "low",
+    val ageEstimate: Int = 0,
+    val primaryConcerns: List<String> = emptyList(),
+    val primaryConcernsAr: List<String> = emptyList()
+)
