@@ -30,6 +30,11 @@ use App\Services\Sanitization\LLMFilter;
 use App\Services\Sanitization\PolicyChecker;
 use App\Services\Sanitization\ValueFilter;
 use App\Services\Sanitization\JunkFilter;
+use App\Services\AdSpendMonitorService;
+use App\Services\AdAutoPauseService;
+use App\Services\AlertNotifier;
+use App\Services\TrafficQualityService;
+use App\Services\MetaReportingService;
 use Modules\AICompliance\Services\ContentModerationService;
 
 class AppServiceProvider extends ServiceProvider
@@ -128,6 +133,34 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(MultiPixelService::class, function ($app) {
             return new MultiPixelService();
+        });
+
+        $this->app->singleton(MetaReportingService::class, function ($app) {
+            return new MetaReportingService();
+        });
+
+        $this->app->singleton(AlertNotifier::class, function ($app) {
+            return new AlertNotifier();
+        });
+
+        $this->app->singleton(TrafficQualityService::class, function ($app) {
+            return new TrafficQualityService();
+        });
+
+        $this->app->singleton(AdSpendMonitorService::class, function ($app) {
+            return new AdSpendMonitorService(
+                $app->make(\App\Services\Meta\FacebookGraphService::class),
+                $app->make(MetaReportingService::class),
+                $app->make(AdAccountHealthService::class),
+            );
+        });
+
+        $this->app->singleton(AdAutoPauseService::class, function ($app) {
+            return new AdAutoPauseService(
+                $app->make(\App\Services\Meta\FacebookGraphService::class),
+                $app->make(AdAccountHealthService::class),
+                $app->make(AlertNotifier::class),
+            );
         });
 
         $this->app->singleton(SanitizationPipeline::class, function ($app) {

@@ -30,12 +30,25 @@ use Modules\CustomAdmin\Http\Controllers\MetaLeadHubController;
 use App\Http\Controllers\Admin\AffiliateController as AdminAffiliateController;
 use App\Http\Controllers\Admin\BlogController as AdminBlogController;
 use App\Http\Controllers\Admin\PosController;
+use App\Http\Controllers\Admin\CapiDiagnosticsController;
+use App\Http\Controllers\Admin\AdAlertController;
+use App\Http\Controllers\Admin\AiCreativeController;
+use App\Http\Controllers\Admin\AudienceController;
+use App\Http\Controllers\Admin\MetaToolsController;
+use App\Http\Controllers\Admin\MetaProToolsController;
+use App\Http\Controllers\Admin\MetaAdvancedController;
+use App\Http\Controllers\Admin\GoogleAdsController;
+use App\Http\Controllers\Admin\SocialAuthController;
 
 Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
 
     Route::get('/', function () {
         return redirect()->route('admin.pos.index');
     })->name('admin.dashboard');
+
+    // ============================================================
+    // Marketing Dashboard
+    // ============================================================
     Route::get('/meta-marketing', [MarketingTrackingController::class, 'metaMarketingDashboard'])->name('admin.meta-marketing.index');
     Route::post('/meta-marketing/import-page', [MarketingTrackingController::class, 'importPage'])->name('admin.meta-marketing.import-page');
     Route::post('/meta-marketing/search-page', [MarketingTrackingController::class, 'searchPage'])->name('admin.meta-marketing.search-page');
@@ -46,24 +59,69 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/meta-marketing/audiences', [MarketingTrackingController::class, 'audiences'])->name('admin.meta-marketing.audiences');
     Route::get('/meta-marketing/webhooks', [MarketingTrackingController::class, 'webhookLogs'])->name('admin.meta-marketing.webhooks');
     Route::get('/meta-marketing/stats', [MarketingTrackingController::class, 'dashboardStats'])->name('admin.meta-marketing.stats');
+    Route::get('/meta-marketing/diagnostics', [CapiDiagnosticsController::class, 'index'])->name('admin.diagnostics.index');
+    Route::get('/meta-marketing/diagnostics/data', [CapiDiagnosticsController::class, 'data'])->name('admin.diagnostics.data');
     Route::delete('/meta-marketing/pages/{id}', [MarketingTrackingController::class, 'deletePage'])->name('admin.meta-marketing.delete-page');
 
+    // Meta Hub - Unified dashboard for all Meta tools
+    Route::get('/meta-hub', function () {
+        return view('admin.meta-hub');
+    })->name('admin.meta-hub.index');
+
+    // ============================================================
     // Ads Management
+    // ============================================================
     Route::get('/ads', [MetaAdsController::class, 'dashboard'])->name('admin.ads.dashboard');
     Route::post('/ads/accounts/connect', [MetaAdsController::class, 'connectAccount'])->name('admin.ads.connect-account');
     Route::delete('/ads/accounts/{id}', [MetaAdsController::class, 'deleteAdAccount'])->name('admin.ads.delete-account');
+
+    // Campaigns
     Route::post('/ads/campaigns', [MetaAdsController::class, 'createCampaign'])->name('admin.ads.create-campaign');
+    Route::put('/ads/campaigns/{id}', [MetaAdsController::class, 'updateCampaign'])->name('admin.ads.update-campaign');
     Route::post('/ads/campaigns/{id}/toggle', [MetaAdsController::class, 'toggleCampaign'])->name('admin.ads.toggle-campaign');
     Route::delete('/ads/campaigns/{id}', [MetaAdsController::class, 'deleteCampaign'])->name('admin.ads.delete-campaign');
-    Route::post('/ads/campaigns/{id}/insights', [MetaAdsController::class, 'getInsights'])->name('admin.ads.insights');
+    Route::post('/ads/campaigns/{id}/insights', [MetaAdsController::class, 'getCampaignInsights'])->name('admin.ads.campaign-insights');
+    Route::get('/ads/campaigns/{id}/adsets', [MetaAdsController::class, 'getCampaignAdSets'])->name('admin.ads.campaign-adsets');
+    Route::post('/ads/campaigns/{id}/duplicate', [MetaAdsController::class, 'duplicateCampaign'])->name('admin.ads.duplicate-campaign');
+
+    // Ad Sets
     Route::post('/ads/adsets', [MetaAdsController::class, 'createAdSet'])->name('admin.ads.create-adset');
+    Route::put('/ads/adsets/{id}', [MetaAdsController::class, 'updateAdSet'])->name('admin.ads.update-adset');
     Route::post('/ads/adsets/{id}/toggle', [MetaAdsController::class, 'toggleAdSet'])->name('admin.ads.toggle-adset');
+    Route::get('/ads/adsets/{id}/ads', [MetaAdsController::class, 'getAdSetAds'])->name('admin.ads.adset-ads');
+    Route::post('/ads/adsets/{id}/insights', [MetaAdsController::class, 'getAdSetInsights'])->name('admin.ads.adset-insights');
+
+    // Creatives
     Route::post('/ads/creatives', [MetaAdsController::class, 'uploadCreative'])->name('admin.ads.upload-creative');
     Route::post('/ads/creatives/save', [MetaAdsController::class, 'saveCreative'])->name('admin.ads.save-creative');
+    Route::put('/ads/creatives/{id}', [MetaAdsController::class, 'updateCreative'])->name('admin.ads.update-creative');
+    Route::delete('/ads/creatives/{id}', [MetaAdsController::class, 'deleteCreative'])->name('admin.ads.delete-creative');
+    Route::get('/ads/creatives/list', [MetaAdsController::class, 'getCreatives'])->name('admin.ads.list-creatives');
+
+    // Ads
     Route::post('/ads/create', [MetaAdsController::class, 'createAd'])->name('admin.ads.create-ad');
+    Route::put('/ads/{id}', [MetaAdsController::class, 'updateAd'])->name('admin.ads.update-ad');
     Route::post('/ads/{id}/toggle', [MetaAdsController::class, 'toggleAd'])->name('admin.ads.toggle-ad');
+    Route::post('/ads/{id}/insights', [MetaAdsController::class, 'getAdInsights'])->name('admin.ads.ad-insights');
+
+    // Bulk
     Route::post('/ads/insights/refresh', [MetaAdsController::class, 'refreshInsights'])->name('admin.ads.refresh-insights');
     Route::post('/ads/sync', [MetaAdsController::class, 'syncCampaigns'])->name('admin.ads.sync');
+
+    // Google Ads Management
+    Route::get('/google-ads', [GoogleAdsController::class, 'index'])->name('admin.google-ads.index');
+    Route::post('/google-ads', [GoogleAdsController::class, 'store'])->name('admin.google-ads.store');
+    Route::put('/google-ads/{campaignId}', [GoogleAdsController::class, 'update'])->name('admin.google-ads.update');
+    Route::post('/google-ads/{campaignId}/toggle', [GoogleAdsController::class, 'toggle'])->name('admin.google-ads.toggle');
+    Route::delete('/google-ads/{campaignId}', [GoogleAdsController::class, 'destroy'])->name('admin.google-ads.destroy');
+    Route::get('/google-ads/{campaignId}/insights', [GoogleAdsController::class, 'insights'])->name('admin.google-ads.insights');
+    Route::get('/google-ads/{campaignId}/ad-groups', [GoogleAdsController::class, 'adGroups'])->name('admin.google-ads.ad-groups');
+    Route::post('/google-ads/{campaignId}/ad-groups', [GoogleAdsController::class, 'createAdGroup'])->name('admin.google-ads.create-ad-group');
+    Route::get('/google-ads/ad-groups/{adGroupId}/keywords', [GoogleAdsController::class, 'keywords'])->name('admin.google-ads.keywords');
+    Route::post('/google-ads/ad-groups/{adGroupId}/keywords', [GoogleAdsController::class, 'addKeyword'])->name('admin.google-ads.add-keyword');
+    Route::post('/google-ads/ad-groups/{adGroupId}/responsive-ad', [GoogleAdsController::class, 'createResponsiveAd'])->name('admin.google-ads.create-responsive-ad');
+    Route::get('/google-ads/test-connection', [GoogleAdsController::class, 'testConnection'])->name('admin.google-ads.test-connection');
+    Route::get('/google-ads/metrics', [GoogleAdsController::class, 'getMetrics'])->name('admin.google-ads.metrics');
 
     // OAuth Connect for all social platforms
     Route::get('/oauth/{platform}/redirect', [\App\Http\Controllers\Admin\SocialAuthController::class, 'redirect'])
@@ -303,6 +361,10 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/leads-hub/export', [MetaLeadHubController::class, 'exportExcel'])->name('admin.leads-hub.export');
     Route::get('/leads-hub/export-selected', [MetaLeadHubController::class, 'exportSelected'])->name('admin.leads-hub.export-selected');
     Route::get('/leads-hub/{lead}', [MetaLeadHubController::class, 'show'])->name('admin.leads-hub.show');
+    Route::post('/leads-hub/{lead}/score', [MetaLeadHubController::class, 'updateScore'])->name('admin.leads-hub.score');
+    Route::post('/leads-hub/{lead}/stage', [MetaLeadHubController::class, 'updateStage'])->name('admin.leads-hub.stage');
+    Route::post('/leads-hub/{lead}/tag', [MetaLeadHubController::class, 'addTag'])->name('admin.leads-hub.tag');
+    Route::delete('/leads-hub/{lead}/tag', [MetaLeadHubController::class, 'removeTag'])->name('admin.leads-hub.remove-tag');
 
     // POS System
     Route::get('/pos', [PosController::class, 'index'])->name('admin.pos.index');
@@ -355,4 +417,173 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::put('/skinanalyzer/white-label', [\App\Http\Controllers\Admin\WhiteLabelController::class, 'update'])->name('admin.skinanalyzer.whitelabel.update');
     Route::post('/skinanalyzer/white-label/logo', [\App\Http\Controllers\Admin\WhiteLabelController::class, 'uploadLogo'])->name('admin.skinanalyzer.whitelabel.logo');
     Route::get('/skinanalyzer/white-label/preview', [\App\Http\Controllers\Admin\WhiteLabelController::class, 'preview'])->name('admin.skinanalyzer.whitelabel.preview');
+
+    // ============================================================
+    // Ad Alerts
+    // ============================================================
+    Route::get('/ad-alerts', [AdAlertController::class, 'index'])->name('admin.ad-alerts.index');
+    Route::get('/ad-alerts/pause-log', [AdAlertController::class, 'pauseLog'])->name('admin.ad-alerts.pause-log');
+    Route::post('/ad-alerts/{alert}/acknowledge', [AdAlertController::class, 'acknowledge'])->name('admin.ad-alerts.acknowledge');
+    Route::post('/ad-alerts/{alert}/resolve', [AdAlertController::class, 'resolve'])->name('admin.ad-alerts.resolve');
+    Route::delete('/ad-alerts/{alert}', [AdAlertController::class, 'destroy'])->name('admin.ad-alerts.destroy');
+    Route::get('/ad-alerts/health-summary', [AdAlertController::class, 'healthSummary'])->name('admin.ad-alerts.health-summary');
+    Route::get('/ad-alerts/active-count', [AdAlertController::class, 'activeAlertsCount'])->name('admin.ad-alerts.active-count');
+
+    // AI Creative Copilot
+    Route::prefix('ai-creative')->group(function () {
+        Route::get('/', [AiCreativeController::class, 'index'])->name('admin.ai-creative.index');
+        Route::get('/generate', [AiCreativeController::class, 'generateForm'])->name('admin.ai-creative.generate-form');
+        Route::post('/generate', [AiCreativeController::class, 'generate'])->name('admin.ai-creative.generate');
+        Route::post('/store', [AiCreativeController::class, 'store'])->name('admin.ai-creative.store');
+        Route::delete('/{id}', [AiCreativeController::class, 'destroy'])->name('admin.ai-creative.destroy');
+    });
+
+    // Audience Builder
+    Route::prefix('audiences')->group(function () {
+        Route::get('/', [AudienceController::class, 'index'])->name('admin.audiences.index');
+        Route::get('/create', [AudienceController::class, 'create'])->name('admin.audiences.create');
+        Route::post('/', [AudienceController::class, 'store'])->name('admin.audiences.store');
+        Route::get('/{audience}', [AudienceController::class, 'show'])->name('admin.audiences.show');
+        Route::post('/{audience}/sync', [AudienceController::class, 'sync'])->name('admin.audiences.sync');
+        Route::post('/{audience}/push', [AudienceController::class, 'pushToPlatform'])->name('admin.audiences.push');
+        Route::delete('/{audience}', [AudienceController::class, 'destroy'])->name('admin.audiences.destroy');
+        Route::post('/lookalike', [AudienceController::class, 'createLookalike'])->name('admin.audiences.lookalike');
+        Route::post('/overlap', [AudienceController::class, 'overlapAnalysis'])->name('admin.audiences.overlap');
+    });
+
+    // ============================================================
+    // Meta Tools
+    // ============================================================
+
+    // WhatsApp
+    Route::get('/meta-tools/whatsapp', [MetaToolsController::class, 'whatsappDashboard'])->name('admin.meta-tools.whatsapp');
+    Route::post('/meta-tools/whatsapp/send', [MetaToolsController::class, 'whatsappSend'])->name('admin.meta-tools.whatsapp-send');
+    Route::post('/meta-tools/whatsapp/bulk', [MetaToolsController::class, 'whatsappBulkSend'])->name('admin.meta-tools.whatsapp-bulk');
+    Route::get('/meta-tools/whatsapp/test', [MetaToolsController::class, 'whatsappTest'])->name('admin.meta-tools.whatsapp-test');
+
+    // Conversations
+    Route::get('/meta-tools/conversations', [MetaToolsController::class, 'conversationsIndex'])->name('admin.meta-tools.conversations');
+    Route::get('/meta-tools/conversations/{id}/messages', [MetaToolsController::class, 'conversationsMessages'])->name('admin.meta-tools.conversation-messages');
+    Route::post('/meta-tools/conversations/reply', [MetaToolsController::class, 'conversationsReply'])->name('admin.meta-tools.conversation-reply');
+    Route::get('/meta-tools/conversations/unread', [MetaToolsController::class, 'conversationsUnread'])->name('admin.meta-tools.conversation-unread');
+
+    // Pixel Helper
+    Route::get('/meta-tools/pixel-helper', [MetaToolsController::class, 'pixelHelperIndex'])->name('admin.meta-tools.pixel-helper');
+    Route::get('/meta-tools/pixel-helper/verify', [MetaToolsController::class, 'pixelHelperVerify'])->name('admin.meta-tools.pixel-verify');
+    Route::get('/meta-tools/pixel-helper/health', [MetaToolsController::class, 'pixelHelperHealth'])->name('admin.meta-tools.pixel-health');
+
+    // A/B Testing
+    Route::get('/meta-tools/ab-tests', [MetaToolsController::class, 'abTestsIndex'])->name('admin.ab-tests.index');
+    Route::post('/meta-tools/ab-tests', [MetaToolsController::class, 'abTestsCreate'])->name('admin.ab-tests.create');
+    Route::get('/meta-tools/ab-tests/{id}/analyze', [MetaToolsController::class, 'abTestsAnalyze'])->name('admin.ab-tests.analyze');
+    Route::post('/meta-tools/ab-tests/{id}/winner', [MetaToolsController::class, 'abTestsDeclareWinner'])->name('admin.ab-tests.winner');
+
+    // Instagram
+    Route::get('/meta-tools/instagram', [MetaToolsController::class, 'instagramDashboard'])->name('admin.meta-tools.instagram');
+    Route::get('/meta-tools/instagram/insights', [MetaToolsController::class, 'instagramInsights'])->name('admin.meta-tools.instagram-insights');
+    Route::get('/meta-tools/instagram/top-posts', [MetaToolsController::class, 'instagramTopPosts'])->name('admin.meta-tools.instagram-top-posts');
+
+    // Audience Upload
+    Route::get('/meta-tools/audience-upload', [MetaToolsController::class, 'audienceUploadIndex'])->name('admin.meta-tools.audience-upload');
+    Route::post('/meta-tools/audience-upload/csv', [MetaToolsController::class, 'audienceUploadCsv'])->name('admin.meta-tools.audience-upload-csv');
+    Route::post('/meta-tools/audience-upload/phones', [MetaToolsController::class, 'audienceUploadPhones'])->name('admin.meta-tools.audience-upload-phones');
+    Route::post('/meta-tools/audience-upload/emails', [MetaToolsController::class, 'audienceUploadEmails'])->name('admin.meta-tools.audience-upload-emails');
+    Route::get('/meta-tools/audience-upload/template', [MetaToolsController::class, 'audienceTemplate'])->name('admin.meta-tools.audience-template');
+
+    // Enhanced Matching
+    Route::post('/meta-tools/enhanced-matching/test', [MetaToolsController::class, 'enhancedMatchingTest'])->name('admin.meta-tools.enhanced-matching');
+
+    // ============================================================
+    // Meta Pro Tools - Advanced Advertising Tools
+    // ============================================================
+
+    Route::prefix('meta-pro-tools')->name('admin.meta-pro-tools.')->group(function () {
+        Route::get('/', [MetaProToolsController::class, 'index'])->name('index');
+
+        // Ad Preview
+        Route::get('/ad-preview/{creative}', [MetaProToolsController::class, 'adPreview'])->name('ad-preview');
+        Route::get('/ad-preview/{creative}/all', [MetaProToolsController::class, 'adPreviewAll'])->name('ad-preview-all');
+        Route::post('/validate-ad', [MetaProToolsController::class, 'validateAd'])->name('validate-ad');
+
+        // Copy Generator
+        Route::get('/copy-generator', [MetaProToolsController::class, 'copyGeneratorIndex'])->name('copy-generator');
+        Route::post('/copy-generator/generate', [MetaProToolsController::class, 'copyGeneratorGenerate'])->name('copy-generator.generate');
+
+        // Budget Optimizer
+        Route::get('/budget-optimizer', [MetaProToolsController::class, 'budgetOptimizerIndex'])->name('budget-optimizer');
+        Route::get('/budget-optimizer/analyze/{account}', [MetaProToolsController::class, 'budgetOptimizerAnalyze'])->name('budget-optimizer.analyze');
+
+        // Performance Forecast
+        Route::get('/performance-forecast', [MetaProToolsController::class, 'performanceForecastIndex'])->name('performance-forecast');
+        Route::get('/performance-forecast/campaign/{campaignId}', [MetaProToolsController::class, 'performanceForecastCampaign'])->name('performance-forecast.campaign');
+        Route::get('/performance-forecast/account/{accountId}', [MetaProToolsController::class, 'performanceForecastAccount'])->name('performance-forecast.account');
+
+        // Placement Recommendations
+        Route::get('/placement-recommendations', [MetaProToolsController::class, 'placementRecommendations'])->name('placement-recommendations');
+        Route::get('/placement-recommendations/{objective}', [MetaProToolsController::class, 'placementForObjective'])->name('placement-recommendations.objective');
+
+        // Schedule Optimizer
+        Route::get('/schedule-optimizer', [MetaProToolsController::class, 'scheduleOptimizer'])->name('schedule-optimizer');
+        Route::get('/schedule-optimizer/{campaignId}', [MetaProToolsController::class, 'scheduleForCampaign'])->name('schedule-optimizer.campaign');
+
+        // Ad Library
+        Route::get('/ad-library', [MetaProToolsController::class, 'adLibraryIndex'])->name('ad-library');
+        Route::post('/ad-library/search', [MetaProToolsController::class, 'adLibrarySearch'])->name('ad-library.search');
+        Route::post('/ad-library/by-page', [MetaProToolsController::class, 'adLibraryByPage'])->name('ad-library.by-page');
+        Route::post('/ad-library/industry', [MetaProToolsController::class, 'adLibraryIndustry'])->name('ad-library.industry');
+
+        // Pre-Flight Compliance
+        Route::post('/pre-flight-check', [MetaProToolsController::class, 'preFlightCheck'])->name('pre-flight-check');
+        Route::get('/compliance-rules', [MetaProToolsController::class, 'complianceRules'])->name('compliance-rules');
+    });
+
+    // ============================================================
+    // Meta Advanced Features
+    // ============================================================
+
+    Route::prefix('meta-advanced')->name('admin.meta-advanced.')->group(function () {
+        Route::get('/', [MetaAdvancedController::class, 'dashboard'])->name('dashboard');
+
+        // Analytics
+        Route::get('/analytics', [MetaAdvancedController::class, 'analyticsIndex'])->name('analytics');
+
+        // Automation
+        Route::get('/automation', [MetaAdvancedController::class, 'automationIndex'])->name('automation');
+        Route::post('/automation/rules', [MetaAdvancedController::class, 'createAutomationRule'])->name('automation.rules.store');
+        Route::put('/automation/rules/{id}', [MetaAdvancedController::class, 'updateAutomationRule'])->name('automation.rules.update');
+        Route::delete('/automation/rules/{id}', [MetaAdvancedController::class, 'deleteAutomationRule'])->name('automation.rules.destroy');
+        Route::post('/automation/execute', [MetaAdvancedController::class, 'executeAutomationRules'])->name('automation.execute');
+        Route::post('/automation/schedule', [MetaAdvancedController::class, 'scheduleCampaignAction'])->name('automation.schedule');
+        Route::post('/automation/scheduled/{id}/cancel', [MetaAdvancedController::class, 'cancelScheduledAction'])->name('automation.schedule.cancel');
+
+        // Creative Optimization
+        Route::get('/creative', [MetaAdvancedController::class, 'creativeIndex'])->name('creative');
+        Route::get('/creative/{id}/analyze', [MetaAdvancedController::class, 'analyzeCreativeFatigue'])->name('creative.analyze');
+        Route::get('/creative/{id}/suggestions', [MetaAdvancedController::class, 'getCreativeSuggestions'])->name('creative.suggestions');
+        Route::post('/creative/compare', [MetaAdvancedController::class, 'compareCreatives'])->name('creative.compare');
+
+        // Compliance
+        Route::get('/compliance', [MetaAdvancedController::class, 'complianceIndex'])->name('compliance');
+        Route::post('/compliance/issues/{id}/resolve', [MetaAdvancedController::class, 'resolveComplianceIssue'])->name('compliance.resolve');
+        Route::get('/compliance/health/{accountId}', [MetaAdvancedController::class, 'checkAccountHealth'])->name('compliance.health');
+        Route::post('/compliance/spending-limits', [MetaAdvancedController::class, 'createSpendingLimit'])->name('compliance.limits.store');
+        Route::post('/compliance/check-limits', [MetaAdvancedController::class, 'checkSpendingLimits'])->name('compliance.limits.check');
+
+        // Leads
+        Route::get('/leads', [MetaAdvancedController::class, 'leadsIndex'])->name('leads');
+        Route::post('/leads/{leadId}/conversion', [MetaAdvancedController::class, 'trackLeadConversion'])->name('leads.conversion');
+        Route::post('/leads/auto-score', [MetaAdvancedController::class, 'autoScoreLeads'])->name('leads.auto-score');
+
+        // Targeting
+        Route::get('/targeting', [MetaAdvancedController::class, 'targetingIndex'])->name('targeting');
+        Route::post('/targeting/lookalike', [MetaAdvancedController::class, 'createLookalikeAudience'])->name('targeting.lookalike');
+        Route::post('/targeting/retargeting', [MetaAdvancedController::class, 'createRetargetingAudience'])->name('targeting.retargeting');
+        Route::get('/targeting/suggestions/{campaignId}', [MetaAdvancedController::class, 'getAudienceSuggestions'])->name('targeting.suggestions');
+
+        // Reports
+        Route::get('/reports', [MetaAdvancedController::class, 'reportsIndex'])->name('reports');
+        Route::post('/reports', [MetaAdvancedController::class, 'createAutomatedReport'])->name('reports.store');
+        Route::post('/reports/{id}/generate', [MetaAdvancedController::class, 'generateReport'])->name('reports.generate');
+        Route::delete('/reports/{id}', [MetaAdvancedController::class, 'deleteAutomatedReport'])->name('reports.destroy');
+    });
 });

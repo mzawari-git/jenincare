@@ -525,6 +525,396 @@ class MetaAdsController extends Controller
         return $this->refreshInsights($request);
     }
 
+    // ──────────────────────────────────────────────
+    //  New: Get Ad Sets for a Campaign
+    // ──────────────────────────────────────────────
+    public function getCampaignAdSets($id)
+    {
+        $campaign = MetaCampaign::with('adSets.adAccount')->findOrFail($id);
+        $adSets = $campaign->adSets;
+
+        return response()->json([
+            'success' => true,
+            'data' => $adSets->map(fn($s) => [
+                'id' => $s->id,
+                'ad_set_id' => $s->ad_set_id,
+                'name' => $s->name,
+                'status' => $s->status,
+                'optimization_goal' => $s->optimization_goal,
+                'daily_budget' => $s->daily_budget,
+                'lifetime_budget' => $s->lifetime_budget,
+                'bid_amount' => $s->bid_amount,
+                'billing_event' => $s->billing_event,
+                'start_time' => $s->start_time?->toIso8601String(),
+                'end_time' => $s->end_time?->toIso8601String(),
+                'promoted_object' => $s->promoted_object,
+                'targeting' => $s->targeting,
+                'insights' => $s->insights,
+                'ads_count' => $s->ads()->count(),
+                'last_synced_at' => $s->last_synced_at?->diffForHumans(),
+            ]),
+        ]);
+    }
+
+    // ──────────────────────────────────────────────
+    //  New: Get Ads for an Ad Set
+    // ──────────────────────────────────────────────
+    public function getAdSetAds($id)
+    {
+        $adSet = MetaAdSet::with('ads.creative', 'ads.adAccount')->findOrFail($id);
+        $ads = $adSet->ads;
+
+        return response()->json([
+            'success' => true,
+            'data' => $ads->map(fn($a) => [
+                'id' => $a->id,
+                'ad_id' => $a->ad_id,
+                'name' => $a->name,
+                'status' => $a->status,
+                'creative_name' => $a->creative?->name,
+                'creative_id' => $a->creative_id,
+                'insights' => $a->insights,
+                'tracking_specs' => $a->tracking_specs,
+                'last_synced_at' => $a->last_synced_at?->diffForHumans(),
+            ]),
+        ]);
+    }
+
+    // ──────────────────────────────────────────────
+    //  New: List all Creatives
+    // ──────────────────────────────────────────────
+    public function getCreatives()
+    {
+        $creatives = MetaAdCreative::with('adAccount')
+            ->latest()
+            ->paginate(20);
+
+        return response()->json([
+            'success' => true,
+            'data' => $creatives->map(fn($c) => [
+                'id' => $c->id,
+                'creative_id' => $c->creative_id,
+                'name' => $c->name,
+                'title' => $c->title,
+                'body' => $c->body,
+                'description' => $c->description,
+                'image_hash' => $c->image_hash,
+                'image_url' => $c->image_url,
+                'link_url' => $c->link_url,
+                'call_to_action' => $c->call_to_action,
+                'page_id' => $c->page_id,
+                'status' => $c->status,
+                'account_name' => $c->adAccount?->name,
+            ]),
+            'current_page' => $creatives->currentPage(),
+            'last_page' => $creatives->lastPage(),
+            'total' => $creatives->total(),
+        ]);
+    }
+
+    // ──────────────────────────────────────────────
+    //  New: Update Campaign
+    // ──────────────────────────────────────────────
+    public function updateCampaign(Request $request, $id)
+    {
+        $campaign = MetaCampaign::findOrFail($id);
+
+        $data = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'status' => 'sometimes|string|in:ACTIVE,PAUSED',
+            'daily_budget' => 'nullable|numeric|min:1',
+            'lifetime_budget' => 'nullable|numeric|min:1',
+            'bid_strategy' => 'sometimes|string|in:LOWEST_COST_WITHOUT_CAP,LOWEST_COST_WITH_BID_CAP,COST_CAP,TARGET_COST',
+            'start_time' => 'nullable|date',
+        ]);
+
+        $account = $campaign->adAccount;
+        if ($account) {
+            $this->graph->setUserAccessToken($account->access_token);
+
+            $fbPayload = [];
+            if (isset($data['name'])) $fbPayload['name'] = $data['name'];
+            if (isset($data['status'])) $fbPayload['status'] = $data['status'];
+            if (array_key_exists('daily_budget', $data)) {
+                $fbPayload['daily_budget'] = $data['daily_budget'] ? (int) ($data['daily_budget'] * 100) : null;
+            }
+            if (array_key_exists('lifetime_budget', $data)) {
+                $fbPayload['lifetime_budget'] = $data['lifetime_budget'] ? (int) ($data['lifetime_budget'] * 100) : null;
+            }
+            if (isset($data['bid_strategy'])) $fbPayload['bid_strategy'] = $data['bid_strategy'];
+            if (array_key_exists('start_time', $data)) $fbPayload['start_time'] = $data['start_time'];
+
+            if (!empty($fbPayload)) {
+                $response = $this->graph->post($campaign->campaign_id, $fbPayload);
+                if (!empty($response['error'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $response['error']['message'] ?? 'فشل تحديث الحملة في فيسبوك',
+                    ], 400);
+                }
+            }
+        }
+
+        $campaign->update($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تحديث الحملة بنجاح',
+            'campaign' => $campaign->fresh(),
+        ]);
+    }
+
+    // ──────────────────────────────────────────────
+    //  New: Update Ad Set
+    // ──────────────────────────────────────────────
+    public function updateAdSet(Request $request, $id)
+    {
+        $adSet = MetaAdSet::findOrFail($id);
+
+        $data = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'status' => 'sometimes|string|in:ACTIVE,PAUSED',
+            'daily_budget' => 'nullable|numeric|min:1',
+            'lifetime_budget' => 'nullable|numeric|min:1',
+            'bid_amount' => 'nullable|numeric|min:0.01',
+            'start_time' => 'nullable|date',
+            'end_time' => 'nullable|date|after:start_time',
+        ]);
+
+        $account = $adSet->adAccount;
+        if ($account) {
+            $this->graph->setUserAccessToken($account->access_token);
+
+            $fbPayload = [];
+            if (isset($data['name'])) $fbPayload['name'] = $data['name'];
+            if (isset($data['status'])) $fbPayload['status'] = $data['status'];
+            if (array_key_exists('daily_budget', $data)) {
+                $fbPayload['daily_budget'] = $data['daily_budget'] ? (int) ($data['daily_budget'] * 100) : null;
+            }
+            if (array_key_exists('lifetime_budget', $data)) {
+                $fbPayload['lifetime_budget'] = $data['lifetime_budget'] ? (int) ($data['lifetime_budget'] * 100) : null;
+            }
+            if (array_key_exists('bid_amount', $data)) {
+                $fbPayload['bid_amount'] = $data['bid_amount'] ? (int) ($data['bid_amount'] * 100) : null;
+            }
+
+            if (!empty($fbPayload)) {
+                $response = $this->graph->post($adSet->ad_set_id, $fbPayload);
+                if (!empty($response['error'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $response['error']['message'] ?? 'فشل تحديث المجموعة في فيسبوك',
+                    ], 400);
+                }
+            }
+        }
+
+        $adSet->update($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تحديث المجموعة الإعلانية بنجاح',
+            'ad_set' => $adSet->fresh(),
+        ]);
+    }
+
+    // ──────────────────────────────────────────────
+    //  New: Update Creative (local only)
+    // ──────────────────────────────────────────────
+    public function updateCreative(Request $request, $id)
+    {
+        $creative = MetaAdCreative::findOrFail($id);
+
+        $data = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'title' => 'nullable|string|max:40',
+            'body' => 'nullable|string',
+            'description' => 'nullable|string|max:255',
+            'link_url' => 'nullable|url|max:500',
+            'display_link' => 'nullable|string|max:500',
+            'call_to_action' => 'nullable|string',
+            'page_id' => 'nullable|string',
+        ]);
+
+        $creative->update($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تحديث التصميم الإبداعي',
+            'creative' => $creative->fresh(),
+        ]);
+    }
+
+    // ──────────────────────────────────────────────
+    //  New: Update Ad
+    // ──────────────────────────────────────────────
+    public function updateAd(Request $request, $id)
+    {
+        $ad = MetaAd::findOrFail($id);
+
+        $data = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'status' => 'sometimes|string|in:ACTIVE,PAUSED',
+        ]);
+
+        $account = $ad->adAccount;
+        if ($account && $ad->ad_id) {
+            $this->graph->setUserAccessToken($account->access_token);
+
+            $fbPayload = [];
+            if (isset($data['name'])) $fbPayload['name'] = $data['name'];
+            if (isset($data['status'])) $fbPayload['status'] = $data['status'];
+
+            if (!empty($fbPayload)) {
+                $response = $this->graph->post($ad->ad_id, $fbPayload);
+                if (!empty($response['error'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $response['error']['message'] ?? 'فشل تحديث الإعلان في فيسبوك',
+                    ], 400);
+                }
+            }
+        }
+
+        $ad->update($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تحديث الإعلان',
+            'ad' => $ad->fresh(),
+        ]);
+    }
+
+    // ──────────────────────────────────────────────
+    //  New: Delete Creative
+    // ──────────────────────────────────────────────
+    public function deleteCreative($id)
+    {
+        $creative = MetaAdCreative::findOrFail($id);
+
+        MetaAd::where('creative_id', $creative->id)->update(['creative_id' => null]);
+        $creative->delete();
+
+        return response()->json(['success' => true, 'message' => 'تم حذف التصميم']);
+    }
+
+    // ──────────────────────────────────────────────
+    //  New: Duplicate Campaign
+    // ──────────────────────────────────────────────
+    public function duplicateCampaign(Request $request, $id)
+    {
+        $campaign = MetaCampaign::with('adAccount')->findOrFail($id);
+        $account = $campaign->adAccount;
+
+        if (!$account) {
+            return response()->json(['success' => false, 'message' => 'حساب الإعلانات غير موجود'], 400);
+        }
+
+        $newName = ($request->input('name') ?? $campaign->name) . ' (نسخة)';
+
+        $this->graph->setUserAccessToken($account->access_token);
+
+        $response = $this->graph->createCampaign(
+            $account->ad_account_id,
+            [
+                'name' => $newName,
+                'objective' => $campaign->objective,
+                'status' => 'PAUSED',
+                'daily_budget' => $campaign->daily_budget,
+                'bid_strategy' => $campaign->bid_strategy,
+            ]
+        );
+
+        if (!empty($response['error'])) {
+            return response()->json([
+                'success' => false,
+                'message' => $response['error']['message'] ?? 'فشل نسخ الحملة',
+            ], 400);
+        }
+
+        $newCampaign = MetaCampaign::create([
+            'ad_account_id' => $account->id,
+            'campaign_id' => $response['id'],
+            'name' => $newName,
+            'objective' => $campaign->objective,
+            'status' => 'PAUSED',
+            'buying_type' => $campaign->buying_type,
+            'daily_budget' => $campaign->daily_budget,
+            'lifetime_budget' => $campaign->lifetime_budget,
+            'bid_strategy' => $campaign->bid_strategy,
+            'last_synced_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم نسخ الحملة بنجاح',
+            'campaign' => $newCampaign,
+        ]);
+    }
+
+    // ──────────────────────────────────────────────
+    //  New: Campaign Insights (POST)
+    // ──────────────────────────────────────────────
+    public function getCampaignInsights(Request $request, $id)
+    {
+        $campaign = MetaCampaign::findOrFail($id);
+        $account = $campaign->adAccount;
+        if (!$account) {
+            return response()->json(['success' => false, 'data' => []]);
+        }
+
+        $this->graph->setUserAccessToken($account->access_token);
+        $insights = $this->graph->getInsights($campaign->campaign_id, 'campaign', [
+            'date_preset' => $request->get('date_preset', 'last_30d'),
+        ]);
+
+        $campaign->update(['insights' => $insights, 'last_synced_at' => now()]);
+
+        return response()->json(['success' => true, 'data' => $insights]);
+    }
+
+    // ──────────────────────────────────────────────
+    //  New: Ad Set Insights (POST)
+    // ──────────────────────────────────────────────
+    public function getAdSetInsights(Request $request, $id)
+    {
+        $adSet = MetaAdSet::findOrFail($id);
+        $account = $adSet->adAccount;
+        if (!$account) {
+            return response()->json(['success' => false, 'data' => []]);
+        }
+
+        $this->graph->setUserAccessToken($account->access_token);
+        $insights = $this->graph->getInsights($adSet->ad_set_id, 'adset', [
+            'date_preset' => $request->get('date_preset', 'last_30d'),
+        ]);
+
+        $adSet->update(['insights' => $insights, 'last_synced_at' => now()]);
+
+        return response()->json(['success' => true, 'data' => $insights]);
+    }
+
+    // ──────────────────────────────────────────────
+    //  New: Ad Insights (POST)
+    // ──────────────────────────────────────────────
+    public function getAdInsights(Request $request, $id)
+    {
+        $ad = MetaAd::findOrFail($id);
+        $account = $ad->adAccount;
+        if (!$account) {
+            return response()->json(['success' => false, 'data' => []]);
+        }
+
+        $this->graph->setUserAccessToken($account->access_token);
+        $insights = $this->graph->getInsights($ad->ad_id, 'ad', [
+            'date_preset' => $request->get('date_preset', 'last_30d'),
+        ]);
+
+        $ad->update(['insights' => $insights, 'last_synced_at' => now()]);
+
+        return response()->json(['success' => true, 'data' => $insights]);
+    }
+
     private function mapAccountStatus(int $status): string
     {
         return match ($status) {

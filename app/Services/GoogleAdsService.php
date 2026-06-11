@@ -8,50 +8,36 @@ use Illuminate\Support\Facades\Log;
 
 class GoogleAdsService
 {
-    private bool $enabled = false;
-    private ?string $conversionId = null;
-    private ?string $conversionLabel = null;
-    private ?string $googleAdsId = null;
-    private ?string $developerToken = null;
-    private ?string $clientId = null;
-    private ?string $clientSecret = null;
-    private ?string $refreshToken = null;
-    private bool $loaded = false;
+    private bool $enabled;
+    private ?string $conversionId;
+    private ?string $conversionLabel;
+    private ?string $googleAdsId;
+    private ?string $developerToken;
+    private ?string $clientId;
+    private ?string $clientSecret;
+    private ?string $refreshToken;
 
     private const API_BASE = 'https://googleads.googleapis.com';
 
     public function __construct()
     {
+        $this->loadSettings();
     }
 
     public function loadSettings(): void
     {
-        if ($this->loaded) return;
-        try {
-            $this->enabled = MarketingSetting::get('google_ads_enabled', false);
-            $this->conversionId = MarketingSetting::get('google_conversion_id');
-            $this->conversionLabel = MarketingSetting::get('google_conversion_label');
-            $this->googleAdsId = MarketingSetting::get('google_ads_cid');
-            $this->developerToken = MarketingSetting::get('google_ads_developer_token');
-            $this->clientId = config('services.google.client_id');
-            $this->clientSecret = config('services.google.client_secret');
-            $this->refreshToken = MarketingSetting::get('google_ads_refresh_token');
-        } catch (\Exception $e) {
-            $this->enabled = false;
-            $this->conversionId = null;
-            $this->conversionLabel = null;
-            $this->googleAdsId = null;
-            $this->developerToken = null;
-            $this->clientId = null;
-            $this->clientSecret = null;
-            $this->refreshToken = null;
-        }
-        $this->loaded = true;
+        $this->enabled = MarketingSetting::get('google_ads_enabled', false);
+        $this->conversionId = MarketingSetting::get('google_conversion_id');
+        $this->conversionLabel = MarketingSetting::get('google_conversion_label');
+        $this->googleAdsId = MarketingSetting::get('google_ads_cid');
+        $this->developerToken = MarketingSetting::get('google_ads_developer_token');
+        $this->clientId = config('services.google.client_id');
+        $this->clientSecret = config('services.google.client_secret');
+        $this->refreshToken = MarketingSetting::get('google_ads_refresh_token');
     }
 
     public function isEnabled(): bool
     {
-        $this->loadSettings();
         return $this->enabled && $this->conversionId;
     }
 

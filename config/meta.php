@@ -4,7 +4,7 @@ return [
     'api_version' => env('META_API_VERSION', 'v22.0'),
     'app_id' => env('META_APP_ID', ''),
     'app_secret' => env('META_APP_SECRET', ''),
-    'webhook_verify_token' => env('META_WEBHOOK_VERIFY_TOKEN', 'شركة جنين للتجميل_webhook_2026'),
+    'webhook_verify_token' => env('META_WEBHOOK_VERIFY_TOKEN', 'your_webhook_verify_token'),
 
     'scopes' => [
         'ads_management', 'ads_read', 'business_management',

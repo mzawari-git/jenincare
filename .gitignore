@@ -80,5 +80,10 @@ __*.php
 # PHPUnit cache
 .phpunit.result.cache
 
+# Temp output files
+git_*.txt
+stderr.txt
+stdout.txt
+
 # Temporary planning docs
 roadmapaffiliate.md
