@@ -230,9 +230,10 @@
         $discount = (float) ($sale->discount_amount ?? 0);
         $taxAmount = (float) ($sale->tax_amount ?? 0);
         $taxRate = (float) ($sale->tax_rate ?? 0);
-        $netTotal = $subtotal - $discount;
-        $grandTotal = $netTotal + $taxAmount;
         $items = is_array($sale->items) ? $sale->items : (is_string($sale->items) ? json_decode($sale->items, true) : []);
+        $totalItemDiscount = collect($items)->sum(fn($i) => (float) ($i['item_discount'] ?? 0));
+        $netTotal = $subtotal - $discount - $totalItemDiscount;
+        $grandTotal = $netTotal + $taxAmount;
         $siteName = $siteSettings['site_name'] ?? 'جنين للتجميل';
         $taxNumber = $siteSettings['tax_number'] ?? '';
         $sitePhone = $siteSettings['contact_phone'] ?? $siteSettings['site_phone'] ?? '';
@@ -316,6 +317,12 @@
             <div class="total-row discount">
                 <span>الخصم</span>
                 <span>- {{ number_format($discount, 2) }} {{ $currencySymbol }}</span>
+            </div>
+            @endif
+            @if($totalItemDiscount > 0)
+            <div class="total-row discount">
+                <span>خصم المنتجات</span>
+                <span>- {{ number_format($totalItemDiscount, 2) }} {{ $currencySymbol }}</span>
             </div>
             @endif
             @if($taxAmount > 0)

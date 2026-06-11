@@ -2803,7 +2803,7 @@
                 <span style="display:flex;align-items:center;gap:.35rem;">
                     <i class="fas fa-percent" style="font-size:.65rem;color:#0d6efd;"></i>
                     الضريبة
-                    <select id="taxRateSelect" onchange="updateCart()" style="border:none;background:transparent;font-size:.65rem;font-weight:600;color:var(--gray-500);cursor:pointer;width:48px;padding:0;">
+                        <select id="taxRateSelect" onchange="renderCart()" style="border:none;background:transparent;font-size:.65rem;font-weight:600;color:var(--gray-500);cursor:pointer;width:48px;padding:0;">
                         <option value="0.15">15%</option>
                         <option value="0.09">9%</option>
                         <option value="0.05">5%</option>
@@ -3893,6 +3893,10 @@
             image: card.dataset.image || '',
             sku: card.dataset.sku || '',
             track_inventory: card.dataset.trackInventory === '1' || card.dataset.trackInventory === undefined,
+            itemId: 'ci_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            itemDiscount: 0,
+            itemDiscountType: 'fixed',
+            staffId: null,
         });
 
         qtyModal.classList.remove('show');
@@ -4065,7 +4069,8 @@
         items.forEach(el => el.classList.add('removing'));
         setTimeout(() => {
             document.querySelectorAll('.pos-product-card.added').forEach(el => el.classList.remove('added'));
-            cart = [];
+            carts[currentCartIndex] = [];
+            cart = carts[currentCartIndex];
             lastSaleData = null;
             splitPayments = [];
             document.getElementById('discountInput').value = '0';
@@ -4113,7 +4118,7 @@
     // Tax toggle
     function toggleTax() {
         taxEnabled = !taxEnabled;
-        updateCart();
+        renderCart();
     }
 
     function updateTaxUI() {
@@ -4555,7 +4560,11 @@
         const taxRate = sale.tax_rate || 0.15;
         const taxEnabled = sale.tax_enabled !== undefined ? sale.tax_enabled : true;
         const taxAmount = taxEnabled ? sale.subtotal * taxRate : 0;
-        const finalTotal = sale.subtotal - sale.discount;
+        const itemDiscountTotal = (sale.items || []).reduce((sum, i) => {
+            const lineTotal = i.price * i.quantity;
+            return sum + (i.itemDiscountType === 'percent' ? lineTotal * (i.itemDiscount / 100) : Math.min(i.itemDiscount || 0, lineTotal));
+        }, 0);
+        const finalTotal = sale.subtotal - sale.discount - itemDiscountTotal;
 
         let html = `<div class="receipt-preview-80mm" style="font-size:${fs}px;">`;
         html += `<div class="rp-header">`;
@@ -4596,6 +4605,9 @@
         html += `<div class="rp-row" style="font-size:${fs}px;"><span>المجموع الفرعي</span><span>₪${sale.subtotal.toFixed(2)}</span></div>`;
         if (sale.discount > 0) {
             html += `<div class="rp-row" style="color:#ef4444;font-size:${fs}px;"><span>الخصم</span><span>-₪${sale.discount.toFixed(2)}</span></div>`;
+        }
+        if (itemDiscountTotal > 0) {
+            html += `<div class="rp-row" style="color:#ef4444;font-size:${fs}px;"><span>خصم المنتجات</span><span>-₪${itemDiscountTotal.toFixed(2)}</span></div>`;
         }
         if (taxEnabled && taxAmount > 0) {
             html += `<div class="rp-row" style="font-size:${fs}px;"><span>ضريبة ${(taxRate * 100).toFixed(0)}%</span><span>₪${taxAmount.toFixed(2)}</span></div>`;
@@ -4662,8 +4674,12 @@
         const sale = lastSaleData;
         const taxRate = sale?.tax_rate || 0.15;
         const taxEnabled = sale?.tax_enabled !== undefined ? sale.tax_enabled : true;
+        const itemDiscountTotal = (sale?.items || []).reduce((sum, i) => {
+            const lineTotal = (i.price || 0) * (i.quantity || 0);
+            return sum + ((i.itemDiscountType === 'percent' ? lineTotal * (i.itemDiscount / 100) : Math.min(i.itemDiscount || 0, lineTotal)));
+        }, 0);
         const taxAmount = taxEnabled ? (sale?.subtotal || 0) * taxRate : 0;
-        const finalTotal = (sale?.subtotal || 0) - (sale?.discount || 0);
+        const finalTotal = (sale?.subtotal || 0) - (sale?.discount || 0) - itemDiscountTotal;
 
         let printHtml = `<div class="rp-header">`;
         if (settings.showLogo && siteLogo) printHtml += `<img src="${siteLogo}" class="rp-logo" alt="${siteName}">`;
@@ -4701,13 +4717,16 @@
         if ((sale?.discount || 0) > 0) {
             printHtml += `<div class="rp-row" style="color:#ef4444;font-size:${fs}px;"><span>الخصم</span><span>-₪${(sale?.discount || 0).toFixed(2)}</span></div>`;
         }
+        if (itemDiscountTotal > 0) {
+            printHtml += `<div class="rp-row" style="color:#ef4444;font-size:${fs}px;"><span>خصم المنتجات</span><span>-₪${itemDiscountTotal.toFixed(2)}</span></div>`;
+        }
         if (taxEnabled && taxAmount > 0) {
             printHtml += `<div class="rp-row" style="font-size:${fs}px;"><span>ضريبة ${(taxRate * 100).toFixed(0)}%</span><span>₪${taxAmount.toFixed(2)}</span></div>`;
         }
         printHtml += `<div class="rp-row total" style="font-size:${fs+3}px;font-weight:bold;border-top:2px solid ${pc};padding-top:4px;margin-top:4px;color:${pc};"><span>الإجمالي</span><span>₪${(finalTotal + taxAmount).toFixed(2)}</span></div>`;
 
         if (settings.showQR) {
-            printHtml += `<div class="rp-qr">[${sale?.posSaleId || ''}]</div>`;
+            printHtml += `<div class="rp-qr"><div id="printQrCode"></div></div>`;
         }
 
         printHtml += `<div class="rp-footer" style="font-size:${Math.max(8, fs-2)}px;color:#888;border-top:1px dashed ${pc};padding-top:6px;margin-top:6px;">${footerText}<br>${siteName}</div>`;
@@ -4742,6 +4761,11 @@
             </html>
         `);
         win.document.close();
+        win.onload = function() {
+            if (settings.showQR && typeof QRCode !== 'undefined' && win.document.getElementById('printQrCode')) {
+                new QRCode(win.document.getElementById('printQrCode'), { text: sale?.posSaleId || '', width: 50, height: 50 });
+            }
+        };
         setTimeout(() => { win.focus(); win.print(); }, 500);
     }
 
@@ -5777,7 +5801,7 @@
 
     function escHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
     function escJs(str) { return String(str).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"').replace(/`/g,'\\`').replace(/\${/g,'\\${').replace(/\n/g,'\\n').replace(/\r/g,'\\r'); }
-    function escAttr(str) { return escHtml(escJs(str)); }
+    function escAttr(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/\n/g,' ').replace(/\r/g,' '); }
 
     document.getElementById('customerName').addEventListener('input', function() {
         clearTimeout(customerSearchTimeout);
@@ -6111,7 +6135,7 @@
         if (item) {
             item.itemDiscount = 0;
             item.itemDiscountType = 'fixed';
-            document.getElementById(`itemDiscountArea-${itemId}`).style.display = 'none';
+            document.getElementById(`itemDiscountArea-${itemId}`).classList.remove('show');
             renderCart();
             highlightCartItem(itemId);
             showToast('تم إلغاء خصم المنتج');
@@ -6138,7 +6162,12 @@
     function initSplitPayment() {
         const total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
         const discount = calculateDiscount(total);
-        const netTotal = total - discount;
+        const itemDiscountTotal = cart.reduce((sum, i) => {
+            const lineTotal = i.price * i.quantity;
+            return sum + (i.itemDiscountType === 'percent' ? lineTotal * (i.itemDiscount / 100) : Math.min(i.itemDiscount || 0, lineTotal));
+        }, 0);
+        const taxAmt = taxEnabled ? total * (parseFloat(taxRateSelect.value) || 0) : 0;
+        const netTotal = total - discount - itemDiscountTotal + taxAmt;
         const container = document.getElementById('splitPaymentMethods');
         const methods = [
             { key: 'cash', label: 'نقداً', icon: 'fa-money-bill-wave' },
@@ -6172,7 +6201,12 @@
         }
         const total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
         const discount = calculateDiscount(total);
-        const netTotal = total - discount;
+        const itemDiscountTotal = cart.reduce((sum, i) => {
+            const lineTotal = i.price * i.quantity;
+            return sum + (i.itemDiscountType === 'percent' ? lineTotal * (i.itemDiscount / 100) : Math.min(i.itemDiscount || 0, lineTotal));
+        }, 0);
+        const taxAmt = taxEnabled ? total * (parseFloat(taxRateSelect.value) || 0) : 0;
+        const netTotal = total - discount - itemDiscountTotal + taxAmt;
         updateSplitTotal(netTotal);
     }
 
@@ -6199,7 +6233,7 @@
         document.getElementById('confirmRefundBtn').innerHTML = '<i class="fas fa-check-circle"></i> تأكيد الإرجاع';
 
         // Fetch sale details
-        fetch('{{ url('admin/pos/sales') }}/' + encodeURIComponent(saleId), {
+        fetch('{{ route('admin.pos.getSale', '') }}/' + encodeURIComponent(saleId), {
             headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
         })
         .then(r => r.json())
@@ -6329,6 +6363,7 @@
     const pollInterval = setInterval(() => {
         if (!document.hidden) loadRecentSales();
     }, 30000);
+    window.addEventListener('beforeunload', () => clearInterval(pollInterval));
 
     // Init
     loadQuickBar();

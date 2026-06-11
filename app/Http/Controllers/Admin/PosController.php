@@ -501,7 +501,7 @@ class PosController extends Controller
             $taxAmount = $sale->tax_amount;
             $taxRate = (float) $sale->tax_rate;
             if ($taxRate > 0 && $sale->subtotal > 0) {
-                $taxAmount = $subtotal * ($taxRate / 100);
+                $taxAmount = $subtotal * $taxRate;
             }
 
             $orderTotal = ($subtotal - $discount - $totalItemDiscount) + $taxAmount;
