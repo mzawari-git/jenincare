@@ -8,5 +8,7 @@ class VerifyCsrfToken extends Middleware
 {
     protected $except = [
         'jenincare/public/api/track/*',
+        'jenincare/public/admin/skinanalyzer/*',
+        'admin/skinanalyzer/*',
     ];
 }

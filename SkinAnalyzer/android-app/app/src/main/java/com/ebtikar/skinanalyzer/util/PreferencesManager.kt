@@ -23,6 +23,10 @@ class PreferencesManager @Inject constructor(
         private val KEY_LANGUAGE = stringPreferencesKey("app_language")
         private val KEY_ANALYSIS_MODE = stringPreferencesKey("analysis_mode")
         private val KEY_BRIGHTNESS = stringPreferencesKey("screen_brightness")
+        private val KEY_DIAGNOSIS_MODE = stringPreferencesKey("diagnosis_mode")
+        private val KEY_API_URL = stringPreferencesKey("api_url")
+        private val KEY_API_KEY = stringPreferencesKey("api_key")
+        private val KEY_PROVIDER_SELECTION = stringPreferencesKey("provider_selection")
     }
 
     val languageFlow: Flow<String> = context.dataStore.data.map { prefs ->
@@ -35,6 +39,22 @@ class PreferencesManager @Inject constructor(
 
     val brightnessFlow: Flow<String> = context.dataStore.data.map { prefs ->
         prefs[KEY_BRIGHTNESS] ?: "100"
+    }
+
+    val diagnosisModeFlow: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[KEY_DIAGNOSIS_MODE] ?: Constants.DIAGNOSIS_CROSS
+    }
+
+    val apiUrlFlow: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[KEY_API_URL] ?: ""
+    }
+
+    val apiKeyFlow: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[KEY_API_KEY] ?: ""
+    }
+
+    val providerSelectionFlow: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[KEY_PROVIDER_SELECTION] ?: "local"
     }
 
     suspend fun setLanguage(language: String) {
@@ -52,6 +72,30 @@ class PreferencesManager @Inject constructor(
     suspend fun setBrightness(brightness: String) {
         context.dataStore.edit { prefs ->
             prefs[KEY_BRIGHTNESS] = brightness
+        }
+    }
+
+    suspend fun setDiagnosisMode(mode: String) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_DIAGNOSIS_MODE] = mode
+        }
+    }
+
+    suspend fun setApiUrl(url: String) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_API_URL] = url
+        }
+    }
+
+    suspend fun setApiKey(key: String) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_API_KEY] = key
+        }
+    }
+
+    suspend fun setProviderSelection(provider: String) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_PROVIDER_SELECTION] = provider
         }
     }
 }

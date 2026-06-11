@@ -61,23 +61,59 @@
         </div>
         <div class="col-md-3">
             <div class="stat-box bg-pink bg-opacity-10 border border-pink border-opacity-25 rounded-4 p-3 text-center">
-                <div class="text-pink fw-bold small">الإجمالي</div>
+                <div class="text-pink fw-bold small">إجمالي المبيعات</div>
                 <div class="fs-4 fw-bold text-pink">{{ number_format($totals->total ?? 0, 2) }} ₪</div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="stat-box bg-warning bg-opacity-10 border border-warning border-opacity-25 rounded-4 p-3 text-center">
-                <div class="text-warning fw-bold small">الشحن</div>
-                <div class="fs-4 fw-bold text-warning">{{ number_format($totals->shipping ?? 0, 2) }} ₪</div>
+            <div class="stat-box bg-info bg-opacity-10 border border-info border-opacity-25 rounded-4 p-3 text-center">
+                <div class="text-info fw-bold small">مبيعات نقاط البيع</div>
+                <div class="fs-4 fw-bold text-info">{{ number_format($posTotals->revenue ?? 0, 2) }} ₪</div>
+                <div class="small text-muted">{{ $posTotals->count ?? 0 }} فاتورة</div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="stat-box bg-danger bg-opacity-10 border border-danger border-opacity-25 rounded-4 p-3 text-center">
-                <div class="text-danger fw-bold small">الخصومات</div>
-                <div class="fs-4 fw-bold text-danger">{{ number_format($totals->discount ?? 0, 2) }} ₪</div>
+                <div class="text-danger fw-bold small">مرتجعات نقاط البيع</div>
+                <div class="fs-4 fw-bold text-danger">{{ number_format($posTotals->refunds ?? 0, 2) }} ₪</div>
             </div>
         </div>
     </div>
+
+    {{-- POS Recent Sales --}}
+    @if($posSales->isNotEmpty())
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-transparent fw-bold px-4 pt-3">
+            <i class="fas fa-cash-register text-info me-1"></i> آخر مبيعات نقاط البيع
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">رقم الفاتورة</th>
+                        <th>العميل</th>
+                        <th>عدد المنتجات</th>
+                        <th>طريقة الدفع</th>
+                        <th>الإجمالي</th>
+                        <th class="pe-3">التاريخ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($posSales as $sale)
+                    <tr>
+                        <td class="ps-3 fw-bold text-info">{{ $sale->pos_sale_id }}</td>
+                        <td>{{ $sale->customer_name ?? 'نقدي' }}</td>
+                        <td>{{ is_array($sale->items) ? count($sale->items) : 0 }}</td>
+                        <td>{{ $sale->payment_method }}</td>
+                        <td class="fw-bold">{{ number_format($sale->order_total, 2) }} ₪</td>
+                        <td class="pe-3">{{ $sale->created_at->format('Y-m-d H:i') }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
 
     <div class="card border-0 shadow-sm rounded-4">
         <div class="table-responsive">

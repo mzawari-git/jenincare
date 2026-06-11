@@ -1,10 +1,26 @@
 package com.ebtikar.skinanalyzer.ui.home
 
+import android.Manifest
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.PackageManager
+import android.hardware.usb.UsbDevice
+import android.hardware.usb.UsbManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.View
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
@@ -12,12 +28,17 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.ebtikar.skinanalyzer.databinding.ActivityHomeBinding
+import com.ebtikar.skinanalyzer.hardware.SerialBusManager
 import com.ebtikar.skinanalyzer.ui.analysis.AnalysisActivity
 import com.ebtikar.skinanalyzer.ui.history.HistoryActivity
 import com.ebtikar.skinanalyzer.ui.settings.SettingsActivity
-import com.ebtikar.skinanalyzer.util.NetworkMonitor
+import com.ebtikar.skinanalyzer.util.Constants
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import timber.log.Timber
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -25,9 +46,61 @@ class HomeActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityHomeBinding
     private val viewModel: HomeViewModel by viewModels()
+    private lateinit var recentAdapter: HomeRecentAdapter
+    private val clockHandler = Handler(Looper.getMainLooper())
+    private val clockRunnable = object : Runnable {
+        override fun run() {
+            updateClock()
+            clockHandler.postDelayed(this, 30000)
+        }
+    }
+
+    private var cameraProvider: ProcessCameraProvider? = null
 
     @Inject
-    lateinit var networkMonitor: NetworkMonitor
+    lateinit var serialBusManager: SerialBusManager
+
+    private val ACTION_USB_PERMISSION = "com.ebtikar.skinanalyzer.USB_PERMISSION"
+
+    private val usbReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.action) {
+                ACTION_USB_PERMISSION -> {
+                    synchronized(this) {
+                        val device = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
+                        if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                            device?.let {
+                                Timber.i("USB permission granted for ${it.deviceName}")
+                                connectUsbDevice()
+                            }
+                        } else {
+                            Timber.w("USB permission denied")
+                            updateUsbStatus(false)
+                        }
+                    }
+                }
+                UsbManager.ACTION_USB_DEVICE_ATTACHED -> {
+                    Timber.i("USB device attached")
+                    connectUsbDevice()
+                }
+                UsbManager.ACTION_USB_DEVICE_DETACHED -> {
+                    Timber.w("USB device detached")
+                    serialBusManager.disconnect()
+                    updateUsbStatus(false)
+                }
+            }
+        }
+    }
+
+    private val cameraPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            startCameraPreview()
+        } else {
+            Timber.w("Camera permission denied")
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -46,18 +119,151 @@ class HomeActivity : AppCompatActivity() {
             insets
         }
 
+        registerUsbReceiver()
         setupUI()
+        setupRecentReports()
         observeViewModel()
+        updateClock()
+        checkCameraPermission()
+        connectUsbDevice()
     }
 
     override fun onResume() {
         super.onResume()
         viewModel.loadHistory()
+        clockHandler.post(clockRunnable)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        clockHandler.removeCallbacks(clockRunnable)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        cameraProvider?.unbindAll()
+        try {
+            unregisterReceiver(usbReceiver)
+        } catch (e: Exception) {
+            Timber.w(e, "Error unregistering USB receiver")
+        }
+    }
+
+    private fun registerUsbReceiver() {
+        val filter = IntentFilter().apply {
+            addAction(ACTION_USB_PERMISSION)
+            addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED)
+            addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
+        }
+        registerReceiver(usbReceiver, filter)
+    }
+
+    private fun connectUsbDevice() {
+        try {
+            val driver = serialBusManager.findDriver()
+            if (driver != null) {
+                val usbManager = getSystemService(Context.USB_SERVICE) as UsbManager
+                if (!usbManager.hasPermission(driver.device)) {
+                    val permissionIntent = PendingIntent.getBroadcast(
+                        this, 0,
+                        Intent(ACTION_USB_PERMISSION).apply { setPackage(packageName) },
+                        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                    )
+                    usbManager.requestPermission(driver.device, permissionIntent)
+                    Timber.i("Requesting USB permission for ${driver.device.deviceName}")
+                } else {
+                    val result = serialBusManager.connect(driver)
+                    if (result.isSuccess) {
+                        Timber.i("USB serial connected successfully")
+                        updateUsbStatus(true)
+                    } else {
+                        Timber.w("Failed to connect USB serial: ${result.exceptionOrNull()?.message}")
+                        updateUsbStatus(false)
+                    }
+                }
+            } else {
+                Timber.w("No USB serial driver found - LED hardware not detected")
+                updateUsbStatus(false)
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Error connecting USB device")
+            updateUsbStatus(false)
+        }
+    }
+
+    private fun updateUsbStatus(connected: Boolean) {
+        runOnUiThread {
+            if (connected) {
+                binding.tvUsbStatus.text = "LED متصل"
+                binding.tvUsbStatus.setTextColor(getColor(com.ebtikar.skinanalyzer.R.color.severity_excellent))
+                binding.dotUsb.setBackgroundResource(com.ebtikar.skinanalyzer.R.drawable.shape_status_dot_green)
+            } else {
+                binding.tvUsbStatus.text = "LED غير متصل"
+                binding.tvUsbStatus.setTextColor(getColor(com.ebtikar.skinanalyzer.R.color.severity_critical))
+                binding.dotUsb.setBackgroundResource(com.ebtikar.skinanalyzer.R.drawable.shape_status_dot_purple)
+            }
+        }
+    }
+
+    private fun checkCameraPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+            == PackageManager.PERMISSION_GRANTED
+        ) {
+            startCameraPreview()
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    private fun startCameraPreview() {
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+        cameraProviderFuture.addListener({
+            try {
+                cameraProvider = cameraProviderFuture.get()
+                val preview = Preview.Builder().build()
+                preview.setSurfaceProvider(binding.previewView.surfaceProvider)
+
+                val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+                cameraProvider?.unbindAll()
+                cameraProvider?.bindToLifecycle(
+                    this,
+                    cameraSelector,
+                    preview
+                )
+                Timber.i("Camera preview started")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to start camera preview")
+            }
+        }, ContextCompat.getMainExecutor(this))
+    }
+
+    private fun setupRecentReports() {
+        recentAdapter = HomeRecentAdapter { reportId ->
+            val intent = Intent(this, com.ebtikar.skinanalyzer.ui.report.ReportActivity::class.java).apply {
+                putExtra("report_id", reportId)
+            }
+            startActivity(intent)
+        }
+        binding.rvRecentReports.apply {
+            layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this@HomeActivity)
+            adapter = this@HomeActivity.recentAdapter
+        }
+    }
+
+    private fun updateClock() {
+        val dayFormat = SimpleDateFormat("EEEE، d MMMM yyyy", Locale("ar"))
+        val timeFormat = SimpleDateFormat("hh:mm a", Locale("ar"))
+        val now = Date()
+        binding.tvDateTime.text = "${dayFormat.format(now)} — ${timeFormat.format(now)}"
     }
 
     private fun setupUI() {
         binding.btnStartAnalysis.setOnClickListener {
-            startActivity(Intent(this, AnalysisActivity::class.java))
+            val intent = Intent(this, AnalysisActivity::class.java).apply {
+                putExtra("diagnosis_mode", viewModel.diagnosisMode.value)
+            }
+            startActivity(intent)
         }
 
         binding.btnSettings.setOnClickListener {
@@ -67,20 +273,81 @@ class HomeActivity : AppCompatActivity() {
         binding.btnHistory.setOnClickListener {
             startActivity(Intent(this, HistoryActivity::class.java))
         }
+
+        binding.cardComparison.setOnClickListener {
+            val reports = recentAdapter.currentList
+            if (reports.size >= 2) {
+                val intent = Intent(this, com.ebtikar.skinanalyzer.ui.comparison.ComparisonActivity::class.java).apply {
+                    putExtra("before_id", reports[1].id)
+                    putExtra("after_id", reports[0].id)
+                }
+                startActivity(intent)
+            } else if (reports.size == 1) {
+                val intent = Intent(this, com.ebtikar.skinanalyzer.ui.comparison.ComparisonActivity::class.java).apply {
+                    putExtra("before_id", reports[0].id)
+                }
+                startActivity(intent)
+            } else {
+                com.google.android.material.snackbar.Snackbar.make(
+                    binding.root, "قم بإجراء تحليلين على الأقل للمقارنة",
+                    com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+        binding.cardHistoryQuick.setOnClickListener {
+            startActivity(Intent(this, HistoryActivity::class.java))
+        }
+
+        binding.cardReport.setOnClickListener {
+            startActivity(Intent(this, HistoryActivity::class.java))
+        }
+
+        binding.layoutDiagnosisUV.setOnClickListener {
+            viewModel.setDiagnosisMode(Constants.DIAGNOSIS_UV)
+        }
+
+        binding.layoutDiagnosisRGB.setOnClickListener {
+            viewModel.setDiagnosisMode(Constants.DIAGNOSIS_RGB)
+        }
+
+        binding.layoutDiagnosisCross.setOnClickListener {
+            viewModel.setDiagnosisMode(Constants.DIAGNOSIS_CROSS)
+        }
     }
 
     private fun observeViewModel() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
+                    viewModel.diagnosisMode.collect { mode ->
+                        updateDiagnosisSelection(mode)
+                    }
+                }
+
+                launch {
+                    viewModel.historyCount.collect { count ->
+                        binding.tvHistoryCount.text = count.toString()
+                        binding.tvHistoryCountQuick.text = "السجل ($count)"
+                        binding.btnHistory.isEnabled = count > 0
+                    }
+                }
+
+                launch {
+                    viewModel.todayCount.collect { count ->
+                        binding.tvTodayCount.text = count.toString()
+                    }
+                }
+
+                launch {
+                    viewModel.recentReports.collect { reports ->
+                        recentAdapter.submitList(reports)
+                    }
+                }
+
+                launch {
                     viewModel.connectionStatus.collect { status ->
                         binding.tvConnectionStatus.text = status
-                        binding.dotConnection.setBackgroundResource(
-                            if (networkMonitor.isOnline())
-                                com.ebtikar.skinanalyzer.R.drawable.shape_status_dot_green
-                            else
-                                com.ebtikar.skinanalyzer.R.drawable.shape_status_dot_purple
-                        )
                     }
                 }
 
@@ -89,19 +356,35 @@ class HomeActivity : AppCompatActivity() {
                         binding.tvHardwareStatus.text = status
                     }
                 }
+            }
+        }
+    }
 
-                launch {
-                    viewModel.analysisMode.collect { mode ->
-                        binding.tvAnalysisMode.text = mode
-                    }
-                }
+    private fun updateDiagnosisSelection(mode: String) {
+        binding.checkUV.visibility = View.GONE
+        binding.checkRGB.visibility = View.GONE
+        binding.checkCross.visibility = View.GONE
 
-                launch {
-                    viewModel.historyCount.collect { count ->
-                        binding.tvHistoryCount.text = count.toString()
-                        binding.btnHistory.isEnabled = count > 0
-                    }
-                }
+        when (mode) {
+            Constants.DIAGNOSIS_UV -> {
+                binding.checkUV.visibility = View.VISIBLE
+                binding.tvSelectedDiagnosisMode.text = "UV"
+                binding.tvSelectedDiagnosisMode.setTextColor(getColor(com.ebtikar.skinanalyzer.R.color.accent_purple))
+            }
+            Constants.DIAGNOSIS_RGB -> {
+                binding.checkRGB.visibility = View.VISIBLE
+                binding.tvSelectedDiagnosisMode.text = "RGB"
+                binding.tvSelectedDiagnosisMode.setTextColor(getColor(com.ebtikar.skinanalyzer.R.color.primary))
+            }
+            Constants.DIAGNOSIS_CROSS -> {
+                binding.checkCross.visibility = View.VISIBLE
+                binding.tvSelectedDiagnosisMode.text = "Cross"
+                binding.tvSelectedDiagnosisMode.setTextColor(getColor(com.ebtikar.skinanalyzer.R.color.accent_coral))
+            }
+            else -> {
+                binding.checkCross.visibility = View.VISIBLE
+                binding.tvSelectedDiagnosisMode.text = "Cross"
+                binding.tvSelectedDiagnosisMode.setTextColor(getColor(com.ebtikar.skinanalyzer.R.color.accent_coral))
             }
         }
     }

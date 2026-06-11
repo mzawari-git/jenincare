@@ -4,7 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
-import android.graphics.SurfaceTexture
+import android.graphics.Matrix
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
@@ -12,16 +12,15 @@ import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
-import android.hardware.camera2.params.StreamConfigurationMap
 import android.media.ImageReader
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Size
 import android.view.Surface
-import com.ebtikar.skinanalyzer.util.ImageUtils
+import android.view.TextureView
+import android.view.WindowManager
 import kotlinx.coroutines.suspendCancellableCoroutine
 import timber.log.Timber
-import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.resume
@@ -44,6 +43,11 @@ class USBCameraManager @Inject constructor(
     private var backgroundThread: HandlerThread? = null
     private var supportedSizes: List<Size> = emptyList()
     private var previewSurface: Surface? = null
+    private var sensorOrientation: Int = 0
+    private var previewTargetSize: Size = TARGET_RESOLUTION
+    private var displayRotationDegrees: Int = 0
+
+    var isDisplayPortrait: Boolean = false
 
     val isReady: Boolean get() = cameraDevice != null
 
@@ -69,7 +73,8 @@ class USBCameraManager @Inject constructor(
             val cameraId = cameraManager.cameraIdList.firstOrNull { id ->
                 val characteristics = cameraManager.getCameraCharacteristics(id)
                 val facing = characteristics.get(CameraCharacteristics.LENS_FACING)
-                facing == CameraCharacteristics.LENS_FACING_FRONT ||
+                facing == CameraCharacteristics.LENS_FACING_BACK ||
+                    facing == CameraCharacteristics.LENS_FACING_FRONT ||
                     facing == CameraCharacteristics.LENS_FACING_EXTERNAL
             }
 
@@ -77,7 +82,8 @@ class USBCameraManager @Inject constructor(
                 val characteristics = cameraManager.getCameraCharacteristics(cameraId)
                 val config = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
                 supportedSizes = config?.getOutputSizes(ImageFormat.JPEG)?.toList() ?: emptyList()
-                Timber.i("Found camera $cameraId with ${supportedSizes.size} supported sizes")
+                sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) ?: 0
+                Timber.i("Found camera $cameraId with ${supportedSizes.size} sizes, orientation=$sensorOrientation")
             } else {
                 Timber.w("No suitable camera found")
             }
@@ -90,11 +96,12 @@ class USBCameraManager @Inject constructor(
 
     fun getOptimalSize(): Size {
         if (supportedSizes.isEmpty()) return TARGET_RESOLUTION
-
+        val targetWidth = if (isDisplayPortrait) TARGET_RESOLUTION.height else TARGET_RESOLUTION.width
+        val targetHeight = if (isDisplayPortrait) TARGET_RESOLUTION.width else TARGET_RESOLUTION.height
         return supportedSizes
-            .filter { it.width <= TARGET_RESOLUTION.width && it.height <= TARGET_RESOLUTION.height }
+            .filter { it.width <= targetWidth && it.height <= targetHeight }
             .maxByOrNull { it.width * it.height }
-            ?: TARGET_RESOLUTION
+            ?: Size(targetWidth, targetHeight)
     }
 
     suspend fun openCamera(cameraId: String, surface: Surface? = null): CameraDevice =
@@ -105,13 +112,43 @@ class USBCameraManager @Inject constructor(
                 previewSurface = surface
             }
 
+            updateDisplayRotation()
+
             val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
 
             try {
                 cameraManager.openCamera(cameraId, object : CameraDevice.StateCallback() {
                     override fun onOpened(camera: CameraDevice) {
                         cameraDevice = camera
-                        Timber.i("Camera opened: $cameraId")
+                        Timber.i("Camera opened: $cameraId, sensorOrientation=$sensorOrientation, displayRotation=$displayRotationDegrees")
+                        val ps = previewSurface
+                        if (ps != null) {
+                            try {
+                                val size = getOptimalSize()
+                                previewTargetSize = size
+                                imageReader = ImageReader.newInstance(size.width, size.height, ImageFormat.JPEG, 4)
+                                val targets = listOf(ps, imageReader!!.surface)
+                                camera.createCaptureSession(
+                                    targets,
+                                    object : CameraCaptureSession.StateCallback() {
+                                        override fun onConfigured(session: CameraCaptureSession) {
+                                            captureSession = session
+                                            val request = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
+                                                addTarget(ps)
+                                                configureAutoExposure(this)
+                                                configureAutoFocusPreview(this)
+                                            }
+                                            session.setRepeatingRequest(request.build(), null, backgroundHandler)
+                                            Timber.i("Preview + capture session ready, size=${size.width}x${size.height}")
+                                        }
+                                        override fun onConfigureFailed(session: CameraCaptureSession) {
+                                            Timber.e("Combined session config failed")
+                                        }
+                                    }, backgroundHandler)
+                            } catch (e: Exception) {
+                                Timber.w(e, "Failed to create combined session")
+                            }
+                        }
                         if (continuation.isActive) {
                             continuation.resume(camera)
                         }
@@ -144,85 +181,59 @@ class USBCameraManager @Inject constructor(
 
     suspend fun captureFrame(): Bitmap = suspendCancellableCoroutine { continuation ->
         val device = cameraDevice ?: run {
-            if (continuation.isActive) {
-                continuation.resumeWithException(IllegalStateException("Camera not open"))
-            }
+            if (continuation.isActive) continuation.resumeWithException(IllegalStateException("Camera not open"))
+            return@suspendCancellableCoroutine
+        }
+        val session = captureSession ?: run {
+            if (continuation.isActive) continuation.resumeWithException(IllegalStateException("No capture session"))
+            return@suspendCancellableCoroutine
+        }
+        val reader = imageReader ?: run {
+            if (continuation.isActive) continuation.resumeWithException(IllegalStateException("No image reader"))
             return@suspendCancellableCoroutine
         }
 
-        val size = getOptimalSize()
-
-        imageReader = ImageReader.newInstance(size.width, size.height, ImageFormat.JPEG, 2).apply {
-            setOnImageAvailableListener({ reader ->
-                val image = reader.acquireLatestImage() ?: return@setOnImageAvailableListener
+        reader.setOnImageAvailableListener({ r ->
+            val image = r.acquireLatestImage()
+            if (image != null) {
                 try {
                     val buffer = image.planes[0].buffer
                     val bytes = ByteArray(buffer.remaining())
                     buffer.get(bytes)
-
                     val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                    if (continuation.isActive) {
-                        continuation.resume(bitmap)
-                    }
+                    if (continuation.isActive) continuation.resume(bitmap)
                 } catch (e: Exception) {
-                    Timber.e(e, "Failed to capture frame")
-                    if (continuation.isActive) {
-                        continuation.resumeWithException(e)
-                    }
+                    Timber.e(e, "Failed to decode captured frame")
+                    if (continuation.isActive) continuation.resumeWithException(e)
                 } finally {
                     image.close()
                 }
-            }, backgroundHandler)
-        }
+            }
+        }, backgroundHandler)
 
         try {
             val captureBuilder = device.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE).apply {
-                addTarget(imageReader!!.surface)
+                addTarget(reader.surface)
                 set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO)
+                set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
+                set(CaptureRequest.JPEG_ORIENTATION, getJpegOrientation())
+                set(CaptureRequest.JPEG_QUALITY, 95.toByte())
                 configureAutoExposure(this)
             }
-
-            device.createCaptureSession(
-                listOf(imageReader!!.surface),
-                object : CameraCaptureSession.StateCallback() {
-                    override fun onConfigured(session: CameraCaptureSession) {
-                        captureSession = session
-                        try {
-                            session.capture(captureBuilder.build(), object : CameraCaptureSession.CaptureCallback() {
-                                override fun onCaptureCompleted(
-                                    session: CameraCaptureSession,
-                                    request: CaptureRequest,
-                                    result: android.hardware.camera2.TotalCaptureResult
-                                ) {
-                                    Timber.d("Frame captured successfully")
-                                }
-                            }, backgroundHandler)
-                        } catch (e: CameraAccessException) {
-                            Timber.e(e, "Capture request failed")
-                            if (continuation.isActive) {
-                                continuation.resumeWithException(e)
-                            }
-                        }
-                    }
-
-                    override fun onConfigureFailed(session: CameraCaptureSession) {
-                        Timber.e("Capture session configuration failed")
-                        if (continuation.isActive) {
-                            continuation.resumeWithException(IllegalStateException("Session config failed"))
-                        }
-                    }
-                },
-                backgroundHandler
-            )
+            session.capture(captureBuilder.build(), object : CameraCaptureSession.CaptureCallback() {
+                override fun onCaptureCompleted(
+                    session: CameraCaptureSession,
+                    request: CaptureRequest,
+                    result: android.hardware.camera2.TotalCaptureResult
+                ) {
+                    Timber.d("Still capture submitted")
+                }
+            }, backgroundHandler)
         } catch (e: CameraAccessException) {
-            Timber.e(e, "Failed to create capture session")
-            if (continuation.isActive) {
-                continuation.resumeWithException(e)
-            }
+            Timber.e(e, "Still capture failed")
+            if (continuation.isActive) continuation.resumeWithException(e)
         }
     }
-
-    fun getPreviewSurface(): Surface? = previewSurface
 
     fun closeCamera() {
         captureSession?.close()
@@ -236,10 +247,54 @@ class USBCameraManager @Inject constructor(
         Timber.i("Camera released")
     }
 
-    fun configureAutoExposure(builder: CaptureRequest.Builder) {
+    private fun updateDisplayRotation() {
+        val display = (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay
+        displayRotationDegrees = when (display.rotation) {
+            Surface.ROTATION_0 -> 0
+            Surface.ROTATION_90 -> 90
+            Surface.ROTATION_180 -> 180
+            Surface.ROTATION_270 -> 270
+            else -> 0
+        }
+    }
+
+    private fun configureAutoExposure(builder: CaptureRequest.Builder) {
         builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
         builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, android.util.Range(MIN_FPS, 30))
     }
+
+    private fun configureAutoFocusPreview(builder: CaptureRequest.Builder) {
+        try {
+            builder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
+        } catch (e: Exception) {
+            Timber.w(e, "Continuous AF not supported, using AUTO")
+            builder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO)
+        }
+    }
+
+    fun getJpegOrientation(): Int {
+        return (sensorOrientation + displayRotationDegrees) % 360
+    }
+
+    fun rotateTextureView(textureView: TextureView) {
+        if (textureView.width == 0 || textureView.height == 0) return
+        val rotation = (sensorOrientation + displayRotationDegrees) % 360
+        if (rotation == 0) return
+        val matrix = Matrix()
+        val cx = textureView.width / 2f
+        val cy = textureView.height / 2f
+        matrix.postRotate(rotation.toFloat(), cx, cy)
+        if (rotation == 90 || rotation == 270) {
+            val scale = maxOf(
+                textureView.width.toFloat() / textureView.height.toFloat(),
+                textureView.height.toFloat() / textureView.width.toFloat()
+            )
+            matrix.postScale(scale, scale, cx, cy)
+        }
+        textureView.setTransform(matrix)
+    }
+
+    fun getPreviewSize(): Size = previewTargetSize
 
     fun release() {
         closeCamera()

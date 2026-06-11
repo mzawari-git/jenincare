@@ -37,6 +37,7 @@
     <link id="googleFontsLink" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
 
     <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
     <link rel="stylesheet" href="{{ asset('css/tailwind.css') }}?v=4">
@@ -49,10 +50,6 @@
     <meta name="apple-mobile-web-app-title" content="شركة جنين للتجميل">
     <meta name="application-name" content="شركة جنين للتجميل">
     <meta name="msapplication-TileColor" content="#050a08">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-
     <link rel="stylesheet" href="{{ asset('css/themes/' . $activeTheme . '.css') }}?v=4">
     <link rel="stylesheet" href="{{ asset('css/light-mode.css') }}?v=4">
     <script>(function(){var m=localStorage.getItem('شركة جنين للتجميل_mode');if(!m){var c=document.cookie.match('شركة جنين للتجميل_mode=([^;]+)');m=c?c[1]:null;}if(m==='dark'){document.documentElement.removeAttribute('data-theme-mode');}else{document.documentElement.setAttribute('data-theme-mode','light');}})();</script>
@@ -158,7 +155,7 @@
     @include('frontend.layouts.organic-spa.footer')
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js" defer></script>
     <script src="{{ asset('js/behavioral-analysis.js') }}?v=4" defer></script>
     <script src="{{ asset('js/app.js') }}?v=4"></script>
     @if($tracking->isEnabled()) {!! $tracking->getBrowserPixelScript() !!} @endif

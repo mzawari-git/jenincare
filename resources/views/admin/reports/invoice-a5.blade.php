@@ -33,7 +33,11 @@
 <body>
     <div class="header">
         <div class="header-left">
-            <h1>{{ $siteSettings['site_name'] ?? 'شركة جنين للتجميل' }}</h1>
+            @php $logoUrl = \App\Helpers\SettingsHelper::siteLogo(); @endphp
+            @if($logoUrl)
+                <img src="{{ $logoUrl }}" alt="Logo" style="height:24px;margin-bottom:2px;">
+            @endif
+            <h1>{{ $siteSettings['site_name'] ?? \App\Helpers\SettingsHelper::siteName() }}</h1>
             <div class="company">{{ $siteSettings['site_description'] ?? '' }}</div>
         </div>
         <div class="header-right">
@@ -96,6 +100,6 @@
         </div>
     </div>
 
-    <div class="footer">{{ $siteSettings['site_name'] ?? 'شركة جنين للتجميل' }} - شكراً لتعاملكم معنا</div>
+    <div class="footer">{{ $siteSettings['site_name'] ?? \App\Helpers\SettingsHelper::siteName() }} - شكراً لتعاملكم معنا</div>
 </body>
 </html>

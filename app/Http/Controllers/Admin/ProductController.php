@@ -18,9 +18,9 @@ class ProductController extends Controller
             'total' => Product::count(),
             'active' => Product::where('status', 'active')->count(),
             'inactive' => Product::where('status', '!=', 'active')->count(),
-            'low_stock' => Product::where('stock_quantity', '>', 0)->where('stock_quantity', '<=', 10)->count(),
-            'out_of_stock' => Product::where('stock_quantity', 0)->count(),
-            'in_stock' => Product::where('stock_quantity', '>', 10)->count(),
+            'low_stock' => Product::where('track_inventory', true)->where('stock_quantity', '>', 0)->where('stock_quantity', '<=', 10)->count(),
+            'out_of_stock' => Product::where('track_inventory', true)->where('stock_quantity', 0)->count(),
+            'in_stock' => Product::where(function($q) { $q->where('track_inventory', false)->orWhere('stock_quantity', '>', 10); })->count(),
             'total_value' => Product::where('status', 'active')->sum(\DB::raw('b2c_price * stock_quantity')),
             'categories' => \App\Models\Category::count(),
             'featured' => Product::where('is_featured', true)->count(),
@@ -74,6 +74,10 @@ class ProductController extends Controller
             $data['status'] = 'draft';
         }
 
+        if ($data['status'] === 'active' && empty($data['published_at'])) {
+            $data['published_at'] = now();
+        }
+
         Product::create($data);
         return redirect()->route('admin.products.index')->with('success', 'Product created.');
     }
@@ -117,6 +121,10 @@ class ProductController extends Controller
 
         if (empty($data['status'])) {
             $data['status'] = 'draft';
+        }
+
+        if ($data['status'] === 'active' && empty($product->published_at)) {
+            $data['published_at'] = now();
         }
 
         $product->update($data);

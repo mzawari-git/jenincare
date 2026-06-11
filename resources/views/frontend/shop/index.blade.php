@@ -157,7 +157,9 @@
                         <span class="absolute top-3 right-3 pill-brand text-[11px] font-bold px-2.5 py-1 rounded-full">جديد</span>
                         @endif
                         @php $qty = $product->stock_quantity ?? 0; @endphp
-                        @if($qty <= 0)
+                        @if(!$product->track_inventory)
+                        {{-- Always in stock --}}
+                        @elseif($qty <= 0)
                         <span class="absolute top-3 left-3 bg-red-500/20 text-red-400 text-[10px] font-bold px-2 py-0.5 rounded-full">نفذ</span>
                         @elseif($qty <= 10)
                         <span class="absolute top-3 left-3 bg-amber-500/20 text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded-full">تبقى {{ $qty }}</span>
@@ -213,7 +215,9 @@
                             @endif
                             <span class="text-base font-extrabold text-brand-500">{{ number_format($product->final_b2c_price ?? $product->b2c_price, 2) }} ₪</span>
                             @php $qty = $product->stock_quantity ?? 0; @endphp
-                            @if($qty <= 0)
+                            @if(!$product->track_inventory)
+                            {{-- Always in stock --}}
+                            @elseif($qty <= 0)
                             <span class="bg-red-500/20 text-red-400 text-[10px] font-bold px-2 py-0.5 rounded-full">نفذ المخزون</span>
                             @elseif($qty <= 10)
                             <span class="bg-amber-500/20 text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded-full">تبقى {{ $qty }}</span>

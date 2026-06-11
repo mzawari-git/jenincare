@@ -121,33 +121,6 @@
                                     </div>
                                 </td>
                             </tr>
-
-                            {{-- Edit Barcode Modal --}}
-                            <div class="modal fade" id="editBarcode{{ $product->id }}" tabindex="-1">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <form method="POST" action="{{ route('admin.barcodes.update', $product) }}">
-                                            @csrf
-                                            @method('PATCH')
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">تحديث الباركود — {{ $product->name_ar }}</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="mb-3">
-                                                    <label class="form-label">رقم الباركود</label>
-                                                    <input type="text" name="barcode" value="{{ $product->barcode }}" class="form-control" maxlength="100" placeholder="مثال: 6261234567890">
-                                                    <div class="form-text">اترك فارغاً لإزالة الباركود</div>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                                                <button type="submit" class="btn btn-primary">حفظ</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
                             @empty
                             <tr>
                                 <td colspan="7" class="text-center py-4 text-muted">لا توجد منتجات مطابقة للبحث</td>
@@ -171,6 +144,35 @@
             </div>
         </div>
     </form>
+
+{{-- Edit Barcode Modals (must be outside printForm) --}}
+@foreach($products as $product)
+<div class="modal fade" id="editBarcode{{ $product->id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ route('admin.barcodes.update', $product) }}">
+                @csrf
+                @method('PATCH')
+                <div class="modal-header">
+                    <h5 class="modal-title">تحديث الباركود — {{ $product->name_ar }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">رقم الباركود</label>
+                        <input type="text" name="barcode" value="{{ $product->barcode }}" class="form-control" maxlength="100" placeholder="مثال: 6261234567890">
+                        <div class="form-text">اترك فارغاً لإزالة الباركود</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endforeach
 </div>
 
 <script>

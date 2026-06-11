@@ -10,8 +10,8 @@ import java.io.File
 
 interface SkinAnalysisRepository {
     fun getAnalysisState(): StateFlow<AnalysisState>
-    suspend fun startAnalysis(outputDir: File): Result<Map<LightSpectrum, File>>
-    suspend fun analyzeImages(frames: Map<LightSpectrum, File>): Result<SkinAnalysisReport>
+    suspend fun startAnalysis(outputDir: java.io.File, diagnosisMode: String = "all", previewSurface: android.view.Surface? = null): Result<Map<com.ebtikar.skinanalyzer.hardware.LightSpectrum, java.io.File>>
+    suspend fun analyzeImages(frames: Map<com.ebtikar.skinanalyzer.hardware.LightSpectrum, java.io.File>, mode: String = "auto"): Result<com.ebtikar.skinanalyzer.model.SkinAnalysisReport>
     suspend fun saveReport(report: SkinAnalysisReport): Result<String>
     suspend fun getReport(id: String): SkinReportEntity?
     fun getAllReports(): Flow<List<SkinReportEntity>>

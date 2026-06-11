@@ -34,7 +34,11 @@
 <body>
     <div class="header">
         <div class="header-left">
-            <h1>{{ $siteSettings['site_name'] ?? 'شركة جنين للتجميل' }}</h1>
+            @php $logoUrl = \App\Helpers\SettingsHelper::siteLogo(); @endphp
+            @if($logoUrl)
+                <img src="{{ $logoUrl }}" alt="Logo" style="height:40px;margin-bottom:4px;">
+            @endif
+            <h1>{{ $siteSettings['site_name'] ?? \App\Helpers\SettingsHelper::siteName() }}</h1>
             <div class="company">{{ $siteSettings['site_description'] ?? '' }}</div>
         </div>
         <div class="header-right">
@@ -108,6 +112,6 @@
     <div class="notes"><strong>ملاحظات الشحن:</strong> {{ $order->shipping_notes }}</div>
     @endif
 
-    <div class="footer">{{ $siteSettings['site_name'] ?? 'شركة جنين للتجميل' }} - شكراً لتعاملكم معنا | {{ $order->created_at->format('Y-m-d H:i') }}</div>
+    <div class="footer">{{ $siteSettings['site_name'] ?? \App\Helpers\SettingsHelper::siteName() }} - شكراً لتعاملكم معنا | {{ $order->created_at->format('Y-m-d H:i') }}</div>
 </body>
 </html>

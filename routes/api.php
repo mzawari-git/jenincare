@@ -201,3 +201,82 @@ Route::prefix('tracking')->group(function () {
     Route::post('/batch', [TrackingController::class, 'batch'])->name('api.tracking.batch');
     Route::get('/health', [TrackingController::class, 'health'])->name('api.tracking.health');
 });
+
+Route::prefix('v1')->middleware('auth:api')->group(function () {
+    Route::post('/scans', [\App\Http\Controllers\Api\ScanController::class, 'store'])->name('api.scans.store');
+    Route::get('/scans', [\App\Http\Controllers\Api\ScanController::class, 'index'])->name('api.scans.index');
+    Route::get('/scans/{id}', [\App\Http\Controllers\Api\ScanController::class, 'show'])->name('api.scans.show');
+    Route::post('/scans/{id}/unlock', [\App\Http\Controllers\Api\ScanController::class, 'unlock'])->name('api.scans.unlock');
+    Route::get('/scans/{id}/timeline', [\App\Http\Controllers\Api\ScanController::class, 'timeline'])->name('api.scans.timeline');
+
+    Route::get('/products/recommended/{scanId}', [\App\Http\Controllers\Api\ProductController::class, 'recommended'])->name('api.products.recommended');
+    Route::post('/cart/add', [\App\Http\Controllers\Api\ProductController::class, 'addToCart'])->name('api.cart.add');
+
+    Route::get('/profile', [\App\Http\Controllers\Api\AuthController::class, 'profile'])->name('api.profile');
+    Route::post('/device/register', [\App\Http\Controllers\Api\AuthController::class, 'deviceRegister'])->name('api.device.register');
+});
+
+Route::post('/auth/login', [\App\Http\Controllers\Api\AuthController::class, 'login'])->name('api.auth.login');
+Route::post('/auth/register', [\App\Http\Controllers\Api\AuthController::class, 'register'])->name('api.auth.register');
+
+Route::post('/admin/auth/login', [\App\Http\Controllers\Admin\AuthController::class, 'login'])->name('api.admin.auth.login');
+Route::post('/admin/auth/logout', [\App\Http\Controllers\Admin\AuthController::class, 'logout'])->middleware('auth:api')->name('api.admin.auth.logout');
+Route::get('/admin/auth/verify', [\App\Http\Controllers\Admin\AuthController::class, 'verify'])->middleware('auth:api')->name('api.admin.auth.verify');
+Route::get('/admin/auth/me', [\App\Http\Controllers\Admin\AuthController::class, 'verify'])->middleware('auth:api')->name('api.admin.auth.me');
+
+Route::get('/v1/health', function () {
+    return response()->json(['status' => 'ok', 'version' => '1.0', 'time' => now()]);
+});
+
+Route::prefix('admin')->middleware(['auth:api'])->group(function () {
+    // Dashboard
+    Route::get('/dashboard/stats', [\App\Http\Controllers\Admin\DashboardController::class, 'skinAnalyzerStats']);
+    Route::get('/dashboard/charts', [\App\Http\Controllers\Admin\DashboardController::class, 'skinAnalyzerStats']);
+    Route::get('/dashboard/recent-scans', [\App\Http\Controllers\Admin\DashboardController::class, 'pendingSkinScans']);
+    Route::get('/dashboard/quota-usage', [\App\Http\Controllers\Admin\AIProviderController::class, 'quotaStatus']);
+
+    // Scans
+    Route::get('/scans', [\App\Http\Controllers\Admin\DashboardController::class, 'allSkinScans']);
+    Route::get('/scans/{id}', [\App\Http\Controllers\Admin\DashboardController::class, 'skinScanDetail']);
+    Route::post('/scans/{id}/approve', [\App\Http\Controllers\Admin\ScanApprovalController::class, 'approve']);
+    Route::post('/scans/{id}/reject', [\App\Http\Controllers\Admin\ScanApprovalController::class, 'reject']);
+    Route::post('/scans/{id}/pin', [\App\Http\Controllers\Admin\ScanApprovalController::class, 'generatePin']);
+    Route::post('/scans/batch-approve', [\App\Http\Controllers\Admin\ScanApprovalController::class, 'batchApprove']);
+    Route::post('/scans/{id}/broadcast', [\App\Http\Controllers\Admin\ScanApprovalController::class, 'broadcastResult']);
+    Route::get('/scans/stats', [\App\Http\Controllers\Admin\DashboardController::class, 'skinAnalyzerStats']);
+
+    // AI Providers
+    Route::get('/ai-providers', [\App\Http\Controllers\Admin\AIProviderController::class, 'index']);
+    Route::post('/ai-providers', [\App\Http\Controllers\Admin\AIProviderController::class, 'store']);
+    Route::get('/ai-providers/{id}', [\App\Http\Controllers\Admin\AIProviderController::class, 'show']);
+    Route::put('/ai-providers/{id}', [\App\Http\Controllers\Admin\AIProviderController::class, 'update']);
+    Route::post('/ai-providers/{id}/toggle', [\App\Http\Controllers\Admin\AIProviderController::class, 'activate']);
+    Route::post('/ai-providers/{id}/test', [\App\Http\Controllers\Admin\AIProviderController::class, 'testConnection']);
+    Route::get('/ai-providers/quota-status', [\App\Http\Controllers\Admin\AIProviderController::class, 'quotaStatus']);
+
+    // Prompts
+    Route::get('/prompts', [\App\Http\Controllers\Admin\PromptController::class, 'index']);
+    Route::get('/prompts/{id}', [\App\Http\Controllers\Admin\PromptController::class, 'show']);
+    Route::post('/prompts', [\App\Http\Controllers\Admin\PromptController::class, 'store']);
+    Route::put('/prompts/{id}', [\App\Http\Controllers\Admin\PromptController::class, 'update']);
+
+    // White Label
+    Route::get('/white-label', [\App\Http\Controllers\Admin\WhiteLabelController::class, 'show']);
+    Route::put('/white-label', [\App\Http\Controllers\Admin\WhiteLabelController::class, 'update']);
+    Route::post('/white-label/logo', [\App\Http\Controllers\Admin\WhiteLabelController::class, 'uploadLogo']);
+
+    // SkinAnalyzer Settings
+    Route::get('/settings/skinanalyzer', function () {
+        return response()->json([
+            'free_scan_mode' => \App\Models\Setting::get('skinanalyzer.free_scan_mode', false),
+        ]);
+    });
+    Route::post('/settings/skinanalyzer', function (\Illuminate\Http\Request $request) {
+        $value = filter_var($request->input('free_scan_mode', false), FILTER_VALIDATE_BOOLEAN);
+        \App\Models\Setting::set('skinanalyzer.free_scan_mode', $value);
+        return response()->json([
+            'message' => 'Settings saved.',
+            'free_scan_mode' => $value,
+        ]);
+    });
+});

@@ -21,6 +21,10 @@ object Constants {
     const val ANALYSIS_CLOUD = "cloud"
     const val ANALYSIS_AUTO = "auto"
 
+    const val DIAGNOSIS_UV = "uv"
+    const val DIAGNOSIS_RGB = "rgb"
+    const val DIAGNOSIS_CROSS = "cross"
+
     const val DB_NAME = "skin_analyzer_db"
     const val DB_VERSION = 1
 

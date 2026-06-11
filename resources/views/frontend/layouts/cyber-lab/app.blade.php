@@ -39,6 +39,7 @@
     <link id="googleFontsLink" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
 
     {{-- Phosphor Icons --}}
     <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
@@ -160,7 +161,7 @@
     {{-- Bootstrap JS (deferred) --}}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
     {{-- Alpine.js (deferred) --}}
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js" defer></script>
     <script src="{{ asset('js/behavioral-analysis.js') }}" defer></script>
 
     {{-- Core App JS --}}

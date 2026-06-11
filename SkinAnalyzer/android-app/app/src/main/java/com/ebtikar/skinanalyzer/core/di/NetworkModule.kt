@@ -3,12 +3,15 @@ package com.ebtikar.skinanalyzer.core.di
 import com.ebtikar.skinanalyzer.BuildConfig
 import com.ebtikar.skinanalyzer.data.local.TokenManager
 import com.ebtikar.skinanalyzer.data.remote.CloudApiService
+import com.ebtikar.skinanalyzer.util.PreferencesManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -56,9 +59,34 @@ object NetworkModule {
     @Singleton
     fun provideOkHttpClient(
         authInterceptor: Interceptor,
-        loggingInterceptor: HttpLoggingInterceptor
+        loggingInterceptor: HttpLoggingInterceptor,
+        preferencesManager: PreferencesManager
     ): OkHttpClient {
         return OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val originalRequest = chain.request()
+                val customUrl = runBlocking { preferencesManager.apiUrlFlow.first() }
+                
+                if (customUrl.isNotBlank()) {
+                    try {
+                        val customHttpUrl = customUrl.toHttpUrlOrNull()
+                        if (customHttpUrl != null) {
+                            val newUrl = originalRequest.url.newBuilder()
+                                .scheme(customHttpUrl.scheme)
+                                .host(customHttpUrl.host)
+                                .port(customHttpUrl.port)
+                                .build()
+                            chain.proceed(originalRequest.newBuilder().url(newUrl).build())
+                        } else {
+                            chain.proceed(originalRequest)
+                        }
+                    } catch (e: Exception) {
+                        chain.proceed(originalRequest)
+                    }
+                } else {
+                    chain.proceed(originalRequest)
+                }
+            }
             .addInterceptor(authInterceptor)
             .addInterceptor(loggingInterceptor)
             .connectTimeout(60, TimeUnit.SECONDS)

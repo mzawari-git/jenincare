@@ -14,6 +14,9 @@
     @if(!empty($siteSettings['site_favicon_url']))<link rel="icon" href="{{ $siteSettings['site_favicon_url'] }}">@else<link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">@endif
 
     <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
     <link id="googleFontsLink" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
 
     <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
@@ -101,7 +104,7 @@
     @include('frontend.layouts.luxury-boutique.footer')
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js" defer></script>
     <script src="{{ asset('js/behavioral-analysis.js') }}" defer></script>
     <script src="{{ asset('js/app.js') }}"></script>
     @if($tracking->isEnabled()) {!! $tracking->getBrowserPixelScript() !!} @endif

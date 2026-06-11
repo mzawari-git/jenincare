@@ -53,4 +53,36 @@ return [
         'base_url' => env('LTV_SERVICE_URL', 'http://localhost:8000'),
     ],
 
+    'yimei' => [
+        'api_key' => env('YIMEI_API_KEY', ''),
+        'api_url' => env('YIMEI_API_URL', 'https://api.yimei.ai/v1'),
+        'model' => env('YIMEI_MODEL', 'skin-v3'),
+        'timeout' => env('YIMEI_TIMEOUT', 30),
+    ],
+
+    'hautai' => [
+        'api_key' => env('HAUTAI_API_KEY', ''),
+        'api_url' => env('HAUTAI_API_URL', 'https://api.haut.ai/v1'),
+        'timeout' => env('HAUTAI_TIMEOUT', 30),
+    ],
+
+    'perfectcorp' => [
+        'api_key' => env('PERFECTCORP_API_KEY', ''),
+        'api_secret' => env('PERFECTCORP_API_SECRET', ''),
+        'api_url' => env('PERFECTCORP_API_URL', 'https://api.perfectcorp.com/youcam'),
+        'timeout' => env('PERFECTCORP_TIMEOUT', 30),
+    ],
+
+    'skinive' => [
+        'api_key' => env('SKINIVE_API_KEY', ''),
+        'api_url' => env('SKINIVE_API_URL', 'https://api.skinive.com/v1'),
+        'timeout' => env('SKINIVE_TIMEOUT', 30),
+    ],
+
+    'zyla' => [
+        'api_key' => env('ZYLA_API_KEY', ''),
+        'api_url' => env('ZYLA_API_URL', 'https://zylalabs.com/api/skin-analyze-advanced'),
+        'timeout' => env('ZYLA_TIMEOUT', 60),
+    ],
+
 ];

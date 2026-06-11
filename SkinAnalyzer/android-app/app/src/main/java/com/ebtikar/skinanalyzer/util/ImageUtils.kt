@@ -3,10 +3,16 @@ package com.ebtikar.skinanalyzer.util
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
 import android.graphics.Matrix
+import android.graphics.Paint
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.math.max
+import kotlin.math.min
 
 object ImageUtils {
 
@@ -60,6 +66,116 @@ object ImageUtils {
         val dir = File(baseDir, "captures/$sessionId")
         if (!dir.exists()) dir.mkdirs()
         return dir
+    }
+
+    fun applySpectralFilter(source: Bitmap, spectrumName: String): Bitmap {
+        val w = source.width
+        val h = source.height
+        val result = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val pixels = IntArray(w * h)
+        source.getPixels(pixels, 0, w, 0, 0, w, h)
+
+        when (spectrumName) {
+            "WHITE" -> {
+                for (i in pixels.indices) {
+                    val r = (pixels[i] shr 16) and 0xFF
+                    val g = (pixels[i] shr 8) and 0xFF
+                    val b = pixels[i] and 0xFF
+                    val nr = min(255, (r * 1.05f).toInt())
+                    val ng = min(255, (g * 1.05f).toInt())
+                    val nb = min(255, (b * 1.08f).toInt())
+                    pixels[i] = (0xFF shl 24) or (nr shl 16) or (ng shl 8) or nb
+                }
+            }
+            "UV365" -> {
+                for (i in pixels.indices) {
+                    val r = (pixels[i] shr 16) and 0xFF
+                    val g = (pixels[i] shr 8) and 0xFF
+                    val b = pixels[i] and 0xFF
+                    val nr = min(255, (r * 0.3f + 30).toInt())
+                    val ng = min(255, (g * 0.4f + 20).toInt())
+                    val nb = min(255, (b * 1.6f).toInt())
+                    val gray = ((nr + ng + nb) / 3)
+                    val contrast = ((gray - 128) * 1.8f + 128).toInt().coerceIn(0, 255)
+                    val cb = min(255, (contrast * 1.3f).toInt())
+                    pixels[i] = (0xFF shl 24) or (contrast shl 16) or (contrast shl 8) or cb
+                }
+            }
+            "POL_P" -> {
+                for (i in pixels.indices) {
+                    val r = (pixels[i] shr 16) and 0xFF
+                    val g = (pixels[i] shr 8) and 0xFF
+                    val b = pixels[i] and 0xFF
+                    val gray = ((r + g + b) / 3)
+                    val contrast = ((gray - 128) * 1.5f + 128).toInt().coerceIn(0, 255)
+                    val nr = min(255, (contrast * 0.7f + r * 0.3f).toInt())
+                    val ng = min(255, (contrast * 0.5f + g * 0.5f).toInt())
+                    val nb = min(255, (contrast * 0.9f + b * 0.1f).toInt())
+                    pixels[i] = (0xFF shl 24) or (nr shl 16) or (ng shl 8) or nb
+                }
+            }
+            "POL_N" -> {
+                for (i in pixels.indices) {
+                    val r = (pixels[i] shr 16) and 0xFF
+                    val g = (pixels[i] shr 8) and 0xFF
+                    val b = pixels[i] and 0xFF
+                    val bright = (r * 0.299f + g * 0.587f + b * 0.114f)
+                    val sharpen = (bright * 1.4f - 50f).coerceIn(0f, 255f)
+                    val nr = min(255, (r * 0.4f + sharpen * 0.6f).toInt())
+                    val ng = min(255, (g * 0.3f + sharpen * 0.7f).toInt())
+                    val nb = min(255, (b * 0.3f + sharpen * 0.7f).toInt())
+                    pixels[i] = (0xFF shl 24) or (nr shl 16) or (ng shl 8) or nb
+                }
+            }
+            "WOODS" -> {
+                for (i in pixels.indices) {
+                    val r = (pixels[i] shr 16) and 0xFF
+                    val g = (pixels[i] shr 8) and 0xFF
+                    val b = pixels[i] and 0xFF
+                    val nr = min(255, (r * 0.5f + 40).toInt())
+                    val ng = min(255, (g * 1.4f).toInt())
+                    val nb = min(255, (b * 1.5f).toInt())
+                    val gray = ((nr + ng + nb) / 3)
+                    val contrast = ((gray - 128) * 1.6f + 128).toInt().coerceIn(0, 255)
+                    pixels[i] = (0xFF shl 24) or (nr shl 16) or (contrast shl 8) or nb
+                }
+            }
+            "BLUE" -> {
+                for (i in pixels.indices) {
+                    val b = pixels[i] and 0xFF
+                    val g = ((pixels[i] shr 8) and 0xFF)
+                    val nr = 0
+                    val ng = min(255, (g * 0.3f).toInt())
+                    val nb = min(255, (b * 1.5f + 30).toInt())
+                    pixels[i] = (0xFF shl 24) or (nr shl 16) or (ng shl 8) or nb
+                }
+            }
+            "RED" -> {
+                for (i in pixels.indices) {
+                    val r = (pixels[i] shr 16) and 0xFF
+                    val g = ((pixels[i] shr 8) and 0xFF)
+                    val nr = min(255, (r * 1.5f + 20).toInt())
+                    val ng = min(255, (g * 0.2f).toInt())
+                    val nb = 0
+                    pixels[i] = (0xFF shl 24) or (nr shl 16) or (ng shl 8) or nb
+                }
+            }
+            "BROWN" -> {
+                for (i in pixels.indices) {
+                    val r = (pixels[i] shr 16) and 0xFF
+                    val g = (pixels[i] shr 8) and 0xFF
+                    val b = pixels[i] and 0xFF
+                    val nr = min(255, (r * 1.3f + 20).toInt())
+                    val ng = min(255, (g * 0.9f).toInt())
+                    val nb = min(255, (b * 0.5f).toInt())
+                    pixels[i] = (0xFF shl 24) or (nr shl 16) or (ng shl 8) or nb
+                }
+            }
+            else -> {}
+        }
+
+        result.setPixels(pixels, 0, w, 0, 0, w, h)
+        return result
     }
 
     private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {

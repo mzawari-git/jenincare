@@ -32,7 +32,7 @@
                         @if(!empty($siteSettings['site_logo_url']))
                             <img src="{{ $siteSettings['site_logo_url'] }}" alt="Logo" style="height:50px;margin-bottom:10px;">
                         @endif
-                        <h4 class="fw-bold text-pink mb-1">{{ $siteSettings['site_name'] ?? 'شركة جنين للتجميل' }}</h4>
+                        <h4 class="fw-bold text-pink mb-1">{{ $siteSettings['site_name'] ?? \App\Helpers\SettingsHelper::siteName() }}</h4>
                         <small class="text-muted">{{ $siteSettings['site_description'] ?? '' }}</small>
                     </div>
                     <div class="col-6 text-end">
@@ -125,7 +125,7 @@
                 </div>
 
                 <div class="text-center mt-4 pt-3 border-top">
-                    <small class="text-muted">{{ $siteSettings['site_name'] ?? 'شركة جنين للتجميل' }} - شكراً لتعاملكم معنا</small>
+                    <small class="text-muted">{{ $siteSettings['site_name'] ?? \App\Helpers\SettingsHelper::siteName() }} - شكراً لتعاملكم معنا</small>
                 </div>
             </div>
         </div>

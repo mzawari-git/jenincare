@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             BrandSeeder::class,
             ProductSeeder::class,
+            AIProviderSeeder::class,
             BlogPostSeeder::class,
             AIProviderSeeder::class,
             WarehouseSeeder::class,

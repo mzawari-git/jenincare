@@ -371,8 +371,23 @@
                     <a href="{{ route('admin.orders.index') }}" class="nav-item {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
                         <i class="fas fa-shopping-bag"></i> <span>الطلبات</span>
                     </a>
+                    <a href="{{ route('admin.pos.index') }}" class="nav-item {{ request()->routeIs('admin.pos.*') || request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                        <i class="fas fa-cash-register"></i> <span>نقطة البيع POS</span>
+                    </a>
                     <a href="{{ route('admin.analytics.index') }}" class="nav-item {{ request()->routeIs('admin.analytics.*') ? 'active' : '' }}">
-                        <i class="fas fa-chart-line"></i> <span>تحليلات متقدمة</span>
+                        <i class="fas fa-chart-bar"></i> <span>الاحصائيات</span>
+                    </a>
+                    <a href="{{ route('admin.products.index') }}" class="nav-item {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
+                        <i class="fas fa-box"></i> <span>المنتجات</span>
+                    </a>
+                    <a href="{{ route('admin.categories.index') }}" class="nav-item {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
+                        <i class="fas fa-tags"></i> <span>التصنيفات</span>
+                    </a>
+                    <a href="{{ route('admin.brands.index') }}" class="nav-item {{ request()->routeIs('admin.brands.*') ? 'active' : '' }}">
+                        <i class="fas fa-certificate"></i> <span>العلامات التجارية</span>
+                    </a>
+                    <a href="{{ route('admin.barcodes.index') }}" class="nav-item {{ request()->routeIs('admin.barcodes.*') ? 'active' : '' }}">
+                        <i class="fas fa-barcode"></i> <span>الباركود والطباعة</span>
                     </a>
                     <a href="{{ route('admin.reports.index') }}" class="nav-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
                         <i class="fas fa-file-invoice"></i> <span>التقارير والفواتير</span>
@@ -434,23 +449,11 @@
                     الكتالوج <i class="fas fa-chevron-down collapse-icon"></i>
                 </div>
                 <div class="nav-items">
-                    <a href="{{ route('admin.products.index') }}" class="nav-item {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
-                        <i class="fas fa-box"></i> <span>المنتجات</span>
-                    </a>
-                    <a href="{{ route('admin.categories.index') }}" class="nav-item {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
-                        <i class="fas fa-tags"></i> <span>التصنيفات</span>
-                    </a>
-                    <a href="{{ route('admin.brands.index') }}" class="nav-item {{ request()->routeIs('admin.brands.*') ? 'active' : '' }}">
-                        <i class="fas fa-certificate"></i> <span>العلامات التجارية</span>
-                    </a>
                     <a href="{{ route('admin.reviews.index') }}" class="nav-item {{ request()->routeIs('admin.reviews.*') ? 'active' : '' }}">
                         <i class="fas fa-star"></i> <span>التقييمات</span>
                     </a>
                     <a href="{{ route('admin.coupons.index') }}" class="nav-item {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
                         <i class="fas fa-ticket-alt"></i> <span>كوبونات الخصم</span>
-                    </a>
-                    <a href="{{ route('admin.barcodes.index') }}" class="nav-item {{ request()->routeIs('admin.barcodes.*') ? 'active' : '' }}">
-                        <i class="fas fa-barcode"></i> <span>الباركود والطباعة</span>
                     </a>
                 </div>
             </nav>
@@ -592,8 +595,8 @@
     {{-- Toast Container --}}
     <div class="toast-container"></div>
 
-    @stack('scripts')
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    @stack('scripts')
     <script>
         // Mobile sidebar toggle
         function toggleSidebar() {

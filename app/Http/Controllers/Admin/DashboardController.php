@@ -10,7 +10,10 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Company;
 use App\Models\Delivery;
+use App\Models\SkinAnalysis;
+use App\Models\AIProvider;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -30,8 +33,8 @@ class DashboardController extends Controller
         $completedOrders = Order::whereIn('status', ['completed', 'delivered'])->count();
         $cancelledOrders = Order::where('status', 'cancelled')->count();
 
-        $lowStockProducts = Product::where('stock_quantity', '>', 0)->where('stock_quantity', '<=', 10)->count();
-        $outOfStockProducts = Product::where('stock_quantity', 0)->count();
+        $lowStockProducts = Product::where('track_inventory', true)->where('stock_quantity', '>', 0)->where('stock_quantity', '<=', 10)->count();
+        $outOfStockProducts = Product::where('track_inventory', true)->where('stock_quantity', 0)->count();
 
         $recentOrders = Order::with('user')->latest()->take(8)->get();
 
@@ -262,5 +265,55 @@ class DashboardController extends Controller
             'completedDeliveries', 'failedDeliveries', 'todayDeliveries',
             'todayCompleted', 'successRate', 'recentDeliveries', 'drivers', 'deliveryByStatus'
         );
+    }
+
+    public function skinAnalyzerStats()
+    {
+        $totalScans = SkinAnalysis::count();
+        $pendingScans = SkinAnalysis::where('status', 'pending')->count();
+        $approvedToday = SkinAnalysis::where('status', 'approved')->whereDate('approved_at', today())->count();
+        $activeProvider = AIProvider::where('is_active', true)->first();
+        $providers = AIProvider::all()->map(fn($p) => [
+            'id' => $p->id, 'name' => $p->name, 'driver_key' => $p->driver_key,
+            'is_active' => $p->is_active, 'quota_used' => $p->quota_used, 'quota_limit' => $p->quota_limit,
+        ]);
+
+        return response()->json([
+            'total_scans' => $totalScans,
+            'pending_scans' => $pendingScans,
+            'approved_today' => $approvedToday,
+            'active_provider' => $activeProvider?->name ?? 'Native Engine',
+            'providers' => $providers,
+        ]);
+    }
+
+    public function pendingSkinScans()
+    {
+        $scans = SkinAnalysis::with(['user', 'aiProvider', 'accessPin'])
+            ->where('status', 'pending')
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return response()->json($scans);
+    }
+
+    public function allSkinScans(Request $request)
+    {
+        $query = SkinAnalysis::with(['user', 'aiProvider']);
+
+        if ($request->status) $query->where('status', $request->status);
+        if ($request->user_id) $query->where('user_id', $request->user_id);
+        if ($request->date_from) $query->whereDate('created_at', '>=', $request->date_from);
+        if ($request->date_to) $query->whereDate('created_at', '<=', $request->date_to);
+
+        return response()->json($query->orderBy('created_at', 'desc')->paginate(20));
+    }
+
+    public function skinScanDetail($id)
+    {
+        $scan = SkinAnalysis::with(['user', 'aiProvider', 'accessPin', 'recommendedProducts'])
+            ->findOrFail($id);
+
+        return response()->json($scan);
     }
 }

@@ -75,7 +75,7 @@ class Product extends Model
                 $product->slug = \Illuminate\Support\Str::slug($product->name_ar);
             }
             if (empty($product->barcode_slug)) {
-                $product->barcode_slug = 'BC-' . time() . '-' . $product->id;
+                $product->barcode_slug = 'BC-' . time() . '-' . \Illuminate\Support\Str::random(6);
             }
             if (empty($product->tenant_id)) {
                 $product->tenant_id = 1;
@@ -458,5 +458,12 @@ class Product extends Model
         $column = $sorts[$sort] ?? 'created_at';
         $direction = in_array(strtolower($direction), ['asc', 'desc']) ? strtolower($direction) : 'asc';
         return $query->orderBy($column, $direction);
+    }
+
+    public function skinAnalyses(): BelongsToMany
+    {
+        return $this->belongsToMany(SkinAnalysis::class, 'skin_analysis_products')
+                    ->withPivot('matching_reason')
+                    ->withTimestamps();
     }
 }

@@ -39,6 +39,18 @@ class ComparisonActivity : AppCompatActivity() {
 
         setupUI()
         observeViewModel()
+        loadComparisonData()
+    }
+
+    private fun loadComparisonData() {
+        val beforeId = intent.getStringExtra("before_id")
+        val afterId = intent.getStringExtra("after_id")
+        if (beforeId != null && afterId != null) {
+            viewModel.compareReports(beforeId, afterId)
+        } else if (beforeId != null) {
+            viewModel.compareReports(beforeId, beforeId)
+            binding.tvDelta.text = "—"
+        }
     }
 
     private fun setupUI() {

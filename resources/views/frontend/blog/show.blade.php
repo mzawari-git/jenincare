@@ -3,6 +3,38 @@
 @section('title', $post->meta_title ?: $post->title_ar . ' | مدونة جنين للتجميل')
 @section('meta_description', $post->meta_description ?: Str::limit(strip_tags($post->excerpt_ar ?? $post->content_ar), 160))
 
+@php
+$dc = $post->design_color;
+$primaryColor = $dc ?? '#D97706';
+$primaryLight = \App\Http\Controllers\Frontend\BlogController::adjustBrightnessStatic($primaryColor, 40);
+$primaryGradientStart = \App\Http\Controllers\Frontend\BlogController::adjustBrightnessStatic($primaryColor, 10);
+$primaryGradientEnd = $primaryColor;
+$textPrimary = \App\Http\Controllers\Frontend\BlogController::adjustBrightnessStatic($primaryColor, -20);
+$textSecondary = \App\Http\Controllers\Frontend\BlogController::adjustBrightnessStatic($primaryColor, -30);
+$bgLight = \App\Http\Controllers\Frontend\BlogController::adjustBrightnessStatic($primaryColor, 50);
+
+function formatBlogContent($raw) {
+    $raw = trim($raw);
+    if (empty($raw)) return '';
+    if (str_contains($raw, 'blog-section')) return $raw;
+    if (preg_match('/<[a-z][\s\S]*>/i', $raw)) {
+        return '<div class="blog-section">' . "\n" . $raw . "\n" . '</div>';
+    }
+    $lines = array_filter(array_map('trim', explode("\n", $raw)));
+    if (!empty($lines)) {
+        $html = '<div class="blog-section">' . "\n";
+        foreach ($lines as $line) {
+            if (!empty($line)) {
+                $html .= '    <p>' . e($line) . '</p>' . "\n";
+            }
+        }
+        $html .= '</div>';
+        return $html;
+    }
+    return '<div class="blog-section"><p>' . e($raw) . '</p></div>';
+}
+@endphp
+
 @section('content')
 <section style="background:#ffffff;min-height:100vh;">
     <article style="max-width:800px;margin:0 auto;padding:6rem 1rem 4rem;">
@@ -26,7 +58,7 @@
         @endif
 
         <div style="color:#334155;font-size:1.05rem;line-height:2;text-align:justify;" class="blog-content">
-            {!! $post->content_ar !!}
+            {!! formatBlogContent($post->content_ar) !!}
         </div>
 
         {{-- RELATED POSTS --}}
@@ -48,6 +80,16 @@
 </section>
 
 <style>
+.blog-content {
+    --primary-color: {{ $primaryColor }};
+    --primary-light: {{ $primaryLight }};
+    --primary-gradient-start: {{ $primaryGradientStart }};
+    --primary-gradient-end: {{ $primaryGradientEnd }};
+    --text-primary: {{ $textPrimary }};
+    --text-secondary: {{ $textSecondary }};
+    --bg-light: {{ $bgLight }};
+}
+
 .blog-content h2 { font-size:1.5rem; font-weight:900; color:#0f172a; margin-top:2rem; margin-bottom:1rem; }
 .blog-content h3 { font-size:1.2rem; font-weight:800; color:#1e293b; margin-top:1.5rem; margin-bottom:.75rem; }
 .blog-content p { margin-bottom:1rem; line-height:1.9; text-align:justify; color:#475569; }
@@ -60,13 +102,13 @@
 
 .blog-section { background:#fff; border-radius:16px; padding:0; margin-bottom:0; }
 
-.blog-section h2 { color:#D97706; font-size:1.4rem; font-weight:700; margin-bottom:25px; padding-bottom:15px; border-bottom:3px solid #FDE68A; display:flex; align-items:center; gap:12px; }
-.blog-section h2 i { width:42px; height:42px; background:linear-gradient(135deg,#F59E0B,#D97706); color:#fff; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
-.blog-section h3 { color:#B45309; font-size:1.15rem; font-weight:600; margin:25px 0 15px; display:flex; align-items:center; gap:8px; }
+.blog-content .blog-section h2 { color:var(--primary-color) !important; font-size:1.4rem; font-weight:700; margin-bottom:25px; padding-bottom:15px; border-bottom:3px solid var(--primary-light); display:flex; align-items:center; gap:12px; }
+.blog-content .blog-section h2 i { width:42px; height:42px; background:linear-gradient(135deg,var(--primary-gradient-start),var(--primary-gradient-end)); color:#fff; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
+.blog-content .blog-section h3 { color:var(--text-primary) !important; font-size:1.15rem; font-weight:600; margin:25px 0 15px; display:flex; align-items:center; gap:8px; }
 .blog-section p { color:#4B5563; line-height:1.9; margin-bottom:15px; text-align:justify; }
 .blog-section ul { list-style:none; padding:0; margin:15px 0; }
-.blog-section ul li { padding:12px 18px; margin-bottom:10px; background:#FFFBEB; border-radius:10px; border-right:4px solid #F59E0B; color:#4B5563; line-height:1.7; }
-.blog-section ul li strong { color:#92400E; }
+.blog-section ul li { padding:12px 18px; margin-bottom:10px; background:var(--bg-light); border-radius:10px; border-right:4px solid var(--primary-gradient-start); color:#4B5563; line-height:1.7; }
+.blog-section ul li strong { color:var(--text-secondary); }
 .blog-section ol { margin:15px 0; padding-right:1.5rem; }
 .blog-section ol li { padding:8px 0; margin-bottom:10px; color:#4B5563; line-height:1.7; }
 
@@ -81,10 +123,10 @@
 .blog-highlight { background:#FEF3C7; padding:2px 8px; border-radius:4px; font-weight:600; color:#92400E; }
 
 .blog-section table { width:100%; border-collapse:collapse; margin:20px 0; font-size:.9rem; overflow-x:auto; display:block; }
-.blog-section table th,
-.blog-section table td { padding:10px 12px; border:1px solid #FDE68A; }
-.blog-section table th { background:linear-gradient(135deg,#F59E0B,#D97706); color:#fff; font-weight:700; }
-.blog-section table tr:nth-child(even) { background:#FFFBEB; }
+.blog-content .blog-section table th,
+.blog-content .blog-section table td { padding:10px 12px; border:1px solid var(--primary-light); }
+.blog-content .blog-section table th { background:linear-gradient(135deg,var(--primary-gradient-start),var(--primary-gradient-end)); color:#fff; font-weight:700; }
+.blog-section table tr:nth-child(even) { background:var(--bg-light); }
 
 @media (max-width:768px) {
     .blog-section h2 { font-size:1.15rem; }

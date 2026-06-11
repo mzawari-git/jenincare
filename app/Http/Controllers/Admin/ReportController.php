@@ -65,7 +65,18 @@ class ReportController extends Controller
             ->when($request->payment_status, fn($q) => $q->where('payment_status', $request->payment_status))
             ->first();
 
-        return view('admin.reports.sales', compact('orders', 'totals'));
+        // POS sales (not filtered by order status/payment, only by date)
+        $posQuery = \App\Models\PosSale::where('status', '!=', 'cancelled')
+            ->when($request->date_from, fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
+            ->when($request->date_to, fn($q) => $q->whereDate('created_at', '<=', $request->date_to));
+        $posSales = (clone $posQuery)->latest()->take(50)->get();
+        $posTotals = (clone $posQuery)->selectRaw('
+                COUNT(*) as count,
+                COALESCE(SUM(CASE WHEN order_total > 0 THEN order_total ELSE 0 END), 0) as revenue,
+                COALESCE(SUM(CASE WHEN order_total < 0 THEN ABS(order_total) ELSE 0 END), 0) as refunds
+            ')->first();
+
+        return view('admin.reports.sales', compact('orders', 'totals', 'posSales', 'posTotals'));
     }
 
     public function products(Request $request)
@@ -82,9 +93,9 @@ class ReportController extends Controller
             ->paginate(30)
             ->appends($request->all());
 
-        $lowStock = Product::where('quantity', '>', 0)
-            ->where('quantity', '<=', 10)
-            ->orderBy('quantity')
+        $lowStock = Product::where('stock_quantity', '>', 0)
+            ->where('stock_quantity', '<=', 10)
+            ->orderBy('stock_quantity')
             ->limit(10)
             ->get();
 

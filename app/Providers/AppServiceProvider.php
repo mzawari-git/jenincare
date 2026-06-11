@@ -188,6 +188,7 @@ class AppServiceProvider extends ServiceProvider
             'payment_bank_enabled' => '0',
             'payment_jawwal_enabled' => '0',
             'payment_reflect_enabled' => '0',
+            'tax_number' => '',
         ];
 
         View::composer('*', function ($view) use ($defaultSettings) {
@@ -196,7 +197,8 @@ class AppServiceProvider extends ServiceProvider
 
             // ── Read user theme preferences from cookies (persist across logout) ──
             $knownThemes = ['rose','midnight','natural','forest','minimal','ocean','sunset','luxury'];
-            $activeTheme = $_COOKIE['شركة جنين للتجميل_color'] ?? $s['site_theme'] ?? 'rose';
+            $cookieColor = request()->cookie('jenincare_color', $s['site_theme'] ?? 'rose');
+            $activeTheme = $cookieColor;
             if (!in_array($activeTheme, $knownThemes)) {
                 $activeTheme = 'rose';
             }
@@ -210,18 +212,20 @@ class AppServiceProvider extends ServiceProvider
                 default => 'cyber-lab',
             };
             // Architecture cookie overrides (user explicitly chose a layout)
-            if (isset($_COOKIE['شركة جنين للتجميل_arch'])) {
-                $ca = $_COOKIE['شركة جنين للتجميل_arch'];
-                if (in_array($ca, ['cyber-lab','organic-spa','editorial','luxury-boutique'])) {
-                    $layoutArchitecture = $ca;
-                }
+            $cookieArch = request()->cookie('jenincare_arch');
+            if ($cookieArch && in_array($cookieArch, ['cyber-lab','organic-spa','editorial','luxury-boutique'])) {
+                $layoutArchitecture = $cookieArch;
             }
 
-            $mode = $_COOKIE['شركة جنين للتجميل_mode'] ?? 'light';
+            $mode = request()->cookie('jenincare_mode', 'light');
             $isLightTheme = $mode !== 'dark';
 
             $view->with('layoutArchitecture', $layoutArchitecture);
-            $view->with('layoutPath', 'frontend.layouts.' . $layoutArchitecture . '.app');
+            $layoutPath = 'frontend.layouts.' . $layoutArchitecture . '.app';
+            if (!view()->exists($layoutPath)) {
+                $layoutPath = 'frontend.layouts.cyber-lab.app';
+            }
+            $view->with('layoutPath', $layoutPath);
             $view->with('activeTheme', $activeTheme);
             $view->with('isLightTheme', $isLightTheme);
 
@@ -263,6 +267,7 @@ class AppServiceProvider extends ServiceProvider
                 'payment_bank_enabled' => $s['payment_bank_enabled'] ?? '0',
                 'payment_jawwal_enabled' => $s['payment_jawwal_enabled'] ?? '0',
                 'payment_reflect_enabled' => $s['payment_reflect_enabled'] ?? '0',
+                'tax_number' => $s['tax_number'] ?? '',
             ]);
         });
 
@@ -276,16 +281,31 @@ class AppServiceProvider extends ServiceProvider
             }
         });
 
-        // Share cart count with all views
+        // Share cart count with all views (cached per request via static)
         View::composer('*', function ($view) {
+            static $cartCount = null;
+            if ($cartCount !== null) {
+                $view->with('cartCount', $cartCount);
+                return;
+            }
             try {
+                $cartCount = 0;
                 if (Auth::check()) {
                     $cart = Cart::where('user_id', Auth::id())->where('is_active', true)->first();
                 } else {
-                    $cart = Cart::where('session_id', Session::getId())->where('is_active', true)->first();
+                    $sessionId = Session::getId();
+                    if ($sessionId) {
+                        $cart = Cart::where('session_id', $sessionId)->where('is_active', true)->first();
+                    } else {
+                        $cart = null;
+                    }
                 }
-                $view->with('cartCount', $cart ? $cart->items()->sum('quantity') : 0);
+                if ($cart) {
+                    $cartCount = $cart->items()->sum('quantity');
+                }
+                $view->with('cartCount', $cartCount);
             } catch (\Exception $e) {
+                $cartCount = 0;
                 $view->with('cartCount', 0);
             }
         });

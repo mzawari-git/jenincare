@@ -59,6 +59,71 @@ class BarcodeController extends Controller
     }
 
     /**
+     * عدد المنتجات المطابقة للفلترة (لاختيار الكل)
+     */
+    public function countByFilters(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $query = Product::query();
+
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('name_ar', 'like', "%{$request->search}%")
+                  ->orWhere('sku', 'like', "%{$request->search}%")
+                  ->orWhere('barcode', 'like', "%{$request->search}%");
+            });
+        }
+
+        if ($request->filled('category')) {
+            $query->where('category_id', $request->category);
+        }
+
+        if ($request->filled('status')) {
+            if ($request->status === 'no_barcode') {
+                $query->whereNull('barcode')->orWhere('barcode', '');
+            } elseif ($request->status === 'has_barcode') {
+                $query->whereNotNull('barcode')->where('barcode', '!=', '');
+            }
+        }
+
+        return response()->json(['count' => $query->count()]);
+    }
+
+    /**
+     * تصدير الباركود إلى CSV
+     */
+    public function exportCsv()
+    {
+        $products = Product::whereNotNull('barcode')->where('barcode', '!=', '')
+            ->orderBy('name_ar')->get();
+
+        $filename = 'barcodes-' . now()->format('Y-m-d') . '.csv';
+        $headers = [
+            'Content-Type' => 'text/csv; charset=utf-8',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+        ];
+
+        $callback = function () use ($products) {
+            $handle = fopen('php://output', 'w');
+            // BOM for Arabic Excel support
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($handle, ['Barcode', 'SKU', 'Name (AR)', 'Name (EN)', 'Price', 'Category']);
+            foreach ($products as $p) {
+                fputcsv($handle, [
+                    $p->barcode,
+                    $p->sku,
+                    $p->name_ar,
+                    $p->name_en,
+                    $p->b2c_price,
+                    $p->category?->name_ar ?? '',
+                ]);
+            }
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
      * توليد باركود تلقائي لمنتجات بدون باركود
      */
     public function generateMissing()
@@ -79,39 +144,130 @@ class BarcodeController extends Controller
     }
 
     /**
-     * عرض صفحة الطباعة A4
+     * عرض صفحة الطباعة
      */
     public function print(Request $request)
     {
+        $selectAll = $request->boolean('select_all');
         $ids = $request->input('ids', []);
-        $layout = $request->input('layout', 'a4_24'); // a4_24, a4_12, a4_6
+        $qtys = $request->input('qty', []);
+
+        // If "select all matching" is active, fetch all matching IDs from filters
+        if ($selectAll) {
+            $query = Product::query();
+            if ($request->filled('search')) {
+                $query->where(function ($q) use ($request) {
+                    $q->where('name_ar', 'like', "%{$request->search}%")
+                      ->orWhere('sku', 'like', "%{$request->search}%")
+                      ->orWhere('barcode', 'like', "%{$request->search}%");
+                });
+            }
+            if ($request->filled('category')) {
+                $query->where('category_id', $request->category);
+            }
+            if ($request->filled('status')) {
+                if ($request->status === 'no_barcode') {
+                    $query->whereNull('barcode')->orWhere('barcode', '');
+                } elseif ($request->status === 'has_barcode') {
+                    $query->whereNotNull('barcode')->where('barcode', '!=', '');
+                }
+            }
+            $ids = $query->pluck('id')->toArray();
+        }
+
+        $layout = $request->input('layout', 'a4_24');
+        $width = $request->input('width', 50);
+        $height = $request->input('height', 30);
+        $barcodePosition = $request->input('barcode_position', 'bottom');
+        $showName = $request->boolean('show_name', true);
+        $showPrice = $request->boolean('show_price', true);
+        $showBrand = $request->boolean('show_brand', true);
 
         if (empty($ids)) {
             return redirect()->back()->with('error', 'يرجى اختيار منتجات للطباعة.');
         }
 
-        $products = Product::whereIn('id', $ids)->get();
+        $products = Product::whereIn('id', $ids)->get()->keyBy('id');
+
+        // Expand products by requested quantities
+        $expanded = collect();
+        foreach ($ids as $id) {
+            $product = $products->get($id);
+            if (!$product) continue;
+            $qty = max(1, (int)($qtys[$id] ?? 1));
+            for ($i = 0; $i < $qty; $i++) {
+                $expanded->push($product);
+            }
+        }
+
+        if ($expanded->isEmpty()) {
+            return redirect()->back()->with('error', 'يرجى اختيار منتجات للطباعة.');
+        }
+
+        $totalLabels = $expanded->count();
         $siteSettings = \App\Models\Setting::pluck('value', 'key')->all();
 
-        return view('admin.products.barcode-print', compact('products', 'layout', 'siteSettings'));
+        // Log print history
+        if (class_exists(\App\Models\BarcodePrintLog::class)) {
+            foreach ($ids as $id) {
+                \App\Models\BarcodePrintLog::create([
+                    'product_id' => $id,
+                    'user_id' => auth()->id(),
+                    'quantity' => (int)($qtys[$id] ?? 1),
+                    'layout' => $layout,
+                ]);
+            }
+            foreach ($products as $product) {
+                $product->increment('print_count');
+                $product->last_printed_at = now();
+                $product->save();
+            }
+        }
+
+        if ($layout === 'thermal') {
+            return view('admin.products.barcode-print-thermal', compact(
+                'expanded', 'totalLabels', 'products', 'siteSettings', 'barcodePosition', 'showName', 'showPrice', 'showBrand'
+            ));
+        }
+
+        return view('admin.products.barcode-print', compact(
+            'expanded', 'totalLabels', 'products', 'layout', 'siteSettings', 'width', 'height',
+            'barcodePosition', 'showName', 'showPrice', 'showBrand'
+        ));
     }
 
     /**
-     * توليد رقم EAN-13 صالح
+     * توليد رقم EAN-13 صالح مع ضمان عدم التكرار
      */
-    private function generateEAN13(int $seed): string
+    private function generateEAN13(int $productId): string
     {
-        $prefix = '626'; // رمز دولة فلسطين (مثال)
-        $middle = str_pad($seed % 100000000, 8, '0', STR_PAD_LEFT);
-        $code = $prefix . $middle;
-        $code .= $this->calculateEAN13CheckDigit($code);
+        // Use timestamp + product ID to avoid collisions
+        $base = ((int)(microtime(true) * 1000) % 900000000) + ($productId % 100000000);
+        $prefix = '626';
+        $attempts = 0;
+
+        do {
+            $seed = ($base + $attempts) % 1000000000;
+            $middle = str_pad($seed, 9, '0', STR_PAD_LEFT);
+            $code = $prefix . $middle;
+            $code .= $this->calculateEAN13CheckDigit($code);
+            $attempts++;
+            if ($attempts > 100) {
+                // Fallback: use random
+                $code = $prefix . str_pad(random_int(0, 999999999), 9, '0', STR_PAD_LEFT);
+                $code .= $this->calculateEAN13CheckDigit($code);
+                break;
+            }
+        } while (\App\Models\Product::where('barcode', $code)->exists());
+
         return $code;
     }
 
     private function calculateEAN13CheckDigit(string $code): string
     {
         $sum = 0;
-        for ($i = 0; $i < 12; $i++) {
+        $len = strlen($code);
+        for ($i = 0; $i < $len; $i++) {
             $sum += ($i % 2 === 0) ? (int)$code[$i] : (int)$code[$i] * 3;
         }
         $check = (10 - ($sum % 10)) % 10;

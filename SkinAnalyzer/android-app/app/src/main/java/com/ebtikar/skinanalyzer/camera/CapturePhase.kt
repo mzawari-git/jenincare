@@ -13,6 +13,7 @@ data class CapturePhase(
         ACTIVATING,
         SETTLING,
         CAPTURING,
+        PROCESSING,
         COMPLETE,
         FAILED
     }

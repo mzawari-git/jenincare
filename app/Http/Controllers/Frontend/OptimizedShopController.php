@@ -86,7 +86,11 @@ class OptimizedShopController extends Controller
 
         // In stock filter
         if ($request->in_stock) {
-            $query->where('stock_quantity', '>', 0);
+            $query->where(function ($q) {
+                $q->where('track_inventory', false)
+                  ->orWhere('stock_quantity', '>', 0)
+                  ->orWhere('allow_backorder', true);
+            });
         }
 
         // Search filter

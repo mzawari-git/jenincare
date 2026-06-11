@@ -29,10 +29,13 @@ use Modules\CustomAdmin\Http\Controllers\MetaAdsController;
 use Modules\CustomAdmin\Http\Controllers\MetaLeadHubController;
 use App\Http\Controllers\Admin\AffiliateController as AdminAffiliateController;
 use App\Http\Controllers\Admin\BlogController as AdminBlogController;
+use App\Http\Controllers\Admin\PosController;
 
 Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
 
-    Route::get('/', [DashboardController::class, 'index'])->name('admin.dashboard');
+    Route::get('/', function () {
+        return redirect()->route('admin.pos.index');
+    })->name('admin.dashboard');
     Route::get('/meta-marketing', [MarketingTrackingController::class, 'metaMarketingDashboard'])->name('admin.meta-marketing.index');
     Route::post('/meta-marketing/import-page', [MarketingTrackingController::class, 'importPage'])->name('admin.meta-marketing.import-page');
     Route::post('/meta-marketing/search-page', [MarketingTrackingController::class, 'searchPage'])->name('admin.meta-marketing.search-page');
@@ -174,9 +177,11 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
 
     // Barcodes
     Route::get('/barcodes', [\App\Http\Controllers\Admin\BarcodeController::class, 'index'])->name('admin.barcodes.index');
+    Route::get('/barcodes/count', [\App\Http\Controllers\Admin\BarcodeController::class, 'countByFilters'])->name('admin.barcodes.count');
     Route::patch('/barcodes/{product}/update', [\App\Http\Controllers\Admin\BarcodeController::class, 'updateBarcode'])->name('admin.barcodes.update');
     Route::get('/barcodes/generate-missing', [\App\Http\Controllers\Admin\BarcodeController::class, 'generateMissing'])->name('admin.barcodes.generate-missing');
     Route::post('/barcodes/print', [\App\Http\Controllers\Admin\BarcodeController::class, 'print'])->name('admin.barcodes.print');
+    Route::get('/barcodes/export', [\App\Http\Controllers\Admin\BarcodeController::class, 'exportCsv'])->name('admin.barcodes.export');
 
     // Analytics
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('admin.analytics.index');
@@ -298,4 +303,56 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/leads-hub/export', [MetaLeadHubController::class, 'exportExcel'])->name('admin.leads-hub.export');
     Route::get('/leads-hub/export-selected', [MetaLeadHubController::class, 'exportSelected'])->name('admin.leads-hub.export-selected');
     Route::get('/leads-hub/{lead}', [MetaLeadHubController::class, 'show'])->name('admin.leads-hub.show');
+
+    // POS System
+    Route::get('/pos', [PosController::class, 'index'])->name('admin.pos.index');
+    Route::get('/pos/products/search', [PosController::class, 'searchProducts'])->name('admin.pos.products.search');
+    Route::post('/pos/sale', [PosController::class, 'store'])->name('admin.pos.sale.store');
+    Route::get('/pos/recent-sales', [PosController::class, 'recentSales'])->name('admin.pos.recent-sales');
+    Route::post('/pos/suspend', [PosController::class, 'suspendCart'])->name('admin.pos.suspend');
+    Route::get('/pos/suspended', [PosController::class, 'suspendedCarts'])->name('admin.pos.suspended');
+    Route::post('/pos/suspended/{id}/restore', [PosController::class, 'restoreCart'])->name('admin.pos.suspended.restore');
+    Route::delete('/pos/suspended/{id}', [PosController::class, 'deleteSuspendedCart'])->name('admin.pos.suspended.delete');
+    Route::get('/pos/sales/{posSaleId}', [PosController::class, 'getSale'])->name('admin.pos.getSale')->where('posSaleId', '[A-Za-z0-9\-]+');
+    Route::post('/pos/sales/{posSaleId}/edit', [PosController::class, 'editSale'])->name('admin.pos.editSale')->where('posSaleId', '[A-Za-z0-9\-]+');
+    Route::delete('/pos/sales/{posSaleId}', [PosController::class, 'deleteSale'])->name('admin.pos.deleteSale')->where('posSaleId', '[A-Za-z0-9\-]+');
+    Route::get('/pos/receipt/{posSaleId}', [PosController::class, 'printReceipt'])->name('admin.pos.receipt')->where('posSaleId', '[A-Za-z0-9\-]+');
+    Route::get('/pos/customers/search', [PosController::class, 'searchCustomers'])->name('admin.pos.searchCustomers');
+    Route::post('/pos/customers/create', [PosController::class, 'createCustomer'])->name('admin.pos.createCustomer');
+    Route::get('/pos/customers/{id}/history', [PosController::class, 'customerHistory'])->name('admin.pos.customerHistory');
+    Route::post('/pos/products/quick-create', [PosController::class, 'quickCreateProduct'])->name('admin.pos.quickProduct');
+    Route::get('/pos/favorites', [PosController::class, 'getFavorites'])->name('admin.pos.getFavorites');
+    Route::post('/pos/favorites/toggle', [PosController::class, 'toggleFavorite'])->name('admin.pos.toggleFavorite');
+    Route::post('/pos/refund', [PosController::class, 'processRefund'])->name('admin.pos.refund');
+
+    // SkinAnalyzer Section
+    Route::get('/skinanalyzer/stats', [DashboardController::class, 'skinAnalyzerStats'])->name('admin.skinanalyzer.stats');
+    Route::get('/skinanalyzer/scans/pending', [DashboardController::class, 'pendingSkinScans'])->name('admin.skinanalyzer.scans.pending');
+    Route::get('/skinanalyzer/scans/all', [DashboardController::class, 'allSkinScans'])->name('admin.skinanalyzer.scans.all');
+    Route::get('/skinanalyzer/scans/{id}', [DashboardController::class, 'skinScanDetail'])->name('admin.skinanalyzer.scans.detail');
+
+    Route::post('/skinanalyzer/scans/{id}/approve', [\App\Http\Controllers\Admin\ScanApprovalController::class, 'approve'])->name('admin.skinanalyzer.scans.approve');
+    Route::post('/skinanalyzer/scans/{id}/reject', [\App\Http\Controllers\Admin\ScanApprovalController::class, 'reject'])->name('admin.skinanalyzer.scans.reject');
+    Route::post('/skinanalyzer/scans/{id}/generate-pin', [\App\Http\Controllers\Admin\ScanApprovalController::class, 'generatePin'])->name('admin.skinanalyzer.scans.generate-pin');
+    Route::post('/skinanalyzer/scans/batch-approve', [\App\Http\Controllers\Admin\ScanApprovalController::class, 'batchApprove'])->name('admin.skinanalyzer.scans.batch-approve');
+    Route::post('/skinanalyzer/scans/{id}/broadcast', [\App\Http\Controllers\Admin\ScanApprovalController::class, 'broadcastResult'])->name('admin.skinanalyzer.scans.broadcast');
+
+    Route::get('/skinanalyzer/ai-providers', [\App\Http\Controllers\Admin\AIProviderController::class, 'index'])->name('admin.skinanalyzer.providers.index');
+    Route::get('/skinanalyzer/ai-providers/quota', [\App\Http\Controllers\Admin\AIProviderController::class, 'quotaStatus'])->name('admin.skinanalyzer.providers.quota');
+    Route::get('/skinanalyzer/ai-providers/{id}', [\App\Http\Controllers\Admin\AIProviderController::class, 'show'])->name('admin.skinanalyzer.providers.show');
+    Route::put('/skinanalyzer/ai-providers/{id}', [\App\Http\Controllers\Admin\AIProviderController::class, 'update'])->name('admin.skinanalyzer.providers.update');
+    Route::post('/skinanalyzer/ai-providers/{id}/activate', [\App\Http\Controllers\Admin\AIProviderController::class, 'activate'])->name('admin.skinanalyzer.providers.activate');
+    Route::post('/skinanalyzer/ai-providers/{id}/deactivate', [\App\Http\Controllers\Admin\AIProviderController::class, 'deactivate'])->name('admin.skinanalyzer.providers.deactivate');
+    Route::post('/skinanalyzer/ai-providers/{id}/test', [\App\Http\Controllers\Admin\AIProviderController::class, 'testConnection'])->name('admin.skinanalyzer.providers.test');
+
+    Route::get('/skinanalyzer/prompts', [\App\Http\Controllers\Admin\PromptController::class, 'index'])->name('admin.skinanalyzer.prompts.index');
+    Route::get('/skinanalyzer/prompts/{id}', [\App\Http\Controllers\Admin\PromptController::class, 'show'])->name('admin.skinanalyzer.prompts.show');
+    Route::post('/skinanalyzer/prompts', [\App\Http\Controllers\Admin\PromptController::class, 'store'])->name('admin.skinanalyzer.prompts.store');
+    Route::put('/skinanalyzer/prompts/{id}', [\App\Http\Controllers\Admin\PromptController::class, 'update'])->name('admin.skinanalyzer.prompts.update');
+    Route::get('/skinanalyzer/prompts/variables', [\App\Http\Controllers\Admin\PromptController::class, 'variables'])->name('admin.skinanalyzer.prompts.variables');
+
+    Route::get('/skinanalyzer/white-label', [\App\Http\Controllers\Admin\WhiteLabelController::class, 'show'])->name('admin.skinanalyzer.whitelabel.show');
+    Route::put('/skinanalyzer/white-label', [\App\Http\Controllers\Admin\WhiteLabelController::class, 'update'])->name('admin.skinanalyzer.whitelabel.update');
+    Route::post('/skinanalyzer/white-label/logo', [\App\Http\Controllers\Admin\WhiteLabelController::class, 'uploadLogo'])->name('admin.skinanalyzer.whitelabel.logo');
+    Route::get('/skinanalyzer/white-label/preview', [\App\Http\Controllers\Admin\WhiteLabelController::class, 'preview'])->name('admin.skinanalyzer.whitelabel.preview');
 });

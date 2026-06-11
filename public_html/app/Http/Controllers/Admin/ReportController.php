@@ -82,9 +82,9 @@ class ReportController extends Controller
             ->paginate(30)
             ->appends($request->all());
 
-        $lowStock = Product::where('quantity', '>', 0)
-            ->where('quantity', '<=', 10)
-            ->orderBy('quantity')
+        $lowStock = Product::where('stock_quantity', '>', 0)
+            ->where('stock_quantity', '<=', 10)
+            ->orderBy('stock_quantity')
             ->limit(10)
             ->get();
 

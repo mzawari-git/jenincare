@@ -78,7 +78,7 @@ class PerformanceOptimizer {
     preloadCriticalResources() {
         const bp = window.basePath || '';
         const criticalResources = [
-            bp + '/css/main.css',
+            bp + '/css/tailwind.css',
             bp + '/js/app.js',
         ];
 
@@ -179,11 +179,15 @@ class PerformanceOptimizer {
     }
 
     updateElement(element) {
-        // Update individual element
-        if (element.dataset.update) {
-            // Apply updates based on data attributes
-            const updates = JSON.parse(element.dataset.update);
-            Object.assign(element, updates);
+        if (element && element.dataset.update) {
+            try {
+                const updates = JSON.parse(element.dataset.update);
+                if (updates && typeof updates === 'object') {
+                    Object.assign(element, updates);
+                }
+            } catch (e) {
+                // Invalid JSON in dataset.update - skip silently
+            }
         }
     }
 
@@ -269,16 +273,16 @@ class PerformanceOptimizer {
 
 // Initialize performance optimizations
 document.addEventListener('DOMContentLoaded', () => {
-    const optimizer = new PerformanceOptimizer();
+    window.performanceOptimizer = new PerformanceOptimizer();
     
     // Monitor performance
-    optimizer.measurePerformance();
+    window.performanceOptimizer.measurePerformance();
     
     // Optimize images
-    optimizer.optimizeImages();
+    window.performanceOptimizer.optimizeImages();
     
     // Minimize reflows
-    optimizer.minimizeReflows();
+    window.performanceOptimizer.minimizeReflows();
 });
 
 // Cleanup on page unload

@@ -59,6 +59,8 @@ Route::get('/affiliate', [FrontAffiliateController::class, 'landing'])->name('af
 Route::get('/affiliate/dashboard', [FrontAffiliateController::class, 'dashboard'])->name('affiliate.dashboard');
 Route::get('/affiliate/tools', [FrontAffiliateController::class, 'marketingTools'])->name('affiliate.tools');
 
+Route::get('/blog-tool', [\App\Http\Controllers\Frontend\BlogController::class, 'designTool'])->name('blog.design-tool');
+Route::post('/blog-tool/insert', [\App\Http\Controllers\Frontend\BlogController::class, 'insertFromTool'])->name('blog.insert-tool');
 Route::get('/blog', [FrontBlogController::class, 'index'])->name('blog.index');
 Route::get('/blog/category/{category}', [FrontBlogController::class, 'category'])->name('blog.category');
 Route::get('/blog/{slug}', [FrontBlogController::class, 'show'])->name('blog.show');

@@ -29,6 +29,7 @@ use Modules\CustomAdmin\Http\Controllers\MetaAdsController;
 use Modules\CustomAdmin\Http\Controllers\MetaLeadHubController;
 use App\Http\Controllers\Admin\AffiliateController as AdminAffiliateController;
 use App\Http\Controllers\Admin\BlogController as AdminBlogController;
+use App\Http\Controllers\Admin\PosController;
 
 Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
 
@@ -298,4 +299,10 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/leads-hub/export', [MetaLeadHubController::class, 'exportExcel'])->name('admin.leads-hub.export');
     Route::get('/leads-hub/export-selected', [MetaLeadHubController::class, 'exportSelected'])->name('admin.leads-hub.export-selected');
     Route::get('/leads-hub/{lead}', [MetaLeadHubController::class, 'show'])->name('admin.leads-hub.show');
+
+    // POS System
+    Route::get('/pos', [PosController::class, 'index'])->name('admin.pos.index');
+    Route::get('/pos/products/search', [PosController::class, 'searchProducts'])->name('admin.pos.products.search');
+    Route::post('/pos/sale', [PosController::class, 'store'])->name('admin.pos.sale.store');
+    Route::get('/pos/recent-sales', [PosController::class, 'recentSales'])->name('admin.pos.recent-sales');
 });

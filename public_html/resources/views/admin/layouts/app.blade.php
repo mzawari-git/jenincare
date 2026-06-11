@@ -371,6 +371,9 @@
                     <a href="{{ route('admin.orders.index') }}" class="nav-item {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
                         <i class="fas fa-shopping-bag"></i> <span>الطلبات</span>
                     </a>
+                    <a href="{{ route('admin.pos.index') }}" class="nav-item {{ request()->routeIs('admin.pos.*') ? 'active' : '' }}">
+                        <i class="fas fa-cash-register"></i> <span>نقطة البيع POS</span>
+                    </a>
                     <a href="{{ route('admin.analytics.index') }}" class="nav-item {{ request()->routeIs('admin.analytics.*') ? 'active' : '' }}">
                         <i class="fas fa-chart-line"></i> <span>تحليلات متقدمة</span>
                     </a>

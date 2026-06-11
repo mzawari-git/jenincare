@@ -10,12 +10,14 @@ class PosSale extends Model
     protected $fillable = [
         'pos_sale_id', 'uuid', 'user_id', 'store_id',
         'customer_name', 'customer_email', 'customer_phone',
-        'order_total', 'subtotal', 'currency', 'items',
+        'order_total', 'subtotal', 'discount_amount', 'tax_amount', 'tax_rate', 'currency', 'items',
         'payment_method', 'matched_to_online', 'sale_at',
+        'notes', 'split_payments', 'status',
     ];
 
     protected $casts = [
         'items' => 'json',
+        'split_payments' => 'json',
         'matched_to_online' => 'boolean',
         'sale_at' => 'datetime',
         'order_total' => 'decimal:2',

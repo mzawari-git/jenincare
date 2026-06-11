@@ -14,7 +14,7 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
-        'tenant_id', 'name', 'email', 'password', 'phone', 'avatar',
+        'tenant_id', 'name', 'email', 'password', 'phone', 'device_id', 'avatar',
         'role', 'is_active', 'phone_verified_at', 'last_login_at', 'last_login_ip', 'settings',
         'security_question', 'security_answer', 'identity_uuid'
     ];
@@ -86,5 +86,25 @@ class User extends Authenticatable
     public function isB2B(): bool
     {
         return $this->role === 'b2b';
+    }
+
+    public function skinAnalyses(): HasMany
+    {
+        return $this->hasMany(SkinAnalysis::class)->orderBy('created_at', 'desc');
+    }
+
+    public function approvedAnalyses(): HasMany
+    {
+        return $this->hasMany(SkinAnalysis::class)->where('status', 'approved')->orderBy('created_at', 'desc');
+    }
+
+    public function hasPendingAnalysis(): bool
+    {
+        return $this->skinAnalyses()->where('status', 'pending')->exists();
+    }
+
+    public function latestAnalysis()
+    {
+        return $this->skinAnalyses()->first();
     }
 }

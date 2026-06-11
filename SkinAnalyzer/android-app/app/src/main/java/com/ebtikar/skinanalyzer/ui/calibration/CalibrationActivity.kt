@@ -10,6 +10,8 @@ import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.ebtikar.skinanalyzer.R
 import com.ebtikar.skinanalyzer.databinding.ActivityCalibrationBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -19,6 +21,7 @@ class CalibrationActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityCalibrationBinding
     private val viewModel: CalibrationViewModel by viewModels()
+    private lateinit var stepAdapter: CalibrationStepAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -37,8 +40,17 @@ class CalibrationActivity : AppCompatActivity() {
             insets
         }
 
+        setupRecyclerView()
         setupUI()
         observeViewModel()
+    }
+
+    private fun setupRecyclerView() {
+        stepAdapter = CalibrationStepAdapter()
+        binding.rvCalibrationSteps.apply {
+            layoutManager = LinearLayoutManager(this@CalibrationActivity)
+            adapter = stepAdapter
+        }
     }
 
     private fun setupUI() {
@@ -52,8 +64,8 @@ class CalibrationActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    viewModel.calibrationResults.collect { results ->
-                        updateCalibrationUI(results)
+                    viewModel.calibrationSteps.collect { steps ->
+                        stepAdapter.submitList(steps)
                     }
                 }
 
@@ -61,26 +73,42 @@ class CalibrationActivity : AppCompatActivity() {
                     viewModel.isRunning.collect { running ->
                         binding.btnStartCalibration.isEnabled = !running
                         binding.btnStartCalibration.text = if (running)
-                            getString(com.ebtikar.skinanalyzer.R.string.calibration_running)
+                            "جاري المعايرة..."
                         else
-                            getString(com.ebtikar.skinanalyzer.R.string.calibration_start)
+                            "بدء المعايرة"
+                    }
+                }
+
+                launch {
+                    viewModel.calibrationStatus.collect { status ->
+                        binding.tvCalibrationStatus.text = status
+                    }
+                }
+
+                launch {
+                    viewModel.lastCalibration.collect { last ->
+                        binding.tvLastCalibration.text = last
+                    }
+                }
+
+                launch {
+                    viewModel.currentStep.collect { step ->
+                        binding.tvCurrentStep.text = step
+                    }
+                }
+
+                launch {
+                    viewModel.progress.collect { progress ->
+                        binding.progressCalibration.progress = progress
+                    }
+                }
+
+                launch {
+                    viewModel.calibrationLog.collect { log ->
+                        binding.tvCalibrationLog.text = log
                     }
                 }
             }
         }
-    }
-
-    private fun updateCalibrationUI(results: Map<String, CalibrationViewModel.CalibrationResult>) {
-        val sb = StringBuilder()
-        for ((name, result) in results) {
-            val status = when (result.status) {
-                CalibrationViewModel.TestStatus.PENDING -> "⏳"
-                CalibrationViewModel.TestStatus.RUNNING -> "🔄"
-                CalibrationViewModel.TestStatus.PASS -> "✅"
-                CalibrationViewModel.TestStatus.FAIL -> "❌"
-            }
-            sb.appendLine("$status $name: ${result.message}")
-        }
-        binding.tvCalibrationLog.text = sb.toString()
     }
 }

@@ -40,7 +40,7 @@ class ProductController extends Controller
             'image' => $product->main_image_url,
             'description' => $product->description_ar ? \Illuminate\Support\Str::limit(strip_tags($product->description_ar), 200) : null,
             'category' => $product->category?->name_ar,
-            'stock' => $product->stock_quantity > 10 ? 'متوفر' : ($product->stock_quantity > 0 ? 'تبقى '.$product->stock_quantity.' فقط' : 'نفذ المخزون'),
+            'stock' => !$product->track_inventory ? 'متوفر' : ($product->stock_quantity > 10 ? 'متوفر' : ($product->stock_quantity > 0 ? 'تبقى '.$product->stock_quantity.' فقط' : 'نفذ المخزون')),
             'url' => route('product.show', $product->slug),
             'add_url' => route('cart.add'),
         ]);

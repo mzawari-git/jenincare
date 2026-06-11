@@ -11,11 +11,15 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.ebtikar.skinanalyzer.databinding.ActivitySettingsBinding
+import com.ebtikar.skinanalyzer.hardware.SerialBusManager
 import com.ebtikar.skinanalyzer.ui.calibration.CalibrationActivity
 import com.ebtikar.skinanalyzer.ui.diagnostics.DiagnosticsActivity
 import com.ebtikar.skinanalyzer.util.Constants
+import com.ebtikar.skinanalyzer.util.NetworkMonitor
 import com.ebtikar.skinanalyzer.util.PreferencesManager
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -26,6 +30,12 @@ class SettingsActivity : AppCompatActivity() {
 
     @Inject
     lateinit var preferencesManager: PreferencesManager
+
+    @Inject
+    lateinit var networkMonitor: NetworkMonitor
+
+    @Inject
+    lateinit var serialBusManager: SerialBusManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -46,6 +56,7 @@ class SettingsActivity : AppCompatActivity() {
 
         setupUI()
         loadCurrentSettings()
+        observeDeviceStatus()
     }
 
     private fun setupUI() {
@@ -70,6 +81,17 @@ class SettingsActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 preferencesManager.setLanguage(lang)
             }
+            applyLocale(lang)
+        }
+
+        binding.rgProviderSelection.setOnCheckedChangeListener { _, checkedId ->
+            val provider = when (checkedId) {
+                com.ebtikar.skinanalyzer.R.id.rb_provider_cloud -> "cloud"
+                else -> "local"
+            }
+            lifecycleScope.launch {
+                preferencesManager.setProviderSelection(provider)
+            }
         }
 
         binding.btnCalibration.setOnClickListener {
@@ -79,6 +101,34 @@ class SettingsActivity : AppCompatActivity() {
         binding.btnDiagnostics.setOnClickListener {
             startActivity(Intent(this, DiagnosticsActivity::class.java))
         }
+
+        binding.btnDemo.setOnClickListener {
+            startActivity(Intent(this, com.ebtikar.skinanalyzer.ui.demo.DemoActivity::class.java))
+        }
+
+        binding.btnSaveApi.setOnClickListener {
+            val url = binding.etApiUrl.text.toString().trim()
+            val key = binding.etApiKey.text.toString().trim()
+            lifecycleScope.launch {
+                preferencesManager.setApiUrl(url)
+                preferencesManager.setApiKey(key)
+            }
+            com.google.android.material.snackbar.Snackbar.make(binding.root, "تم حفظ إعدادات API", com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun observeDeviceStatus() {
+        networkMonitor.isOnlineFlow.onEach { isOnline ->
+            binding.tvConnectionStatus.text = if (isOnline) "متصل" else "غير متصل"
+            binding.dotConnection.setBackgroundResource(
+                if (isOnline)
+                    com.ebtikar.skinanalyzer.R.drawable.shape_status_dot_green
+                else
+                    com.ebtikar.skinanalyzer.R.drawable.shape_status_dot_purple
+            )
+        }.launchIn(lifecycleScope)
+
+        binding.tvHardwareStatus.text = if (serialBusManager.isConnected) "العتاد جاهز" else "لا يوجد جهاز USB"
     }
 
     private fun loadCurrentSettings() {
@@ -86,11 +136,21 @@ class SettingsActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     preferencesManager.analysisModeFlow.collect { mode ->
-                        when (mode) {
-                            Constants.ANALYSIS_LOCAL -> binding.rbLocal.isChecked = true
-                            Constants.ANALYSIS_CLOUD -> binding.rbCloud.isChecked = true
-                            else -> binding.rbAuto.isChecked = true
+                        val modeText = when (mode) {
+                            Constants.ANALYSIS_LOCAL -> {
+                                binding.rbLocal.isChecked = true
+                                "محلي"
+                            }
+                            Constants.ANALYSIS_CLOUD -> {
+                                binding.rbCloud.isChecked = true
+                                "سحابي"
+                            }
+                            else -> {
+                                binding.rbAuto.isChecked = true
+                                "تلقائي"
+                            }
                         }
+                        binding.tvAnalysisMode.text = modeText
                     }
                 }
 
@@ -102,10 +162,44 @@ class SettingsActivity : AppCompatActivity() {
                         }
                     }
                 }
+
+                launch {
+                    preferencesManager.providerSelectionFlow.collect { provider ->
+                        when (provider) {
+                            "cloud" -> binding.rbProviderCloud.isChecked = true
+                            else -> binding.rbProviderLocal.isChecked = true
+                        }
+                    }
+                }
+
+                launch {
+                    preferencesManager.apiUrlFlow.collect { url ->
+                        binding.etApiUrl.setText(url)
+                    }
+                }
+
+                launch {
+                    preferencesManager.apiKeyFlow.collect { key ->
+                        binding.etApiKey.setText(key)
+                    }
+                }
             }
         }
 
         binding.tvDeviceInfo.text = "${Constants.DEVICE_BRAND} ${Constants.DEVICE_MODEL}\n${Constants.DEVICE_EDITION}"
         binding.tvResolution.text = "${Constants.SCREEN_WIDTH} x ${Constants.SCREEN_HEIGHT}"
+    }
+
+    private fun applyLocale(lang: String) {
+        val locale = java.util.Locale(lang)
+        java.util.Locale.setDefault(locale)
+        val config = android.content.res.Configuration(resources.configuration)
+        config.setLocale(locale)
+        resources.updateConfiguration(config, resources.displayMetrics)
+        com.google.android.material.snackbar.Snackbar.make(
+            binding.root,
+            if (lang == Constants.LANG_ARABIC) "تم تغيير اللغة — أعد تشغيل التطبيق للتطبيق الكامل" else "Language changed — restart app for full effect",
+            com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
+        ).show()
     }
 }

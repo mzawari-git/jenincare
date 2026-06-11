@@ -48,9 +48,11 @@ object AppModule {
     @Singleton
     fun provideFrameCapturePipeline(
         spectrumController: SpectrumController,
-        cameraManager: USBCameraManager
+        cameraManager: USBCameraManager,
+        serialBusManager: SerialBusManager,
+        faceDetector: FaceLandmarkDetector
     ): FrameCapturePipeline {
-        return FrameCapturePipeline(spectrumController, cameraManager)
+        return FrameCapturePipeline(spectrumController, cameraManager, serialBusManager, faceDetector)
     }
 
     @Provides

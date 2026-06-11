@@ -8,11 +8,14 @@ import com.ebtikar.skinanalyzer.data.repository.SkinAnalysisRepository
 import com.ebtikar.skinanalyzer.hardware.LightSpectrum
 import com.ebtikar.skinanalyzer.model.AnalysisState
 import com.ebtikar.skinanalyzer.model.SkinAnalysisReport
+import com.ebtikar.skinanalyzer.util.Constants
+import com.ebtikar.skinanalyzer.util.PreferencesManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -24,7 +27,8 @@ import javax.inject.Inject
 @HiltViewModel
 class AnalysisViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val repository: SkinAnalysisRepository
+    private val repository: SkinAnalysisRepository,
+    private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
     private val _currentPhase = MutableStateFlow<CapturePhase?>(null)
@@ -35,6 +39,12 @@ class AnalysisViewModel @Inject constructor(
 
     private val _statusMessage = MutableStateFlow("")
     val statusMessage: StateFlow<String> = _statusMessage.asStateFlow()
+
+    private val _currentStep = MutableStateFlow(0)
+    val currentStep: StateFlow<Int> = _currentStep.asStateFlow()
+
+    private val _totalSteps = MutableStateFlow(0)
+    val totalSteps: StateFlow<Int> = _totalSteps.asStateFlow()
 
     private val _isComplete = MutableStateFlow(false)
     val isComplete: StateFlow<Boolean> = _isComplete.asStateFlow()
@@ -51,29 +61,41 @@ class AnalysisViewModel @Inject constructor(
     private var reportId = UUID.randomUUID().toString()
     private var isAborted = false
     private var capturedFrames: Map<LightSpectrum, File> = emptyMap()
+    private var diagnosisMode = "all"
 
     fun getReportId(): String = reportId
 
     init {
         repository.getAnalysisState().onEach { state ->
             when (state) {
+                is AnalysisState.WaitingForFace -> {
+                    _statusMessage.value = "يرجى وضع الوجه أمام الكاميرا..."
+                    _progress.value = 5
+                }
                 is AnalysisState.Capturing -> {
                     _currentSpectrumName.value = state.phase.displayName
                     _progress.value = state.progress
-                    _statusMessage.value = "Capturing ${state.phase.displayName}..."
+                    _currentStep.value = state.step
+                    _totalSteps.value = state.totalSteps
+                    val arName = state.spectrumDisplayAr.ifBlank { state.phase.displayNameAr }
+                    if (state.step > 0 && state.totalSteps > 0) {
+                        _statusMessage.value = "${state.step} من ${state.totalSteps} — $arName"
+                    } else {
+                        _statusMessage.value = "جاري المسح..."
+                    }
                 }
                 is AnalysisState.Analyzing -> {
-                    _statusMessage.value = "Analyzing with ${state.provider}..."
-                    _progress.value = 80
+                    _statusMessage.value = "جاري التحليل عبر ${state.provider}..."
+                    _progress.value = 85
                 }
                 is AnalysisState.Saving -> {
-                    _statusMessage.value = "Saving report..."
+                    _statusMessage.value = "جاري حفظ التقرير..."
                     _progress.value = 95
                 }
                 is AnalysisState.Complete -> {
                     _progress.value = 100
                     _isComplete.value = true
-                    _statusMessage.value = "Analysis complete"
+                    _statusMessage.value = "اكتمل التحليل"
                 }
                 is AnalysisState.Error -> {
                     _error.value = state.message
@@ -83,7 +105,11 @@ class AnalysisViewModel @Inject constructor(
         }.launchIn(viewModelScope)
     }
 
-    fun initializeAnalysis() {
+    fun setDiagnosisMode(mode: String) {
+        diagnosisMode = mode
+    }
+
+    fun initializeAnalysis(previewSurface: android.view.Surface? = null) {
         isAborted = false
         _error.value = null
         _isComplete.value = false
@@ -94,7 +120,7 @@ class AnalysisViewModel @Inject constructor(
 
             val outputDir = File(context.filesDir, "captures/$reportId")
 
-            val captureResult = repository.startAnalysis(outputDir)
+            val captureResult = repository.startAnalysis(outputDir, diagnosisMode, previewSurface)
 
             if (captureResult.isFailure || isAborted) {
                 _error.value = captureResult.exceptionOrNull()?.message ?: "Analysis aborted"
@@ -105,13 +131,15 @@ class AnalysisViewModel @Inject constructor(
             _capturedImages.value = capturedFrames
 
             _statusMessage.value = "Processing captured images..."
-            runAnalysis(capturedFrames)
+
+            val mode = preferencesManager.analysisModeFlow.first()
+            runAnalysis(capturedFrames, mode)
         }
     }
 
-    private fun runAnalysis(frames: Map<LightSpectrum, File>) {
+    private fun runAnalysis(frames: Map<LightSpectrum, File>, mode: String = Constants.ANALYSIS_AUTO) {
         viewModelScope.launch {
-            val analysisResult = repository.analyzeImages(frames)
+            val analysisResult = repository.analyzeImages(frames, mode)
 
             if (analysisResult.isSuccess) {
                 val report = analysisResult.getOrThrow()

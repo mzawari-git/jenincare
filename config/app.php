@@ -54,6 +54,9 @@ return [
         App\Providers\AppServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         App\Providers\HorizonServiceProvider::class,
+        App\Providers\EventServiceProvider::class,
+        App\Providers\AIServiceProvider::class,
+        App\Providers\SkinAnalyzerServiceProvider::class,
     ],
     'aliases' => Illuminate\Support\Facades\Facade::defaultAliases()->merge([
     ])->toArray(),

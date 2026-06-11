@@ -2,6 +2,7 @@ package com.ebtikar.skinanalyzer.camera
 
 import com.ebtikar.skinanalyzer.camera.FrameCapturePipeline
 import com.ebtikar.skinanalyzer.camera.USBCameraManager
+import com.ebtikar.skinanalyzer.hardware.SerialBusManager
 import com.ebtikar.skinanalyzer.hardware.SpectrumController
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -13,12 +14,14 @@ class FrameCapturePipelineTest {
     private lateinit var pipeline: FrameCapturePipeline
     private lateinit var mockSpectrumController: SpectrumController
     private lateinit var mockCameraManager: USBCameraManager
+    private lateinit var mockSerialBusManager: SerialBusManager
 
     @Before
     fun setup() {
         mockSpectrumController = mock()
         mockCameraManager = mock()
-        pipeline = FrameCapturePipeline(mockSpectrumController, mockCameraManager)
+        mockSerialBusManager = mock()
+        pipeline = FrameCapturePipeline(mockSpectrumController, mockCameraManager, mockSerialBusManager)
     }
 
     @Test

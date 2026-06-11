@@ -8,8 +8,10 @@ import com.ebtikar.skinanalyzer.data.repository.SkinAnalysisRepository
 import com.ebtikar.skinanalyzer.hardware.LightSpectrum
 import com.ebtikar.skinanalyzer.model.MetricSeverity
 import com.ebtikar.skinanalyzer.model.ProductRecommendation
+import com.ebtikar.skinanalyzer.model.SkinAnalysisReport
 import com.ebtikar.skinanalyzer.model.SkinMetric
 import com.ebtikar.skinanalyzer.model.SkinProfile
+import com.ebtikar.skinanalyzer.util.PdfReportGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,7 +31,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ReportViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val repository: SkinAnalysisRepository
+    private val repository: SkinAnalysisRepository,
+    private val pdfReportGenerator: PdfReportGenerator
 ) : ViewModel() {
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -155,11 +158,38 @@ class ReportViewModel @Inject constructor(
     }
 
     fun shareReport() {
-        Timber.i("Sharing report: $currentReportId")
+        val reportId = currentReportId ?: return
+        viewModelScope.launch {
+            val entity = repository.getReport(reportId) ?: return@launch
+            val report = entity.toReport()
+            val outputDir = File(context.cacheDir, "pdf_reports")
+            val pdfFile = pdfReportGenerator.generate(context, report, outputDir)
+            if (pdfFile != null) {
+                val uri = androidx.core.content.FileProvider.getUriForFile(
+                    context, "${context.packageName}.fileprovider", pdfFile
+                )
+                val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "application/pdf"
+                    putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                context.startActivity(android.content.Intent.createChooser(shareIntent, "مشاركة التقرير"))
+                Timber.i("PDF shared: ${pdfFile.absolutePath}")
+            }
+        }
     }
 
     fun saveReport() {
-        Timber.i("Saving report PDF: $currentReportId")
+        val reportId = currentReportId ?: return
+        viewModelScope.launch {
+            val entity = repository.getReport(reportId) ?: return@launch
+            val report = entity.toReport()
+            val outputDir = File(context.filesDir, "pdf_reports")
+            val pdfFile = pdfReportGenerator.generate(context, report, outputDir)
+            if (pdfFile != null) {
+                Timber.i("PDF saved: ${pdfFile.absolutePath}")
+            }
+        }
     }
 
     private fun generateSampleMetrics(): List<SkinMetric> {
@@ -172,6 +202,50 @@ class ReportViewModel @Inject constructor(
                 recommendations = listOf("حافظي على روتينك الحالي")
             )
         }
+    }
+
+    private fun SkinReportEntity.toReport(): SkinAnalysisReport {
+        val metricSerializer = ListSerializer(SkinMetric.serializer())
+        val metricsList = try {
+            json.decodeFromString(metricSerializer, metricsJson)
+        } catch (e: Exception) {
+            generateSampleMetrics()
+        }
+        val tipsSerializer = ListSerializer(String.serializer())
+        val tipsList = try {
+            json.decodeFromString(tipsSerializer, expertTipsJson)
+        } catch (e: Exception) {
+            emptyList()
+        }
+        val productsSerializer = ListSerializer(ProductRecommendation.serializer())
+        val productsList = try {
+            json.decodeFromString(productsSerializer, productsJson)
+        } catch (e: Exception) {
+            emptyList()
+        }
+        val profile = try {
+            json.decodeFromString(SkinProfile.serializer(), skinProfileJson)
+        } catch (e: Exception) {
+            SkinProfile()
+        }
+        return SkinAnalysisReport(
+            id = id,
+            timestamp = timestamp,
+            providerName = providerName,
+            overallScore = overallScore,
+            metrics = metricsList,
+            executionTimeMs = executionTimeMs,
+            deviceModel = deviceModel,
+            notes = notes,
+            aiAnalysisText = aiAnalysisText,
+            aiAnalysisTextAr = aiAnalysisText,
+            expertTips = tipsList,
+            expertTipsAr = tipsList,
+            productRecommendations = productsList,
+            skinProfile = profile,
+            confidence = confidence,
+            scanId = scanId
+        )
     }
 
     private fun getArabicName(type: SkinMetric.Type): String = when (type) {
