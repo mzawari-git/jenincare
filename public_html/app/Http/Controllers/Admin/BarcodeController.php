@@ -99,19 +99,33 @@ class BarcodeController extends Controller
     /**
      * توليد رقم EAN-13 صالح
      */
-    private function generateEAN13(int $seed): string
+    private function generateEAN13(int $productId): string
     {
-        $prefix = '626'; // رمز دولة فلسطين (مثال)
-        $middle = str_pad($seed % 100000000, 8, '0', STR_PAD_LEFT);
-        $code = $prefix . $middle;
-        $code .= $this->calculateEAN13CheckDigit($code);
+        $base = ((int)(microtime(true) * 1000) % 900000000) + ($productId % 100000000);
+        $prefix = '626';
+        $attempts = 0;
+
+        do {
+            $seed = ($base + $attempts) % 1000000000;
+            $middle = str_pad($seed, 9, '0', STR_PAD_LEFT);
+            $code = $prefix . $middle;
+            $code .= $this->calculateEAN13CheckDigit($code);
+            $attempts++;
+            if ($attempts > 100) {
+                $code = $prefix . str_pad(random_int(0, 999999999), 9, '0', STR_PAD_LEFT);
+                $code .= $this->calculateEAN13CheckDigit($code);
+                break;
+            }
+        } while (\App\Models\Product::where('barcode', $code)->exists());
+
         return $code;
     }
 
     private function calculateEAN13CheckDigit(string $code): string
     {
         $sum = 0;
-        for ($i = 0; $i < 12; $i++) {
+        $len = strlen($code);
+        for ($i = 0; $i < $len; $i++) {
             $sum += ($i % 2 === 0) ? (int)$code[$i] : (int)$code[$i] * 3;
         }
         $check = (10 - ($sum % 10)) % 10;
