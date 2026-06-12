@@ -15,8 +15,15 @@
         }
 
         @media print {
+            html { margin: 0; }
             @page { size: 80mm auto; margin: 0; }
-            body { width: 80mm; padding: 0; }
+            body {
+                width: 80mm;
+                margin: 0;
+                padding: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
             .no-print { display: none !important; }
         }
 
@@ -117,8 +124,11 @@
             <button onclick="printLabels()" style="background:#0d6efd;color:white;border:none;padding:8px 20px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600;">طباعة</button>
         </div>
     </div>
-    <div class="print-tips no-print" style="background:#fff3cd;padding:8px 12px;font-size:11px;font-family:'Segoe UI',sans-serif;color:#856404;border-bottom:1px solid #ffc107;">
-        <strong>إعدادات الطباعة:</strong> اختر حجم الورق <u>80mm × Receipt</u>، واجعل الهوامش <u>0mm</u>، وفعّل <u>Fit to page</u>.
+    <div class="print-tips no-print" style="background:#fff3cd;padding:10px 14px;font-size:12px;font-family:'Segoe UI',sans-serif;color:#856404;border-bottom:1px solid #ffc107;text-align:right;">
+        <strong>إعدادات طباعة Zebra ZD410:</strong><br>
+        • في خيارات الطباعة (Print Dialog) ← اختر <u>Margins: None</u> وألغِ <u>Headers and Footers</u><br>
+        • تأكد أن حجم الورق مضبوط على <u>80mm × (طول الملصق)</u> في تعريف الطابعة<br>
+        • استخدم <u>Scale: 100</u> (ليس Fit to Page)
     </div>
 
     @foreach($expanded as $product)
