@@ -332,10 +332,7 @@
                     @if($showName)
                         <div class="info-section" style="margin-top:1px;">
                             <div class="name-line" title="{{ $product->name_ar }}">{{ Str::limit($product->name_ar, 35) }}</div>
-                            <div class="sku-line">{{ $product->sku }}</div>
                         </div>
-                    @else
-                        <div class="sku-line" style="margin-top:1px;">{{ $product->sku }}</div>
                     @endif
 
                     @if($showPrice)
@@ -347,7 +344,6 @@
                     @if($showName)
                         <div class="name-line" title="{{ $product->name_ar }}">{{ Str::limit($product->name_ar, 35) }}</div>
                     @endif
-                    <div class="sku-line">{{ $product->sku }}</div>
 
                     @if($product->barcode)
                         <div class="barcode-section" style="margin-top:1px;">
