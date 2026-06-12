@@ -6373,6 +6373,11 @@
 
     // Load Quick-Pick Grid
 
+    // Auto fullscreen on load
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+    }
+
     // Online/Offline event listeners
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
