@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>طباعة الباركود — {{ $siteSettings['site_name'] ?? \App\Helpers\SettingsHelper::siteName() }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3/dist/JsBarcode.all.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -114,6 +115,11 @@
                     default => '38mm',
                 }
             );
+            $bcPx = match($layout) {
+                'a4_6', 'a5_4', 'a6_2' => 120,
+                'a4_12', 'a5_6', 'a6_4' => 80,
+                default => 55,
+            };
         @endphp
 
         .label-24 {
@@ -220,73 +226,45 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-        .sku-line {
-            font-size: 7px;
-            color: #94a3b8;
-            font-family: 'Courier New', monospace;
-            margin-bottom: 2px;
-        }
         .price-line {
             font-size: 10px;
             font-weight: 800;
             color: #dc2626;
             margin-top: 1px;
         }
-        .barcode-img {
-            max-width: 100%;
-            height: auto;
-            image-rendering: crisp-edges;
-            display: block;
-        }
-        .barcode-number {
-            font-size: 8px;
-            font-family: 'Courier New', monospace;
-            color: #334155;
-            letter-spacing: 0.8px;
-            margin-top: 1px;
-            direction: ltr;
-        }
 
         .label-12 .brand-line { font-size: 8px; }
         .label-12 .name-line { font-size: 11px; }
-        .label-12 .sku-line { font-size: 8px; }
         .label-12 .price-line { font-size: 12px; }
-        .label-12 .barcode-number { font-size: 9px; }
 
         .label-6 .brand-line { font-size: 10px; }
         .label-6 .name-line { font-size: 14px; }
-        .label-6 .sku-line { font-size: 10px; }
         .label-6 .price-line { font-size: 15px; }
-        .label-6 .barcode-number { font-size: 11px; }
 
         .label-a5-12 .brand-line { font-size: 6px; }
         .label-a5-12 .name-line { font-size: 7px; }
-        .label-a5-12 .sku-line { font-size: 6px; }
         .label-a5-12 .price-line { font-size: 8px; }
-        .label-a5-12 .barcode-number { font-size: 6px; }
 
         .label-a5-6 .brand-line { font-size: 7px; }
         .label-a5-6 .name-line { font-size: 8px; }
-        .label-a5-6 .sku-line { font-size: 7px; }
         .label-a5-6 .price-line { font-size: 9px; }
-        .label-a5-6 .barcode-number { font-size: 7px; }
 
         .label-a5-4 .brand-line { font-size: 9px; }
         .label-a5-4 .name-line { font-size: 12px; }
-        .label-a5-4 .sku-line { font-size: 9px; }
         .label-a5-4 .price-line { font-size: 13px; }
-        .label-a5-4 .barcode-number { font-size: 10px; }
 
         .label-custom .brand-line { font-size: 6px; }
         .label-custom .name-line { font-size: 7px; }
-        .label-custom .sku-line { font-size: 6px; }
         .label-custom .price-line { font-size: 8px; }
-        .label-custom .barcode-number { font-size: 6px; }
 
         .barcode-section {
             display: flex;
             flex-direction: column;
             align-items: center;
+        }
+        .barcode-section canvas {
+            max-width: 100%;
+            height: auto;
         }
         .info-section {
             display: flex;
@@ -311,19 +289,14 @@
         @foreach($expanded as $product)
             <div class="{{ $labelClass }}">
 
-                {{-- === BRAND (always at top if shown) === --}}
                 @if($showBrand)
                     <div class="brand-line">{{ $siteSettings['site_name'] ?? \App\Helpers\SettingsHelper::siteName() }}</div>
                 @endif
 
                 @if($barcodePosition === 'top')
-                    {{-- === BARCODE TOP, NAME BELOW === --}}
                     @if($product->barcode)
                         <div class="barcode-section">
-                            <img src="https://barcode.tec-it.com/barcode.ashx?data={{ urlencode($product->barcode) }}&code=EAN13&dpi=96&dataseparator=&translate-esc=true"
-                                 alt="{{ $product->barcode }}"
-                                 class="barcode-img"
-                                 style="height: {{ $barcodeHeight }}; max-width: {{ $barcodeWidth }};">
+                            <canvas class="bcode" data-code="{{ $product->barcode }}" data-height="{{ $bcPx }}"></canvas>
                         </div>
                     @else
                         <div style="font-size:9px;color:#dc2626;padding:4px 0;">لا يوجد باركود</div>
@@ -340,17 +313,13 @@
                     @endif
 
                 @else
-                    {{-- === NAME TOP, BARCODE BELOW (default) === --}}
                     @if($showName)
                         <div class="name-line" title="{{ $product->name_ar }}">{{ Str::limit($product->name_ar, 35) }}</div>
                     @endif
 
                     @if($product->barcode)
                         <div class="barcode-section" style="margin-top:1px;">
-                            <img src="https://barcode.tec-it.com/barcode.ashx?data={{ urlencode($product->barcode) }}&code=EAN13&dpi=96&dataseparator=&translate-esc=true"
-                                 alt="{{ $product->barcode }}"
-                                 class="barcode-img"
-                                 style="height: {{ $barcodeHeight }}; max-width: {{ $barcodeWidth }};">
+                            <canvas class="bcode" data-code="{{ $product->barcode }}" data-height="{{ $bcPx }}"></canvas>
                         </div>
                     @else
                         <div style="font-size:9px;color:#dc2626;padding:4px 0;">لا يوجد باركود</div>
@@ -359,11 +328,41 @@
                     @if($showPrice)
                         <div class="price-line" style="margin-top:0;">{{ number_format($product->b2c_price, 0) }} ₪</div>
                     @endif
-
                 @endif
 
             </div>
         @endforeach
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('canvas.bcode').forEach(function(canvas) {
+            var code = canvas.getAttribute('data-code');
+            var h = parseInt(canvas.getAttribute('data-height')) || 55;
+            if (!code) return;
+            try {
+                JsBarcode(canvas, code, {
+                    format: 'EAN13',
+                    width: 2,
+                    height: h,
+                    displayValue: false,
+                    margin: 2,
+                    background: '#ffffff',
+                });
+            } catch(e) {
+                try {
+                    JsBarcode(canvas, code, {
+                        format: 'CODE128',
+                        width: 1.5,
+                        height: h,
+                        displayValue: false,
+                        margin: 2,
+                        background: '#ffffff',
+                    });
+                } catch(e2) {}
+            }
+        });
+    });
+    </script>
 </body>
 </html>

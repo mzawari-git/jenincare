@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>طباعة الباركود حراري — {{ $siteSettings['site_name'] ?? \App\Helpers\SettingsHelper::siteName() }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3/dist/JsBarcode.all.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -80,29 +81,19 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-        .sku-line {
-            font-size: 8px;
-            color: #666;
-            margin-bottom: 2px;
-        }
         .price-line {
             font-size: 12px;
             font-weight: bold;
             color: #dc2626;
             margin-top: 1px;
         }
-        .barcode-img {
+        .barcode-section {
+            margin: 2px auto;
+            text-align: center;
+        }
+        .barcode-section canvas {
             max-width: 92%;
             height: auto;
-            margin: 2px auto;
-            image-rendering: crisp-edges;
-            display: block;
-        }
-        .barcode-number {
-            font-size: 10px;
-            letter-spacing: 1px;
-            color: #334155;
-            direction: ltr;
         }
         .divider {
             border-top: 1px dashed #d0d0d0;
@@ -129,20 +120,15 @@
             @if($barcodePosition === 'top')
 
                 @if($product->barcode)
-                    <img src="https://barcode.tec-it.com/barcode.ashx?data={{ urlencode($product->barcode) }}&code=EAN13&dpi=96&dataseparator=&translate-esc=true"
-                         alt="{{ $product->barcode }}"
-                         class="barcode-img"
-                         style="height: 22mm;">
-                    <div class="barcode-number">{{ $product->barcode }}</div>
+                    <div class="barcode-section">
+                        <canvas class="bcode" data-code="{{ $product->barcode }}" data-height="80"></canvas>
+                    </div>
                 @else
                     <div style="font-size:9px;color:#dc2626;padding:3px 0;">لا يوجد باركود</div>
                 @endif
 
                 @if($showName)
                     <div class="name-line">{{ $product->name_ar }}</div>
-                    <div class="sku-line">{{ $product->sku }}</div>
-                @else
-                    <div class="sku-line" style="margin-top:1px;">{{ $product->sku }}</div>
                 @endif
 
                 @if($showPrice)
@@ -153,17 +139,12 @@
 
                 @if($showName)
                     <div class="name-line">{{ $product->name_ar }}</div>
-                    <div class="sku-line">{{ $product->sku }}</div>
-                @else
-                    <div class="sku-line">{{ $product->sku }}</div>
                 @endif
 
                 @if($product->barcode)
-                    <img src="https://barcode.tec-it.com/barcode.ashx?data={{ urlencode($product->barcode) }}&code=EAN13&dpi=96&dataseparator=&translate-esc=true"
-                         alt="{{ $product->barcode }}"
-                         class="barcode-img"
-                         style="height: 22mm;">
-                    <div class="barcode-number">{{ $product->barcode }}</div>
+                    <div class="barcode-section">
+                        <canvas class="bcode" data-code="{{ $product->barcode }}" data-height="80"></canvas>
+                    </div>
                 @else
                     <div style="font-size:9px;color:#dc2626;padding:3px 0;">لا يوجد باركود</div>
                 @endif
@@ -179,5 +160,36 @@
             <div class="divider"></div>
         @endif
     @endforeach
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('canvas.bcode').forEach(function(canvas) {
+            var code = canvas.getAttribute('data-code');
+            var h = parseInt(canvas.getAttribute('data-height')) || 55;
+            if (!code) return;
+            try {
+                JsBarcode(canvas, code, {
+                    format: 'EAN13',
+                    width: 2,
+                    height: h,
+                    displayValue: false,
+                    margin: 2,
+                    background: '#ffffff',
+                });
+            } catch(e) {
+                try {
+                    JsBarcode(canvas, code, {
+                        format: 'CODE128',
+                        width: 1.5,
+                        height: h,
+                        displayValue: false,
+                        margin: 2,
+                        background: '#ffffff',
+                    });
+                } catch(e2) {}
+            }
+        });
+    });
+    </script>
 </body>
 </html>
