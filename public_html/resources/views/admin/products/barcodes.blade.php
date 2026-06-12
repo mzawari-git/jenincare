@@ -114,7 +114,7 @@
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         @if($product->main_image_url)
-                                            <img src="{{ $product->main_image_url }}" alt="" class="rounded" width="40" height="40" style="object-fit: cover;">
+                                            <img src="{{ $product->main_image_url }}" alt="" class="rounded" width="40" height="40" style="object-fit: cover;" loading="lazy">
                                         @else
                                             <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
                                                 <i class="fas fa-box text-muted"></i>

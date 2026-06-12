@@ -29,7 +29,7 @@ class BarcodeController extends Controller
 
         if ($request->filled('status')) {
             if ($request->status === 'no_barcode') {
-                $query->whereNull('barcode')->orWhere('barcode', '');
+                $query->where(function ($q) { $q->whereNull('barcode')->orWhere('barcode', ''); });
             } elseif ($request->status === 'has_barcode') {
                 $query->whereNotNull('barcode')->where('barcode', '!=', '');
             }
@@ -79,7 +79,7 @@ class BarcodeController extends Controller
 
         if ($request->filled('status')) {
             if ($request->status === 'no_barcode') {
-                $query->whereNull('barcode')->orWhere('barcode', '');
+                $query->where(function ($q) { $q->whereNull('barcode')->orWhere('barcode', ''); });
             } elseif ($request->status === 'has_barcode') {
                 $query->whereNotNull('barcode')->where('barcode', '!=', '');
             }
@@ -128,7 +128,7 @@ class BarcodeController extends Controller
      */
     public function generateMissing()
     {
-        $products = Product::whereNull('barcode')->orWhere('barcode', '')->get();
+        $products = Product::where(function ($q) { $q->whereNull('barcode')->orWhere('barcode', ''); })->get();
         $count = 0;
 
         foreach ($products as $product) {
@@ -165,13 +165,15 @@ class BarcodeController extends Controller
             if ($request->filled('category')) {
                 $query->where('category_id', $request->category);
             }
-            if ($request->filled('status')) {
-                if ($request->status === 'no_barcode') {
-                    $query->whereNull('barcode')->orWhere('barcode', '');
-                } elseif ($request->status === 'has_barcode') {
-                    $query->whereNotNull('barcode')->where('barcode', '!=', '');
-                }
+        if ($request->filled('status')) {
+            if ($request->status === 'no_barcode') {
+                $query->where(function ($q) {
+                    $q->whereNull('barcode')->orWhere('barcode', '');
+                });
+            } elseif ($request->status === 'has_barcode') {
+                $query->whereNotNull('barcode')->where('barcode', '!=', '');
             }
+        }
             $ids = $query->pluck('id')->toArray();
         }
 
