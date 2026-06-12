@@ -15,8 +15,8 @@
         }
 
         @media print {
-            @page { size: 80mm auto; margin: 2mm; }
-            body { width: 80mm; }
+            @page { size: 80mm auto; margin: 0; }
+            body { width: 80mm; padding: 0; }
             .no-print { display: none !important; }
         }
 
@@ -54,9 +54,9 @@
         .print-controls button:hover { background: #0b5ed7; }
 
         .thermal-label {
-            width: 74mm;
-            margin: 2mm auto;
-            padding: 3mm 2mm;
+            width: 100%;
+            margin: 0;
+            padding: 2mm 4mm;
             text-align: center;
             page-break-inside: avoid;
             page-break-after: always;
@@ -66,41 +66,44 @@
         }
 
         .brand-line {
-            font-size: 9px;
+            font-size: 8px;
             font-weight: bold;
             color: #0d6efd;
-            margin-bottom: 1px;
+            margin-bottom: 0;
+            line-height: 1.3;
         }
         .name-line {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: bold;
             color: #1a1a2e;
-            margin-bottom: 1px;
+            margin-bottom: 0;
             max-width: 100%;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            line-height: 1.3;
         }
         .price-line {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             color: #dc2626;
-            margin-top: 1px;
+            margin-top: 0;
+            line-height: 1.3;
         }
         .barcode-section {
-            margin: 2px auto;
+            margin: 1px auto;
             text-align: center;
         }
         .barcode-section canvas,
         .barcode-section img {
-            max-width: 92%;
+            max-width: 100%;
             height: auto;
             display: block;
             margin: 0 auto;
         }
         .divider {
             border-top: 1px dashed #d0d0d0;
-            margin: 1mm 0;
+            margin: 0;
         }
     </style>
 </head>
@@ -110,7 +113,12 @@
             طباعة حراري
             <span>— {{ $totalLabels }} ملصق ({{ count($products) }} منتج)</span>
         </div>
-        <button onclick="printLabels()">طباعة</button>
+        <div class="d-flex align-items-center gap-2">
+            <button onclick="printLabels()" style="background:#0d6efd;color:white;border:none;padding:8px 20px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600;">طباعة</button>
+        </div>
+    </div>
+    <div class="print-tips no-print" style="background:#fff3cd;padding:8px 12px;font-size:11px;font-family:'Segoe UI',sans-serif;color:#856404;border-bottom:1px solid #ffc107;">
+        <strong>إعدادات الطباعة:</strong> اختر حجم الورق <u>80mm × Receipt</u>، واجعل الهوامش <u>0mm</u>، وفعّل <u>Fit to page</u>.
     </div>
 
     @foreach($expanded as $product)
@@ -124,10 +132,10 @@
 
                 @if($product->barcode)
                     <div class="barcode-section">
-                        <canvas class="bcode" data-code="{{ $product->barcode }}" data-height="80"></canvas>
+                        <canvas class="bcode" data-code="{{ $product->barcode }}" data-height="60"></canvas>
                     </div>
                 @else
-                    <div style="font-size:9px;color:#dc2626;padding:3px 0;">لا يوجد باركود</div>
+                    <div style="font-size:8px;color:#dc2626;padding:2px 0;">لا يوجد باركود</div>
                 @endif
 
                 @if($showName)
@@ -146,7 +154,7 @@
 
                 @if($product->barcode)
                     <div class="barcode-section">
-                        <canvas class="bcode" data-code="{{ $product->barcode }}" data-height="80"></canvas>
+                        <canvas class="bcode" data-code="{{ $product->barcode }}" data-height="60"></canvas>
                     </div>
                 @else
                     <div style="font-size:9px;color:#dc2626;padding:3px 0;">لا يوجد باركود</div>
@@ -170,7 +178,7 @@
             if (canvas.dataset._converted) return;
             var img = document.createElement('img');
             img.src = canvas.toDataURL();
-            img.style.cssText = 'display:block;margin:0 auto;max-width:92%;height:auto;';
+            img.style.cssText = 'display:block;margin:0 auto;max-width:100%;height:auto;';
             img.className = canvas.className;
             canvas.parentNode.replaceChild(img, canvas);
             img.dataset._converted = '1';
@@ -190,20 +198,20 @@
             try {
                 JsBarcode(canvas, code, {
                     format: 'EAN13',
-                    width: 2,
+                    width: 1.5,
                     height: h,
                     displayValue: false,
-                    margin: 2,
+                    margin: 1,
                     background: '#ffffff',
                 });
             } catch(e) {
                 try {
                     JsBarcode(canvas, code, {
                         format: 'CODE128',
-                        width: 1.5,
+                        width: 1,
                         height: h,
                         displayValue: false,
-                        margin: 2,
+                        margin: 1,
                         background: '#ffffff',
                     });
                 } catch(e2) {}
