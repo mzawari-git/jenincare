@@ -3321,13 +3321,13 @@
             <button onclick="adjustQty(1)">+1</button>
             <button onclick="adjustQty(5)">+5</button>
         </div>
-        <div class="row g-2 mb-3">
-            <div class="col-4"><button class="btn btn-sm btn-outline-secondary w-100" onclick="setQty(1)">1</button></div>
-            <div class="col-4"><button class="btn btn-sm btn-outline-secondary w-100" onclick="setQty(2)">2</button></div>
-            <div class="col-4"><button class="btn btn-sm btn-outline-secondary w-100" onclick="setQty(3)">3</button></div>
-            <div class="col-4"><button class="btn btn-sm btn-outline-secondary w-100" onclick="setQty(5)">5</button></div>
-            <div class="col-4"><button class="btn btn-sm btn-outline-secondary w-100" onclick="setQty(10)">10</button></div>
-            <div class="col-4"><button class="btn btn-sm btn-outline-secondary w-100" onclick="setQty(20)">20</button></div>
+        <div style="display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.75rem;justify-content:center;">
+            <button type="button" onclick="setQty(1)" style="width:70px;height:42px;border-radius:10px;border:2px solid var(--gray-200);background:#fff;font-size:.95rem;font-weight:700;cursor:pointer;color:var(--gray-700);transition:all .15s;">1</button>
+            <button type="button" onclick="setQty(2)" style="width:70px;height:42px;border-radius:10px;border:2px solid var(--gray-200);background:#fff;font-size:.95rem;font-weight:700;cursor:pointer;color:var(--gray-700);transition:all .15s;">2</button>
+            <button type="button" onclick="setQty(3)" style="width:70px;height:42px;border-radius:10px;border:2px solid var(--gray-200);background:#fff;font-size:.95rem;font-weight:700;cursor:pointer;color:var(--gray-700);transition:all .15s;">3</button>
+            <button type="button" onclick="setQty(5)" style="width:70px;height:42px;border-radius:10px;border:2px solid var(--gray-200);background:#fff;font-size:.95rem;font-weight:700;cursor:pointer;color:var(--gray-700);transition:all .15s;">5</button>
+            <button type="button" onclick="setQty(10)" style="width:70px;height:42px;border-radius:10px;border:2px solid var(--gray-200);background:#fff;font-size:.95rem;font-weight:700;cursor:pointer;color:var(--gray-700);transition:all .15s;">10</button>
+            <button type="button" onclick="setQty(20)" style="width:70px;height:42px;border-radius:10px;border:2px solid var(--gray-200);background:#fff;font-size:.95rem;font-weight:700;cursor:pointer;color:var(--gray-700);transition:all .15s;">20</button>
         </div>
         <button class="qty-confirm" onclick="confirmQty()">تأكيد</button>
     </div>
