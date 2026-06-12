@@ -240,6 +240,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/barcodes/generate-missing', [\App\Http\Controllers\Admin\BarcodeController::class, 'generateMissing'])->name('admin.barcodes.generate-missing');
     Route::post('/barcodes/print', [\App\Http\Controllers\Admin\BarcodeController::class, 'print'])->name('admin.barcodes.print');
     Route::get('/barcodes/export', [\App\Http\Controllers\Admin\BarcodeController::class, 'exportCsv'])->name('admin.barcodes.export');
+    Route::get('/barcodes/svg/{code}', [\App\Http\Controllers\Admin\BarcodeController::class, 'svg'])->name('admin.barcodes.svg');
 
     // Analytics
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('admin.analytics.index');

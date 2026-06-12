@@ -15,6 +15,7 @@
         "laravel/sanctum": "*",
         "laravel/socialite": "^5.27",
         "maatwebsite/excel": "^3.1",
+        "picqer/php-barcode-generator": "*",
         "predis/predis": "*",
         "yajra/laravel-datatables": "^10.0"
     },

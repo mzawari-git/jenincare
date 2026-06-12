@@ -2706,20 +2706,20 @@
                     سلة المشتريات
                     <span class="cart-count" id="cartCount">0</span>
                 </h5>
-                <div class="d-flex gap-1">
-                    <button class="btn btn-sm btn-outline-secondary" onclick="openSettings()" title="إعدادات الطباعة">
+                <div style="display:flex;gap:.2rem;align-items:center;">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="openSettings()" title="إعدادات الطباعة" style="height:32px;width:32px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:.78rem;border-width:1.5px;">
                         <i class="fas fa-cog"></i>
                     </button>
-                    <button class="btn btn-sm btn-reprint" onclick="reprintLastReceipt()" id="reprintBtn" style="display:none;" title="طباعة الفاتورة السابقة">
+                    <button class="btn btn-sm btn-reprint" onclick="reprintLastReceipt()" id="reprintBtn" style="display:none;height:32px;padding:.2rem .5rem;border-radius:8px;font-size:.72rem;font-weight:600;" title="طباعة الفاتورة السابقة">
                         <i class="fas fa-receipt"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-warning" onclick="suspendCart()" id="suspendBtn" style="display:none;" title="تعليق الطلب">
+                    <button class="btn btn-sm btn-outline-warning" onclick="suspendCart()" id="suspendBtn" style="display:none;height:32px;padding:.2rem .5rem;border-radius:8px;font-size:.72rem;font-weight:600;border-width:1.5px;" title="تعليق الطلب">
                         <i class="fas fa-pause"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="clearCart()" id="clearCartBtn" style="display:none;font-size:.72rem;border-radius:8px;padding:.2rem .55rem;height:32px;" title="تفريغ السلة بالكامل">
-                        <i class="fas fa-trash-alt me-1"></i> تفريغ
+                    <button class="btn btn-sm btn-outline-danger" onclick="clearCart()" id="clearCartBtn" style="display:none;font-size:.72rem;border-radius:8px;padding:.2rem .55rem;height:32px;border-width:1.5px;" title="تفريغ السلة بالكامل">
+                        <i class="fas fa-trash-alt" style="margin-left:3px;"></i> تفريغ
                     </button>
-                    <button class="btn btn-sm btn-outline-info" onclick="printCartReport()" id="printReportBtn" style="display:none;font-size:.72rem;border-radius:8px;padding:.2rem .55rem;height:32px;" title="طباعة تقرير السلة الحالية">
+                    <button class="btn btn-sm btn-outline-info" onclick="printCartReport()" id="printReportBtn" style="display:none;font-size:.72rem;border-radius:8px;padding:.2rem .55rem;height:32px;border-width:1.5px;" title="طباعة تقرير السلة الحالية">
                         <i class="fas fa-print"></i>
                     </button>
                 </div>
@@ -2865,18 +2865,19 @@
     </div>
     <div class="rs-items" id="recentSalesList">
         @forelse($recentSales as $sale)
-            <div class="rs-item" data-sale-id="{{ $sale->pos_sale_id }}" data-customer="{{ $sale->customer_name ?? '' }}" data-total="{{ $sale->order_total }}">
+            @php $_saleId = $sale->pos_sale_id ?? ''; $_customer = $sale->customer_name ?? 'بدون عميل'; $_total = (float)($sale->order_total ?? 0); $_time = optional($sale->created_at)->format('H:i') ?? ''; @endphp
+            <div class="rs-item" data-sale-id="{{ $_saleId }}" data-customer="{{ $_customer }}" data-total="{{ $_total }}">
                 <i class="fas fa-receipt" style="color:var(--gray-400);"></i>
-                <span style="font-weight:600;font-size:.72rem;flex-shrink:0;" class="sale-id-text">{{ $sale->pos_sale_id }}</span>
-                <span style="font-size:.65rem;color:var(--gray-500);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ $sale->customer_name ?? 'بدون عميل' }}</span>
-                <span class="rs-total">₪{{ number_format($sale->order_total, 2) }}</span>
-                <span style="color:var(--gray-400);font-size:.6rem;">{{ $sale->created_at->format('H:i') }}</span>
+                <span style="font-weight:600;font-size:.72rem;flex-shrink:0;" class="sale-id-text">{{ $_saleId }}</span>
+                <span style="font-size:.65rem;color:var(--gray-500);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ $_customer }}</span>
+                <span class="rs-total">₪{{ number_format($_total, 2) }}</span>
+                <span style="color:var(--gray-400);font-size:.6rem;">{{ $_time }}</span>
                 <div class="rs-item-actions">
-                    <button class="rsa-view" onclick="openSaleDetail('{{ $sale->pos_sale_id }}')"><i class="fas fa-eye"></i> عرض</button>
-                    <button class="rsa-print" onclick="reprintReceipt('{{ $sale->pos_sale_id }}')"><i class="fas fa-print"></i> طباعة</button>
-                    <button class="rsa-edit" onclick="openEditSale('{{ $sale->pos_sale_id }}')"><i class="fas fa-edit"></i> تعديل</button>
-                    <button class="rsa-refund" onclick="openRefund('{{ $sale->pos_sale_id }}')"><i class="fas fa-undo-alt"></i> إرجاع</button>
-                    <button class="rsa-delete" onclick="openDeleteSale('{{ $sale->pos_sale_id }}')"><i class="fas fa-trash"></i> إلغاء</button>
+                    <button class="rsa-view" onclick="openSaleDetail('{{ $_saleId }}')"><i class="fas fa-eye"></i> عرض</button>
+                    <button class="rsa-print" onclick="reprintReceipt('{{ $_saleId }}')"><i class="fas fa-print"></i> طباعة</button>
+                    <button class="rsa-edit" onclick="openEditSale('{{ $_saleId }}')"><i class="fas fa-edit"></i> تعديل</button>
+                    <button class="rsa-refund" onclick="openRefund('{{ $_saleId }}')"><i class="fas fa-undo-alt"></i> إرجاع</button>
+                    <button class="rsa-delete" onclick="openDeleteSale('{{ $_saleId }}')"><i class="fas fa-trash"></i> إلغاء</button>
                 </div>
             </div>
         @empty
@@ -2884,7 +2885,9 @@
                 <i class="fas fa-inbox"></i> لا توجد مبيعات بعد
             </div>
         @endforelse
-        <script>document.getElementById('rsCount') && (document.getElementById('rsCount').textContent = '({{ $recentSales->count() }})');</script>
+        <script>
+        (function(){ var el = document.getElementById('rsCount'); if (el) el.textContent = '({{ $recentSales->count() }})'; })();
+        </script>
     </div>
 </div>
 
@@ -4377,9 +4380,10 @@
 
                 showToast('تم تسجيل البيع بنجاح! رقم المرجع: ' + data.data.pos_sale_id);
                 showConfetti();
+                const _lastSale = lastSaleData;
                 resetAfterSale();
 
-                setTimeout(() => buildReceiptPreview(lastSaleData, true), 500);
+                setTimeout(() => buildReceiptPreview(_lastSale, true), 500);
             } else {
                 showToast(data.message || 'حدث خطأ أثناء تسجيل البيع', true);
             }
@@ -4548,6 +4552,7 @@
 
     // Build receipt preview HTML
     function buildReceiptPreview(sale, autoPrintAfter) {
+        if (!sale) { showToast('لا توجد بيانات للفاتورة', true); return; }
         const settings = loadPrintSettings();
         const pc = settings.primaryColor || '#db2777';
         const fs = parseInt(settings.receiptFontSize) || 10;
@@ -4986,9 +4991,10 @@
     // Load recent sales into the bar
     async function loadRecentSales() {
         try {
+            const list = document.getElementById('recentSalesList');
+            if (!list) return;
             const response = await fetch('{{ route('admin.pos.recent-sales') }}');
             const data = await response.json();
-            const list = document.getElementById('recentSalesList');
             const countEl = document.getElementById('rsCount');
 
             if (data.sales && data.sales.length > 0) {
@@ -6372,11 +6378,6 @@
     updateTaxUI();
 
     // Load Quick-Pick Grid
-
-    // Auto fullscreen on load
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-    }
 
     // Online/Offline event listeners
     window.addEventListener('online', updateOnlineStatus);

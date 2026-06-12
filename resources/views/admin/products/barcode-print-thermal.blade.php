@@ -12,15 +12,17 @@
         $pageWidth = $isCustom ? ($width ?: 50) . 'mm' : ($isA5 ? '148mm' : ($isA6 ? '105mm' : '80mm'));
         $pageHeight = $isCustom ? ($height ?: 30) . 'mm' : ($isA5 ? '210mm' : ($isA6 ? '148mm' : 'auto'));
         $bodyWidth = $pageWidth;
-        $labelPadding = $isA5 ? '4mm 6mm' : ($isA6 ? '3mm 5mm' : '2mm 4mm');
-        $titleText = $isA5 ? 'طباعة A5' : ($isA6 ? 'طباعة A6' : ($isCustom ? 'طباعة مخصص' : 'طباعة حراري 80mm'));
+        $labelPadding = $isA5 ? '4mm 6mm' : ($isA6 ? '3mm 5mm' : '2mm 0');
+        $titleText = $isA5 ? 'طباعة A5' : ($isA6 ? 'طباعة A6' : ($isCustom ? 'طباعة مخصص' : 'طباعة ZD410 50×30mm'));
         $paperWidth = $pageWidth;
+        $labelInnerWidth = $isThermal ? '50mm' : '100%';
+        $labelMinHeight = $isThermal ? '30mm' : 'auto';
     @endphp
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Courier New', Courier, monospace;
-            background: #e8e8e8;
+            background: {{ $isThermal ? '#fff' : '#e8e8e8' }};
             width: {{ $bodyWidth }};
             margin: 0;
             padding: 0;
@@ -30,8 +32,8 @@
             width: {{ $paperWidth }};
             margin: 0;
             padding: 0;
-            min-height: 100vh;
-            box-shadow: 0 0 0 1px #ccc;
+            min-height: {{ $isThermal ? 'auto' : '100vh' }};
+            box-shadow: {{ $isThermal ? 'none' : '0 0 0 1px #ccc' }};
         }
 
         @media print {
@@ -70,6 +72,15 @@
         .thermal-label:last-child {
             page-break-after: avoid;
         }
+        .thermal-label-inner {
+            width: {{ $labelInnerWidth }};
+            min-height: {{ $labelMinHeight }};
+            margin: 0 auto;
+            padding: 2mm 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
 
         .brand-line {
             font-size: 8px;
@@ -100,16 +111,10 @@
             margin: 1px auto;
             text-align: center;
         }
-        .barcode-section canvas,
-        .barcode-section img {
+        .barcode-section svg {
             max-width: 100%;
             display: block;
             margin: 0 auto;
-        }
-        .barcode-section canvas {
-            height: auto;
-        }
-        .barcode-section img {
             height: auto;
         }
         .divider {
@@ -124,7 +129,7 @@
             {{ $titleText }}
             <span style="color:#94a3b8;font-weight:400;">— {{ $totalLabels }} ملصق ({{ count($products) }} منتج)</span>
         </div>
-        <button onclick="printLabels()" style="background:#0d6efd;color:white;border:none;padding:8px 20px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600;">طباعة</button>
+        <button onclick="window.print()" style="background:#0d6efd;color:white;border:none;padding:8px 20px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600;">طباعة</button>
     </div>
     @if($isThermal)
     <div class="no-print" style="background:#fff3cd;padding:10px 14px;font-size:12px;font-family:'Segoe UI',sans-serif;color:#856404;border-bottom:1px solid #ffc107;text-align:right;">
@@ -136,6 +141,7 @@
     <div class="paper">
     @foreach($expanded as $product)
         <div class="thermal-label">
+            <div class="thermal-label-inner">
 
             @if($showBrand)
                 <div class="brand-line">{{ $siteSettings['site_name'] ?? \App\Helpers\SettingsHelper::siteName() }}</div>
@@ -143,9 +149,9 @@
 
             @if($barcodePosition === 'top')
 
-                @if($product->barcode)
+                @if($product->barcode && $product->barcode_svg)
                     <div class="barcode-section">
-                        <canvas class="bcode" data-code="{{ trim($product->barcode) }}" data-height="60"></canvas>
+                        {!! $product->barcode_svg !!}
                     </div>
                 @else
                     <div style="font-size:8px;color:#dc2626;padding:2px 0;">لا يوجد باركود</div>
@@ -165,9 +171,9 @@
                     <div class="name-line">{{ $product->name_ar }}</div>
                 @endif
 
-                @if($product->barcode)
+                @if($product->barcode && $product->barcode_svg)
                     <div class="barcode-section">
-                        <canvas class="bcode" data-code="{{ trim($product->barcode) }}" data-height="60"></canvas>
+                        {!! $product->barcode_svg !!}
                     </div>
                 @else
                     <div style="font-size:9px;color:#dc2626;padding:3px 0;">لا يوجد باركود</div>
@@ -179,87 +185,12 @@
 
             @endif
 
+            </div>
         </div>
         @if(!$loop->last)
             <div class="divider"></div>
         @endif
     @endforeach
     </div>
-
-    <script src="{{ asset('js/vendor/jsbarcode.min.js') }}" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/jsbarcode@3/dist/JsBarcode.all.min.js';s.onerror=function(){this.onerror=null;var s2=document.createElement('script');s2.src='https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js';document.head.appendChild(s2)};document.head.appendChild(s)"></script>
-    <script>
-    function barcodeError(canvas, code) {
-        var txt = document.createElement('div');
-        txt.textContent = code || 'لا يوجد باركود';
-        txt.style.cssText = 'font-size:11px;font-weight:bold;font-family:monospace;letter-spacing:1px;color:#c00;padding:2px 0;';
-        canvas.parentNode.replaceChild(txt, canvas);
-    }
-
-    function renderBarcodes() {
-        if (typeof JsBarcode === 'undefined') {
-            var retries = parseInt(window._barcodeRetries || 0) + 1;
-            window._barcodeRetries = retries;
-            if (retries > 5) {
-                document.querySelectorAll('canvas.bcode').forEach(function(c) {
-                    barcodeError(c, c.getAttribute('data-code'));
-                });
-                return;
-            }
-            setTimeout(renderBarcodes, 500);
-            return;
-        }
-        document.querySelectorAll('canvas.bcode').forEach(function(canvas) {
-            var code = (canvas.getAttribute('data-code') || '').trim();
-            var h = parseInt(canvas.getAttribute('data-height')) || 60;
-            if (!code) return;
-            try {
-                JsBarcode(canvas, code, {
-                    format: 'EAN13',
-                    width: 1.5,
-                    height: h,
-                    displayValue: false,
-                    margin: 1,
-                    background: '#ffffff',
-                });
-            } catch(e) {
-                try {
-                    JsBarcode(canvas, code, {
-                        format: 'CODE128',
-                        width: 2,
-                        height: h,
-                        displayValue: false,
-                        margin: 1,
-                        background: '#ffffff',
-                    });
-                } catch(e2) {
-                    barcodeError(canvas, code);
-                }
-            }
-        });
-    }
-
-    function convertCanvasesToImages() {
-        document.querySelectorAll('canvas.bcode').forEach(function(canvas) {
-            if (canvas.dataset._converted) return;
-            var img = document.createElement('img');
-            img.src = canvas.toDataURL();
-            img.style.cssText = 'display:block;margin:0 auto;max-width:100%;height:auto;';
-            canvas.parentNode.replaceChild(img, canvas);
-        });
-    }
-
-    function printLabels() {
-        convertCanvasesToImages();
-        window.print();
-    }
-
-    renderBarcodes();
-
-    if (window.matchMedia) {
-        window.matchMedia('print').addEventListener('change', function(mql) {
-            if (mql.matches) convertCanvasesToImages();
-        });
-    }
-    </script>
 </body>
 </html>

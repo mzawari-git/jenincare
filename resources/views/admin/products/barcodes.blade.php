@@ -130,7 +130,7 @@
                                 <td>
                                     @if($product->barcode)
                                         <span class="badge bg-success">{{ $product->barcode }}</span>
-                                        <canvas class="barcode-mini d-block mt-1" data-barcode="{{ $product->barcode }}" width="100" height="20" style="max-width:100px;height:20px;"></canvas>
+                                        <img src="{{ route('admin.barcodes.svg', $product->barcode) }}" alt="barcode" class="d-block mt-1" style="max-width:100px;height:20px;">
                                     @else
                                         <span class="badge bg-warning text-dark">بدون باركود</span>
                                     @endif
@@ -557,29 +557,7 @@ function previewBarcode(id, barcode, name, price) {
     document.getElementById('previewBarcodeName').textContent = name;
     document.getElementById('previewBarcodeNumber').textContent = barcode;
     document.getElementById('previewBarcodePrice').textContent = price + ' ₪';
-    
-    const canvas = document.getElementById('previewBarcodeCanvas');
-    try {
-        JsBarcode(canvas, barcode, {
-            format: 'EAN13',
-            width: 3,
-            height: 80,
-            displayValue: false,
-            margin: 5,
-        });
-    } catch(e) {
-        try {
-            JsBarcode(canvas, barcode, {
-                format: 'CODE128',
-                width: 2,
-                height: 80,
-                displayValue: false,
-                margin: 5,
-            });
-        } catch(e2) {
-            canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-        }
-    }
+    document.getElementById('previewBarcodeImg').src = '{{ route('admin.barcodes.svg', '') }}/' + barcode;
     
     if (!previewModalInstance) {
         previewModalInstance = new bootstrap.Modal(modalEl);
@@ -589,31 +567,6 @@ function previewBarcode(id, barcode, name, price) {
 
 document.addEventListener('DOMContentLoaded', function() {
     updateMatchingCount();
-    document.querySelectorAll('.barcode-mini').forEach(function(canvas) {
-        const code = canvas.getAttribute('data-barcode');
-        if (!code) return;
-        try {
-            JsBarcode(canvas, code, {
-                format: 'EAN13',
-                width: 1,
-                height: 15,
-                displayValue: false,
-                margin: 0,
-                background: 'transparent',
-            });
-        } catch(e) {
-            try {
-                JsBarcode(canvas, code, {
-                    format: 'CODE128',
-                    width: 1,
-                    height: 15,
-                    displayValue: false,
-                    margin: 0,
-                    background: 'transparent',
-                });
-            } catch(e2) {}
-        }
-    });
 });
 </script>
 
@@ -626,7 +579,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button type="button" class="btn-close position-absolute top-0 end-0 mt-2 me-2" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body py-3">
-                <canvas id="previewBarcodeCanvas" width="300" height="100" class="mx-auto d-block"></canvas>
+                <img id="previewBarcodeImg" src="" alt="barcode" class="mx-auto d-block" style="max-width:280px;height:auto;">
                 <div class="mt-2 fw-bold" style="font-family:monospace;letter-spacing:1px;direction:ltr;" id="previewBarcodeNumber"></div>
                 <div class="mt-1" style="font-size:1.2rem;font-weight:800;color:#dc2626;" id="previewBarcodePrice"></div>
             </div>
@@ -640,5 +593,4 @@ document.addEventListener('DOMContentLoaded', function() {
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3/dist/JsBarcode.all.min.js"></script>
 @endpush

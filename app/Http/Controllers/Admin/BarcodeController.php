@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Picqer\Barcode\BarcodeGeneratorSVG;
 
 class BarcodeController extends Controller
 {
@@ -209,6 +210,23 @@ class BarcodeController extends Controller
         $totalLabels = $expanded->count();
         $siteSettings = \App\Models\Setting::pluck('value', 'key')->all();
 
+        $generator = new BarcodeGeneratorSVG();
+        foreach ($expanded as $product) {
+            if ($product->barcode) {
+                try {
+                    $product->barcode_svg = $generator->getBarcode(trim($product->barcode), $generator::TYPE_EAN_13, 2, 80);
+                } catch (\Exception $e) {
+                    try {
+                        $product->barcode_svg = $generator->getBarcode(trim($product->barcode), $generator::TYPE_CODE_128, 2, 80);
+                    } catch (\Exception $e2) {
+                        $product->barcode_svg = null;
+                    }
+                }
+            } else {
+                $product->barcode_svg = null;
+            }
+        }
+
         // Log print history
         if (class_exists(\App\Models\BarcodePrintLog::class)) {
             foreach ($ids as $id) {
@@ -236,6 +254,24 @@ class BarcodeController extends Controller
             'expanded', 'totalLabels', 'products', 'layout', 'siteSettings', 'width', 'height',
             'barcodePosition', 'showName', 'showPrice', 'showBrand'
         ));
+    }
+
+    /**
+     * عرض باركود SVG (للمعاينة في الجدول)
+     */
+    public function svg($code)
+    {
+        $generator = new BarcodeGeneratorSVG();
+        try {
+            $svg = $generator->getBarcode(trim($code), $generator::TYPE_EAN_13, 2, 60);
+        } catch (\Exception $e) {
+            try {
+                $svg = $generator->getBarcode(trim($code), $generator::TYPE_CODE_128, 2, 60);
+            } catch (\Exception $e2) {
+                abort(404, 'Cannot generate barcode for: ' . $code);
+            }
+        }
+        return response($svg, 200, ['Content-Type' => 'image/svg+xml']);
     }
 
     /**

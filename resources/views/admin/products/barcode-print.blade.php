@@ -98,27 +98,6 @@
                 'custom' => 'label-custom',
                 default => 'label-24',
             };
-            $barcodeHeight = $isCustom ? ($height * 0.45) . 'mm' : (
-                match($layout) {
-                    'a4_6', 'a5_4', 'a6_2' => '30mm',
-                    'a4_12', 'a5_6', 'a6_4' => '20mm',
-                    default => '14mm',
-                }
-            );
-            $barcodeWidth = $isCustom ? ($width * 0.85) . 'mm' : (
-                match($layout) {
-                    'a4_6' => '80mm',
-                    'a4_12', 'a5_6', 'a6_4' => '55mm',
-                    'a5_4', 'a6_2' => '70mm',
-                    'a5_12', 'a6_8' => '38mm',
-                    default => '38mm',
-                }
-            );
-            $bcPx = match($layout) {
-                'a4_6', 'a5_4', 'a6_2' => 120,
-                'a4_12', 'a5_6', 'a6_4' => 80,
-                default => 55,
-            };
         @endphp
 
         .label-24 {
@@ -261,8 +240,7 @@
             flex-direction: column;
             align-items: center;
         }
-        .barcode-section canvas,
-        .barcode-section img {
+        .barcode-section svg {
             max-width: 100%;
             height: auto;
             display: block;
@@ -281,7 +259,7 @@
             طباعة الباركود
             <span>— {{ $totalLabels }} ملصق ({{ count($products) }} منتج) | {{ $layout }}</span>
         </div>
-        <button onclick="printLabels()">
+        <button onclick="window.print()">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 5V1h8v4" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 9h-1M12 13H4v-3h8v3z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="2" y="5" width="12" height="5" rx="1" stroke="#fff" stroke-width="1.5"/></svg>
             طباعة الآن
         </button>
@@ -296,9 +274,9 @@
                 @endif
 
                 @if($barcodePosition === 'top')
-                    @if($product->barcode)
+                    @if($product->barcode && $product->barcode_svg)
                         <div class="barcode-section">
-                            <canvas class="bcode" data-code="{{ trim($product->barcode) }}" data-height="{{ $bcPx }}"></canvas>
+                            {!! $product->barcode_svg !!}
                         </div>
                     @else
                         <div style="font-size:9px;color:#dc2626;padding:4px 0;">لا يوجد باركود</div>
@@ -319,9 +297,9 @@
                         <div class="name-line" title="{{ $product->name_ar }}">{{ Str::limit($product->name_ar, 35) }}</div>
                     @endif
 
-                    @if($product->barcode)
+                    @if($product->barcode && $product->barcode_svg)
                         <div class="barcode-section" style="margin-top:1px;">
-                            <canvas class="bcode" data-code="{{ trim($product->barcode) }}" data-height="{{ $bcPx }}"></canvas>
+                            {!! $product->barcode_svg !!}
                         </div>
                     @else
                         <div style="font-size:9px;color:#dc2626;padding:4px 0;">لا يوجد باركود</div>
@@ -335,81 +313,5 @@
             </div>
         @endforeach
     </div>
-
-    <script src="{{ asset('js/vendor/jsbarcode.min.js') }}" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/jsbarcode@3/dist/JsBarcode.all.min.js';s.onerror=function(){this.onerror=null;var s2=document.createElement('script');s2.src='https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js';document.head.appendChild(s2)};document.head.appendChild(s)"></script>
-    <script>
-    function barcodeError(canvas, code) {
-        var txt = document.createElement('div');
-        txt.textContent = code || 'لا يوجد باركود';
-        txt.style.cssText = 'font-size:11px;font-weight:bold;font-family:monospace;letter-spacing:1px;color:#c00;padding:2px 0;';
-        canvas.parentNode.replaceChild(txt, canvas);
-    }
-
-    function renderBarcodes() {
-        if (typeof JsBarcode === 'undefined') {
-            var retries = parseInt(window._barcodeRetries || 0) + 1;
-            window._barcodeRetries = retries;
-            if (retries > 5) {
-                document.querySelectorAll('canvas.bcode').forEach(function(c) {
-                    barcodeError(c, c.getAttribute('data-code'));
-                });
-                return;
-            }
-            setTimeout(renderBarcodes, 500);
-            return;
-        }
-        document.querySelectorAll('canvas.bcode').forEach(function(canvas) {
-            var code = (canvas.getAttribute('data-code') || '').trim();
-            var h = parseInt(canvas.getAttribute('data-height')) || 50;
-            if (!code) return;
-            try {
-                JsBarcode(canvas, code, {
-                    format: 'EAN13',
-                    width: 2,
-                    height: h,
-                    displayValue: false,
-                    margin: 2,
-                    background: '#ffffff',
-                });
-            } catch(e) {
-                try {
-                    JsBarcode(canvas, code, {
-                        format: 'CODE128',
-                        width: 2,
-                        height: h,
-                        displayValue: false,
-                        margin: 2,
-                        background: '#ffffff',
-                    });
-                } catch(e2) {
-                    barcodeError(canvas, code);
-                }
-            }
-        });
-    }
-
-    function convertCanvasesToImages() {
-        document.querySelectorAll('canvas.bcode').forEach(function(canvas) {
-            if (canvas.dataset._converted) return;
-            var img = document.createElement('img');
-            img.src = canvas.toDataURL();
-            img.style.cssText = 'display:block;margin:0 auto;max-width:100%;height:auto;';
-            canvas.parentNode.replaceChild(img, canvas);
-        });
-    }
-
-    function printLabels() {
-        convertCanvasesToImages();
-        window.print();
-    }
-
-    renderBarcodes();
-
-    if (window.matchMedia) {
-        window.matchMedia('print').addEventListener('change', function(mql) {
-            if (mql.matches) convertCanvasesToImages();
-        });
-    }
-    </script>
 </body>
 </html>
