@@ -445,8 +445,6 @@ function submitPrintFromModal() {
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> جاري المعاينة...';
 
     const modalEl = document.getElementById('printOptionsModal');
-    const modal = bootstrap.Modal.getInstance(modalEl);
-    if (modal) modal.hide();
 
     const form = document.getElementById('printForm');
 
@@ -487,7 +485,9 @@ function submitPrintFromModal() {
         fc.value = cb && cb.checked ? '1' : '0';
     });
 
+    const modal = bootstrap.Modal.getInstance(modalEl);
     form.submit();
+    if (modal) modal.hide();
     setTimeout(function() { btn.disabled = false; btn.innerHTML = origHtml; }, 3000);
 }
 
