@@ -324,7 +324,6 @@
                                  alt="{{ $product->barcode }}"
                                  class="barcode-img"
                                  style="height: {{ $barcodeHeight }}; max-width: {{ $barcodeWidth }};">
-                            <div class="barcode-number">{{ $product->barcode }}</div>
                         </div>
                     @else
                         <div style="font-size:9px;color:#dc2626;padding:4px 0;">لا يوجد باركود</div>
@@ -356,14 +355,13 @@
                                  alt="{{ $product->barcode }}"
                                  class="barcode-img"
                                  style="height: {{ $barcodeHeight }}; max-width: {{ $barcodeWidth }};">
-                            <div class="barcode-number">{{ $product->barcode }}</div>
                         </div>
                     @else
                         <div style="font-size:9px;color:#dc2626;padding:4px 0;">لا يوجد باركود</div>
                     @endif
 
                     @if($showPrice)
-                        <div class="price-line">{{ number_format($product->b2c_price, 0) }} ₪</div>
+                        <div class="price-line" style="margin-top:0;">{{ number_format($product->b2c_price, 0) }} ₪</div>
                     @endif
 
                 @endif
