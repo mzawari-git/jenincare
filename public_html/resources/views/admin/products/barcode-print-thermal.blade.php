@@ -169,7 +169,7 @@
     @endforeach
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3/dist/JsBarcode.all.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js';document.head.appendChild(s)"></script>
+    <script src="{{ asset('js/vendor/jsbarcode.min.js') }}" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/jsbarcode@3/dist/JsBarcode.all.min.js';s.onerror=function(){this.onerror=null;var s2=document.createElement('script');s2.src='https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js';document.head.appendChild(s2)};document.head.appendChild(s)"></script>
     <script>
     function barcodeError(canvas, code) {
         var txt = document.createElement('div');

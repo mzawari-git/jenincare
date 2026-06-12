@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>طباعة الباركود — {{ $siteSettings['site_name'] ?? \App\Helpers\SettingsHelper::siteName() }}</title>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3/dist/JsBarcode.all.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js';document.head.appendChild(s)"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -299,7 +298,7 @@
                 @if($barcodePosition === 'top')
                     @if($product->barcode)
                         <div class="barcode-section">
-                            <canvas class="bcode" data-code="{{ $product->barcode }}" data-height="{{ $bcPx }}"></canvas>
+                            <canvas class="bcode" data-code="{{ trim($product->barcode) }}" data-height="{{ $bcPx }}"></canvas>
                         </div>
                     @else
                         <div style="font-size:9px;color:#dc2626;padding:4px 0;">لا يوجد باركود</div>
@@ -322,7 +321,7 @@
 
                     @if($product->barcode)
                         <div class="barcode-section" style="margin-top:1px;">
-                            <canvas class="bcode" data-code="{{ $product->barcode }}" data-height="{{ $bcPx }}"></canvas>
+                            <canvas class="bcode" data-code="{{ trim($product->barcode) }}" data-height="{{ $bcPx }}"></canvas>
                         </div>
                     @else
                         <div style="font-size:9px;color:#dc2626;padding:4px 0;">لا يوجد باركود</div>
@@ -337,28 +336,25 @@
         @endforeach
     </div>
 
+    <script src="{{ asset('js/vendor/jsbarcode.min.js') }}" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/jsbarcode@3/dist/JsBarcode.all.min.js';s.onerror=function(){this.onerror=null;var s2=document.createElement('script');s2.src='https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js';document.head.appendChild(s2)};document.head.appendChild(s)"></script>
     <script>
-    function convertCanvasesToImages() {
-        document.querySelectorAll('canvas.bcode').forEach(function(canvas) {
-            if (canvas.dataset._converted) return;
-            var img = document.createElement('img');
-            img.src = canvas.toDataURL();
-            img.style.cssText = 'display:block;margin:0 auto;max-width:100%;height:auto;';
-            img.className = canvas.className;
-            canvas.parentNode.replaceChild(img, canvas);
-            img.dataset._converted = '1';
-        });
+    function barcodeError(canvas, code) {
+        var txt = document.createElement('div');
+        txt.textContent = code || 'لا يوجد باركود';
+        txt.style.cssText = 'font-size:11px;font-weight:bold;font-family:monospace;letter-spacing:1px;color:#c00;padding:2px 0;';
+        canvas.parentNode.replaceChild(txt, canvas);
     }
 
-    function printLabels() {
-        convertCanvasesToImages();
-        window.print();
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
+    function renderBarcodes() {
+        if (typeof JsBarcode === 'undefined') {
+            document.querySelectorAll('canvas.bcode').forEach(function(c) {
+                barcodeError(c, c.getAttribute('data-code'));
+            });
+            return;
+        }
         document.querySelectorAll('canvas.bcode').forEach(function(canvas) {
-            var code = canvas.getAttribute('data-code');
-            var h = parseInt(canvas.getAttribute('data-height')) || 55;
+            var code = (canvas.getAttribute('data-code') || '').trim();
+            var h = parseInt(canvas.getAttribute('data-height')) || 50;
             if (!code) return;
             try {
                 JsBarcode(canvas, code, {
@@ -379,16 +375,35 @@
                         margin: 2,
                         background: '#ffffff',
                     });
-                } catch(e2) {}
+                } catch(e2) {
+                    barcodeError(canvas, code);
+                }
             }
         });
+    }
 
-        if (window.matchMedia) {
-            window.matchMedia('print').addEventListener('change', function(mql) {
-                if (mql.matches) convertCanvasesToImages();
-            });
-        }
-    });
+    function convertCanvasesToImages() {
+        document.querySelectorAll('canvas.bcode').forEach(function(canvas) {
+            if (canvas.dataset._converted) return;
+            var img = document.createElement('img');
+            img.src = canvas.toDataURL();
+            img.style.cssText = 'display:block;margin:0 auto;max-width:100%;height:auto;';
+            canvas.parentNode.replaceChild(img, canvas);
+        });
+    }
+
+    function printLabels() {
+        convertCanvasesToImages();
+        window.print();
+    }
+
+    renderBarcodes();
+
+    if (window.matchMedia) {
+        window.matchMedia('print').addEventListener('change', function(mql) {
+            if (mql.matches) convertCanvasesToImages();
+        });
+    }
     </script>
 </body>
 </html>
