@@ -347,9 +347,15 @@
 
     function renderBarcodes() {
         if (typeof JsBarcode === 'undefined') {
-            document.querySelectorAll('canvas.bcode').forEach(function(c) {
-                barcodeError(c, c.getAttribute('data-code'));
-            });
+            var retries = parseInt(window._barcodeRetries || 0) + 1;
+            window._barcodeRetries = retries;
+            if (retries > 5) {
+                document.querySelectorAll('canvas.bcode').forEach(function(c) {
+                    barcodeError(c, c.getAttribute('data-code'));
+                });
+                return;
+            }
+            setTimeout(renderBarcodes, 500);
             return;
         }
         document.querySelectorAll('canvas.bcode').forEach(function(canvas) {

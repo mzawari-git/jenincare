@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8">
+<script src="public/js/vendor/jsbarcode.min.js"></script>
+</head>
+<body>
+<canvas id="bc1"></canvas>
+<canvas id="bc2"></canvas>
+<div id="log"></div>
+<script>
+var log = document.getElementById('log');
+function l(msg) { log.innerHTML += msg + '<br>'; }
+
+var code = '6261492790686';
+var canvas = document.getElementById('bc1');
+
+l('JsBarcode type: ' + typeof JsBarcode);
+l('Code: ' + code + ' (length: ' + code.length + ')');
+
+try {
+    JsBarcode(canvas, code, {
+        format: 'EAN13',
+        width: 1.5,
+        height: 60,
+        displayValue: false,
+        margin: 1,
+        background: '#ffffff',
+    });
+    l('EAN13: SUCCESS');
+} catch(e) {
+    l('EAN13 ERROR: ' + e.message);
+}
+
+var canvas2 = document.getElementById('bc2');
+try {
+    JsBarcode(canvas2, code, {
+        format: 'CODE128',
+        width: 2,
+        height: 60,
+        displayValue: false,
+        margin: 1,
+        background: '#ffffff',
+    });
+    l('CODE128: SUCCESS');
+} catch(e) {
+    l('CODE128 ERROR: ' + e.message);
+}
+
+l('Canvas 1 dimensions: ' + canvas.width + 'x' + canvas.height);
+l('Canvas 2 dimensions: ' + canvas2.width + 'x' + canvas2.height);
+</script>
+</body>
+</html>
