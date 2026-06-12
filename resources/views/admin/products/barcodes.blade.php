@@ -16,8 +16,8 @@
             <a href="{{ route('admin.barcodes.generate-missing') }}" class="btn btn-outline-primary" onclick="return confirm('توليد باركود لجميع المنتجات التي لا تحتوي على باركود؟')">
                 <i class="fas fa-magic me-1"></i> توليد باركود للمنتجات الفارغة
             </a>
-            <button type="button" class="btn btn-primary" onclick="submitPrintForm()">
-                <i class="fas fa-print me-1"></i> طباعة المحدد A4
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#printOptionsModal">
+                <i class="fas fa-print me-1"></i> طباعة المحدد
             </button>
         </div>
     </div>
@@ -64,6 +64,11 @@
     <form id="printForm" method="POST" action="{{ route('admin.barcodes.print') }}" target="_blank">
         @csrf
         <input type="hidden" name="select_all" id="selectAllInput" value="0">
+        <input type="hidden" name="layout" value="a4_24">
+        <input type="hidden" name="barcode_position" value="bottom">
+        <input type="hidden" name="show_name" value="1">
+        <input type="hidden" name="show_price" value="1">
+        <input type="hidden" name="show_brand" value="1">
         @if(request('search'))<input type="hidden" name="search" value="{{ request('search') }}">@endif
         @if(request('category'))<input type="hidden" name="category" value="{{ request('category') }}">@endif
         @if(request('status'))<input type="hidden" name="status" value="{{ request('status') }}">@endif
@@ -158,93 +163,14 @@
                 </div>
             </div>
             <div class="card-footer">
-                {{-- Professional Print Options --}}
-                <div class="row g-3 align-items-end">
-                    {{-- Layout --}}
-                    <div class="col-auto">
-                        <label class="form-label mb-1" style="font-size:.75rem;font-weight:600;">تخطيط الطباعة</label>
-                        <select name="layout" class="form-select form-select-sm" style="width:auto;min-width:160px;" onchange="toggleCustomSize(this)">
-                            <option value="a4_24">A4 — 24 ملصق (5×3 سم)</option>
-                            <option value="a4_12">A4 — 12 ملصق (7×4 سم)</option>
-                            <option value="a4_6">A4 — 6 ملصق (10×5 سم)</option>
-                            <option value="a5_12">A5 — 12 ملصق (5×3 سم)</option>
-                            <option value="a5_6">A5 — 6 ملصق (7×4 سم)</option>
-                            <option value="a5_4">A5 — 4 ملصق (10×5 سم)</option>
-                            <option value="a6_8">A6 — 8 ملصق (5×3 سم)</option>
-                            <option value="a6_4">A6 — 4 ملصق (7×4 سم)</option>
-                            <option value="a6_2">A6 — 2 ملصق (10×5 سم)</option>
-                            <option value="thermal">حراري 80mm</option>
-                            <option value="custom">مقاس مخصص</option>
-                        </select>
-                    </div>
-                    <div class="col-auto" id="customSizeFields" style="display:none;">
-                        <div class="row g-1 align-items-center">
-                            <div class="col-auto">
-                                <label class="form-label mb-0" style="font-size:.7rem;">العرض (ملم)</label>
-                                <input type="number" name="width" value="50" class="form-control form-control-sm" style="width:70px;">
-                            </div>
-                            <div class="col-auto">
-                                <label class="form-label mb-0" style="font-size:.7rem;">الارتفاع (ملم)</label>
-                                <input type="number" name="height" value="30" class="form-control form-control-sm" style="width:70px;">
-                            </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div id="labelCounter" class="badge bg-dark text-white px-3 py-2">
+                            <i class="fas fa-tag me-1"></i>
+                            <span id="labelCountText">0 منتج × 1 نسخة = 0 ملصق</span>
                         </div>
                     </div>
-
-                    {{-- Barcode Position --}}
-                    <div class="col-auto">
-                        <label class="form-label mb-1" style="font-size:.75rem;font-weight:600;">مكان الباركود</label>
-                        <div class="d-flex gap-1">
-                            <label class="position-option {{ request('barcode_position', 'bottom') === 'top' ? 'active' : '' }}">
-                                <input type="radio" name="barcode_position" value="top" {{ request('barcode_position', 'bottom') === 'top' ? 'checked' : '' }} onchange="highlightPosition(this)">
-                                <span class="d-flex flex-column align-items-center px-2 py-1 border rounded" style="cursor:pointer;font-size:11px;min-width:50px;">
-                                    <i class="fas fa-barcode fa-lg mb-1" style="color:#0d6efd;"></i>
-                                    <span style="font-size:9px;">فوق</span>
-                                </span>
-                            </label>
-                            <label class="position-option {{ request('barcode_position', 'bottom') === 'bottom' ? 'active' : '' }}">
-                                <input type="radio" name="barcode_position" value="bottom" {{ request('barcode_position', 'bottom') === 'bottom' ? 'checked' : '' }} onchange="highlightPosition(this)">
-                                <span class="d-flex flex-column align-items-center px-2 py-1 border rounded" style="cursor:pointer;font-size:11px;min-width:50px;">
-                                    <i class="fas fa-barcode fa-lg mb-1" style="color:#0d6efd;"></i>
-                                    <span style="font-size:9px;">تحت</span>
-                                    <i class="fas fa-arrow-down" style="font-size:8px;color:#6c757d;"></i>
-                                </span>
-                            </label>
-                        </div>
-                    </div>
-
-                    {{-- Toggles --}}
-                    <div class="col-auto">
-                        <label class="form-label mb-1" style="font-size:.75rem;font-weight:600;">عناصر الملصق</label>
-                        <div class="d-flex gap-2">
-                            <label class="d-flex align-items-center gap-1" style="cursor:pointer;font-size:12px;">
-                                <input type="hidden" name="show_name" value="0">
-                                <input type="checkbox" name="show_name" value="1" checked class="form-check-input mt-0" style="width:16px;height:16px;">
-                                <span>الاسم</span>
-                            </label>
-                            <label class="d-flex align-items-center gap-1" style="cursor:pointer;font-size:12px;">
-                                <input type="hidden" name="show_price" value="0">
-                                <input type="checkbox" name="show_price" value="1" checked class="form-check-input mt-0" style="width:16px;height:16px;">
-                                <span>السعر</span>
-                            </label>
-                            <label class="d-flex align-items-center gap-1" style="cursor:pointer;font-size:12px;">
-                                <input type="hidden" name="show_brand" value="0">
-                                <input type="checkbox" name="show_brand" value="1" checked class="form-check-input mt-0" style="width:16px;height:16px;">
-                                <span>العلامة</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    {{-- Label Counter --}}
-                    <div class="col-auto">
-                        <div class="d-flex align-items-center gap-2" style="height:100%;">
-                            <div id="labelCounter" class="badge bg-dark text-white fs-6 px-3 py-2">
-                                <i class="fas fa-tag me-1"></i>
-                                <span id="labelCountText">0 منتج × 1 نسخة = 0 ملصق</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-auto">
+                    <div>
                         {{ $products->links() }}
                     </div>
                 </div>
@@ -282,20 +208,178 @@
 </div>
 @endforeach
 
+{{-- Print Options Modal --}}
+<div class="modal fade" id="printOptionsModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered" dir="rtl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-print me-2"></i>خيارات الطباعة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-4">
+
+                    {{-- Layout / Paper Size --}}
+                    <div class="col-12">
+                        <label class="form-label fw-bold mb-2">حجم الورق</label>
+                        <div class="row g-2">
+                            <div class="col-4">
+                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer {{ request('layout', 'a4_24') == 'a4_24' ? 'border-primary bg-light' : '' }}" onclick="selectPrintLayout(this, 'a4_24')">
+                                    <input type="radio" name="layout" value="a4_24" class="d-none" {{ request('layout', 'a4_24') == 'a4_24' ? 'checked' : '' }}>
+                                    <div class="fw-bold">A4</div>
+                                    <small class="text-muted">24 ملصق</small>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'a4_12')">
+                                    <input type="radio" name="layout" value="a4_12" class="d-none">
+                                    <div class="fw-bold">A4</div>
+                                    <small class="text-muted">12 ملصق</small>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'a4_6')">
+                                    <input type="radio" name="layout" value="a4_6" class="d-none">
+                                    <div class="fw-bold">A4</div>
+                                    <small class="text-muted">6 ملصق</small>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'a5_12')">
+                                    <input type="radio" name="layout" value="a5_12" class="d-none">
+                                    <div class="fw-bold">A5</div>
+                                    <small class="text-muted">12 ملصق</small>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'a5_6')">
+                                    <input type="radio" name="layout" value="a5_6" class="d-none">
+                                    <div class="fw-bold">A5</div>
+                                    <small class="text-muted">6 ملصق</small>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'a5_4')">
+                                    <input type="radio" name="layout" value="a5_4" class="d-none">
+                                    <div class="fw-bold">A5</div>
+                                    <small class="text-muted">4 ملصق</small>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'a6_8')">
+                                    <input type="radio" name="layout" value="a6_8" class="d-none">
+                                    <div class="fw-bold">A6</div>
+                                    <small class="text-muted">8 ملصق</small>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'a6_4')">
+                                    <input type="radio" name="layout" value="a6_4" class="d-none">
+                                    <div class="fw-bold">A6</div>
+                                    <small class="text-muted">4 ملصق</small>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'a6_2')">
+                                    <input type="radio" name="layout" value="a6_2" class="d-none">
+                                    <div class="fw-bold">A6</div>
+                                    <small class="text-muted">2 ملصق</small>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'thermal')">
+                                    <input type="radio" name="layout" value="thermal" class="d-none">
+                                    <div class="fw-bold">حراري</div>
+                                    <small class="text-muted">80mm</small>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'custom')">
+                                    <input type="radio" name="layout" value="custom" class="d-none">
+                                    <div class="fw-bold">مخصص</div>
+                                    <small class="text-muted">مقاس مخصص</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Custom Size --}}
+                    <div class="col-12" id="modalCustomSize" style="display:none;">
+                        <div class="row g-2">
+                            <div class="col-auto">
+                                <label class="form-label">العرض (ملم)</label>
+                                <input type="number" name="width" value="50" class="form-control" style="width:100px;">
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-label">الارتفاع (ملم)</label>
+                                <input type="number" name="height" value="30" class="form-control" style="width:100px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Barcode Position --}}
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold mb-2">مكان الباركود</label>
+                        <div class="d-flex gap-2">
+                            <label class="d-flex flex-column align-items-center p-3 border rounded cursor-pointer position-radio" onclick="selectPosition(this, 'top')">
+                                <input type="radio" name="barcode_position" value="top" class="d-none">
+                                <i class="fas fa-barcode fa-2x mb-1 text-primary"></i>
+                                <span>فوق</span>
+                            </label>
+                            <label class="d-flex flex-column align-items-center p-3 border rounded cursor-pointer position-radio active" onclick="selectPosition(this, 'bottom')">
+                                <input type="radio" name="barcode_position" value="bottom" class="d-none" checked>
+                                <i class="fas fa-barcode fa-2x mb-1 text-primary"></i>
+                                <span>تحت</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    {{-- Label Elements --}}
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold mb-2">عناصر الملصق</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <label class="d-flex align-items-center gap-2 cursor-pointer p-2 border rounded" style="cursor:pointer;">
+                                <input type="checkbox" name="show_name" value="1" checked>
+                                <span>الاسم</span>
+                            </label>
+                            <label class="d-flex align-items-center gap-2 cursor-pointer p-2 border rounded" style="cursor:pointer;">
+                                <input type="checkbox" name="show_price" value="1" checked>
+                                <span>السعر</span>
+                            </label>
+                            <label class="d-flex align-items-center gap-2 cursor-pointer p-2 border rounded" style="cursor:pointer;">
+                                <input type="checkbox" name="show_brand" value="1" checked>
+                                <span>العلامة التجارية</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    {{-- Summary --}}
+                    <div class="col-12">
+                        <div class="bg-light p-3 rounded text-center">
+                            <span id="modalLabelCount" class="fw-bold fs-5">0</span>
+                            <span class="text-muted"> ملصق للطباعة</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="submitPrintFromModal()">
+                    <i class="fas fa-print me-1"></i> طباعة
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
-.position-option input[type="radio"] {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-}
-.position-option.active .border {
-    border-color: #0d6efd !important;
-    background: #e8f0fe;
-    box-shadow: 0 0 0 2px rgba(13,110,253,0.2);
-}
-.position-option .border:hover {
-    border-color: #0d6efd;
-}
+.print-option { cursor: pointer; transition: all .15s; }
+.print-option:hover { border-color: #0d6efd; background: #f0f7ff; }
+.print-option.border-primary { border-width: 2px; }
+.position-radio { cursor: pointer; min-width: 80px; transition: all .15s; }
+.position-radio:hover { border-color: #0d6efd; }
+.position-radio.active { border-color: #0d6efd; background: #e8f0fe; }
 </style>
 
 <script>
@@ -304,13 +388,22 @@ function toggleAll(source) {
     updateLabelCount();
 }
 
-function toggleCustomSize(select) {
-    document.getElementById('customSizeFields').style.display = select.value === 'custom' ? 'inline-flex' : 'none';
-}
-
 function highlightPosition(el) {
     document.querySelectorAll('.position-option').forEach(opt => opt.classList.remove('active'));
     el.closest('.position-option').classList.add('active');
+}
+
+function selectPrintLayout(el, value) {
+    document.querySelectorAll('.print-option').forEach(opt => opt.classList.remove('border-primary', 'bg-light'));
+    el.classList.add('border-primary', 'bg-light');
+    el.querySelector('input') && (el.querySelector('input').checked = true);
+    document.getElementById('modalCustomSize').style.display = value === 'custom' ? 'block' : 'none';
+}
+
+function selectPosition(el, value) {
+    document.querySelectorAll('.position-radio').forEach(opt => opt.classList.remove('active'));
+    el.classList.add('active');
+    el.querySelector('input') && (el.querySelector('input').checked = true);
 }
 
 function updateLabelCount() {
@@ -325,15 +418,17 @@ function updateLabelCount() {
     });
     const el = document.getElementById('labelCountText');
     if (el) {
-        el.textContent = totalProduct + ' منتج × ' + (totalLabels > 0 ? (totalLabels / totalProduct).toFixed(0) : '1') + ' نسخة = ' + totalLabels + ' ملصق';
+        el.textContent = totalProduct + ' منتج × ' + (totalLabels > 0 ? Math.round(totalLabels / totalProduct) : '1') + ' نسخة = ' + totalLabels + ' ملصق';
     }
     const selLabel = document.getElementById('selectedCountLabel');
     if (selLabel) {
         selLabel.textContent = totalProduct + ' منتج محدد';
     }
+    const modalCount = document.getElementById('modalLabelCount');
+    if (modalCount) modalCount.textContent = totalLabels;
 }
 
-function submitPrintForm() {
+function submitPrintFromModal() {
     const checked = document.querySelectorAll('.product-checkbox:checked');
     const selectAllMode = document.getElementById('selectAllMatching')?.checked;
     if (!selectAllMode && checked.length === 0) {
@@ -343,12 +438,56 @@ function submitPrintForm() {
     if (selectAllMode) {
         document.getElementById('selectAllInput').value = '1';
     }
-    document.getElementById('printForm').submit();
+
+    const form = document.getElementById('printForm');
+    const modal = document.getElementById('printOptionsModal');
+
+    // Sync layout radio from modal to form
+    const layoutRadio = modal.querySelector('input[name="layout"]:checked');
+    if (layoutRadio) {
+        let formLayout = form.querySelector('input[name="layout"]');
+        if (!formLayout) {
+            formLayout = document.createElement('input');
+            formLayout.type = 'hidden';
+            formLayout.name = 'layout';
+            form.appendChild(formLayout);
+        }
+        formLayout.value = layoutRadio.value;
+    }
+
+    // Sync width/height for custom
+    const widthInput = modal.querySelector('input[name="width"]');
+    const heightInput = modal.querySelector('input[name="height"]');
+    if (widthInput && heightInput) {
+        let fw = form.querySelector('input[name="width"]');
+        let fh = form.querySelector('input[name="height"]');
+        if (!fw) { fw = document.createElement('input'); fw.type = 'hidden'; fw.name = 'width'; form.appendChild(fw); }
+        if (!fh) { fh = document.createElement('input'); fh.type = 'hidden'; fh.name = 'height'; form.appendChild(fh); }
+        fw.value = widthInput.value;
+        fh.value = heightInput.value;
+    }
+
+    // Sync barcode position
+    const posRadio = modal.querySelector('input[name="barcode_position"]:checked');
+    if (posRadio) {
+        let fp = form.querySelector('input[name="barcode_position"]');
+        if (!fp) { fp = document.createElement('input'); fp.type = 'hidden'; fp.name = 'barcode_position'; form.appendChild(fp); }
+        fp.value = posRadio.value;
+    }
+
+    // Sync show_name, show_price, show_brand
+    ['show_name', 'show_price', 'show_brand'].forEach(name => {
+        const cb = modal.querySelector('input[name="' + name + '"]');
+        let fc = form.querySelector('input[name="' + name + '"]');
+        if (!fc) { fc = document.createElement('input'); fc.type = 'hidden'; fc.name = name; form.appendChild(fc); }
+        fc.value = cb && cb.checked ? '1' : '0';
+    });
+
+    form.submit();
 }
 
 function toggleSelectAllMatching(cb) {
     if (cb.checked) {
-        // Check all visible checkboxes
         document.querySelectorAll('.product-checkbox').forEach(c => c.checked = true);
     } else {
         document.querySelectorAll('.product-checkbox').forEach(c => c.checked = false);
@@ -374,31 +513,14 @@ function updateMatchingCount() {
 }
 
 function quickPrint(productId) {
+    document.querySelector('input.product-checkbox[value="' + productId + '"]').checked = true;
     const row = document.querySelector('input.product-checkbox[value="' + productId + '"]')?.closest('tr');
     const qty = row ? (parseInt(row.querySelector('.qty-input')?.value) || 1) : 1;
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '{{ route("admin.barcodes.print") }}';
-    form.target = '_blank';
-    const csrf = document.querySelector('input[name="_token"]').value;
-    form.innerHTML = `
-        <input type="hidden" name="_token" value="${csrf}">
-        <input type="hidden" name="ids[]" value="${productId}">
-        <input type="hidden" name="qty[${productId}]" value="${qty}">
-        <input type="hidden" name="layout" value="a4_24">
-        <input type="hidden" name="width" value="50">
-        <input type="hidden" name="height" value="30">
-        <input type="hidden" name="barcode_position" value="bottom">
-        <input type="hidden" name="show_name" value="1">
-        <input type="hidden" name="show_price" value="1">
-        <input type="hidden" name="show_brand" value="1">
-    `;
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
+    document.querySelectorAll('.product-checkbox').forEach(c => { if (c.value != productId) c.checked = false; });
+    updateLabelCount();
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('printOptionsModal')).show();
 }
 
-// Auto-select qty of parent when checkbox is checked
 document.addEventListener('change', function(e) {
     if (e.target.classList.contains('product-checkbox')) {
         updateLabelCount();
@@ -410,7 +532,6 @@ document.addEventListener('input', function(e) {
     }
 });
 
-// Preview barcode modal
 let previewModalInstance = null;
 function previewBarcode(id, barcode, name, price) {
     const modalEl = document.getElementById('barcodePreviewModal');
@@ -428,7 +549,6 @@ function previewBarcode(id, barcode, name, price) {
             margin: 5,
         });
     } catch(e) {
-        // If EAN13 fails (non-numeric), try CODE128
         try {
             JsBarcode(canvas, barcode, {
                 format: 'CODE128',
@@ -448,7 +568,6 @@ function previewBarcode(id, barcode, name, price) {
     previewModalInstance.show();
 }
 
-// Render mini barcodes on page load
 document.addEventListener('DOMContentLoaded', function() {
     updateMatchingCount();
     document.querySelectorAll('.barcode-mini').forEach(function(canvas) {
