@@ -365,8 +365,8 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                <button type="button" class="btn btn-primary" onclick="submitPrintFromModal()">
-                    <i class="fas fa-print me-1"></i> طباعة
+                <button type="button" class="btn btn-primary" id="printModalBtn" onclick="submitPrintFromModal()">
+                    <i class="fas fa-print me-1"></i> <span>طباعة</span>
                 </button>
             </div>
         </div>
@@ -439,11 +439,18 @@ function submitPrintFromModal() {
         document.getElementById('selectAllInput').value = '1';
     }
 
-    const form = document.getElementById('printForm');
-    const modal = document.getElementById('printOptionsModal');
+    const btn = document.getElementById('printModalBtn');
+    const origHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> جاري المعاينة...';
 
-    // Sync layout radio from modal to form
-    const layoutRadio = modal.querySelector('input[name="layout"]:checked');
+    const modalEl = document.getElementById('printOptionsModal');
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    if (modal) modal.hide();
+
+    const form = document.getElementById('printForm');
+
+    const layoutRadio = modalEl.querySelector('input[name="layout"]:checked');
     if (layoutRadio) {
         let formLayout = form.querySelector('input[name="layout"]');
         if (!formLayout) {
@@ -455,9 +462,8 @@ function submitPrintFromModal() {
         formLayout.value = layoutRadio.value;
     }
 
-    // Sync width/height for custom
-    const widthInput = modal.querySelector('input[name="width"]');
-    const heightInput = modal.querySelector('input[name="height"]');
+    const widthInput = modalEl.querySelector('input[name="width"]');
+    const heightInput = modalEl.querySelector('input[name="height"]');
     if (widthInput && heightInput) {
         let fw = form.querySelector('input[name="width"]');
         let fh = form.querySelector('input[name="height"]');
@@ -467,23 +473,22 @@ function submitPrintFromModal() {
         fh.value = heightInput.value;
     }
 
-    // Sync barcode position
-    const posRadio = modal.querySelector('input[name="barcode_position"]:checked');
+    const posRadio = modalEl.querySelector('input[name="barcode_position"]:checked');
     if (posRadio) {
         let fp = form.querySelector('input[name="barcode_position"]');
         if (!fp) { fp = document.createElement('input'); fp.type = 'hidden'; fp.name = 'barcode_position'; form.appendChild(fp); }
         fp.value = posRadio.value;
     }
 
-    // Sync show_name, show_price, show_brand
     ['show_name', 'show_price', 'show_brand'].forEach(name => {
-        const cb = modal.querySelector('input[name="' + name + '"]');
+        const cb = modalEl.querySelector('input[name="' + name + '"]');
         let fc = form.querySelector('input[name="' + name + '"]');
         if (!fc) { fc = document.createElement('input'); fc.type = 'hidden'; fc.name = name; form.appendChild(fc); }
         fc.value = cb && cb.checked ? '1' : '0';
     });
 
     form.submit();
+    setTimeout(function() { btn.disabled = false; btn.innerHTML = origHtml; }, 3000);
 }
 
 function toggleSelectAllMatching(cb) {
