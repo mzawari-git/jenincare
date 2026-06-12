@@ -226,9 +226,9 @@ class BarcodeController extends Controller
             }
         }
 
-        if ($layout === 'thermal') {
+        if (in_array($layout, ['thermal', 'thermal_a5', 'thermal_a6', 'thermal_custom'])) {
             return view('admin.products.barcode-print-thermal', compact(
-                'expanded', 'totalLabels', 'products', 'siteSettings', 'barcodePosition', 'showName', 'showPrice', 'showBrand'
+                'layout', 'expanded', 'totalLabels', 'products', 'siteSettings', 'barcodePosition', 'showName', 'showPrice', 'showBrand', 'width', 'height'
             ));
         }
 

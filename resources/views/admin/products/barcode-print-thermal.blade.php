@@ -3,19 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>طباعة الباركود حراري — {{ $siteSettings['site_name'] ?? \App\Helpers\SettingsHelper::siteName() }}</title>
+    <title>طباعة الباركود — {{ $siteSettings['site_name'] ?? \App\Helpers\SettingsHelper::siteName() }}</title>
+    @php
+        $isThermal = $layout === 'thermal';
+        $isA5 = $layout === 'thermal_a5';
+        $isA6 = $layout === 'thermal_a6';
+        $isCustom = $layout === 'thermal_custom';
+        $pageWidth = $isCustom ? ($width ?: 50) . 'mm' : ($isA5 ? '148mm' : ($isA6 ? '105mm' : '80mm'));
+        $pageHeight = $isCustom ? ($height ?: 30) . 'mm' : ($isA5 ? '210mm' : ($isA6 ? '148mm' : 'auto'));
+        $bodyWidth = $pageWidth;
+        $labelPadding = $isA5 ? '4mm 6mm' : ($isA6 ? '3mm 5mm' : '2mm 4mm');
+        $titleText = $isA5 ? 'طباعة A5' : ($isA6 ? 'طباعة A6' : ($isCustom ? 'طباعة مخصص' : 'طباعة حراري 80mm'));
+        $paperWidth = $pageWidth;
+    @endphp
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Courier New', Courier, monospace;
             background: #e8e8e8;
-            width: 80mm;
+            width: {{ $bodyWidth }};
             margin: 0;
             padding: 0;
         }
         .paper {
             background: #fff;
-            width: 80mm;
+            width: {{ $paperWidth }};
             margin: 0;
             padding: 0;
             min-height: 100vh;
@@ -24,10 +36,13 @@
 
         @media print {
             html { margin: 0; }
-            @page { size: 80mm auto; margin: 0; }
+            @page {
+                size: {{ $pageWidth }} @if($isThermal)auto @else {{ $pageHeight }} @endif;
+                margin: 0;
+            }
             body {
                 background: #fff;
-                width: 80mm;
+                width: {{ $bodyWidth }};
                 margin: 0;
                 padding: 0;
                 -webkit-print-color-adjust: exact;
@@ -35,7 +50,7 @@
             }
             .paper {
                 background: #fff;
-                width: 80mm;
+                width: {{ $paperWidth }};
                 margin: 0;
                 padding: 0;
                 min-height: auto;
@@ -47,7 +62,7 @@
         .thermal-label {
             width: 100%;
             margin: 0;
-            padding: 2mm 4mm;
+            padding: {{ $labelPadding }};
             text-align: center;
             page-break-inside: avoid;
             page-break-after: always;
@@ -106,16 +121,18 @@
 <body>
     <div class="print-controls no-print" style="background:#1a1a2e;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;font-family:'Segoe UI',sans-serif;position:sticky;top:0;z-index:100;">
         <div style="color:#fff;font-size:14px;font-weight:600;">
-            طباعة حراري
+            {{ $titleText }}
             <span style="color:#94a3b8;font-weight:400;">— {{ $totalLabels }} ملصق ({{ count($products) }} منتج)</span>
         </div>
         <button onclick="printLabels()" style="background:#0d6efd;color:white;border:none;padding:8px 20px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600;">طباعة</button>
     </div>
+    @if($isThermal)
     <div class="no-print" style="background:#fff3cd;padding:10px 14px;font-size:12px;font-family:'Segoe UI',sans-serif;color:#856404;border-bottom:1px solid #ffc107;text-align:right;">
-        <strong>إعدادات Zebra ZD410 في الطباعة (Ctrl+P):</strong><br>
+        <strong>إعدادات الطابعة الحرارية في الطباعة (Ctrl+P):</strong><br>
         • <u>Margins: None</u> (أزل الهوامش) &nbsp; • ألغِ <u>Headers and Footers</u><br>
         • <u>Scale: 100</u> (حجم فعلي) &nbsp; • <u>Paper Size: 80mm</u> (حسب تعريف الطابعة)
     </div>
+    @endif
     <div class="paper">
     @foreach($expanded as $product)
         <div class="thermal-label">
@@ -180,7 +197,6 @@
 
     function renderBarcodes() {
         if (typeof JsBarcode === 'undefined') {
-            // retry up to 5 times (2.5s total) while CDN fallback loads
             var retries = parseInt(window._barcodeRetries || 0) + 1;
             window._barcodeRetries = retries;
             if (retries > 5) {

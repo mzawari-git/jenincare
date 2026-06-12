@@ -13,7 +13,7 @@
 
         @media print {
             @page {
-                size: @php echo match($layout) { 'a5_12', 'a5_6', 'a5_4' => 'A5', 'a6_8', 'a6_4', 'a6_2' => 'A6', 'custom' => $width . 'mm ' . $height . 'mm', default => 'A4' }; @endphp;
+                size: @php echo match($layout) { 'a5_12', 'a5_6', 'a5_4' => 'A5', 'a6_8', 'a6_4', 'a6_2' => 'A6', 'thermal_a5' => 'A5', 'thermal_a6' => 'A6', 'custom', 'thermal_custom' => $width . 'mm ' . $height . 'mm', default => 'A4' }; @endphp;
                 margin: {{ in_array($layout, ['a5_12','a5_6','a5_4','a6_8','a6_4','a6_2','custom']) ? '5mm' : '8mm' }};
             }
             body { padding: 0; }

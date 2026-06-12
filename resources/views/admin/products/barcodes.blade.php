@@ -287,6 +287,20 @@
                                 </label>
                             </div>
                             <div class="col-4">
+                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'thermal_a5')">
+                                    <input type="radio" name="layout" value="thermal_a5" class="d-none">
+                                    <div class="fw-bold">A5</div>
+                                    <small class="text-muted">ملصق واحد</small>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'thermal_a6')">
+                                    <input type="radio" name="layout" value="thermal_a6" class="d-none">
+                                    <div class="fw-bold">A6</div>
+                                    <small class="text-muted">ملصق واحد</small>
+                                </label>
+                            </div>
+                            <div class="col-4">
                                 <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'thermal')">
                                     <input type="radio" name="layout" value="thermal" class="d-none">
                                     <div class="fw-bold">حراري</div>
@@ -397,7 +411,7 @@ function selectPrintLayout(el, value) {
     document.querySelectorAll('.print-option').forEach(opt => opt.classList.remove('border-primary', 'bg-light'));
     el.classList.add('border-primary', 'bg-light');
     el.querySelector('input') && (el.querySelector('input').checked = true);
-    document.getElementById('modalCustomSize').style.display = value === 'custom' ? 'block' : 'none';
+    document.getElementById('modalCustomSize').style.display = (value === 'custom' || value === 'thermal_custom') ? 'block' : 'none';
 }
 
 function selectPosition(el, value) {
