@@ -167,6 +167,12 @@
                             <option value="a4_24">A4 — 24 ملصق (5×3 سم)</option>
                             <option value="a4_12">A4 — 12 ملصق (7×4 سم)</option>
                             <option value="a4_6">A4 — 6 ملصق (10×5 سم)</option>
+                            <option value="a5_12">A5 — 12 ملصق (5×3 سم)</option>
+                            <option value="a5_6">A5 — 6 ملصق (7×4 سم)</option>
+                            <option value="a5_4">A5 — 4 ملصق (10×5 سم)</option>
+                            <option value="a6_8">A6 — 8 ملصق (5×3 سم)</option>
+                            <option value="a6_4">A6 — 4 ملصق (7×4 سم)</option>
+                            <option value="a6_2">A6 — 2 ملصق (10×5 سم)</option>
                             <option value="thermal">حراري 80mm</option>
                             <option value="custom">مقاس مخصص</option>
                         </select>

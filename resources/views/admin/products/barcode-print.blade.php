@@ -13,8 +13,8 @@
 
         @media print {
             @page {
-                size: {{ $layout === 'custom' ? $width . 'mm ' . $height . 'mm' : 'A4' }};
-                margin: {{ $layout === 'custom' ? '0' : '8mm' }};
+                size: @php echo match($layout) { 'a5_12', 'a5_6', 'a5_4' => 'A5', 'a6_8', 'a6_4', 'a6_2' => 'A6', 'custom' => $width . 'mm ' . $height . 'mm', default => 'A4' }; @endphp;
+                margin: {{ in_array($layout, ['a5_12','a5_6','a5_4','a6_8','a6_4','a6_2','custom']) ? '5mm' : '8mm' }};
             }
             body { padding: 0; }
             .no-print { display: none !important; }
@@ -66,6 +66,16 @@
             align-content: flex-start;
             gap: 0;
         }
+        .sheet.sheet-a5 {
+            width: 148mm;
+            min-height: 210mm;
+            padding: 5mm 4mm;
+        }
+        .sheet.sheet-a6 {
+            width: 105mm;
+            min-height: 148mm;
+            padding: 4mm 3mm;
+        }
         .sheet.custom-layout {
             width: {{ $width }}mm;
             min-height: {{ $height }}mm;
@@ -74,17 +84,35 @@
 
         @php
             $isCustom = $layout === 'custom';
+            $sheetClass = match(true) {
+                str_starts_with($layout, 'a5_') => 'sheet-a5',
+                str_starts_with($layout, 'a6_') => 'sheet-a6',
+                default => '',
+            };
             $labelClass = match($layout) {
                 'a4_12' => 'label-12',
                 'a4_6' => 'label-6',
+                'a5_12', 'a6_8' => 'label-a5-12',
+                'a5_6', 'a6_4' => 'label-a5-6',
+                'a5_4', 'a6_2' => 'label-a5-4',
                 'custom' => 'label-custom',
                 default => 'label-24',
             };
             $barcodeHeight = $isCustom ? ($height * 0.45) . 'mm' : (
-                $layout === 'a4_6' ? '30mm' : ($layout === 'a4_12' ? '20mm' : '14mm')
+                match($layout) {
+                    'a4_6', 'a5_4', 'a6_2' => '30mm',
+                    'a4_12', 'a5_6', 'a6_4' => '20mm',
+                    default => '14mm',
+                }
             );
             $barcodeWidth = $isCustom ? ($width * 0.85) . 'mm' : (
-                $layout === 'a4_6' ? '80mm' : ($layout === 'a4_12' ? '55mm' : '38mm')
+                match($layout) {
+                    'a4_6' => '80mm',
+                    'a4_12', 'a5_6', 'a6_4' => '55mm',
+                    'a5_4', 'a6_2' => '70mm',
+                    'a5_12', 'a6_8' => '38mm',
+                    default => '38mm',
+                }
             );
         @endphp
 
@@ -118,6 +146,42 @@
             height: 68mm;
             border: 0.5px solid #d0d0d0;
             padding: 4mm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            page-break-inside: avoid;
+        }
+        .label-a5-12 {
+            width: 35mm;
+            height: 25mm;
+            border: 0.5px solid #d0d0d0;
+            padding: 1.5mm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            page-break-inside: avoid;
+        }
+        .label-a5-6 {
+            width: 47mm;
+            height: 34mm;
+            border: 0.5px solid #d0d0d0;
+            padding: 2mm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            page-break-inside: avoid;
+        }
+        .label-a5-4 {
+            width: 72mm;
+            height: 50mm;
+            border: 0.5px solid #d0d0d0;
+            padding: 3mm;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -195,6 +259,24 @@
         .label-6 .price-line { font-size: 15px; }
         .label-6 .barcode-number { font-size: 11px; }
 
+        .label-a5-12 .brand-line { font-size: 6px; }
+        .label-a5-12 .name-line { font-size: 7px; }
+        .label-a5-12 .sku-line { font-size: 6px; }
+        .label-a5-12 .price-line { font-size: 8px; }
+        .label-a5-12 .barcode-number { font-size: 6px; }
+
+        .label-a5-6 .brand-line { font-size: 7px; }
+        .label-a5-6 .name-line { font-size: 8px; }
+        .label-a5-6 .sku-line { font-size: 7px; }
+        .label-a5-6 .price-line { font-size: 9px; }
+        .label-a5-6 .barcode-number { font-size: 7px; }
+
+        .label-a5-4 .brand-line { font-size: 9px; }
+        .label-a5-4 .name-line { font-size: 12px; }
+        .label-a5-4 .sku-line { font-size: 9px; }
+        .label-a5-4 .price-line { font-size: 13px; }
+        .label-a5-4 .barcode-number { font-size: 10px; }
+
         .label-custom .brand-line { font-size: 6px; }
         .label-custom .name-line { font-size: 7px; }
         .label-custom .sku-line { font-size: 6px; }
@@ -225,7 +307,7 @@
         </button>
     </div>
 
-    <div class="sheet {{ $isCustom ? 'custom-layout' : '' }}">
+    <div class="sheet {{ $sheetClass }} {{ $isCustom ? 'custom-layout' : '' }}">
         @foreach($expanded as $product)
             <div class="{{ $labelClass }}">
 
