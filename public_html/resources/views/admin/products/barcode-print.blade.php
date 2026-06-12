@@ -262,9 +262,12 @@
             flex-direction: column;
             align-items: center;
         }
-        .barcode-section canvas {
+        .barcode-section canvas,
+        .barcode-section img {
             max-width: 100%;
             height: auto;
+            display: block;
+            margin: 0 auto;
         }
         .info-section {
             display: flex;
@@ -340,7 +343,7 @@
             if (canvas.dataset._converted) return;
             var img = document.createElement('img');
             img.src = canvas.toDataURL();
-            img.style.cssText = canvas.style.cssText + ';max-width:100%;height:auto;';
+            img.style.cssText = 'display:block;margin:0 auto;max-width:100%;height:auto;';
             img.className = canvas.className;
             canvas.parentNode.replaceChild(img, canvas);
             img.dataset._converted = '1';
