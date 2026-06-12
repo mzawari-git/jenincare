@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>طباعة الباركود حراري — {{ $siteSettings['site_name'] ?? \App\Helpers\SettingsHelper::siteName() }}</title>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3/dist/JsBarcode.all.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js';document.head.appendChild(s)"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -166,6 +166,15 @@
     </div>
 
     <script>
+    var JSB_LOADED = typeof JsBarcode !== 'undefined';
+
+    function barcodeError(canvas, code) {
+        var txt = document.createElement('div');
+        txt.textContent = code || 'لا يوجد باركود';
+        txt.style.cssText = 'font-size:10px;font-weight:bold;font-family:monospace;letter-spacing:1px;color:#333;padding:2px 0;';
+        canvas.parentNode.replaceChild(txt, canvas);
+    }
+
     function convertCanvasesToImages() {
         document.querySelectorAll('canvas.bcode').forEach(function(canvas) {
             if (canvas.dataset._converted) return;
@@ -184,6 +193,13 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        if (!JSB_LOADED) {
+            console.error('JsBarcode library not loaded from CDN');
+            document.querySelectorAll('canvas.bcode').forEach(function(canvas) {
+                barcodeError(canvas, canvas.getAttribute('data-code'));
+            });
+            return;
+        }
         document.querySelectorAll('canvas.bcode').forEach(function(canvas) {
             var code = canvas.getAttribute('data-code');
             var h = parseInt(canvas.getAttribute('data-height')) || 55;
@@ -201,13 +217,15 @@
                 try {
                     JsBarcode(canvas, code, {
                         format: 'CODE128',
-                        width: 1,
+                        width: 2,
                         height: h,
                         displayValue: false,
                         margin: 1,
                         background: '#ffffff',
                     });
-                } catch(e2) {}
+                } catch(e2) {
+                    barcodeError(canvas, code);
+                }
             }
         });
 
