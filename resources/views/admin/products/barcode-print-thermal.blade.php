@@ -107,7 +107,7 @@
             طباعة حراري
             <span>— {{ $totalLabels }} ملصق ({{ count($products) }} منتج)</span>
         </div>
-        <button onclick="window.print()">طباعة</button>
+        <button onclick="printLabels()">طباعة</button>
     </div>
 
     @foreach($expanded as $product)
@@ -162,6 +162,23 @@
     @endforeach
 
     <script>
+    function convertCanvasesToImages() {
+        document.querySelectorAll('canvas.bcode').forEach(function(canvas) {
+            if (canvas.dataset._converted) return;
+            var img = document.createElement('img');
+            img.src = canvas.toDataURL();
+            img.style.cssText = canvas.style.cssText + ';max-width:100%;height:auto;';
+            img.className = canvas.className;
+            canvas.parentNode.replaceChild(img, canvas);
+            img.dataset._converted = '1';
+        });
+    }
+
+    function printLabels() {
+        convertCanvasesToImages();
+        window.print();
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('canvas.bcode').forEach(function(canvas) {
             var code = canvas.getAttribute('data-code');
@@ -189,6 +206,12 @@
                 } catch(e2) {}
             }
         });
+
+        if (window.matchMedia) {
+            window.matchMedia('print').addEventListener('change', function(mql) {
+                if (mql.matches) convertCanvasesToImages();
+            });
+        }
     });
     </script>
 </body>

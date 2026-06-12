@@ -279,7 +279,7 @@
             طباعة الباركود
             <span>— {{ $totalLabels }} ملصق ({{ count($products) }} منتج) | {{ $layout }}</span>
         </div>
-        <button onclick="window.print()">
+        <button onclick="printLabels()">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 5V1h8v4" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 9h-1M12 13H4v-3h8v3z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="2" y="5" width="12" height="5" rx="1" stroke="#fff" stroke-width="1.5"/></svg>
             طباعة الآن
         </button>
@@ -335,6 +335,23 @@
     </div>
 
     <script>
+    function convertCanvasesToImages() {
+        document.querySelectorAll('canvas.bcode').forEach(function(canvas) {
+            if (canvas.dataset._converted) return;
+            var img = document.createElement('img');
+            img.src = canvas.toDataURL();
+            img.style.cssText = canvas.style.cssText + ';max-width:100%;height:auto;';
+            img.className = canvas.className;
+            canvas.parentNode.replaceChild(img, canvas);
+            img.dataset._converted = '1';
+        });
+    }
+
+    function printLabels() {
+        convertCanvasesToImages();
+        window.print();
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('canvas.bcode').forEach(function(canvas) {
             var code = canvas.getAttribute('data-code');
@@ -362,6 +379,12 @@
                 } catch(e2) {}
             }
         });
+
+        if (window.matchMedia) {
+            window.matchMedia('print').addEventListener('change', function(mql) {
+                if (mql.matches) convertCanvasesToImages();
+            });
+        }
     });
     </script>
 </body>
