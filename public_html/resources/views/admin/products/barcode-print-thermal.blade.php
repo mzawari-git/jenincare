@@ -9,56 +9,41 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Courier New', Courier, monospace;
+            background: #e8e8e8;
+            width: 80mm;
+            margin: 0;
+            padding: 0;
+        }
+        .paper {
             background: #fff;
             width: 80mm;
-            margin: 0 auto;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            box-shadow: 0 0 0 1px #ccc;
         }
 
         @media print {
             html { margin: 0; }
             @page { size: 80mm auto; margin: 0; }
             body {
+                background: #fff;
                 width: 80mm;
                 margin: 0;
                 padding: 0;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
+            .paper {
+                background: #fff;
+                width: 80mm;
+                margin: 0;
+                padding: 0;
+                min-height: auto;
+                box-shadow: none;
+            }
             .no-print { display: none !important; }
         }
-
-        .print-controls {
-            background: #1a1a2e;
-            padding: 12px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        .print-controls .title {
-            color: #fff;
-            font-size: 14px;
-            font-weight: 600;
-        }
-        .print-controls .title span {
-            color: #94a3b8;
-            font-weight: 400;
-        }
-        .print-controls button {
-            background: #0d6efd;
-            color: white;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 6px;
-            font-size: 13px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: background .15s;
-        }
-        .print-controls button:hover { background: #0b5ed7; }
 
         .thermal-label {
             width: 100%;
@@ -115,22 +100,19 @@
     </style>
 </head>
 <body>
-    <div class="print-controls no-print">
-        <div class="title">
+    <div class="print-controls no-print" style="background:#1a1a2e;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;font-family:'Segoe UI',sans-serif;position:sticky;top:0;z-index:100;">
+        <div style="color:#fff;font-size:14px;font-weight:600;">
             طباعة حراري
-            <span>— {{ $totalLabels }} ملصق ({{ count($products) }} منتج)</span>
+            <span style="color:#94a3b8;font-weight:400;">— {{ $totalLabels }} ملصق ({{ count($products) }} منتج)</span>
         </div>
-        <div class="d-flex align-items-center gap-2">
-            <button onclick="printLabels()" style="background:#0d6efd;color:white;border:none;padding:8px 20px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600;">طباعة</button>
-        </div>
+        <button onclick="printLabels()" style="background:#0d6efd;color:white;border:none;padding:8px 20px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600;">طباعة</button>
     </div>
-    <div class="print-tips no-print" style="background:#fff3cd;padding:10px 14px;font-size:12px;font-family:'Segoe UI',sans-serif;color:#856404;border-bottom:1px solid #ffc107;text-align:right;">
-        <strong>إعدادات طباعة Zebra ZD410:</strong><br>
-        • في خيارات الطباعة (Print Dialog) ← اختر <u>Margins: None</u> وألغِ <u>Headers and Footers</u><br>
-        • تأكد أن حجم الورق مضبوط على <u>80mm × (طول الملصق)</u> في تعريف الطابعة<br>
-        • استخدم <u>Scale: 100</u> (ليس Fit to Page)
+    <div class="no-print" style="background:#fff3cd;padding:10px 14px;font-size:12px;font-family:'Segoe UI',sans-serif;color:#856404;border-bottom:1px solid #ffc107;text-align:right;">
+        <strong>إعدادات Zebra ZD410 في الطباعة (Ctrl+P):</strong><br>
+        • <u>Margins: None</u> (أزل الهوامش) &nbsp; • ألغِ <u>Headers and Footers</u><br>
+        • <u>Scale: 100</u> (حجم فعلي) &nbsp; • <u>Paper Size: 80mm</u> (حسب تعريف الطابعة)
     </div>
-
+    <div class="paper">
     @foreach($expanded as $product)
         <div class="thermal-label">
 
@@ -181,6 +163,7 @@
             <div class="divider"></div>
         @endif
     @endforeach
+    </div>
 
     <script>
     function convertCanvasesToImages() {
