@@ -14,10 +14,29 @@
         @media print {
             @page {
                 size: @php echo match($layout) { 'a5_12', 'a5_6', 'a5_4' => 'A5', 'a6_8', 'a6_4', 'a6_2' => 'A6', 'thermal_a5' => 'A5', 'thermal_a6' => 'A6', 'custom', 'thermal_custom' => $width . 'mm ' . $height . 'mm', default => 'A4' }; @endphp;
-                margin: {{ in_array($layout, ['a5_12','a5_6','a5_4','a6_8','a6_4','a6_2','custom']) ? '5mm' : '8mm' }};
+                margin: {{ in_array($layout, ['custom', 'thermal_custom']) ? '0' : (in_array($layout, ['a5_12','a5_6','a5_4','a6_8','a6_4','a6_2']) ? '5mm' : '8mm') }};
             }
-            body { padding: 0; }
+            body {
+                margin: 0;
+                padding: 0;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
             .no-print { display: none !important; }
+            .sheet, .label-24, .label-12, .label-6, .label-a5-12, .label-a5-6, .label-a5-4, .label-custom {
+                display: block !important;
+                overflow: visible !important;
+                position: static !important;
+                page-break-inside: avoid;
+            }
+            .barcode-section {
+                display: block !important;
+                overflow: visible !important;
+            }
+            .barcode-section svg {
+                max-width: 100% !important;
+                height: auto !important;
+            }
         }
 
         .print-controls {

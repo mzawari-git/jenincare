@@ -237,10 +237,10 @@ class BarcodeController extends Controller
                     'layout' => $layout,
                 ]);
             }
+            $now = now();
             foreach ($products as $product) {
                 $product->increment('print_count');
-                $product->last_printed_at = now();
-                $product->save();
+                \App\Models\Product::where('id', $product->id)->update(['last_printed_at' => $now]);
             }
         }
 

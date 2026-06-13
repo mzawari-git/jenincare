@@ -16,7 +16,7 @@
                 <a href="{{ route('home') }}" class="nav-link {{ request()->routeIs('home')?'active':'' }}">الرئيسية</a>
                 <a href="{{ route('shop') }}" class="nav-link {{ request()->routeIs('shop')?'active':'' }}">المتجر</a>
                 <a href="{{ route('b2b') }}" class="nav-link">الأعمال</a>
-                <a href="{{ route('affiliate.landing') }}" class="nav-link" style="color:#ec4899;">تسويق</a>
+                <a href="{{ route('affiliate.landing') }}" class="nav-link">تسويق</a>
                 <a href="{{ route('blog.index') }}" class="nav-link">مدونة</a>
                 <a href="{{ route('contact') }}" class="nav-link">تواصل</a>
             </nav>
@@ -166,7 +166,7 @@
 </div>
 
 <style>
-.nav-link{color:var(--ink-muted);border:none;background:none;cursor:pointer;transition:color .2s;text-decoration:none!important;padding:4px 0;}.nav-link:hover,.nav-link.active{color:var(--brand-500)!important;}
+.nav-link{color:var(--ink-muted);border:none;background:none;cursor:pointer;transition:color .2s;text-decoration:none!important;padding:4px 0;}.nav-link:hover,.nav-link.active{color:#D4AF37!important;}
 .icon-btn{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:transparent;border:1px solid transparent;color:var(--ink-muted);cursor:pointer;transition:all .2s;text-decoration:none!important;}.icon-btn:hover{background:rgba(255,255,255,.06);color:var(--brand-500);border-color:rgba(255,255,255,.08);}
 .btn-primary{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:9999px;font-weight:700;font-size:.8125rem;background:var(--gradient-primary);color:#fff;border:none;cursor:pointer;text-decoration:none!important;transition:all .25s;box-shadow:var(--neon-glow);}.btn-primary:hover{box-shadow:var(--neon-glow-strong);transform:translateY(-1px);filter:brightness(1.1);}
 .btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:9999px;font-weight:600;text-decoration:none!important;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:var(--ink);transition:all .2s;}.btn-ghost:hover{background:rgba(255,255,255,.1);border-color:var(--brand-500);}
