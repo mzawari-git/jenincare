@@ -34,6 +34,7 @@
                 <a href="{{ route('b2b') }}" class="nav-link {{ request()->routeIs('b2b') ? 'active' : '' }}">الأعمال</a>
                 <a href="{{ route('affiliate.landing') }}" class="nav-link {{ request()->routeIs('affiliate.*') ? 'active' : '' }}" style="color:#ec4899;">تسويق</a>
                 <a href="{{ route('blog.index') }}" class="nav-link {{ request()->routeIs('blog.*') ? 'active' : '' }}">مدونة</a>
+                <a href="{{ route('musk-collection') }}" class="nav-link"><span style="color:#D4AF37;">مجموعة المسك</span></a>
                 <a href="{{ route('contact') }}" class="nav-link {{ request()->routeIs('contact') ? 'active' : '' }}">تواصل</a>
             </nav>
         </div>
@@ -97,6 +98,7 @@
             <a href="{{ route('b2b') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium" style="color:var(--ink);text-decoration:none;"><span class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-buildings text-lg" style="color:var(--ink-dim);"></i></span> الأعمال</a>
             <a href="{{ route('affiliate.landing') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-bold" style="color:#ec4899;text-decoration:none;"><span class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(236,72,153,0.1);"><i class="ph ph-share-network text-lg" style="color:#ec4899;"></i></span> التسويق بالعمولة</a>
             <a href="{{ route('blog.index') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium" style="color:var(--ink);text-decoration:none;"><span class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-article text-lg" style="color:var(--ink-dim);"></i></span> المدونة</a>
+            <a href="{{ route('musk-collection') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium" style="color:var(--ink);text-decoration:none;"><span class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-flask text-base" style="color:#D4AF37;"></i></span><span style="color:#D4AF37;">مجموعة المسك</span></a>
             <a href="{{ route('contact') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium" style="color:var(--ink);text-decoration:none;"><span class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-envelope text-lg" style="color:var(--ink-dim);"></i></span> تواصل معنا</a>
         </div>
         <div class="border-t px-4 py-3" style="border-color:rgba(255,255,255,0.06);">
