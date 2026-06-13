@@ -316,6 +316,10 @@
         0% { background-position: 200% center; }
         100% { background-position: -200% center; }
     }
+    @keyframes twinkle {
+        0%, 100% { opacity: 0.3; transform: scale(0.9); }
+        50% { opacity: 1; transform: scale(1.1); }
+    }
     .value-card:hover { transform: translateY(-6px); border-color: rgba(255,42,133,0.15); box-shadow: 0 12px 40px rgba(0,0,0,0.3), var(--neon-glow); }
     @media (max-width: 767px) {
         .home-sections { display: flex; flex-direction: column; }
@@ -481,7 +485,54 @@
 </section>
 
 {{-- ═══════════════════════════════════════════════════════════════
-     SECTION 3: Trust Bar — Social Proof & Quick Stats
+     MUSK COLLECTION BANNER
+     ═══════════════════════════════════════════════════════════════ --}}
+<section class="py-16 relative overflow-hidden" style="background: linear-gradient(135deg, #0D0D0D 0%, #1A0D0D 50%, #0D0D0D 100%);">
+    <div class="absolute inset-0 opacity-10" style="background-image: url(&quot;data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M15 0L17.8 12.2L30 15L17.8 17.8L15 30L12.2 17.8L0 15L12.2 12.2Z' fill='%23d4af37' fill-opacity='0.03'/%3E%3C/svg%3E&quot;);"></div>
+    <div class="max-w-7xl mx-auto px-4 relative z-10">
+        <div class="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
+            <div class="lg:w-1/2">
+                <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest mb-6 border" style="color:#D4AF37;border-color:rgba(212,175,55,0.3);background:rgba(212,175,55,0.08);">
+                    <i class="fa-solid fa-crown" style="color:#D4AF37;"></i> إصدار حصري
+                </span>
+                <h2 class="text-3xl md:text-5xl font-black mb-4 text-white">
+                    مجموعة <span style="background:linear-gradient(45deg,#D4AF37,#F3E5AB,#D4AF37);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">المسك والأرغان</span> الملكية
+                </h2>
+                <p class="text-gray-400 text-lg mb-6 leading-relaxed">روتين العناية الملكي بالشعر من نوڤا كوزمتكس — شامبو خالٍ من الكبريت، حمام زيت مرمم، سيروم مغذي، وسيروم الذهب الفاخر بجزيئات الذهب الدقيقة.</p>
+                <div class="flex flex-wrap gap-3 mb-8">
+                    <span class="text-xs font-bold px-3 py-1.5 rounded-full border" style="color:#D4AF37;border-color:rgba(212,175,55,0.3);background:rgba(212,175,55,0.08);"><i class="fa-solid fa-check ml-1"></i>خالٍ من الكبريت والملح</span>
+                    <span class="text-xs font-bold px-3 py-1.5 rounded-full border" style="color:#D4AF37;border-color:rgba(212,175,55,0.3);background:rgba(212,175,55,0.08);"><i class="fa-solid fa-check ml-1"></i>أرغان عضوي 100%</span>
+                    <span class="text-xs font-bold px-3 py-1.5 rounded-full border" style="color:#D4AF37;border-color:rgba(212,175,55,0.3);background:rgba(212,175,55,0.08);"><i class="fa-solid fa-check ml-1"></i>رائحة مسك ممتدة</span>
+                </div>
+                <a href="{{ route('musk-collection') }}"
+                   class="inline-flex items-center gap-3 px-8 py-4 rounded-full font-black text-sm tracking-wide transition-all hover:scale-[1.02] shadow-xl"
+                   style="background:linear-gradient(135deg,#D4AF37,#F3E5AB);color:#0D0D0D;">
+                    <i class="fa-solid fa-crown"></i> اكتشفي المجموعة الملكية
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
+            </div>
+            <div class="lg:w-1/2 flex justify-center">
+                <div class="relative">
+                    <div class="w-64 h-64 md:w-80 md:h-80 rounded-full absolute -top-10 -right-10 opacity-20 blur-3xl" style="background:radial-gradient(circle,#D4AF37,transparent 70%);"></div>
+                    <div class="relative flex items-center justify-center">
+                        <div class="text-center">
+                            <div class="text-7xl md:text-9xl font-black tracking-widest" style="background:linear-gradient(45deg,#D4AF37,#F3E5AB,#D4AF37);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">NOVA</div>
+                            <div class="text-xs md:text-sm tracking-[0.5em] font-bold mt-2" style="color:#D4AF37;">COSMETICS</div>
+                            <div class="flex justify-center gap-1 mt-6">
+                                <i class="fa-solid fa-star text-lg" style="color:#D4AF37;animation:twinkle 1.5s ease-in-out infinite;"></i>
+                                <i class="fa-solid fa-star text-lg" style="color:#D4AF37;animation:twinkle 1.5s ease-in-out infinite;animation-delay:0.3s;"></i>
+                                <i class="fa-solid fa-star text-lg" style="color:#D4AF37;animation:twinkle 1.5s ease-in-out infinite;animation-delay:0.6s;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{-- ═══════════════════════════════════════════════════════════════
+     SECTION: Trust Bar — Social Proof & Quick Stats
      ═══════════════════════════════════════════════════════════════ --}}
 <section class="py-12 border-b border-ink/10">
     <div class="max-w-7xl mx-auto px-4">
@@ -702,6 +753,13 @@
                    class="px-10 py-4 rounded-full font-black text-sm tracking-wide inline-flex items-center justify-center gap-2 shadow-neon hover:shadow-neon-strong transition-all"
                    style="background: var(--gradient-primary); color: white;">
                     تصفحي المنتجات <i class="fa-solid fa-arrow-left"></i>
+                </a>
+                <a href="{{ route('musk-collection') }}"
+                   class="px-10 py-4 rounded-full font-black text-sm tracking-wide inline-flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all relative overflow-hidden group"
+                   style="background: linear-gradient(135deg, #D4AF37, #F3E5AB, #D4AF37); color: #0D0D0D;">
+                    <i class="fa-solid fa-crown"></i> مجموعة المسك الملكية
+                    <span class="absolute top-0 right-0 -mt-1 -mr-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></span>
+                    <span class="absolute top-0 right-0 -mt-1 -mr-1 w-3 h-3 bg-red-500 rounded-full"></span>
                 </a>
                 <a href="{{ route('b2b') }}"
                    class="px-10 py-4 rounded-full font-bold text-sm border border-white/15 text-white hover:bg-white/5 transition-all inline-flex items-center justify-center gap-2">
