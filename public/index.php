@@ -23,14 +23,18 @@ $scriptName = $_SERVER['SCRIPT_NAME']; // e.g. /jenincare/public/index.php
 $baseUrl = rtrim(dirname($scriptName), '/\\'); // e.g. /jenincare/public
 $request->setBaseUrl($baseUrl);
 
-// Derive pathInfo from REQUEST_URI minus baseUrl
+// Derive pathInfo from REQUEST_URI minus baseUrl (only if URI starts with it)
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
 $pos = strpos($requestUri, '?');
 if ($pos !== false) {
     $requestUri = substr($requestUri, 0, $pos);
 }
 $prefixLength = strlen($baseUrl);
-$pathInfo = substr($requestUri, $prefixLength);
+if ($prefixLength > 0 && strncmp($requestUri, $baseUrl, $prefixLength) === 0) {
+    $pathInfo = substr($requestUri, $prefixLength);
+} else {
+    $pathInfo = $requestUri;
+}
 if ($pathInfo === false || $pathInfo === '') {
     $pathInfo = '/';
 } elseif ($pathInfo[0] !== '/') {
