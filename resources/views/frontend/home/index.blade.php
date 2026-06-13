@@ -1,19 +1,19 @@
-﻿@extends($layoutPath)
+∩╗┐@extends($layoutPath)
 
-@section('title', ($siteSettings['site_name'] ?? 'شركة جنين للتجميل') . ' | منصة الجمال الذكية')
-@section('meta_description', 'شركة جنين للتجميل - وجهتك الأولى للعناية بالبشرة والشعر. منتجات أصلية 100%، شحن لكل فلسطين، دفع عند الاستلام، ودعم احترافي.')
-@section('meta_keywords', 'شركة جنين للتجميل, جيني كير, عناية بالبشرة, عناية بالشعر, منتجات تجميل, فلسطين, شحن مجاني, منتجات أصلية, جمال, ذكاء اصطناعي')
+@section('title', ($siteSettings['site_name'] ?? '╪┤╪▒┘â╪⌐ ╪¼┘å┘è┘å ┘ä┘ä╪¬╪¼┘à┘è┘ä') . ' | ┘à┘å╪╡╪⌐ ╪º┘ä╪¼┘à╪º┘ä ╪º┘ä╪░┘â┘è╪⌐')
+@section('meta_description', '╪┤╪▒┘â╪⌐ ╪¼┘å┘è┘å ┘ä┘ä╪¬╪¼┘à┘è┘ä - ┘ê╪¼┘ç╪¬┘â ╪º┘ä╪ú┘ê┘ä┘ë ┘ä┘ä╪╣┘å╪º┘è╪⌐ ╪¿╪º┘ä╪¿╪┤╪▒╪⌐ ┘ê╪º┘ä╪┤╪╣╪▒. ┘à┘å╪¬╪¼╪º╪¬ ╪ú╪╡┘ä┘è╪⌐ 100%╪î ╪┤╪¡┘å ┘ä┘â┘ä ┘ü┘ä╪│╪╖┘è┘å╪î ╪»┘ü╪╣ ╪╣┘å╪» ╪º┘ä╪º╪│╪¬┘ä╪º┘à╪î ┘ê╪»╪╣┘à ╪º╪¡╪¬╪▒╪º┘ü┘è.')
+@section('meta_keywords', '╪┤╪▒┘â╪⌐ ╪¼┘å┘è┘å ┘ä┘ä╪¬╪¼┘à┘è┘ä, ╪¼┘è┘å┘è ┘â┘è╪▒, ╪╣┘å╪º┘è╪⌐ ╪¿╪º┘ä╪¿╪┤╪▒╪⌐, ╪╣┘å╪º┘è╪⌐ ╪¿╪º┘ä╪┤╪╣╪▒, ┘à┘å╪¬╪¼╪º╪¬ ╪¬╪¼┘à┘è┘ä, ┘ü┘ä╪│╪╖┘è┘å, ╪┤╪¡┘å ┘à╪¼╪º┘å┘è, ┘à┘å╪¬╪¼╪º╪¬ ╪ú╪╡┘ä┘è╪⌐, ╪¼┘à╪º┘ä, ╪░┘â╪º╪í ╪º╪╡╪╖┘å╪º╪╣┘è')
 
 @push('scripts')
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "Organization",
-  "name": "{{ $siteSettings['site_name'] ?? 'شركة جنين للتجميل' }}",
+  "name": "{{ $siteSettings['site_name'] ?? '╪┤╪▒┘â╪⌐ ╪¼┘å┘è┘å ┘ä┘ä╪¬╪¼┘à┘è┘ä' }}",
   "url": "{{ url('/') }}",
   "logo": "{{ asset('assets/images/logo.png') }}",
-  "description": "منصة العناية بالبشرة الذكية - منتجات أصلية 100%",
-  "address": { "@type": "PostalAddress", "addressLocality": "رام الله", "addressCountry": "PS" },
+  "description": "┘à┘å╪╡╪⌐ ╪º┘ä╪╣┘å╪º┘è╪⌐ ╪¿╪º┘ä╪¿╪┤╪▒╪⌐ ╪º┘ä╪░┘â┘è╪⌐ - ┘à┘å╪¬╪¼╪º╪¬ ╪ú╪╡┘ä┘è╪⌐ 100%",
+  "address": { "@type": "PostalAddress", "addressLocality": "╪▒╪º┘à ╪º┘ä┘ä┘ç", "addressCountry": "PS" },
   "contactPoint": { "@type": "ContactPoint", "telephone": "{{ $siteSettings['site_phone'] ?? '+972 56 903 0203' }}", "contactType": "customer service" },
   "sameAs": ["{{ $siteSettings['facebook_url'] ?? '#' }}", "{{ $siteSettings['instagram_url'] ?? '#' }}"]
 }
@@ -22,7 +22,7 @@
 {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  "name": "{{ $siteSettings['site_name'] ?? 'شركة جنين للتجميل' }}",
+  "name": "{{ $siteSettings['site_name'] ?? '╪┤╪▒┘â╪⌐ ╪¼┘å┘è┘å ┘ä┘ä╪¬╪¼┘à┘è┘ä' }}",
   "url": "{{ url('/') }}",
   "potentialAction": { "@type": "SearchAction", "target": "{{ url('/shop') }}?search={search_term_string}", "query-input": "required name=search_term_string" }
 }
@@ -31,9 +31,9 @@
 
 @section('content')
 
-{{-- ═══════════════════════════════════════════════════════════════
-     SECTION 1: HERO — Dynamic Title + Product Slideshow
-     ═══════════════════════════════════════════════════════════════ --}}
+{{-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+     SECTION 1: HERO ΓÇö Dynamic Title + Product Slideshow
+     ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ --}}
 
 <section id="hero" class="relative min-h-screen flex items-center justify-center overflow-hidden">
     <div class="absolute inset-0 z-0">
@@ -48,18 +48,18 @@
 
             <div class="w-full lg:w-[45%] text-center">
 
-                {{-- Logo — clean, no border --}}
+                {{-- Logo ΓÇö clean, no border --}}
                 <div class="mb-5 flex justify-center">
                     @if(!empty($siteSettings['site_logo_url']))
-                    <img src="{{ $siteSettings['site_logo_url'] }}" alt="جنين للتجميل" class="h-8 sm:h-12 md:h-20 lg:h-28 w-auto object-contain drop-shadow-lg" style="max-height:112px;max-width:280px;">
+                    <img src="{{ $siteSettings['site_logo_url'] }}" alt="╪¼┘å┘è┘å ┘ä┘ä╪¬╪¼┘à┘è┘ä" class="h-8 sm:h-12 md:h-20 lg:h-28 w-auto object-contain drop-shadow-lg" style="max-height:112px;max-width:280px;">
                     @else
-                    <span class="text-xl sm:text-2xl md:text-3xl tracking-wider text-white font-black" style="letter-spacing:0.12em;">جنين للتجميل</span>
+                    <span class="text-xl sm:text-2xl md:text-3xl tracking-wider text-white font-black" style="letter-spacing:0.12em;">╪¼┘å┘è┘å ┘ä┘ä╪¬╪¼┘à┘è┘ä</span>
                     @endif
                 </div>
 
-                {{-- ═══════════════════════════════════════════
-                     PREMIUM HERO CARD — Animated gradient + floating elements
-                     ═══════════════════════════════════════════ --}}
+                {{-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+                     PREMIUM HERO CARD ΓÇö Animated gradient + floating elements
+                     ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ --}}
                 <div id="heroCard" class="relative mb-6 select-none">
                     <div class="relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-8 md:p-10" style="background:linear-gradient(145deg,rgba(60,20,60,0.55) 0%,rgba(40,15,45,0.45) 40%,rgba(var(--brand-500-rgb,255,42,133),0.18) 100%);border:1.5px solid rgba(236,72,153,0.25);backdrop-filter:blur(24px);box-shadow:0 24px 80px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.08),0 0 120px rgba(var(--brand-500-rgb,255,42,133),0.15);">
 
@@ -82,7 +82,7 @@
                                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-60"></span>
                                     <span class="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
                                 </span>
-                                عروض حصرية
+                                ╪╣╪▒┘ê╪╢ ╪¡╪╡╪▒┘è╪⌐
                             </span>
                         </div>
 
@@ -128,13 +128,13 @@
                     </div>
                 </div>
 
-                {{-- CTA Buttons — مرنة وغير إلزامية لتجنب Engagement-Bait على المنصات الإعلانية --}}
+                {{-- CTA Buttons ΓÇö ┘à╪▒┘å╪⌐ ┘ê╪║┘è╪▒ ╪Ñ┘ä╪▓╪º┘à┘è╪⌐ ┘ä╪¬╪¼┘å╪¿ Engagement-Bait ╪╣┘ä┘ë ╪º┘ä┘à┘å╪╡╪º╪¬ ╪º┘ä╪Ñ╪╣┘ä╪º┘å┘è╪⌐ --}}
                 <div class="flex flex-col items-center gap-3 mb-8">
                     <a href="{{ route('shop') }}" class="w-full sm:w-72 px-8 py-4 rounded-full font-black text-sm tracking-wide inline-flex items-center justify-center gap-2 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-0.5" style="background:#ffffff;color:#0f172a;">
-                        اكتشفي المنتجات <i class="fa-solid fa-arrow-left mr-1"></i>
+                        ╪º┘â╪¬╪┤┘ü┘è ╪º┘ä┘à┘å╪¬╪¼╪º╪¬ <i class="fa-solid fa-arrow-left mr-1"></i>
                     </a>
                     <a href="{{ route('shop') }}" class="text-white/60 hover:text-white transition-colors font-medium text-sm">
-                        تصفحي المتجر — المتابعة اختيارية
+                        ╪¬╪╡┘ü╪¡┘è ╪º┘ä┘à╪¬╪¼╪▒ ΓÇö ╪º┘ä┘à╪¬╪º╪¿╪╣╪⌐ ╪º╪«╪¬┘è╪º╪▒┘è╪⌐
                     </a>
                 </div>
             </div>
@@ -155,7 +155,7 @@
                             <div class="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-surface/95 via-surface/70 to-transparent">
                                 @if($cat)<span class="inline-block px-2.5 py-1 rounded-full text-white text-[11px] font-bold mb-2" style="background:{{ $slide['color'] }};">{{ $cat->display_name ?? $cat->name_ar }}</span>@endif
                                 <h3 class="text-lg font-black text-white mb-1">{{ $main->name_ar }}</h3>
-                                <span class="font-black text-2xl md:text-3xl" style="color:#ffffff;text-shadow:0 0 12px rgba(255,255,255,0.3),0 0 2px rgba(255,255,255,0.5);">{{ number_format($main->final_b2c_price ?? $main->b2c_price, 0) }} ₪</span>
+                                <span class="font-black text-2xl md:text-3xl" style="color:#ffffff;text-shadow:0 0 12px rgba(255,255,255,0.3),0 0 2px rgba(255,255,255,0.5);">{{ number_format($main->final_b2c_price ?? $main->b2c_price, 0) }} Γé¬</span>
                             </div>
                         </a>
                     </div>
@@ -166,15 +166,15 @@
     </div>
 </section>
 
-{{-- ═══════════════════════════════════════════════════════════════
-     SECTION: Categories — BringUs Style (Circular image, white card, pink border)
-     ═══════════════════════════════════════════════════════════════ --}}
+{{-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+     SECTION: Categories ΓÇö BringUs Style (Circular image, white card, pink border)
+     ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ --}}
 @if($categories->isNotEmpty())
 <section class="categories-section py-12 relative z-20" style="background:#fafafa;">
     <div class="max-w-7xl mx-auto px-4">
         <div class="text-center mb-10">
-            <h2 class="text-2xl md:text-3xl font-black mb-2" style="color:#1a1a1a;">تسوقي حسب <span style="color:#ec4899;">القسم</span></h2>
-            <p class="max-w-2xl mx-auto text-sm md:text-base" style="color:#888;">اكتشفي منتجات أصلية من أفضل الماركات العالمية في جميع أقسام التجميل والعناية</p>
+            <h2 class="text-2xl md:text-3xl font-black mb-2" style="color:#1a1a1a;">╪¬╪│┘ê┘é┘è ╪¡╪│╪¿ <span style="color:#ec4899;">╪º┘ä┘é╪│┘à</span></h2>
+            <p class="max-w-2xl mx-auto text-sm md:text-base" style="color:#888;">╪º┘â╪¬╪┤┘ü┘è ┘à┘å╪¬╪¼╪º╪¬ ╪ú╪╡┘ä┘è╪⌐ ┘à┘å ╪ú┘ü╪╢┘ä ╪º┘ä┘à╪º╪▒┘â╪º╪¬ ╪º┘ä╪╣╪º┘ä┘à┘è╪⌐ ┘ü┘è ╪¼┘à┘è╪╣ ╪ú┘é╪│╪º┘à ╪º┘ä╪¬╪¼┘à┘è┘ä ┘ê╪º┘ä╪╣┘å╪º┘è╪⌐</p>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
             @foreach($categories as $cat)
@@ -215,7 +215,7 @@
 @if(!empty($siteSettings['whatsapp_number']))
 <a href="https://wa.me/{{ preg_replace('/[^0-9]/','',$siteSettings['whatsapp_number']) }}" target="_blank" rel="noopener"
    class="fixed z-[999] flex items-center justify-center shadow-2xl hover:shadow-3xl transition-all duration-300 hover:-translate-y-1 hover:scale-105"
-   style="bottom:24px;right:20px;width:56px;height:56px;background:#25D366;border-radius:50%;" aria-label="واتساب">
+   style="bottom:24px;right:20px;width:56px;height:56px;background:#25D366;border-radius:50%;" aria-label="┘ê╪º╪¬╪│╪º╪¿">
     <i class="ph-fill ph-whatsapp-logo text-white text-2xl"></i>
 </a>
 @endif
@@ -316,10 +316,6 @@
         0% { background-position: 200% center; }
         100% { background-position: -200% center; }
     }
-    @keyframes twinkle {
-        0%, 100% { opacity: 0.3; transform: scale(0.9); }
-        50% { opacity: 1; transform: scale(1.1); }
-    }
     .value-card:hover { transform: translateY(-6px); border-color: rgba(255,42,133,0.15); box-shadow: 0 12px 40px rgba(0,0,0,0.3), var(--neon-glow); }
     @media (max-width: 767px) {
         .home-sections { display: flex; flex-direction: column; }
@@ -333,15 +329,15 @@
 
 <div class="home-sections">
 
-{{-- ═══════════════════════════════════════════════════════════════
+{{-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
      SECTION: Products FIRST on mobile
-     ═══════════════════════════════════════════════════════════════ --}}
+     ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ --}}
 <section id="products" class="products-section py-20 relative">
 
     {{-- Mobile: visual separator --}}
     <div class="md:hidden -mt-20 mb-8 text-center">
         <div class="inline-flex items-center gap-2 px-5 py-2 rounded-full font-black text-sm shadow-lg" style="background:var(--gradient-primary);color:#fff;">
-            <i class="fa-solid fa-star text-xs"></i> منتجاتنا المميزة <i class="fa-solid fa-star text-xs"></i>
+            <i class="fa-solid fa-star text-xs"></i> ┘à┘å╪¬╪¼╪º╪¬┘å╪º ╪º┘ä┘à┘à┘è╪▓╪⌐ <i class="fa-solid fa-star text-xs"></i>
         </div>
     </div>
 
@@ -349,10 +345,10 @@
     <div class="max-w-7xl mx-auto px-4 relative z-10">
         <div class="mb-16 text-center">
             <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-500/20 bg-brand-500/5 mb-6">
-                <span class="text-xs text-brand-500 font-bold tracking-widest uppercase">مختبر الجمال</span>
+                <span class="text-xs text-brand-500 font-bold tracking-widest uppercase">┘à╪«╪¬╪¿╪▒ ╪º┘ä╪¼┘à╪º┘ä</span>
             </div>
-            <h2 class="text-3xl md:text-5xl font-black mb-4">منتجات مختارة <span class="gradient-text bg-[length:200%_auto]">بعناية فائقة</span></h2>
-            <p class="text-ink-dim max-w-2xl mx-auto text-lg font-light">كل منتج في متجرنا تم انتقاؤه بعناية من أفضل الماركات العالمية ليكون جزءاً من روتين عنايتك الشخصي. منتجات أصلية، نتائج مضمونة.</p>
+            <h2 class="text-3xl md:text-5xl font-black mb-4">┘à┘å╪¬╪¼╪º╪¬ ┘à╪«╪¬╪º╪▒╪⌐ <span class="gradient-text bg-[length:200%_auto]">╪¿╪╣┘å╪º┘è╪⌐ ┘ü╪º╪ª┘é╪⌐</span></h2>
+            <p class="text-ink-dim max-w-2xl mx-auto text-lg font-light">┘â┘ä ┘à┘å╪¬╪¼ ┘ü┘è ┘à╪¬╪¼╪▒┘å╪º ╪¬┘à ╪º┘å╪¬┘é╪º╪ñ┘ç ╪¿╪╣┘å╪º┘è╪⌐ ┘à┘å ╪ú┘ü╪╢┘ä ╪º┘ä┘à╪º╪▒┘â╪º╪¬ ╪º┘ä╪╣╪º┘ä┘à┘è╪⌐ ┘ä┘è┘â┘ê┘å ╪¼╪▓╪í╪º┘ï ┘à┘å ╪▒┘ê╪¬┘è┘å ╪╣┘å╪º┘è╪¬┘â ╪º┘ä╪┤╪«╪╡┘è. ┘à┘å╪¬╪¼╪º╪¬ ╪ú╪╡┘ä┘è╪⌐╪î ┘å╪¬╪º╪ª╪¼ ┘à╪╢┘à┘ê┘å╪⌐.</p>
         </div>
 
         @if($featuredProducts->isNotEmpty() || $newProducts->isNotEmpty())
@@ -373,8 +369,8 @@
                 @endif
 
                 <div class="absolute top-6 right-6 z-20 flex gap-2">
-                    <span class="bg-black/50 backdrop-blur px-3 py-1 rounded-full text-xs border border-white/10 text-ink/70">منتجات مميزة</span>
-                    <span class="pill-brand backdrop-blur text-xs">الأكثر مبيعاً</span>
+                    <span class="bg-black/50 backdrop-blur px-3 py-1 rounded-full text-xs border border-white/10 text-ink/70">┘à┘å╪¬╪¼╪º╪¬ ┘à┘à┘è╪▓╪⌐</span>
+                    <span class="pill-brand backdrop-blur text-xs">╪º┘ä╪ú┘â╪½╪▒ ┘à╪¿┘è╪╣╪º┘ï</span>
                 </div>
 
                 <div class="absolute bottom-8 right-8 z-20 text-right">
@@ -383,10 +379,10 @@
                     <p class="text-ink-dim text-sm mb-3">{{ $bigProduct->brand->name }}</p>
                     @endif
                     <div class="flex items-center justify-end gap-4">
-                        <span class="text-2xl font-bold text-brand-500">{{ number_format($bigProduct->b2c_price, 0) }} ₪</span>
+                        <span class="text-2xl font-bold text-brand-500">{{ number_format($bigProduct->b2c_price, 0) }} Γé¬</span>
                         <button onclick="event.stopPropagation(); addToCart({{ $bigProduct->id }})"
                                 class="w-12 h-12 rounded-full bg-white style="color:#0f172a;" flex items-center justify-center hover:shadow-neon transition-all"
-                                aria-label="إضافة للسلة">
+                                aria-label="╪Ñ╪╢╪º┘ü╪⌐ ┘ä┘ä╪│┘ä╪⌐">
                             <i class="fa-solid fa-plus"></i>
                         </button>
                     </div>
@@ -409,7 +405,7 @@
                 @endif
 
                 <div class="absolute top-6 right-6 z-20">
-                    <span class="pill-accent backdrop-blur text-xs">وصل حديثاً</span>
+                    <span class="pill-accent backdrop-blur text-xs">┘ê╪╡┘ä ╪¡╪»┘è╪½╪º┘ï</span>
                 </div>
 
                 <div class="absolute bottom-8 right-8 z-20 text-right">
@@ -420,9 +416,9 @@
                     <div class="flex items-center justify-between">
                         <button onclick="event.stopPropagation(); addToCart({{ $secondProduct->id }})"
                                 class="text-xs font-bold uppercase tracking-wider border-b border-white/30 hover:text-brand-500 hover:border-brand-500 transition-colors pb-1 text-white/70">
-                            تفاصيل
+                            ╪¬┘ü╪º╪╡┘è┘ä
                         </button>
-                        <span class="font-bold text-white">{{ number_format($secondProduct->b2c_price, 0) }} ₪</span>
+                        <span class="font-bold text-white">{{ number_format($secondProduct->b2c_price, 0) }} Γé¬</span>
                     </div>
                 </div>
             </div>
@@ -436,14 +432,14 @@
                     <div class="w-14 h-14 rounded-2xl bg-accent-500/10 flex items-center justify-center mb-6 shadow-accent-neon mx-auto">
                         <i class="fa-solid fa-microchip text-2xl text-accent-500"></i>
                     </div>
-                    <h3 class="text-2xl font-black mb-4" style="color: var(--ink);">روتين عناية<br>مصمم خصيصاً لكِ.</h3>
+                    <h3 class="text-2xl font-black mb-4" style="color: var(--ink);">╪▒┘ê╪¬┘è┘å ╪╣┘å╪º┘è╪⌐<br>┘à╪╡┘à┘à ╪«╪╡┘è╪╡╪º┘ï ┘ä┘â┘É.</h3>
                     <p class="text-ink-dim text-sm leading-relaxed">
-                        نختار لكِ أفضل المنتجات المناسبة لنوع بشرتك واحتياجاتك. تصفحي مجموعتنا المميزة من منتجات العناية بالبشرة والشعر، وتمتعي بتجربة تسوق فريدة مع شحن سريع ودفع آمن.
+                        ┘å╪«╪¬╪º╪▒ ┘ä┘â┘É ╪ú┘ü╪╢┘ä ╪º┘ä┘à┘å╪¬╪¼╪º╪¬ ╪º┘ä┘à┘å╪º╪│╪¿╪⌐ ┘ä┘å┘ê╪╣ ╪¿╪┤╪▒╪¬┘â ┘ê╪º╪¡╪¬┘è╪º╪¼╪º╪¬┘â. ╪¬╪╡┘ü╪¡┘è ┘à╪¼┘à┘ê╪╣╪¬┘å╪º ╪º┘ä┘à┘à┘è╪▓╪⌐ ┘à┘å ┘à┘å╪¬╪¼╪º╪¬ ╪º┘ä╪╣┘å╪º┘è╪⌐ ╪¿╪º┘ä╪¿╪┤╪▒╪⌐ ┘ê╪º┘ä╪┤╪╣╪▒╪î ┘ê╪¬┘à╪¬╪╣┘è ╪¿╪¬╪¼╪▒╪¿╪⌐ ╪¬╪│┘ê┘é ┘ü╪▒┘è╪»╪⌐ ┘à╪╣ ╪┤╪¡┘å ╪│╪▒┘è╪╣ ┘ê╪»┘ü╪╣ ╪ó┘à┘å.
                     </p>
                 </div>
                 <div class="mt-8 text-center">
                     <a href="{{ route('shop') }}" class="text-accent-500 font-bold flex items-center justify-center gap-2 hover:gap-4 transition-all group/link">
-                        تصفحي المتجر <i class="fa-solid fa-arrow-left text-sm group-hover/link:-translate-x-1 transition-transform"></i>
+                        ╪¬╪╡┘ü╪¡┘è ╪º┘ä┘à╪¬╪¼╪▒ <i class="fa-solid fa-arrow-left text-sm group-hover/link:-translate-x-1 transition-transform"></i>
                     </a>
                 </div>
             </div>
@@ -468,7 +464,7 @@
                     @endif
                     <button onclick="event.stopPropagation(); addToCart({{ $thirdProduct->id }})"
                             class="px-6 py-2.5 bg-white style="color:#0f172a;" rounded-full font-bold transition-all text-sm hover:shadow-neon hover:scale-105 inline-flex items-center gap-2">
-                        <i class="fa-solid fa-plus text-xs"></i> إضافة للمختبر — {{ number_format($thirdProduct->b2c_price, 0) }} ₪
+                        <i class="fa-solid fa-plus text-xs"></i> ╪Ñ╪╢╪º┘ü╪⌐ ┘ä┘ä┘à╪«╪¬╪¿╪▒ ΓÇö {{ number_format($thirdProduct->b2c_price, 0) }} Γé¬
                     </button>
                 </div>
             </div>
@@ -478,94 +474,47 @@
         @else
         <div class="text-center py-20 text-ink-dim">
             <i class="fa-solid fa-flask text-5xl mb-6 opacity-20"></i>
-            <p class="text-lg">لم يتم إضافة منتجات بعد.</p>
+            <p class="text-lg">┘ä┘à ┘è╪¬┘à ╪Ñ╪╢╪º┘ü╪⌐ ┘à┘å╪¬╪¼╪º╪¬ ╪¿╪╣╪».</p>
         </div>
         @endif
     </div>
 </section>
 
-{{-- ═══════════════════════════════════════════════════════════════
-     MUSK COLLECTION BANNER
-     ═══════════════════════════════════════════════════════════════ --}}
-<section class="py-16 relative overflow-hidden" style="background: linear-gradient(135deg, #0D0D0D 0%, #1A0D0D 50%, #0D0D0D 100%);">
-    <div class="absolute inset-0 opacity-10" style="background-image: url(&quot;data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M15 0L17.8 12.2L30 15L17.8 17.8L15 30L12.2 17.8L0 15L12.2 12.2Z' fill='%23d4af37' fill-opacity='0.03'/%3E%3C/svg%3E&quot;);"></div>
-    <div class="max-w-7xl mx-auto px-4 relative z-10">
-        <div class="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
-            <div class="lg:w-1/2">
-                <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest mb-6 border" style="color:#D4AF37;border-color:rgba(212,175,55,0.3);background:rgba(212,175,55,0.08);">
-                    <i class="fa-solid fa-crown" style="color:#D4AF37;"></i> إصدار حصري
-                </span>
-                <h2 class="text-3xl md:text-5xl font-black mb-4 text-white">
-                    مجموعة <span style="background:linear-gradient(45deg,#D4AF37,#F3E5AB,#D4AF37);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">المسك والأرغان</span> الملكية
-                </h2>
-                <p class="text-gray-400 text-lg mb-6 leading-relaxed">روتين العناية الملكي بالشعر من نوڤا كوزمتكس — شامبو خالٍ من الكبريت، حمام زيت مرمم، سيروم مغذي، وسيروم الذهب الفاخر بجزيئات الذهب الدقيقة.</p>
-                <div class="flex flex-wrap gap-3 mb-8">
-                    <span class="text-xs font-bold px-3 py-1.5 rounded-full border" style="color:#D4AF37;border-color:rgba(212,175,55,0.3);background:rgba(212,175,55,0.08);"><i class="fa-solid fa-check ml-1"></i>خالٍ من الكبريت والملح</span>
-                    <span class="text-xs font-bold px-3 py-1.5 rounded-full border" style="color:#D4AF37;border-color:rgba(212,175,55,0.3);background:rgba(212,175,55,0.08);"><i class="fa-solid fa-check ml-1"></i>أرغان عضوي 100%</span>
-                    <span class="text-xs font-bold px-3 py-1.5 rounded-full border" style="color:#D4AF37;border-color:rgba(212,175,55,0.3);background:rgba(212,175,55,0.08);"><i class="fa-solid fa-check ml-1"></i>رائحة مسك ممتدة</span>
-                </div>
-                <a href="{{ route('musk-collection') }}"
-                   class="inline-flex items-center gap-3 px-8 py-4 rounded-full font-black text-sm tracking-wide transition-all hover:scale-[1.02] shadow-xl"
-                   style="background:linear-gradient(135deg,#D4AF37,#F3E5AB);color:#0D0D0D;">
-                    <i class="fa-solid fa-crown"></i> اكتشفي المجموعة الملكية
-                    <i class="fa-solid fa-arrow-left"></i>
-                </a>
-            </div>
-            <div class="lg:w-1/2 flex justify-center">
-                <div class="relative">
-                    <div class="w-64 h-64 md:w-80 md:h-80 rounded-full absolute -top-10 -right-10 opacity-20 blur-3xl" style="background:radial-gradient(circle,#D4AF37,transparent 70%);"></div>
-                    <div class="relative flex items-center justify-center">
-                        <div class="text-center">
-                            <div class="text-7xl md:text-9xl font-black tracking-widest" style="background:linear-gradient(45deg,#D4AF37,#F3E5AB,#D4AF37);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">NOVA</div>
-                            <div class="text-xs md:text-sm tracking-[0.5em] font-bold mt-2" style="color:#D4AF37;">COSMETICS</div>
-                            <div class="flex justify-center gap-1 mt-6">
-                                <i class="fa-solid fa-star text-lg" style="color:#D4AF37;animation:twinkle 1.5s ease-in-out infinite;"></i>
-                                <i class="fa-solid fa-star text-lg" style="color:#D4AF37;animation:twinkle 1.5s ease-in-out infinite;animation-delay:0.3s;"></i>
-                                <i class="fa-solid fa-star text-lg" style="color:#D4AF37;animation:twinkle 1.5s ease-in-out infinite;animation-delay:0.6s;"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-{{-- ═══════════════════════════════════════════════════════════════
-     SECTION: Trust Bar — Social Proof & Quick Stats
-     ═══════════════════════════════════════════════════════════════ --}}
+{{-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+     SECTION 3: Trust Bar ΓÇö Social Proof & Quick Stats
+     ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ --}}
 <section class="py-12 border-b border-ink/10">
     <div class="max-w-7xl mx-auto px-4">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <div class="glass-panel rounded-2xl p-6">
                 <span class="text-3xl md:text-4xl font-black gradient-text bg-[length:200%_auto] block mb-2">+{{ \App\Models\Product::count() }}</span>
-                <span class="text-sm text-ink-muted">منتج أصلي</span>
+                <span class="text-sm text-ink-muted">┘à┘å╪¬╪¼ ╪ú╪╡┘ä┘è</span>
             </div>
             <div class="glass-panel rounded-2xl p-6">
                 <span class="text-3xl md:text-4xl font-black text-ink block mb-2">15,000+</span>
-                <span class="text-sm text-ink-muted">عميلة سعيدة</span>
+                <span class="text-sm text-ink-muted">╪╣┘à┘è┘ä╪⌐ ╪│╪╣┘è╪»╪⌐</span>
             </div>
             <div class="glass-panel rounded-2xl p-6">
                 <span class="text-3xl md:text-4xl font-black text-ink block mb-2">4.9</span>
-                <span class="text-sm text-ink-muted">تقييم العملاء</span>
+                <span class="text-sm text-ink-muted">╪¬┘é┘è┘è┘à ╪º┘ä╪╣┘à┘ä╪º╪í</span>
             </div>
             <div class="glass-panel rounded-2xl p-6">
                 <span class="text-3xl md:text-4xl font-black text-ink block mb-2">24H</span>
-                <span class="text-sm text-ink-muted">توصيل سريع</span>
+                <span class="text-sm text-ink-muted">╪¬┘ê╪╡┘è┘ä ╪│╪▒┘è╪╣</span>
             </div>
         </div>
     </div>
 </section>
 
-{{-- ═══════════════════════════════════════════════════════════════
-     SECTION 3: Brand USP — Optimized for Facebook & Google Ads
-     ═══════════════════════════════════════════════════════════════ --}}
+{{-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+     SECTION 3: Brand USP ΓÇö Optimized for Facebook & Google Ads
+     ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ --}}
 <section class="py-16 relative overflow-hidden">
     <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_50%,rgba(var(--brand-500-rgb,255,42,133),0.04),transparent_60%)] pointer-events-none"></div>
     <div class="max-w-7xl mx-auto px-4 relative z-10">
         <div class="text-center mb-14">
-            <h2 class="text-3xl md:text-5xl font-black mb-4">أفضل وجهتك <span class="gradient-text bg-[length:200%_auto]">للعناية بالبشرة والشعر</span></h2>
-            <p class="text-ink-dim max-w-3xl mx-auto text-lg font-light leading-relaxed">متجر الكتروني متخصص في منتجات التجميل والعناية بالبشرة، نوفر لكِ ماركات عالمية أصلية بأسعار تنافسية، مع شحن سريع لجميع مدن فلسطين. اكتشفي عروضنا الحصرية وخدمة العملاء المميزة.</p>
+            <h2 class="text-3xl md:text-5xl font-black mb-4">╪ú┘ü╪╢┘ä ┘ê╪¼┘ç╪¬┘â <span class="gradient-text bg-[length:200%_auto]">┘ä┘ä╪╣┘å╪º┘è╪⌐ ╪¿╪º┘ä╪¿╪┤╪▒╪⌐ ┘ê╪º┘ä╪┤╪╣╪▒</span></h2>
+            <p class="text-ink-dim max-w-3xl mx-auto text-lg font-light leading-relaxed">┘à╪¬╪¼╪▒ ╪º┘ä┘â╪¬╪▒┘ê┘å┘è ┘à╪¬╪«╪╡╪╡ ┘ü┘è ┘à┘å╪¬╪¼╪º╪¬ ╪º┘ä╪¬╪¼┘à┘è┘ä ┘ê╪º┘ä╪╣┘å╪º┘è╪⌐ ╪¿╪º┘ä╪¿╪┤╪▒╪⌐╪î ┘å┘ê┘ü╪▒ ┘ä┘â┘É ┘à╪º╪▒┘â╪º╪¬ ╪╣╪º┘ä┘à┘è╪⌐ ╪ú╪╡┘ä┘è╪⌐ ╪¿╪ú╪│╪╣╪º╪▒ ╪¬┘å╪º┘ü╪│┘è╪⌐╪î ┘à╪╣ ╪┤╪¡┘å ╪│╪▒┘è╪╣ ┘ä╪¼┘à┘è╪╣ ┘à╪»┘å ┘ü┘ä╪│╪╖┘è┘å. ╪º┘â╪¬╪┤┘ü┘è ╪╣╪▒┘ê╪╢┘å╪º ╪º┘ä╪¡╪╡╪▒┘è╪⌐ ┘ê╪«╪»┘à╪⌐ ╪º┘ä╪╣┘à┘ä╪º╪í ╪º┘ä┘à┘à┘è╪▓╪⌐.</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -573,54 +522,54 @@
                 <div class="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center mb-5 mx-auto group-hover:bg-brand-500/20 transition-colors">
                     <i class="fa-solid fa-certificate text-xl text-brand-500"></i>
                 </div>
-                <h3 class="font-black text-lg mb-3 text-ink">منتجات أصلية مضمونة</h3>
-                <p class="text-ink-dim text-sm leading-relaxed">جميع منتجاتنا أصلية 100% ومستوردة من مصادر موثوقة ومعتمدة دولياً. نضمن لكِ الجودة والأصالة في كل طلب.</p>
+                <h3 class="font-black text-lg mb-3 text-ink">┘à┘å╪¬╪¼╪º╪¬ ╪ú╪╡┘ä┘è╪⌐ ┘à╪╢┘à┘ê┘å╪⌐</h3>
+                <p class="text-ink-dim text-sm leading-relaxed">╪¼┘à┘è╪╣ ┘à┘å╪¬╪¼╪º╪¬┘å╪º ╪ú╪╡┘ä┘è╪⌐ 100% ┘ê┘à╪│╪¬┘ê╪▒╪»╪⌐ ┘à┘å ┘à╪╡╪º╪»╪▒ ┘à┘ê╪½┘ê┘é╪⌐ ┘ê┘à╪╣╪¬┘à╪»╪⌐ ╪»┘ê┘ä┘è╪º┘ï. ┘å╪╢┘à┘å ┘ä┘â┘É ╪º┘ä╪¼┘ê╪»╪⌐ ┘ê╪º┘ä╪ú╪╡╪º┘ä╪⌐ ┘ü┘è ┘â┘ä ╪╖┘ä╪¿.</p>
             </div>
             <div class="glass-panel rounded-2xl p-7 text-center hover:-translate-y-2 transition-all duration-500 group">
                 <div class="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center mb-5 mx-auto group-hover:bg-brand-500/20 transition-colors">
                     <i class="fa-solid fa-truck-fast text-xl text-brand-500"></i>
                 </div>
-                <h3 class="font-black text-lg mb-3 text-ink">توصيل لكل فلسطين</h3>
-                <p class="text-ink-dim text-sm leading-relaxed">نوصل طلبك لباب بيتك في الضفة الغربية، القدس، والداخل المحتل. شحن سريع وتتبع مباشر لشحنتك حتى الاستلام.</p>
+                <h3 class="font-black text-lg mb-3 text-ink">╪¬┘ê╪╡┘è┘ä ┘ä┘â┘ä ┘ü┘ä╪│╪╖┘è┘å</h3>
+                <p class="text-ink-dim text-sm leading-relaxed">┘å┘ê╪╡┘ä ╪╖┘ä╪¿┘â ┘ä╪¿╪º╪¿ ╪¿┘è╪¬┘â ┘ü┘è ╪º┘ä╪╢┘ü╪⌐ ╪º┘ä╪║╪▒╪¿┘è╪⌐╪î ╪º┘ä┘é╪»╪│╪î ┘ê╪º┘ä╪»╪º╪«┘ä ╪º┘ä┘à╪¡╪¬┘ä. ╪┤╪¡┘å ╪│╪▒┘è╪╣ ┘ê╪¬╪¬╪¿╪╣ ┘à╪¿╪º╪┤╪▒ ┘ä╪┤╪¡┘å╪¬┘â ╪¡╪¬┘ë ╪º┘ä╪º╪│╪¬┘ä╪º┘à.</p>
             </div>
             <div class="glass-panel rounded-2xl p-7 text-center hover:-translate-y-2 transition-all duration-500 group">
                 <div class="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center mb-5 mx-auto group-hover:bg-brand-500/20 transition-colors">
                     <i class="fa-solid fa-tags text-xl text-brand-500"></i>
                 </div>
-                <h3 class="font-black text-lg mb-3 text-ink">أفضل الأسعار والعروض</h3>
-                <p class="text-ink-dim text-sm leading-relaxed">أسعار تنافسية مع عروض حصرية وخصومات يومية. الدفع عند الاستلام متاح لراحتك وأمانك التام.</p>
+                <h3 class="font-black text-lg mb-3 text-ink">╪ú┘ü╪╢┘ä ╪º┘ä╪ú╪│╪╣╪º╪▒ ┘ê╪º┘ä╪╣╪▒┘ê╪╢</h3>
+                <p class="text-ink-dim text-sm leading-relaxed">╪ú╪│╪╣╪º╪▒ ╪¬┘å╪º┘ü╪│┘è╪⌐ ┘à╪╣ ╪╣╪▒┘ê╪╢ ╪¡╪╡╪▒┘è╪⌐ ┘ê╪«╪╡┘ê┘à╪º╪¬ ┘è┘ê┘à┘è╪⌐. ╪º┘ä╪»┘ü╪╣ ╪╣┘å╪» ╪º┘ä╪º╪│╪¬┘ä╪º┘à ┘à╪¬╪º╪¡ ┘ä╪▒╪º╪¡╪¬┘â ┘ê╪ú┘à╪º┘å┘â ╪º┘ä╪¬╪º┘à.</p>
             </div>
             <div class="glass-panel rounded-2xl p-7 text-center hover:-translate-y-2 transition-all duration-500 group">
                 <div class="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center mb-5 mx-auto group-hover:bg-brand-500/20 transition-colors">
                     <i class="fa-solid fa-headset text-xl text-brand-500"></i>
                 </div>
-                <h3 class="font-black text-lg mb-3 text-ink">دعم احترافي متواصل</h3>
-                <p class="text-ink-dim text-sm leading-relaxed">فريق خدمة عملاء محترف جاهز لمساعدتك يومياً من 9 صباحاً حتى 10 مساءً عبر الواتساب. استفسري وسنرد فوراً.</p>
+                <h3 class="font-black text-lg mb-3 text-ink">╪»╪╣┘à ╪º╪¡╪¬╪▒╪º┘ü┘è ┘à╪¬┘ê╪º╪╡┘ä</h3>
+                <p class="text-ink-dim text-sm leading-relaxed">┘ü╪▒┘è┘é ╪«╪»┘à╪⌐ ╪╣┘à┘ä╪º╪í ┘à╪¡╪¬╪▒┘ü ╪¼╪º┘ç╪▓ ┘ä┘à╪│╪º╪╣╪»╪¬┘â ┘è┘ê┘à┘è╪º┘ï ┘à┘å 9 ╪╡╪¿╪º╪¡╪º┘ï ╪¡╪¬┘ë 10 ┘à╪│╪º╪í┘ï ╪╣╪¿╪▒ ╪º┘ä┘ê╪º╪¬╪│╪º╪¿. ╪º╪│╪¬┘ü╪│╪▒┘è ┘ê╪│┘å╪▒╪» ┘ü┘ê╪▒╪º┘ï.</p>
             </div>
         </div>
     </div>
 </section>
 
-{{-- ═══════════════════════════════════════════════════════════════
-      SECTION 4: Why شركة جنين للتجميل? — Premium Value Cards
-      ═══════════════════════════════════════════════════════════════ --}}
+{{-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+      SECTION 4: Why ╪┤╪▒┘â╪⌐ ╪¼┘å┘è┘å ┘ä┘ä╪¬╪¼┘à┘è┘ä? ΓÇö Premium Value Cards
+      ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ --}}
 <section class="py-24 relative overflow-hidden">
     <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_50%,rgba(var(--brand-500-rgb,255,42,133),0.03),transparent_70%)] pointer-events-none"></div>
     <div class="max-w-7xl mx-auto px-4 relative z-10">
         <div class="mb-16 text-center">
             <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-500/20 bg-brand-500/5 mb-6">
                 <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
-                <span class="text-xs text-brand-500 font-bold tracking-widest uppercase">لماذا تختارينا</span>
+                <span class="text-xs text-brand-500 font-bold tracking-widest uppercase">┘ä┘à╪º╪░╪º ╪¬╪«╪¬╪º╪▒┘è┘å╪º</span>
             </div>
-            <h2 class="text-3xl md:text-5xl font-black mb-4">لماذا <span class="gradient-text bg-[length:200%_auto]">شركة جنين للتجميل</span><span class="text-brand-500">.</span></h2>
-            <p class="text-ink-dim max-w-2xl mx-auto text-lg font-light">متجر العناية بالبشرة الأول في فلسطين. نوفر لكِ تجربة تسوق آمنة وموثوقة مع منتجات أصلية وخدمة عملاء استثنائية.</p>
+            <h2 class="text-3xl md:text-5xl font-black mb-4">┘ä┘à╪º╪░╪º <span class="gradient-text bg-[length:200%_auto]">╪┤╪▒┘â╪⌐ ╪¼┘å┘è┘å ┘ä┘ä╪¬╪¼┘à┘è┘ä</span><span class="text-brand-500">.</span></h2>
+            <p class="text-ink-dim max-w-2xl mx-auto text-lg font-light">┘à╪¬╪¼╪▒ ╪º┘ä╪╣┘å╪º┘è╪⌐ ╪¿╪º┘ä╪¿╪┤╪▒╪⌐ ╪º┘ä╪ú┘ê┘ä ┘ü┘è ┘ü┘ä╪│╪╖┘è┘å. ┘å┘ê┘ü╪▒ ┘ä┘â┘É ╪¬╪¼╪▒╪¿╪⌐ ╪¬╪│┘ê┘é ╪ó┘à┘å╪⌐ ┘ê┘à┘ê╪½┘ê┘é╪⌐ ┘à╪╣ ┘à┘å╪¬╪¼╪º╪¬ ╪ú╪╡┘ä┘è╪⌐ ┘ê╪«╪»┘à╪⌐ ╪╣┘à┘ä╪º╪í ╪º╪│╪¬╪½┘å╪º╪ª┘è╪⌐.</p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
             @php
                 $valueCards = [
-                    ['num' => '01', 'icon' => 'fa-solid fa-shield-check', 'title' => 'منتجات أصلية 100%', 'desc' => 'نضمن لكِ أصالة كل منتج من مصادر موثوقة ومعتمدة دولياً. لا تقلقي بشأن جودة المنتجات - نحن نتعامل فقط مع الماركات العالمية الأصلية.'],
-                    ['num' => '02', 'icon' => 'fa-solid fa-truck-fast', 'title' => 'شحن سريع لكل فلسطين', 'desc' => 'توصيل لجميع المناطق من جنين إلى رام الله والخليل وغزة، مع تتبع مباشر لشحنتك حتى باب منزلك. اطلبي اليوم واستلمي خلال 24-48 ساعة.'],
-                    ['num' => '03', 'icon' => 'fa-solid fa-headset', 'title' => 'دعم يومي احترافي', 'desc' => 'فريق متخصص جاهز لمساعدتك من 9 صباحاً حتى 10 مساءً عبر الواتساب. استشارات مجانية لاختيار المنتج المناسب لنوع بشرتك.'],
+                    ['num' => '01', 'icon' => 'fa-solid fa-shield-check', 'title' => '┘à┘å╪¬╪¼╪º╪¬ ╪ú╪╡┘ä┘è╪⌐ 100%', 'desc' => '┘å╪╢┘à┘å ┘ä┘â┘É ╪ú╪╡╪º┘ä╪⌐ ┘â┘ä ┘à┘å╪¬╪¼ ┘à┘å ┘à╪╡╪º╪»╪▒ ┘à┘ê╪½┘ê┘é╪⌐ ┘ê┘à╪╣╪¬┘à╪»╪⌐ ╪»┘ê┘ä┘è╪º┘ï. ┘ä╪º ╪¬┘é┘ä┘é┘è ╪¿╪┤╪ú┘å ╪¼┘ê╪»╪⌐ ╪º┘ä┘à┘å╪¬╪¼╪º╪¬ - ┘å╪¡┘å ┘å╪¬╪╣╪º┘à┘ä ┘ü┘é╪╖ ┘à╪╣ ╪º┘ä┘à╪º╪▒┘â╪º╪¬ ╪º┘ä╪╣╪º┘ä┘à┘è╪⌐ ╪º┘ä╪ú╪╡┘ä┘è╪⌐.'],
+                    ['num' => '02', 'icon' => 'fa-solid fa-truck-fast', 'title' => '╪┤╪¡┘å ╪│╪▒┘è╪╣ ┘ä┘â┘ä ┘ü┘ä╪│╪╖┘è┘å', 'desc' => '╪¬┘ê╪╡┘è┘ä ┘ä╪¼┘à┘è╪╣ ╪º┘ä┘à┘å╪º╪╖┘é ┘à┘å ╪¼┘å┘è┘å ╪Ñ┘ä┘ë ╪▒╪º┘à ╪º┘ä┘ä┘ç ┘ê╪º┘ä╪«┘ä┘è┘ä ┘ê╪║╪▓╪⌐╪î ┘à╪╣ ╪¬╪¬╪¿╪╣ ┘à╪¿╪º╪┤╪▒ ┘ä╪┤╪¡┘å╪¬┘â ╪¡╪¬┘ë ╪¿╪º╪¿ ┘à┘å╪▓┘ä┘â. ╪º╪╖┘ä╪¿┘è ╪º┘ä┘è┘ê┘à ┘ê╪º╪│╪¬┘ä┘à┘è ╪«┘ä╪º┘ä 24-48 ╪│╪º╪╣╪⌐.'],
+                    ['num' => '03', 'icon' => 'fa-solid fa-headset', 'title' => '╪»╪╣┘à ┘è┘ê┘à┘è ╪º╪¡╪¬╪▒╪º┘ü┘è', 'desc' => '┘ü╪▒┘è┘é ┘à╪¬╪«╪╡╪╡ ╪¼╪º┘ç╪▓ ┘ä┘à╪│╪º╪╣╪»╪¬┘â ┘à┘å 9 ╪╡╪¿╪º╪¡╪º┘ï ╪¡╪¬┘ë 10 ┘à╪│╪º╪í┘ï ╪╣╪¿╪▒ ╪º┘ä┘ê╪º╪¬╪│╪º╪¿. ╪º╪│╪¬╪┤╪º╪▒╪º╪¬ ┘à╪¼╪º┘å┘è╪⌐ ┘ä╪º╪«╪¬┘è╪º╪▒ ╪º┘ä┘à┘å╪¬╪¼ ╪º┘ä┘à┘å╪º╪│╪¿ ┘ä┘å┘ê╪╣ ╪¿╪┤╪▒╪¬┘â.'],
                 ];
             @endphp
             @foreach($valueCards as $card)
@@ -648,46 +597,46 @@
 
 </div>
 
-{{-- ═══════════════════════════════════════════════════════════════
+{{-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
      SECTION 4: Tech Marquee Ticker
-     ═══════════════════════════════════════════════════════════════ --}}
+     ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ --}}
 <div class="py-10 border-y border-white/5 overflow-hidden flex whitespace-nowrap opacity-40 hover:opacity-70 transition-opacity">
     <div class="animate-marquee-rtl flex items-center gap-16 font-mono text-xs tracking-[0.2em] uppercase text-white/50">
-        <span><i class="fa-solid fa-asterisk text-brand-500 text-[8px] mr-2"></i> منتجات أصلية 100%</span>
+        <span><i class="fa-solid fa-asterisk text-brand-500 text-[8px] mr-2"></i> ┘à┘å╪¬╪¼╪º╪¬ ╪ú╪╡┘ä┘è╪⌐ 100%</span>
         <i class="fa-solid fa-circle text-[4px] text-brand-500"></i>
-        <span>شحن سريع لكل فلسطين</span>
+        <span>╪┤╪¡┘å ╪│╪▒┘è╪╣ ┘ä┘â┘ä ┘ü┘ä╪│╪╖┘è┘å</span>
         <i class="fa-solid fa-circle text-[4px] text-accent-500"></i>
-        <span>أفضل ماركات التجميل العالمية</span>
+        <span>╪ú┘ü╪╢┘ä ┘à╪º╪▒┘â╪º╪¬ ╪º┘ä╪¬╪¼┘à┘è┘ä ╪º┘ä╪╣╪º┘ä┘à┘è╪⌐</span>
         <i class="fa-solid fa-circle text-[4px] text-brand-500"></i>
-        <span>الدفع عند الاستلام</span>
+        <span>╪º┘ä╪»┘ü╪╣ ╪╣┘å╪» ╪º┘ä╪º╪│╪¬┘ä╪º┘à</span>
         <i class="fa-solid fa-circle text-[4px] text-accent-500"></i>
-        <span>دعم احترافي يومي</span>
+        <span>╪»╪╣┘à ╪º╪¡╪¬╪▒╪º┘ü┘è ┘è┘ê┘à┘è</span>
         <i class="fa-solid fa-circle text-[4px] text-brand-500"></i>
-        <span>عروض وخصومات حصرية</span>
+        <span>╪╣╪▒┘ê╪╢ ┘ê╪«╪╡┘ê┘à╪º╪¬ ╪¡╪╡╪▒┘è╪⌐</span>
         <i class="fa-solid fa-circle text-[4px] text-accent-500"></i>
-        <span>توصيل لجميع المناطق</span>
+        <span>╪¬┘ê╪╡┘è┘ä ┘ä╪¼┘à┘è╪╣ ╪º┘ä┘à┘å╪º╪╖┘é</span>
         <i class="fa-solid fa-circle text-[4px] text-brand-500"></i>
-        <span>منتجات أصلية 100%</span>
+        <span>┘à┘å╪¬╪¼╪º╪¬ ╪ú╪╡┘ä┘è╪⌐ 100%</span>
         <i class="fa-solid fa-circle text-[4px] text-accent-500"></i>
-        <span>شحن سريع لكل فلسطين</span>
+        <span>╪┤╪¡┘å ╪│╪▒┘è╪╣ ┘ä┘â┘ä ┘ü┘ä╪│╪╖┘è┘å</span>
         <i class="fa-solid fa-circle text-[4px] text-brand-500"></i>
-        <span>أفضل ماركات التجميل العالمية</span>
+        <span>╪ú┘ü╪╢┘ä ┘à╪º╪▒┘â╪º╪¬ ╪º┘ä╪¬╪¼┘à┘è┘ä ╪º┘ä╪╣╪º┘ä┘à┘è╪⌐</span>
     </div>
 </div>
 
-{{-- ═══════════════════════════════════════════════════════════════
-     SECTION 5: More Products — Horizontal Scroll
-     ═══════════════════════════════════════════════════════════════ --}}
+{{-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+     SECTION 5: More Products ΓÇö Horizontal Scroll
+     ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ --}}
 @if($newProducts->isNotEmpty() || $featuredProducts->isNotEmpty())
 <section class="py-20">
     <div class="max-w-7xl mx-auto px-4">
         <div class="mb-12 flex items-end justify-between">
             <div class="text-right">
-                <h2 class="text-3xl md:text-4xl font-black mb-2">وصل حديثاً</h2>
-                <p class="text-ink-dim text-sm">أحدث المنتجات الأصلية في مختبر الجمال - شحن سريع وتوصيل لكل فلسطين</p>
+                <h2 class="text-3xl md:text-4xl font-black mb-2">┘ê╪╡┘ä ╪¡╪»┘è╪½╪º┘ï</h2>
+                <p class="text-ink-dim text-sm">╪ú╪¡╪»╪½ ╪º┘ä┘à┘å╪¬╪¼╪º╪¬ ╪º┘ä╪ú╪╡┘ä┘è╪⌐ ┘ü┘è ┘à╪«╪¬╪¿╪▒ ╪º┘ä╪¼┘à╪º┘ä - ╪┤╪¡┘å ╪│╪▒┘è╪╣ ┘ê╪¬┘ê╪╡┘è┘ä ┘ä┘â┘ä ┘ü┘ä╪│╪╖┘è┘å</p>
             </div>
             <a href="{{ route('shop') }}?sort=newest" class="text-brand-500 font-bold text-sm hover:gap-3 flex items-center gap-1 transition-all">
-                عرض الكل <i class="fa-solid fa-arrow-left text-xs"></i>
+                ╪╣╪▒╪╢ ╪º┘ä┘â┘ä <i class="fa-solid fa-arrow-left text-xs"></i>
             </a>
         </div>
 
@@ -708,11 +657,11 @@
                     @endif
                     <div class="absolute inset-0 bg-gradient-to-t from-surface/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                     <div class="absolute top-3 right-3">
-                        <span class="pill-brand text-[10px] px-2 py-0.5">جديد</span>
+                        <span class="pill-brand text-[10px] px-2 py-0.5">╪¼╪»┘è╪»</span>
                     </div>
                     <div class="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
                         <span class="bg-white style="color:#0f172a;" text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
-                            <i class="fa-solid fa-bag-shopping text-[9px]"></i> اكتشفي المزيد
+                            <i class="fa-solid fa-bag-shopping text-[9px]"></i> ╪º┘â╪¬╪┤┘ü┘è ╪º┘ä┘à╪▓┘è╪»
                         </span>
                     </div>
                 </div>
@@ -721,7 +670,7 @@
                     @if($product->brand)
                     <p class="text-ink-dim text-xs mb-3">{{ $product->brand->name }}</p>
                     @endif
-                    <span class="text-brand-500 font-black text-lg">{{ number_format($product->b2c_price, 0) }} ₪</span>
+                    <span class="text-brand-500 font-black text-lg">{{ number_format($product->b2c_price, 0) }} Γé¬</span>
                 </div>
             </a>
             @endforeach
@@ -730,40 +679,33 @@
 </section>
 @endif
 
-{{-- ═══════════════════════════════════════════════════════════════
+{{-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
      SECTION 6: Protocols / CTA Banner
-     ═══════════════════════════════════════════════════════════════ --}}
+     ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ --}}
 <section class="py-24 relative overflow-hidden">
     <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(var(--brand-500-rgb,255,42,133),0.06),transparent_70%)]"></div>
     <div class="max-w-5xl mx-auto px-4 text-center relative z-10">
         <div class="glass-panel rounded-[3rem] p-12 md:p-16 border border-white/5">
             <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-500/20 bg-brand-500/5 mb-8">
                 <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
-                <span class="text-xs text-brand-500 font-bold tracking-widest uppercase">ابدئي رحلتك الآن</span>
+                <span class="text-xs text-brand-500 font-bold tracking-widest uppercase">╪º╪¿╪»╪ª┘è ╪▒╪¡┘ä╪¬┘â ╪º┘ä╪ó┘å</span>
             </div>
             <h2 class="text-3xl md:text-5xl font-black mb-6">
-                مستعدة لاكتشاف<br>
-                <span class="gradient-text bg-[length:200%_auto]">روتينك المثالي؟</span>
+                ┘à╪│╪¬╪╣╪»╪⌐ ┘ä╪º┘â╪¬╪┤╪º┘ü<br>
+                <span class="gradient-text bg-[length:200%_auto]">╪▒┘ê╪¬┘è┘å┘â ╪º┘ä┘à╪½╪º┘ä┘è╪ƒ</span>
             </h2>
             <p class="text-ink-dim text-lg mb-10 max-w-2xl mx-auto font-light">
-                انضمي إلى آلاف العميلات السعيدات وابدئي رحلة العناية ببشرتك مع أفضل المنتجات الأصلية. شحن سريع، دفع آمن، ودعم احترافي على مدار الأسبوع.
+                ╪º┘å╪╢┘à┘è ╪Ñ┘ä┘ë ╪ó┘ä╪º┘ü ╪º┘ä╪╣┘à┘è┘ä╪º╪¬ ╪º┘ä╪│╪╣┘è╪»╪º╪¬ ┘ê╪º╪¿╪»╪ª┘è ╪▒╪¡┘ä╪⌐ ╪º┘ä╪╣┘å╪º┘è╪⌐ ╪¿╪¿╪┤╪▒╪¬┘â ┘à╪╣ ╪ú┘ü╪╢┘ä ╪º┘ä┘à┘å╪¬╪¼╪º╪¬ ╪º┘ä╪ú╪╡┘ä┘è╪⌐. ╪┤╪¡┘å ╪│╪▒┘è╪╣╪î ╪»┘ü╪╣ ╪ó┘à┘å╪î ┘ê╪»╪╣┘à ╪º╪¡╪¬╪▒╪º┘ü┘è ╪╣┘ä┘ë ┘à╪»╪º╪▒ ╪º┘ä╪ú╪│╪¿┘ê╪╣.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <a href="{{ route('shop') }}"
                    class="px-10 py-4 rounded-full font-black text-sm tracking-wide inline-flex items-center justify-center gap-2 shadow-neon hover:shadow-neon-strong transition-all"
                    style="background: var(--gradient-primary); color: white;">
-                    تصفحي المنتجات <i class="fa-solid fa-arrow-left"></i>
-                </a>
-                <a href="{{ route('musk-collection') }}"
-                   class="px-10 py-4 rounded-full font-black text-sm tracking-wide inline-flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all relative overflow-hidden group"
-                   style="background: linear-gradient(135deg, #D4AF37, #F3E5AB, #D4AF37); color: #0D0D0D;">
-                    <i class="fa-solid fa-crown"></i> مجموعة المسك الملكية
-                    <span class="absolute top-0 right-0 -mt-1 -mr-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></span>
-                    <span class="absolute top-0 right-0 -mt-1 -mr-1 w-3 h-3 bg-red-500 rounded-full"></span>
+                    ╪¬╪╡┘ü╪¡┘è ╪º┘ä┘à┘å╪¬╪¼╪º╪¬ <i class="fa-solid fa-arrow-left"></i>
                 </a>
                 <a href="{{ route('b2b') }}"
                    class="px-10 py-4 rounded-full font-bold text-sm border border-white/15 text-white hover:bg-white/5 transition-all inline-flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-crown text-accent-500"></i> حلول الجملة والصالونات
+                    <i class="fa-solid fa-crown text-accent-500"></i> ╪¡┘ä┘ê┘ä ╪º┘ä╪¼┘à┘ä╪⌐ ┘ê╪º┘ä╪╡╪º┘ä┘ê┘å╪º╪¬
                 </a>
             </div>
         </div>

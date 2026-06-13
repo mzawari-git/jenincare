@@ -18,6 +18,7 @@
                 <a href="{{ route('b2b') }}" class="nav-link">الأعمال</a>
                 <a href="{{ route('affiliate.landing') }}" class="nav-link">تسويق</a>
                 <a href="{{ route('blog.index') }}" class="nav-link">مدونة</a>
+                <a href="{{ route('musk-collection') }}" class="nav-link"><span style="color:#D4AF37;">مجموعة المسك</span></a>
                 <a href="{{ route('contact') }}" class="nav-link">تواصل</a>
             </nav>
         </div>
@@ -101,6 +102,11 @@
                 <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-article text-base" style="color:var(--ink-dim);"></i></span>
                 <span>المدونة</span>
                 @if(request()->routeIs('blog.*'))<i class="ph ph-caret-left ms-auto" style="color:var(--brand-500);"></i>@endif
+            </a>
+            <a href="{{ route('musk-collection') }}" class="mobile-link {{ request()->routeIs('musk-collection')?'active':'' }}">
+                <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-flask text-base" style="color:#D4AF37;"></i></span>
+                <span style="color:#D4AF37;">مجموعة المسك</span>
+                @if(request()->routeIs('musk-collection'))<i class="ph ph-caret-left ms-auto" style="color:var(--brand-500);"></i>@endif
             </a>
             <a href="{{ route('contact') }}" class="mobile-link {{ request()->routeIs('contact')?'active':'' }}">
                 <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-envelope text-base" style="color:var(--ink-dim);"></i></span>
