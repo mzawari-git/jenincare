@@ -70,6 +70,7 @@
                 <span class="text-[10px] font-sans tracking-[0.25em] text-gray-400 mt-1">COSMETICS</span>
             </div>
             <div class="flex items-center gap-6 text-sm font-semibold">
+                <a href="/" class="hover:text-nova-gold transition-colors hidden lg:block">الرئيسية</a>
                 <a href="#overview" class="hover:text-nova-gold transition-colors hidden lg:block">نظرة عامة</a>
                 <a href="#features" class="hover:text-nova-gold transition-colors hidden lg:block">سر الفعالية</a>
                 <a href="#products" class="hover:text-nova-gold transition-colors">مكونات المجموعة</a>
@@ -167,7 +168,7 @@
                 <div class="flex flex-col lg:flex-row items-center gap-16 bg-white p-8 lg:p-12 rounded-3xl shadow-md border border-gray-100 relative group">
                     <div class="lg:w-2/5 flex justify-center">
                         <div class="relative w-80 h-96 rounded-2xl overflow-hidden shadow-lg border border-gray-100 flex items-center justify-center bg-white p-6 group-hover:scale-[1.02] transition-transform duration-500">
-                            <img src="شامبو مسك.webp" alt="شامبو مسك" class="max-h-full object-contain" onerror="this.src='https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?auto=format&fit=crop&q=80&w=600'">
+                            <img src="/uploads/musk-collection/shampoo-musk.webp" alt="شامبو مسك" class="max-h-full object-contain" onerror="this.src='https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?auto=format&fit=crop&q=80&w=600'">
                             <span class="absolute top-4 right-4 bg-nova-dark text-nova-gold text-xs font-extrabold px-4 py-1.5 rounded-full shadow-md">الخطوة 1: التنظيف الفاخر</span>
                         </div>
                     </div>
@@ -196,7 +197,7 @@
                 <div class="flex flex-col lg:flex-row-reverse items-center gap-16 bg-white p-8 lg:p-12 rounded-3xl shadow-md border border-gray-100 relative group">
                     <div class="lg:w-2/5 flex justify-center">
                         <div class="relative w-80 h-96 rounded-2xl overflow-hidden shadow-lg border border-gray-100 flex items-center justify-center bg-white p-6 group-hover:scale-[1.02] transition-transform duration-500">
-                            <img src="حمام زيت مسك.webp" alt="حمام زيت مسك" class="max-h-full object-contain" onerror="this.src='https://images.unsplash.com/photo-1526947425960-945c6e72858f?auto=format&fit=crop&q=80&w=600'">
+                            <img src="/uploads/musk-collection/hair-mask-musk.webp" alt="حمام زيت مسك" class="max-h-full object-contain" onerror="this.src='https://images.unsplash.com/photo-1526947425960-945c6e72858f?auto=format&fit=crop&q=80&w=600'">
                             <span class="absolute top-4 right-4 bg-nova-dark text-nova-gold text-xs font-extrabold px-4 py-1.5 rounded-full shadow-md">الخطوة 2: الترميم والترطيب</span>
                         </div>
                     </div>
@@ -225,7 +226,7 @@
                 <div class="flex flex-col lg:flex-row items-center gap-16 bg-white p-8 lg:p-12 rounded-3xl shadow-md border border-gray-100 relative group">
                     <div class="lg:w-2/5 flex justify-center">
                         <div class="relative w-80 h-96 rounded-2xl overflow-hidden shadow-lg border border-gray-100 flex items-center justify-center bg-white p-6 group-hover:scale-[1.02] transition-transform duration-500">
-                            <img src="سيروم.webp" alt="سيروم مسك" class="max-h-full object-contain" onerror="this.src='https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?auto=format&fit=crop&q=80&w=600'">
+                            <img src="/uploads/musk-collection/serum-musk.webp" alt="سيروم مسك" class="max-h-full object-contain" onerror="this.src='https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?auto=format&fit=crop&q=80&w=600'">
                             <span class="absolute top-4 right-4 bg-nova-dark text-nova-gold text-xs font-extrabold px-4 py-1.5 rounded-full shadow-md">الخطوة 3: التغذية والنمو</span>
                         </div>
                     </div>
@@ -255,7 +256,7 @@
                     <div class="absolute top-0 right-0 w-36 h-36 bg-nova-gold/5 rounded-bl-full pointer-events-none"></div>
                     <div class="lg:w-2/5 flex justify-center">
                         <div class="relative w-80 h-96 rounded-2xl overflow-hidden shadow-lg border border-gray-100 flex items-center justify-center bg-white p-6 group-hover:scale-[1.02] transition-transform duration-500 shadow-nova-gold/10">
-                            <img src="سيروم الذهب.webp" alt="سيروم الذهب" class="max-h-full object-contain" onerror="this.src='https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=600'">
+                            <img src="/uploads/musk-collection/gold-serum.webp" alt="سيروم الذهب" class="max-h-full object-contain" onerror="this.src='https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=600'">
                             <span class="absolute top-4 right-4 bg-gradient-to-r from-nova-gold to-yellow-500 text-nova-dark text-xs font-black px-4 py-1.5 rounded-full shadow-md">اللمسة الملكية الفاخرة</span>
                         </div>
                     </div>
@@ -303,7 +304,7 @@
                     <!-- Item 1: Shampoo -->
                     <label class="flex items-center gap-4 p-4 bg-nova-gray/50 rounded-2xl border-2 border-transparent hover:border-nova-gold/40 cursor-pointer transition-all duration-300 shadow-sm block relative">
                         <input type="checkbox" id="check-shampoo" checked class="w-6 h-6 text-nova-gold border-gray-300 rounded focus:ring-nova-gold" onchange="calculateTotal()">
-                        <img src="شامبو مسك.webp" alt="شامبو مسك" class="w-16 h-16 object-contain bg-white rounded-lg p-1 border border-gray-100" onerror="this.src='https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?auto=format&fit=crop&q=80&w=200'">
+                        <img src="/uploads/musk-collection/shampoo-musk.webp" alt="شامبو مسك" class="w-16 h-16 object-contain bg-white rounded-lg p-1 border border-gray-100" onerror="this.src='https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?auto=format&fit=crop&q=80&w=200'">
                         <div class="flex-grow">
                             <h4 class="font-bold text-nova-dark text-base">شامبو مسك الطبيعي (1000 مل)</h4>
                             <p class="text-xs text-gray-500">حجم عملاق خالٍ من الأملاح</p>
@@ -316,7 +317,7 @@
                     <!-- Item 2: Hair Mask -->
                     <label class="flex items-center gap-4 p-4 bg-nova-gray/50 rounded-2xl border-2 border-transparent hover:border-nova-gold/40 cursor-pointer transition-all duration-300 shadow-sm block relative">
                         <input type="checkbox" id="check-mask" checked class="w-6 h-6 text-nova-gold border-gray-300 rounded focus:ring-nova-gold" onchange="calculateTotal()">
-                        <img src="حمام زيت مسك.webp" alt="حمام زيت مسك" class="w-16 h-16 object-contain bg-white rounded-lg p-1 border border-gray-100" onerror="this.src='https://images.unsplash.com/photo-1526947425960-945c6e72858f?auto=format&fit=crop&q=80&w=200'">
+                        <img src="/uploads/musk-collection/hair-mask-musk.webp" alt="حمام زيت مسك" class="w-16 h-16 object-contain bg-white rounded-lg p-1 border border-gray-100" onerror="this.src='https://images.unsplash.com/photo-1526947425960-945c6e72858f?auto=format&fit=crop&q=80&w=200'">
                         <div class="flex-grow">
                             <h4 class="font-bold text-nova-dark text-base">حمام زيت مسك وترميم (500 مل)</h4>
                             <p class="text-xs text-gray-500">مغذي ومعالج بالأرغان العضوي</p>
@@ -329,7 +330,7 @@
                     <!-- Item 3: Serum -->
                     <label class="flex items-center gap-4 p-4 bg-nova-gray/50 rounded-2xl border-2 border-transparent hover:border-nova-gold/40 cursor-pointer transition-all duration-300 shadow-sm block relative">
                         <input type="checkbox" id="check-serum" checked class="w-6 h-6 text-nova-gold border-gray-300 rounded focus:ring-nova-gold" onchange="calculateTotal()">
-                        <img src="سيروم.webp" alt="سيروم مسك" class="w-16 h-16 object-contain bg-white rounded-lg p-1 border border-gray-100" onerror="this.src='https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?auto=format&fit=crop&q=80&w=200'">
+                        <img src="/uploads/musk-collection/serum-musk.webp" alt="سيروم مسك" class="w-16 h-16 object-contain bg-white rounded-lg p-1 border border-gray-100" onerror="this.src='https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?auto=format&fit=crop&q=80&w=200'">
                         <div class="flex-grow">
                             <h4 class="font-bold text-nova-dark text-base">سيروم العناية بالمسك (150 مل)</h4>
                             <p class="text-xs text-gray-500">حماية يومية فائقة ومنع للتطاير</p>
@@ -342,7 +343,7 @@
                     <!-- Item 4: Gold Serum -->
                     <label class="flex items-center gap-4 p-4 bg-nova-gray/50 rounded-2xl border-2 border-transparent hover:border-nova-gold/40 cursor-pointer transition-all duration-300 shadow-sm block relative">
                         <input type="checkbox" id="check-gold" checked class="w-6 h-6 text-nova-gold border-gray-300 rounded focus:ring-nova-gold" onchange="calculateTotal()">
-                        <img src="سيروم الذهب.webp" alt="سيروم الذهب" class="w-16 h-16 object-contain bg-white rounded-lg p-1 border border-gray-100" onerror="this.src='https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=200'">
+                        <img src="/uploads/musk-collection/gold-serum.webp" alt="سيروم الذهب" class="w-16 h-16 object-contain bg-white rounded-lg p-1 border border-gray-100" onerror="this.src='https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=200'">
                         <div class="flex-grow">
                             <h4 class="font-bold text-nova-dark text-base">سيروم الذهب بالمسك والأرغان (150 مل)</h4>
                             <p class="text-xs text-gray-500">لمعان ملكي وثبات عطري متناهي</p>
@@ -479,8 +480,8 @@
                 وجهتك المتكاملة لعالم الجمال الفاخر. نوفر أفضل المنتجات الموثوقة للعناية والتجميل لتعزيز ثقتك وجمالك الطبيعي بأعلى درجات الفخامة والفعالية.
             </p>
             <div class="flex flex-col sm:flex-row justify-center items-center gap-6 mb-12 text-sm text-gray-400">
-                <span class="flex items-center gap-2"><i class="fas fa-map-marker-alt text-nova-gold"></i> فلسطين، رام الله</span>
-                <span class="flex items-center gap-2"><i class="fas fa-phone text-nova-gold"></i> رقم الهاتف: <span dir="ltr">0567088284</span></span>
+                <span class="flex items-center gap-2"><i class="fas fa-map-marker-alt text-nova-gold"></i> فلسطين، جنين</span>
+                <span class="flex items-center gap-2"><i class="fas fa-phone text-nova-gold"></i> رقم الهاتف: <span dir="ltr">+972569030203</span></span>
             </div>
             <div class="border-t border-gray-900 pt-8 text-gray-500 text-xs">
                 <p>جميع الحقوق محفوظة © 2026 نوڤا كوزمتكس (Nova Cosmetics)</p>
@@ -590,7 +591,7 @@
         }
 
         function updateWhatsAppButton(items, finalPrice) {
-            const phoneNumber = '970567088284';
+            const phoneNumber = '+972569030203';
             if (items.length === 0) {
                 document.getElementById('whatsapp-order-btn').href = "#";
                 return;
