@@ -55,6 +55,10 @@ Route::get('/privacy', function () {
     return view('frontend.pages.privacy');
 })->name('privacy');
 
+Route::get('/musk-collection', function () {
+    return view('frontend.pages.musk-collection');
+})->name('musk-collection');
+
 Route::get('/affiliate', [FrontAffiliateController::class, 'landing'])->name('affiliate.landing');
 Route::get('/affiliate/dashboard', [FrontAffiliateController::class, 'dashboard'])->name('affiliate.dashboard');
 Route::get('/affiliate/tools', [FrontAffiliateController::class, 'marketingTools'])->name('affiliate.tools');
