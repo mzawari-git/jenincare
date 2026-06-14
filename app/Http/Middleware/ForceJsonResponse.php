@@ -20,11 +20,11 @@ class ForceJsonResponse
             $decoded = json_decode($content, true);
 
             if (json_last_error() === JSON_ERROR_NONE) {
-                $response->headers->set('Content-Type', 'application/json');
+                $response->headers->set('Content-Type', 'application/json; charset=UTF-8');
                 return $response;
             }
 
-            $response->headers->set('Content-Type', 'application/json');
+            $response->headers->set('Content-Type', 'application/json; charset=UTF-8');
             $response->setContent(json_encode([
                 'data' => $decoded !== null ? $decoded : $content,
             ], JSON_UNESCAPED_UNICODE));

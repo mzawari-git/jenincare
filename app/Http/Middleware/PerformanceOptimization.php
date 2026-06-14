@@ -14,11 +14,6 @@ class PerformanceOptimization
 
         // Add performance headers
         if ($response instanceof \Illuminate\Http\Response) {
-            // Enable compression
-            if (!ob_get_level() && !headers_sent()) {
-                ob_start('ob_gzhandler');
-            }
-
             // Add performance headers
             $response->headers->set('X-Content-Type-Options', 'nosniff');
             $response->headers->set('X-Frame-Options', 'SAMEORIGIN');

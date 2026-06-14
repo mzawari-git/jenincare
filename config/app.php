@@ -10,6 +10,7 @@ return [
     'locale' => env('APP_LOCALE', 'ar'),
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'ar'),
     'faker_locale' => env('APP_FAKER_LOCALE', 'ar_SA'),
+    'charset' => 'utf-8',
     'update_version' => env('APP_UPDATE_VERSION', '1.0.2'),
     'update_version_code' => env('APP_UPDATE_VERSION_CODE', 3),
     'update_release_notes' => env('APP_UPDATE_RELEASE_NOTES', ''),
