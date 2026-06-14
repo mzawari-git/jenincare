@@ -1,11 +1,11 @@
-{{-- ═══ Universal Theme Switcher: Architecture + Color + Font + Dark/Light ═══ --}}
+{{-- ??? Universal Theme Switcher: Architecture + Color + Font + Dark/Light ??? --}}
 <div id="themeSwitcher" class="fixed bottom-20 left-5 z-[9999] flex flex-col gap-3">
-    <button onclick="toggleThemePalette()" id="themeToggleBtn" class="w-11 h-11 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:scale-110 transition-all cursor-pointer shadow-lg border border-white/10" style="background:rgba(20,20,20,0.6); backdrop-filter:blur(8px);" title="تخصيص المظهر" aria-label="تخصيص المظهر">
+    <button onclick="toggleThemePalette()" id="themeToggleBtn" class="w-11 h-11 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:scale-110 transition-all cursor-pointer shadow-lg border border-white/10" style="background:rgba(20,20,20,0.6); backdrop-filter:blur(8px);" title="????? ??????" aria-label="????? ??????">
         <i class="ph ph-paint-brush text-lg"></i>
     </button>
 
     {{-- Dark/Light Toggle --}}
-    <button onclick="toggleDarkLight()" id="darkLightBtn" class="w-11 h-11 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-lg border border-white/10" style="background:rgba(20,20,20,0.6); backdrop-filter:blur(8px);" title="داكن / فاتح" aria-label="داكن / فاتح">
+    <button onclick="toggleDarkLight()" id="darkLightBtn" class="w-11 h-11 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-lg border border-white/10" style="background:rgba(20,20,20,0.6); backdrop-filter:blur(8px);" title="???? / ????" aria-label="???? / ????">
         <i id="darkLightIcon" class="ph ph-sun text-lg text-white/60"></i>
     </button>
 
@@ -13,14 +13,14 @@
 
         {{-- Architecture Picker --}}
         <div>
-            <h6 class="text-[10px] font-bold uppercase tracking-widest text-ink-dim mb-3">نمط التصميم</h6>
+            <h6 class="text-[10px] font-bold uppercase tracking-widest text-ink-dim mb-3">??? ???????</h6>
             <div class="grid grid-cols-2 gap-2">
                 @php
                 $architectures = [
-                    'cyber-lab' => ['name' => 'سايبر', 'icon' => 'ph ph-cpu', 'color' => '#ff2a85'],
-                    'organic-spa' => ['name' => 'طبيعة', 'icon' => 'ph ph-leaf', 'color' => '#00ff88'],
-                    'editorial' => ['name' => 'تحريري', 'icon' => 'ph ph-text-aa', 'color' => '#ffffff'],
-                    'luxury-boutique' => ['name' => 'فخامة', 'icon' => 'ph ph-crown', 'color' => '#d4af37'],
+                    'cyber-lab' => ['name' => '?????', 'icon' => 'ph ph-cpu', 'color' => '#ff2a85'],
+                    'organic-spa' => ['name' => '?????', 'icon' => 'ph ph-leaf', 'color' => '#00ff88'],
+                    'editorial' => ['name' => '??????', 'icon' => 'ph ph-text-aa', 'color' => '#ffffff'],
+                    'luxury-boutique' => ['name' => '?????', 'icon' => 'ph ph-crown', 'color' => '#d4af37'],
                 ];
                 $currentArch = $layoutArchitecture ?? 'cyber-lab';
                 @endphp
@@ -30,7 +30,7 @@
                         <i class="{{ $arch['icon'] }} text-sm" style="color:{{ $arch['color'] }};"></i>
                         <span class="font-bold text-white">{{ $arch['name'] }}</span>
                     </div>
-                    <span class="text-[10px] text-ink-dim">نمط {{ $arch['name'] }}</span>
+                    <span class="text-[10px] text-ink-dim">??? {{ $arch['name'] }}</span>
                 </button>
                 @endforeach
             </div>
@@ -38,37 +38,37 @@
 
         {{-- Color Palette Picker --}}
         <div>
-            <h6 class="text-[10px] font-bold uppercase tracking-widest text-ink-dim mb-3">لوحة الألوان</h6>
+            <h6 class="text-[10px] font-bold uppercase tracking-widest text-ink-dim mb-3">???? ???????</h6>
             <div class="flex gap-2 flex-wrap" id="colorPaletteContainer">
                 @php
                 $palettes = [
-                    'rose' => ['name' => 'روز', 'color' => '#ff2a85', 'arch' => 'cyber-lab'],
-                    'midnight' => ['name' => 'ليلي', 'color' => '#7c3aed', 'arch' => 'cyber-lab'],
-                    'natural' => ['name' => 'طبيعي', 'color' => '#00ff88', 'arch' => 'organic-spa'],
-                    'forest' => ['name' => 'غابة', 'color' => '#00c853', 'arch' => 'organic-spa'],
-                    'minimal' => ['name' => 'مينيمال', 'color' => '#ffffff', 'arch' => 'editorial'],
-                    'ocean' => ['name' => 'محيط', 'color' => '#00b4d8', 'arch' => 'editorial'],
-                    'sunset' => ['name' => 'غروب', 'color' => '#ff6b35', 'arch' => 'luxury-boutique'],
-                    'luxury' => ['name' => 'فخامة', 'color' => '#d4af37', 'arch' => 'luxury-boutique'],
+                    'rose' => ['name' => '???', 'color' => '#ff2a85', 'arch' => 'cyber-lab'],
+                    'midnight' => ['name' => '????', 'color' => '#7c3aed', 'arch' => 'cyber-lab'],
+                    'natural' => ['name' => '?????', 'color' => '#00ff88', 'arch' => 'organic-spa'],
+                    'forest' => ['name' => '????', 'color' => '#00c853', 'arch' => 'organic-spa'],
+                    'minimal' => ['name' => '???????', 'color' => '#ffffff', 'arch' => 'editorial'],
+                    'ocean' => ['name' => '????', 'color' => '#00b4d8', 'arch' => 'editorial'],
+                    'sunset' => ['name' => '????', 'color' => '#ff6b35', 'arch' => 'luxury-boutique'],
+                    'luxury' => ['name' => '?????', 'color' => '#d4af37', 'arch' => 'luxury-boutique'],
                 ];
                 $currentColor = $siteSettings['site_theme'] ?? 'rose';
                 @endphp
                 @foreach($palettes as $key => $p)
-                <button onclick="switchColor('{{ $key }}')" data-color="{{ $key }}" data-arch="{{ $p['arch'] }}" class="color-btn w-8 h-8 rounded-full border-2 transition-all {{ $currentColor === $key ? 'border-white scale-125' : 'border-transparent opacity-60 hover:opacity-100' }}" style="background:{{ $p['color'] }};" title="{{ $p['name'] }}" aria-label="لون {{ $p['name'] }}"></button>
+                <button onclick="switchColor('{{ $key }}')" data-color="{{ $key }}" data-arch="{{ $p['arch'] }}" class="color-btn w-8 h-8 rounded-full border-2 transition-all {{ $currentColor === $key ? 'border-white scale-125' : 'border-transparent opacity-60 hover:opacity-100' }}" style="background:{{ $p['color'] }};" title="{{ $p['name'] }}" aria-label="??? {{ $p['name'] }}"></button>
                 @endforeach
             </div>
         </div>
 
         {{-- Font Picker --}}
         <div>
-            <h6 class="text-[10px] font-bold uppercase tracking-widest text-ink-dim mb-3">الخط</h6>
+            <h6 class="text-[10px] font-bold uppercase tracking-widest text-ink-dim mb-3">????</h6>
             <div class="flex gap-2 flex-wrap">
                 @php
                 $fonts = [
-                    'Tajawal' => 'تجال',
-                    'Cairo' => 'قاهرة',
-                    'El+Messiri' => 'المسيري',
-                    'Changa' => 'تشانغا',
+                    'Tajawal' => '????',
+                    'Cairo' => '?????',
+                    'El+Messiri' => '???????',
+                    'Changa' => '??????',
                 ];
                 @endphp
                 @foreach($fonts as $fontKey => $fontName)
@@ -94,13 +94,13 @@ function toggleDarkLight() {
     var isLight = html.getAttribute('data-theme-mode') === 'light';
     if (isLight) {
         html.removeAttribute('data-theme-mode');
-        localStorage.setItem('شركة جنين للتجميل_mode', 'dark');
-        setCookie('شركة جنين للتجميل_mode', 'dark', 365);
+        localStorage.setItem('???? ???? ???????_mode', 'dark');
+        setCookie('???? ???? ???????_mode', 'dark', 365);
         updateDarkLightIcon(false);
     } else {
         html.setAttribute('data-theme-mode', 'light');
-        localStorage.setItem('شركة جنين للتجميل_mode', 'light');
-        setCookie('شركة جنين للتجميل_mode', 'light', 365);
+        localStorage.setItem('???? ???? ???????_mode', 'light');
+        setCookie('???? ???? ???????_mode', 'light', 365);
         updateDarkLightIcon(true);
     }
 }
@@ -126,30 +126,30 @@ function toggleThemePalette() {
 function switchArchitecture(arch) {
     var colorMap = { 'cyber-lab': ['rose','midnight'], 'organic-spa': ['natural','forest'], 'editorial': ['minimal','ocean'], 'luxury-boutique': ['sunset','luxury'] };
     var defaults = { 'cyber-lab': 'rose', 'organic-spa': 'natural', 'editorial': 'minimal', 'luxury-boutique': 'sunset' };
-    var currentColor = localStorage.getItem('شركة جنين للتجميل_color') || defaults[arch] || 'rose';
+    var currentColor = localStorage.getItem('???? ???? ???????_color') || defaults[arch] || 'rose';
     var compatibleColors = colorMap[arch] || [];
     // If current color doesn't belong to new architecture, switch to default color for that architecture
     if (compatibleColors.indexOf(currentColor) === -1) {
         currentColor = defaults[arch] || 'rose';
     }
-    localStorage.setItem('شركة جنين للتجميل_architecture', arch);
-    localStorage.setItem('شركة جنين للتجميل_color', currentColor);
-    setCookie('شركة جنين للتجميل_arch', arch, 365);
-    setCookie('شركة جنين للتجميل_color', currentColor, 365);
+    localStorage.setItem('???? ???? ???????_architecture', arch);
+    localStorage.setItem('???? ???? ???????_color', currentColor);
+    setCookie('???? ???? ???????_arch', arch, 365);
+    setCookie('???? ???? ???????_color', currentColor, 365);
     location.reload();
 }
 
 function switchColor(color) {
     // Only change color, keep current architecture
-    localStorage.setItem('شركة جنين للتجميل_color', color);
-    setCookie('شركة جنين للتجميل_color', color, 365);
+    localStorage.setItem('???? ???? ???????_color', color);
+    setCookie('???? ???? ???????_color', color, 365);
     // Do NOT change architecture cookie
     location.reload();
 }
 
 function switchFont(font) {
-    localStorage.setItem('شركة جنين للتجميل_font', font);
-    setCookie('شركة جنين للتجميل_font', font, 365);
+    localStorage.setItem('???? ???? ???????_font', font);
+    setCookie('???? ???? ???????_font', font, 365);
     var link = document.getElementById('googleFontsLink');
     if(link) {
         link.href = 'https://fonts.googleapis.com/css2?family=' + font.replace('+','+') + ':wght@300;400;500;700;800;900&display=swap';
@@ -162,11 +162,11 @@ function switchFont(font) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    var savedArch = localStorage.getItem('شركة جنين للتجميل_architecture') || 'cyber-lab';
-    var savedColor = localStorage.getItem('شركة جنين للتجميل_color') || 'rose';
-    var savedFont = localStorage.getItem('شركة جنين للتجميل_font') || 'Tajawal';
-    // Default light mode — user can toggle to dark
-    var savedMode = localStorage.getItem('شركة جنين للتجميل_mode') || 'light';
+    var savedArch = localStorage.getItem('???? ???? ???????_architecture') || 'cyber-lab';
+    var savedColor = localStorage.getItem('???? ???? ???????_color') || 'rose';
+    var savedFont = localStorage.getItem('???? ???? ???????_font') || 'Tajawal';
+    // Default light mode ? user can toggle to dark
+    var savedMode = localStorage.getItem('???? ???? ???????_mode') || 'light';
 
     var archBtns = document.querySelectorAll('.arch-btn');
     archBtns.forEach(function(b) { b.classList.remove('border-white/40','bg-white/10'); b.classList.add('border-white/5','bg-white/5'); });

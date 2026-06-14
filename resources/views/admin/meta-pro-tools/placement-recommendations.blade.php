@@ -12,7 +12,7 @@
 <div class="row g-3 mb-4">
     <div class="col-12">
         <div class="card shadow-sm">
-            <div class="card-header bg-light fw-bold"><i class="fas fa-th-list"></i> مصفوفة التوصيات (الهدف × المكان)</div>
+            <div class="card-header bg-light fw-bold"><i class="fas fa-th-list"></i> مصفوفة التوصيات (الهدف ? المكان)</div>
             <div class="table-responsive">
                 <table class="table table-hover mb-0 small">
                     <thead class="table-light">

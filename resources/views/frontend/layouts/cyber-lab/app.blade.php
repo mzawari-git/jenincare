@@ -71,7 +71,7 @@
     @php $tracking = app(\App\Services\AdvertisingTrackingService::class); @endphp
 
     <style>
-        /* ── Floating Social Sidebar ── */
+        /* ?? Floating Social Sidebar ?? */
         .floating-social-v3 {
             position: fixed;
             left: 20px;

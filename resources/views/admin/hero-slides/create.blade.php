@@ -44,7 +44,7 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">شارة (عربي)</label>
-                    <input type="text" name="badge_text_ar" class="form-control" value="{{ old("badge_text_ar") }}" placeholder="جديد · خصم 30%">
+                    <input type="text" name="badge_text_ar" class="form-control" value="{{ old("badge_text_ar") }}" placeholder="جديد ? خصم 30%">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">لون النص</label>

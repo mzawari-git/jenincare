@@ -47,7 +47,7 @@
     @php $tracking = app(\App\Services\AdvertisingTrackingService::class); @endphp
 
     <style>
-        /* ── Editorial: Clean Minimal Typography-Focused ── */
+        /* ?? Editorial: Clean Minimal Typography-Focused ?? */
         * { transition: opacity 0.2s ease, border-color 0.2s ease; }
         ::selection { background: var(--brand-500); color: var(--surface); }
 

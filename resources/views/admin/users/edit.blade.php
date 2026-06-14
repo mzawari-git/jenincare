@@ -21,7 +21,7 @@
     <div class="user-avatar-lg">{{ substr($user->name, 0, 1) }}</div>
     <div>
         <h2 class="mb-1" style="font-weight:800;">{{ $user->name }}</h2>
-        <p class="mb-0 opacity-75">{{ $user->email }} · {{ $user->phone ?? 'لا يوجد هاتف' }}</p>
+        <p class="mb-0 opacity-75">{{ $user->email }} ? {{ $user->phone ?? 'لا يوجد هاتف' }}</p>
         <span class="badge bg-light text-dark mt-2">{{ $user->role === 'admin' ? 'مدير' : ($user->role === 'b2b' ? 'B2B' : 'زبون') }}</span>
     </div>
 </div>

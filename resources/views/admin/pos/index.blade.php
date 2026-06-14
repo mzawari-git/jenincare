@@ -212,7 +212,7 @@
         align-content: start;
     }
 
-    /* ── Compact Product Card ── */
+    /* ?? Compact Product Card ?? */
     .pos-product-card {
         background: #fff;
         border-radius: var(--pos-radius-sm);
@@ -4447,7 +4447,7 @@
         } catch (e) { /* silent */ }
     }
 
-    // ── Unified Print Settings ──
+    // ?? Unified Print Settings ??
     function loadPrintSettings() {
         const defaults = {
             showLogo: true, showQR: true, showTaxNumber: true, showProductImages: true,
@@ -4507,7 +4507,7 @@
         openSettings();
     }
 
-    // ── Fullscreen toggle ──
+    // ?? Fullscreen toggle ??
     function toggleFullscreen() {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen().catch(() => {});
@@ -4531,7 +4531,7 @@
         }
     });
 
-    // ── Quick receipt size selector ──
+    // ?? Quick receipt size selector ??
     function syncReceiptSizePills(size) {
         document.querySelectorAll('.rs-pill').forEach(p => {
             const isActive = p.dataset.size === size;
@@ -4601,7 +4601,7 @@
                 html += `<img src="${item.image}" class="rp-item-thumb" alt="">`;
             }
             html += `<span class="rp-item-name">${item.name}</span>`;
-            html += `<span>${item.quantity}×₪${item.price.toFixed(2)}</span>`;
+            html += `<span>${item.quantity}?₪${item.price.toFixed(2)}</span>`;
             html += `<span style="font-weight:bold;margin-right:8px;">₪${lineTotal.toFixed(2)}</span>`;
             html += `</div>`;
         });
@@ -4711,7 +4711,7 @@
                 printHtml += `<div class="rp-item" style="font-size:${Math.max(9, fs-1)}px;">`;
                 if (settings.showProductImages && item.image) printHtml += `<img src="${item.image}" class="rp-item-thumb" alt="">`;
                 printHtml += `<span class="rp-item-name">${item.name}</span>`;
-                printHtml += `<span>${item.quantity}×₪${(item.price || 0).toFixed(2)}</span>`;
+                printHtml += `<span>${item.quantity}?₪${(item.price || 0).toFixed(2)}</span>`;
                 printHtml += `<span style="font-weight:bold;margin-right:8px;">₪${lineTotal.toFixed(2)}</span>`;
                 printHtml += `</div>`;
             });
@@ -5091,7 +5091,7 @@
                 items.forEach(i => {
                     html += `<div class="sale-detail-item">
                         <span class="sdi-name">${i.name}</span>
-                        <span class="sdi-qty">×${i.quantity}</span>
+                        <span class="sdi-qty">?${i.quantity}</span>
                         <span class="sdi-price">₪${(i.price * i.quantity).toFixed(2)}</span>
                     </div>`;
                 });

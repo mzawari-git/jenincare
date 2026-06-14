@@ -28,7 +28,7 @@
     @php $tracking = app(\App\Services\AdvertisingTrackingService::class); @endphp
 
     <style>
-        /* ── Luxury Boutique: Classic centered elegance, gold frames, ornate ── */
+        /* ?? Luxury Boutique: Classic centered elegance, gold frames, ornate ?? */
         * { transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
         ::selection { background: var(--brand-500); color: #000; }
 

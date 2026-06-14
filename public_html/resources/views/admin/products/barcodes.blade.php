@@ -167,7 +167,7 @@
                     <div>
                         <div id="labelCounter" class="badge bg-dark text-white px-3 py-2">
                             <i class="fas fa-tag me-1"></i>
-                            <span id="labelCountText">0 منتج × 1 نسخة = 0 ملصق</span>
+                            <span id="labelCountText">0 منتج ? 1 نسخة = 0 ملصق</span>
                         </div>
                     </div>
                     <div>
@@ -418,7 +418,7 @@ function updateLabelCount() {
     });
     const el = document.getElementById('labelCountText');
     if (el) {
-        el.textContent = totalProduct + ' منتج × ' + (totalLabels > 0 ? Math.round(totalLabels / totalProduct) : '1') + ' نسخة = ' + totalLabels + ' ملصق';
+        el.textContent = totalProduct + ' منتج ? ' + (totalLabels > 0 ? Math.round(totalLabels / totalProduct) : '1') + ' نسخة = ' + totalLabels + ' ملصق';
     }
     const selLabel = document.getElementById('selectedCountLabel');
     if (selLabel) {

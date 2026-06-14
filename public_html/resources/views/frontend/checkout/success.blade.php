@@ -176,7 +176,7 @@ function copySpinCode() {
         </div>
 
         {{-- Footer --}}
-        <p style="color:rgba(255,255,255,.2);font-size:.7rem;margin-top:16px;">الهدية تخضع للشروط والأحكام · يمكنكِ الرفع مرّة واحدة فقط</p>
+        <p style="color:rgba(255,255,255,.2);font-size:.7rem;margin-top:16px;">الهدية تخضع للشروط والأحكام ? يمكنكِ الرفع مرّة واحدة فقط</p>
     </div>
 </div>
 

@@ -409,7 +409,7 @@
                     @endif
                     <div style="flex:1;min-width:0;">
                         <div class="fw-bold small text-truncate">{{ $product->name_ar }}</div>
-                        <div class="text-muted" style="font-size:.75rem;">{{ $product->sales_count }} مباع · {{ number_format($product->b2c_price, 2) }} ₪</div>
+                        <div class="text-muted" style="font-size:.75rem;">{{ $product->sales_count }} مباع ? {{ number_format($product->b2c_price, 2) }} ₪</div>
                     </div>
                 </div>
                 @empty

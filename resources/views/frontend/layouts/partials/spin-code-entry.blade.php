@@ -92,7 +92,7 @@
                 </button>
             </div>
 
-            <p style="color:rgba(255,255,255,.2);font-size:.65rem;margin-top:12px;">الهدية تخضع للشروط والأحكام · يمكنك الاستخدام مرّة واحدة فقط</p>
+            <p style="color:rgba(255,255,255,.2);font-size:.65rem;margin-top:12px;">الهدية تخضع للشروط والأحكام ? يمكنك الاستخدام مرّة واحدة فقط</p>
         </div>
     </div>
 </div>

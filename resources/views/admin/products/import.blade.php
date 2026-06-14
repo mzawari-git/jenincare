@@ -60,21 +60,21 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td>اسم المنتج (عربي)</td><td><code>product_name_ar</code> · <code>product_name</code> · <code>name_ar</code> · <code>الاسم</code></td><td><span class="badge bg-danger">نعم</span></td></tr>
-                            <tr><td>اسم المنتج (إنجليزي)</td><td><code>product_name_en</code> · <code>name_en</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
-                            <tr><td>الباركود / SKU</td><td><code>product_barcode</code> · <code>product_sku</code> · <code>sku</code> · <code>barcode</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
-                            <tr><td>الفئة</td><td><code>category</code> · <code>category_name</code> · <code>الفئة</code> · <code>التصنيف</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
-                            <tr><td>سعر التجزئة</td><td><code>product_price_1</code> · <code>b2c_price</code> · <code>السعر</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
-                            <tr><td>سعر الجملة</td><td><code>product_price_2</code> · <code>b2b_price</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
-                            <tr><td>سعر التكلفة</td><td><code>product_cost</code> · <code>cost_price</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
-                            <tr><td>الكمية</td><td><code>product_stock</code> · <code>stock_quantity</code> · <code>المخزون</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
-                            <tr><td>الوصف</td><td><code>product_description</code> · <code>description_ar</code> · <code>الوصف</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
-                            <tr><td>الصورة الرئيسية</td><td><code>product_image_url_1</code> · <code>main_image</code> · <code>الصورة</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
+                            <tr><td>اسم المنتج (عربي)</td><td><code>product_name_ar</code> ? <code>product_name</code> ? <code>name_ar</code> ? <code>الاسم</code></td><td><span class="badge bg-danger">نعم</span></td></tr>
+                            <tr><td>اسم المنتج (إنجليزي)</td><td><code>product_name_en</code> ? <code>name_en</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
+                            <tr><td>الباركود / SKU</td><td><code>product_barcode</code> ? <code>product_sku</code> ? <code>sku</code> ? <code>barcode</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
+                            <tr><td>الفئة</td><td><code>category</code> ? <code>category_name</code> ? <code>الفئة</code> ? <code>التصنيف</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
+                            <tr><td>سعر التجزئة</td><td><code>product_price_1</code> ? <code>b2c_price</code> ? <code>السعر</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
+                            <tr><td>سعر الجملة</td><td><code>product_price_2</code> ? <code>b2b_price</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
+                            <tr><td>سعر التكلفة</td><td><code>product_cost</code> ? <code>cost_price</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
+                            <tr><td>الكمية</td><td><code>product_stock</code> ? <code>stock_quantity</code> ? <code>المخزون</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
+                            <tr><td>الوصف</td><td><code>product_description</code> ? <code>description_ar</code> ? <code>الوصف</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
+                            <tr><td>الصورة الرئيسية</td><td><code>product_image_url_1</code> ? <code>main_image</code> ? <code>الصورة</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
                             <tr><td>صور إضافية</td><td><code>product_image_url_2</code> إلى <code>product_image_url_5</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
-                            <tr><td>الحالة</td><td><code>product_is_active</code> (1=نشط, 0=غير نشط) · <code>status</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
-                            <tr><td>العلامة التجارية</td><td><code>brand</code> · <code>brand_name</code> · <code>الماركة</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
-                            <tr><td>نسبة الخصم</td><td><code>discount_percentage</code> · <code>discount</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
-                            <tr><td>مميز</td><td><code>is_featured</code> · <code>featured</code> (1=نعم)</td><td><span class="badge bg-secondary">لا</span></td></tr>
+                            <tr><td>الحالة</td><td><code>product_is_active</code> (1=نشط, 0=غير نشط) ? <code>status</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
+                            <tr><td>العلامة التجارية</td><td><code>brand</code> ? <code>brand_name</code> ? <code>الماركة</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
+                            <tr><td>نسبة الخصم</td><td><code>discount_percentage</code> ? <code>discount</code></td><td><span class="badge bg-secondary">لا</span></td></tr>
+                            <tr><td>مميز</td><td><code>is_featured</code> ? <code>featured</code> (1=نعم)</td><td><span class="badge bg-secondary">لا</span></td></tr>
                         </tbody>
                     </table>
                 </div>

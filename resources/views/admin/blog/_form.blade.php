@@ -121,7 +121,7 @@
                             <button type="button" onclick="wrapText('blogContentArea', '<h2>', '</h2>')" class="btn btn-sm btn-outline-secondary" title="عنوان H2" style="border: none; font-weight: 700;">H2</button>
                             <button type="button" onclick="wrapText('blogContentArea', '<h3>', '</h3>')" class="btn btn-sm btn-outline-secondary" title="عنوان H3" style="border: none; font-weight: 700;">H3</button>
                             <span class="mx-1" style="width: 1px; height: 18px; background: var(--gray-200);"></span>
-                            <button type="button" onclick="wrapText('blogContentArea', '<p>', '</p>')" class="btn btn-sm btn-outline-secondary" title="فقرة" style="border: none; font-weight: 700;">¶</button>
+                            <button type="button" onclick="wrapText('blogContentArea', '<p>', '</p>')" class="btn btn-sm btn-outline-secondary" title="فقرة" style="border: none; font-weight: 700;">?</button>
                             <button type="button" onclick="insertList('blogContentArea', 'ul')" class="btn btn-sm btn-outline-secondary" title="قائمة غير مرقمة" style="border: none;"><i class="fas fa-list-ul"></i></button>
                             <button type="button" onclick="insertList('blogContentArea', 'ol')" class="btn btn-sm btn-outline-secondary" title="قائمة مرقمة" style="border: none;"><i class="fas fa-list-ol"></i></button>
                             <span class="mx-1" style="width: 1px; height: 18px; background: var(--gray-200);"></span>

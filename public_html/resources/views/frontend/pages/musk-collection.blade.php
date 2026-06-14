@@ -484,7 +484,7 @@
                 <span class="flex items-center gap-2"><i class="fas fa-phone text-nova-gold"></i> رقم الهاتف: <span dir="ltr">+972569030203</span></span>
             </div>
             <div class="border-t border-gray-900 pt-8 text-gray-500 text-xs">
-                <p>جميع الحقوق محفوظة © 2026 نوڤا كوزمتكس (Nova Cosmetics)</p>
+                <p>جميع الحقوق محفوظة ? 2026 نوڤا كوزمتكس (Nova Cosmetics)</p>
             </div>
         </div>
     </footer>

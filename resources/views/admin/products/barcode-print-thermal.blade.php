@@ -13,7 +13,7 @@
         $pageHeight = $isCustom ? ($height ?: 30) . 'mm' : ($isA5 ? '210mm' : ($isA6 ? '148mm' : 'auto'));
         $bodyWidth = $pageWidth;
         $labelPadding = $isA5 ? '4mm 6mm' : ($isA6 ? '3mm 5mm' : '2mm 0');
-        $titleText = $isA5 ? 'طباعة A5' : ($isA6 ? 'طباعة A6' : ($isCustom ? 'طباعة مخصص' : 'طباعة ZD410 50×30mm'));
+        $titleText = $isA5 ? 'طباعة A5' : ($isA6 ? 'طباعة A6' : ($isCustom ? 'طباعة مخصص' : 'طباعة ZD410 50?30mm'));
         $paperWidth = $pageWidth;
         $labelInnerWidth = $isThermal ? '50mm' : '100%';
         $labelMinHeight = $isThermal ? '30mm' : 'auto';

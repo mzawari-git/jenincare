@@ -6,27 +6,27 @@
             <a href="{{ route('home') }}" class="flex items-center gap-2 flex-shrink-0 group" style="color: var(--ink);">
                 @if(!empty($siteSettings['site_logo_url']))
                 <div class="relative flex items-center justify-center rounded-lg p-1 transition-all duration-300 group-hover:scale-105" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);">
-                    <img src="{{ $siteSettings['site_logo_url'] }}" alt="{{ $siteSettings['site_name']??'شركة جنين للتجميل' }}" class="h-6 md:h-10 w-auto object-contain" style="max-height:40px;max-width:120px;">
+                    <img src="{{ $siteSettings['site_logo_url'] }}" alt="{{ $siteSettings['site_name']??'???? ???? ???????' }}" class="h-6 md:h-10 w-auto object-contain" style="max-height:40px;max-width:120px;">
                 </div>
                 @else
-                <span class="text-lg md:text-xl font-black tracking-tight">{{ $siteSettings['site_name_ar']??$siteSettings['site_name']??'شركة جنين للتجميل' }}<span class="text-brand-500">.</span></span>
+                <span class="text-lg md:text-xl font-black tracking-tight">{{ $siteSettings['site_name_ar']??$siteSettings['site_name']??'???? ???? ???????' }}<span class="text-brand-500">.</span></span>
                 @endif
             </a>
             <nav class="hidden lg:flex items-center gap-6 text-sm font-bold">
-                <a href="{{ route('home') }}" class="nav-link {{ request()->routeIs('home')?'active':'' }}">الرئيسية</a>
-                <a href="{{ route('shop') }}" class="nav-link {{ request()->routeIs('shop')?'active':'' }}">المتجر</a>
-                <a href="{{ route('b2b') }}" class="nav-link">الأعمال</a>
-                <a href="{{ route('affiliate.landing') }}" class="nav-link">تسويق</a>
-                <a href="{{ route('blog.index') }}" class="nav-link">مدونة</a>
-                <a href="{{ route('musk-collection') }}" class="nav-link"><span style="color:#D4AF37;">مجموعة المسك</span></a>
-                <a href="{{ route('contact') }}" class="nav-link">تواصل</a>
+                <a href="{{ route('home') }}" class="nav-link {{ request()->routeIs('home')?'active':'' }}">????????</a>
+                <a href="{{ route('shop') }}" class="nav-link {{ request()->routeIs('shop')?'active':'' }}">??????</a>
+                <a href="{{ route('b2b') }}" class="nav-link">???????</a>
+                <a href="{{ route('affiliate.landing') }}" class="nav-link">?????</a>
+                <a href="{{ route('blog.index') }}" class="nav-link">?????</a>
+                <a href="{{ route('musk-collection') }}" class="nav-link"><span style="color:#D4AF37;">?????? ?????</span></a>
+                <a href="{{ route('contact') }}" class="nav-link">?????</a>
             </nav>
         </div>
         <div class="flex items-center gap-3">
-            <button onclick="toggleSearchV3()" class="icon-btn" aria-label="بحث"><i class="ph ph-magnifying-glass text-lg"></i></button>
-            <a href="{{ route('cart') }}" class="icon-btn relative" aria-label="السلة"><i class="ph ph-shopping-bag text-lg"></i><span class="absolute -top-0.5 -right-0.5 bg-brand-500 text-white text-[9px] font-bold h-4 w-4 rounded-full flex items-center justify-center" id="cart-count-v3">{{ $cartCount??0 }}</span></a>
-            @auth<a href="{{ route('account') }}" class="hidden sm:flex items-center gap-1.5 text-sm font-medium nav-link"><i class="ph ph-user-circle"></i> حسابي</a>@else<a href="{{ route('login') }}" class="hidden sm:inline-flex btn-ghost text-sm">دخول</a>@endauth
-            <a href="{{ route('shop') }}" class="btn-primary text-sm inline-flex"><i class="ph ph-storefront"></i> <span class="hidden sm:inline">تسوق الآن</span></a>
+            <button onclick="toggleSearchV3()" class="icon-btn" aria-label="???"><i class="ph ph-magnifying-glass text-lg"></i></button>
+            <a href="{{ route('cart') }}" class="icon-btn relative" aria-label="?????"><i class="ph ph-shopping-bag text-lg"></i><span class="absolute -top-0.5 -right-0.5 bg-brand-500 text-white text-[9px] font-bold h-4 w-4 rounded-full flex items-center justify-center" id="cart-count-v3">{{ $cartCount??0 }}</span></a>
+            @auth<a href="{{ route('account') }}" class="hidden sm:flex items-center gap-1.5 text-sm font-medium nav-link"><i class="ph ph-user-circle"></i> ?????</a>@else<a href="{{ route('login') }}" class="hidden sm:inline-flex btn-ghost text-sm">????</a>@endauth
+            <a href="{{ route('shop') }}" class="btn-primary text-sm inline-flex"><i class="ph ph-storefront"></i> <span class="hidden sm:inline">???? ????</span></a>
             <button onclick="toggleMobileMenuV3()" class="lg:hidden icon-btn"><i class="ph ph-list text-xl" id="mobileMenuIconV3"></i></button>
         </div>
     </div>
@@ -39,12 +39,12 @@
 </header>
 
 <div id="searchOverlayV3" class="fixed inset-0 z-[60] hidden items-start justify-center pt-32" style="background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);">
-    <div class="spa-card rounded-2xl w-full max-w-lg mx-4 p-6"><button onclick="toggleSearchV3()" class="absolute top-3 left-3 text-ink-dim text-xl">&times;</button><form action="{{ route('shop') }}" method="GET" class="flex gap-2"><input type="text" name="search" placeholder="ابحثي عن منتج..." autofocus class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500" style="color:var(--ink);"><button type="submit" class="btn-primary">بحث</button></form></div>
+    <div class="spa-card rounded-2xl w-full max-w-lg mx-4 p-6"><button onclick="toggleSearchV3()" class="absolute top-3 left-3 text-ink-dim text-xl">&times;</button><form action="{{ route('shop') }}" method="GET" class="flex gap-2"><input type="text" name="search" placeholder="????? ?? ????..." autofocus class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500" style="color:var(--ink);"><button type="submit" class="btn-primary">???</button></form></div>
 </div>
 
-{{-- ═══════════════════════════════════════════════════════════
+{{-- ???????????????????????????????????????????????????????????
      PROFESSIONAL MOBILE MENU V3
-     ═══════════════════════════════════════════════════════════ --}}
+     ??????????????????????????????????????????????????????????? --}}
 <div id="mobileMenuV3" class="fixed inset-0 z-[60] hidden" style="direction:rtl;">
     <div class="absolute inset-0" style="background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);" onclick="toggleMobileMenuV3()"></div>
     <div class="absolute top-0 right-0 w-[300px] sm:w-80 h-full shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col" id="mobileMenuPanelV3" style="background:var(--surface);">
@@ -54,68 +54,68 @@
             <div class="flex items-center justify-between relative z-10">
                 <div class="flex items-center gap-2.5">
                     @if(!empty($siteSettings['site_logo_url']))
-                        <img src="{{ $siteSettings['site_logo_url'] }}" alt="شركة جنين للتجميل" class="h-8 w-auto object-contain" style="max-height:32px;max-width:120px;">
+                        <img src="{{ $siteSettings['site_logo_url'] }}" alt="???? ???? ???????" class="h-8 w-auto object-contain" style="max-height:32px;max-width:120px;">
                     @else
-                        <span class="text-lg font-black" style="color:var(--ink);">{{ $siteSettings['site_name']??'شركة جنين للتجميل' }}</span>
+                        <span class="text-lg font-black" style="color:var(--ink);">{{ $siteSettings['site_name']??'???? ???? ???????' }}</span>
                     @endif
                 </div>
                 <button onclick="toggleMobileMenuV3()" class="w-9 h-9 rounded-full flex items-center justify-center" style="background:var(--surface-alt);color:var(--ink-dim);border:none;cursor:pointer;">
                     <i class="ph ph-x text-lg"></i>
                 </button>
             </div>
-            <p class="text-[10px] mt-3 font-bold tracking-wider uppercase" style="color:var(--brand-500);">منتجات أصلية · جمال لا يُقاوم</p>
+            <p class="text-[10px] mt-3 font-bold tracking-wider uppercase" style="color:var(--brand-500);">?????? ????? ? ???? ?? ??????</p>
         </div>
 
         {{-- Marketing Banner CTA --}}
         <div class="px-4 pt-4 shrink-0">
             <a href="{{ route('shop') }}" class="flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm" style="background:linear-gradient(135deg,#ec4899,#be185d);color:#fff;text-decoration:none;box-shadow:0 4px 20px rgba(236,72,153,0.3);">
                 <i class="ph ph-sparkle text-lg"></i>
-                <span>تصفحي أحدث المنتجات</span>
+                <span>????? ???? ????????</span>
             </a>
         </div>
 
         {{-- Navigation --}}
         <div class="flex-1 overflow-y-auto px-4 py-3 space-y-1 min-h-0">
-            <p class="text-[10px] font-bold tracking-wider uppercase mb-2 mt-2 px-1" style="color:var(--ink-dim);">القائمة الرئيسية</p>
+            <p class="text-[10px] font-bold tracking-wider uppercase mb-2 mt-2 px-1" style="color:var(--ink-dim);">??????? ????????</p>
 
             <a href="{{ route('home') }}" class="mobile-link {{ request()->routeIs('home')?'active':'' }}">
                 <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-house text-base" style="color:var(--ink-dim);"></i></span>
-                <span>الرئيسية</span>
+                <span>????????</span>
                 @if(request()->routeIs('home'))<i class="ph ph-caret-left ms-auto" style="color:var(--brand-500);"></i>@endif
             </a>
             <a href="{{ route('shop') }}" class="mobile-link {{ request()->routeIs('shop')?'active':'' }}">
                 <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-storefront text-base" style="color:var(--ink-dim);"></i></span>
-                <span>المتجر</span>
+                <span>??????</span>
                 @if(request()->routeIs('shop'))<i class="ph ph-caret-left ms-auto" style="color:var(--brand-500);"></i>@endif
             </a>
             <a href="{{ route('b2b') }}" class="mobile-link {{ request()->routeIs('b2b')?'active':'' }}">
                 <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-buildings text-base" style="color:var(--ink-dim);"></i></span>
-                <span>للأعمال</span>
+                <span>???????</span>
                 @if(request()->routeIs('b2b'))<i class="ph ph-caret-left ms-auto" style="color:var(--brand-500);"></i>@endif
             </a>
             <a href="{{ route('affiliate.landing') }}" class="mobile-link {{ request()->routeIs('affiliate.*')?'active':'' }}">
                 <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-handshake text-base" style="color:var(--ink-dim);"></i></span>
-                <span>تسويق بالعمولة</span>
+                <span>????? ????????</span>
                 @if(request()->routeIs('affiliate.*'))<i class="ph ph-caret-left ms-auto" style="color:var(--brand-500);"></i>@endif
             </a>
             <a href="{{ route('blog.index') }}" class="mobile-link {{ request()->routeIs('blog.*')?'active':'' }}">
                 <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-article text-base" style="color:var(--ink-dim);"></i></span>
-                <span>المدونة</span>
+                <span>???????</span>
                 @if(request()->routeIs('blog.*'))<i class="ph ph-caret-left ms-auto" style="color:var(--brand-500);"></i>@endif
             </a>
             <a href="{{ route('musk-collection') }}" class="mobile-link {{ request()->routeIs('musk-collection')?'active':'' }}">
                 <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-flask text-base" style="color:#D4AF37;"></i></span>
-                <span style="color:#D4AF37;">مجموعة المسك</span>
+                <span style="color:#D4AF37;">?????? ?????</span>
                 @if(request()->routeIs('musk-collection'))<i class="ph ph-caret-left ms-auto" style="color:var(--brand-500);"></i>@endif
             </a>
             <a href="{{ route('contact') }}" class="mobile-link {{ request()->routeIs('contact')?'active':'' }}">
                 <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-envelope text-base" style="color:var(--ink-dim);"></i></span>
-                <span>تواصل معنا</span>
+                <span>????? ????</span>
                 @if(request()->routeIs('contact'))<i class="ph ph-caret-left ms-auto" style="color:var(--brand-500);"></i>@endif
             </a>
 
             @if(isset($headerCategories) && $headerCategories->count())
-            <p class="text-[10px] font-bold tracking-wider uppercase mb-2 mt-4 px-1" style="color:var(--ink-dim);">تسوقي حسب القسم</p>
+            <p class="text-[10px] font-bold tracking-wider uppercase mb-2 mt-4 px-1" style="color:var(--ink-dim);">????? ??? ?????</p>
             <div class="space-y-1">
                 @foreach($headerCategories->take(6) as $cat)
                 <a href="{{ route('shop',['category'=>$cat->slug]) }}" class="mobile-link text-xs">
@@ -128,27 +128,27 @@
             @endif
 
             <div class="border-t mt-4 pt-4" style="border-color:rgba(255,255,255,0.06);">
-                <p class="text-[10px] font-bold tracking-wider uppercase mb-2 px-1" style="color:var(--ink-dim);">حسابي</p>
+                <p class="text-[10px] font-bold tracking-wider uppercase mb-2 px-1" style="color:var(--ink-dim);">?????</p>
                 @auth
                 <a href="{{ route('account') }}" class="mobile-link">
                     <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-user-circle text-base" style="color:var(--ink-dim);"></i></span>
-                    <span>حسابي</span>
+                    <span>?????</span>
                 </a>
                 <form method="POST" action="{{ route('logout') }}" style="display:contents;">
                     @csrf
                     <button type="submit" class="mobile-link" style="width:100%;background:none;border:none;cursor:pointer;text-align:right;">
                         <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-sign-out text-base" style="color:var(--ink-dim);"></i></span>
-                        <span>تسجيل خروج</span>
+                        <span>????? ????</span>
                     </button>
                 </form>
                 @else
                 <a href="{{ route('login') }}" class="mobile-link">
                     <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-sign-in text-base" style="color:var(--ink-dim);"></i></span>
-                    <span>تسجيل دخول</span>
+                    <span>????? ????</span>
                 </a>
                 <a href="{{ route('register') }}" class="mobile-link">
                     <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-user-plus text-base" style="color:var(--ink-dim);"></i></span>
-                    <span>إنشاء حساب جديد</span>
+                    <span>????? ???? ????</span>
                 </a>
                 @endauth
             </div>
@@ -165,7 +165,7 @@
                     <a href="{{ $siteSettings['instagram_url'] }}" target="_blank" class="w-9 h-9 rounded-full flex items-center justify-center" style="background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff;"><i class="ph-fill ph-instagram-logo text-lg"></i></a>
                     @endif
                 </div>
-                <span class="text-[10px] font-bold" style="color:var(--ink-dim);">© {{ date('Y') }}</span>
+                <span class="text-[10px] font-bold" style="color:var(--ink-dim);">? {{ date('Y') }}</span>
             </div>
         </div>
     </div>

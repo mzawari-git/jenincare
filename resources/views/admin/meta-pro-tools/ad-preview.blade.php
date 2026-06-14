@@ -69,7 +69,7 @@
             <div class="card-body small">
                 @if(isset($preview['specs']))
                     @php $imgSpecs = $preview['specs']['recommended_image_size'] ?? []; @endphp
-                    <div class="mb-1"><b>الحجم الموصى به:</b><br>{{ $imgSpecs['width'] ?? '—' }} × {{ $imgSpecs['height'] ?? '—' }}</div>
+                    <div class="mb-1"><b>الحجم الموصى به:</b><br>{{ $imgSpecs['width'] ?? '—' }} ? {{ $imgSpecs['height'] ?? '—' }}</div>
                     <div class="mb-1"><b>النسبة:</b> {{ $imgSpecs['ratio'] ?? '—' }}</div>
                 @endif
                 <div class="mt-2 text-muted"><small>* قد تختلف المقاسات حسب موقع الظهور</small></div>
