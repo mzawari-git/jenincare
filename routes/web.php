@@ -14,6 +14,7 @@ use App\Http\Controllers\Frontend\AffiliateController as FrontAffiliateControlle
 use App\Http\Controllers\Frontend\BlogController as FrontBlogController;
 use App\Http\Controllers\Frontend\OptimizedImageController;
 use App\Http\Controllers\Frontend\ServeStorageController;
+use App\Http\Controllers\Frontend\VirtualStoreController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/shop', [ShopController::class, 'index'])->name('shop');
@@ -117,3 +118,12 @@ Route::get('/skin-admin', function () {
 Route::get('/skin-admin/{any}', function () {
     return response()->file(public_path('skin-admin/index.html'));
 })->where('any', '.*');
+
+// Virtual Store 360° Tour
+Route::get('/virtual-store', [VirtualStoreController::class, 'index'])->name('virtual-store.index');
+Route::get('/virtual-store/scene/{slug}', [VirtualStoreController::class, 'scene'])->name('virtual-store.scene');
+Route::get('/virtual-store/hotspot-product', [VirtualStoreController::class, 'hotspotProduct'])->name('virtual-store.hotspot-product');
+
+// Virtual Store 3D
+Route::get('/virtual-store/3d', [VirtualStoreController::class, 'store3d'])->name('virtual-store.3d');
+Route::get('/virtual-store/3d/{slug}', [VirtualStoreController::class, 'store3dScene'])->name('virtual-store.3d.scene');

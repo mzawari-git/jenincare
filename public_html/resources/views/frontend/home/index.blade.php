@@ -305,6 +305,9 @@ if (!empty($slideProductIds)) {
                     <a href="{{ route('shop') }}" class="w-full sm:w-72 px-8 py-4 rounded-full font-black text-sm tracking-wide inline-flex items-center justify-center gap-2 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-0.5" style="background:#ffffff;color:#0f172a;">
                         اكتشفي المنتجات <i class="fa-solid fa-arrow-left mr-1"></i>
                     </a>
+                    <a href="{{ route('virtual-store.index') }}" class="w-full sm:w-72 px-8 py-3.5 rounded-full font-bold text-sm tracking-wide inline-flex items-center justify-center gap-2 border-2 border-brand-500/40 text-brand-300 hover:bg-brand-500/10 hover:border-brand-500 transition-all duration-300 hover:-translate-y-0.5">
+                        <i class="ph ph-globe-hemisphere-west"></i> جولة في المتجر 360°
+                    </a>
                     <a href="{{ route('shop') }}" class="text-white/60 hover:text-white transition-colors font-medium text-sm">
                         تصفحي المتجر — المتابعة اختيارية
                     </a>
@@ -878,6 +881,42 @@ if (!empty($slideProductIds)) {
                 <a href="{{ route('b2b') }}"
                    class="px-10 py-4 rounded-full font-bold text-sm border border-white/15 text-white hover:bg-white/5 transition-all inline-flex items-center justify-center gap-2">
                     <i class="fa-solid fa-crown text-accent-500"></i> حلول الجملة والصالونات
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{-- ═══════════════════════════════════════════════════════════════
+     SECTION 7: Virtual Store CTA — Before Footer
+     ═══════════════════════════════════════════════════════════════ --}}
+<section class="py-16 relative overflow-hidden" style="background: linear-gradient(180deg, transparent 0%, rgba(var(--brand-500-rgb,255,42,133),0.04) 100%);">
+    <div class="absolute inset-0 pointer-events-none">
+        <div class="absolute top-10 left-10 w-32 h-32 rounded-full opacity-5" style="background:radial-gradient(circle,var(--brand-500),transparent 70%);filter:blur(40px);"></div>
+        <div class="absolute bottom-10 right-10 w-40 h-40 rounded-full opacity-5" style="background:radial-gradient(circle,#06b6d4,transparent 70%);filter:blur(50px);"></div>
+    </div>
+    <div class="max-w-5xl mx-auto px-4 text-center relative z-10">
+        <div class="glass-panel rounded-[2rem] p-10 md:p-14 border border-white/5">
+            <div class="flex justify-center mb-6">
+                <div class="w-16 h-16 rounded-2xl flex items-center justify-center" style="background:linear-gradient(135deg,rgba(var(--brand-500-rgb,255,42,133),0.15),rgba(var(--brand-500-rgb,255,42,133),0.05));border:1px solid rgba(var(--brand-500-rgb,255,42,133),0.15);">
+                    <i class="ph ph-globe-hemisphere-west text-3xl" style="color:var(--brand-500);"></i>
+                </div>
+            </div>
+            <h2 class="text-2xl md:text-4xl font-black mb-4">
+                تجوّلي في المتجر عن بُعد
+            </h2>
+            <p class="text-ink-dim text-base md:text-lg mb-8 max-w-2xl mx-auto font-light">
+                اكتشفي أقسام المتجر وكأنكِ داخله — جولة 360° تفاعلية. اضغطي على أي منتج وأضيفيه إلى سلة التسوق مباشرة.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="{{ route('virtual-store.index') }}"
+                   class="px-10 py-4 rounded-full font-black text-sm tracking-wide inline-flex items-center justify-center gap-2 shadow-neon hover:shadow-neon-strong transition-all"
+                   style="background: var(--gradient-primary); color: white;">
+                    <i class="ph ph-globe-hemisphere-west"></i> ابدئي الجولة الآن
+                </a>
+                <a href="{{ route('shop') }}"
+                   class="px-10 py-4 rounded-full font-bold text-sm border border-white/15 text-white hover:bg-white/5 transition-all inline-flex items-center justify-center gap-2">
+                    <i class="ph ph-storefront"></i> تصفحي المتجر
                 </a>
             </div>
         </div>

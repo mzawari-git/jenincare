@@ -10,11 +10,16 @@ class BlogController extends Controller
 {
     public function index()
     {
-        $featuredPosts = BlogPost::published()->featured()->orderByDesc('created_at')->limit(3)->get();
-        $latestPosts = BlogPost::published()->ordered()->limit(12)->get();
-        $articlePosts = BlogPost::published()->category('articles')->ordered()->limit(4)->get();
-        $tipPosts = BlogPost::published()->category('tips')->ordered()->limit(4)->get();
-        $guidePosts = BlogPost::published()->category('guides')->ordered()->limit(4)->get();
+        $allPosts = BlogPost::published()
+            ->selectRaw('*, CASE WHEN is_featured = 1 THEN 0 ELSE 1 END as sort_featured')
+            ->ordered()
+            ->get();
+
+        $featuredPosts = $allPosts->where('is_featured', true)->take(3);
+        $latestPosts = $allPosts->take(12);
+        $articlePosts = $allPosts->where('category', 'articles')->take(4);
+        $tipPosts = $allPosts->where('category', 'tips')->take(4);
+        $guidePosts = $allPosts->where('category', 'guides')->take(4);
 
         return view('frontend.blog.index', compact(
             'featuredPosts', 'latestPosts', 'articlePosts', 'tipPosts', 'guidePosts'

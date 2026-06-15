@@ -35,27 +35,19 @@ class AffiliateController extends Controller
             return view('frontend.affiliate.pending', compact('affiliate'));
         }
 
-        $todayClicks = AffiliateClick::where('affiliate_id', $affiliate->id)
-            ->whereDate('created_at', today())
-            ->count();
+        $clickStats = AffiliateClick::where('affiliate_id', $affiliate->id)
+            ->selectRaw("
+                COUNT(*) as total_clicks,
+                COALESCE(SUM(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE 0 END), 0) as today_clicks,
+                COALESCE(SUM(CASE WHEN MONTH(created_at) = MONTH(CURDATE()) THEN 1 ELSE 0 END), 0) as month_clicks,
+                COALESCE(SUM(CASE WHEN converted = 1 THEN 1 ELSE 0 END), 0) as total_conversions
+            ")->first();
 
-        $monthClicks = AffiliateClick::where('affiliate_id', $affiliate->id)
-            ->whereMonth('created_at', now()->month)
-            ->count();
-
-        $totalConversions = AffiliateClick::where('affiliate_id', $affiliate->id)
-            ->where('converted', true)
-            ->count();
-
-        $totalClicks = AffiliateClick::where('affiliate_id', $affiliate->id)->count();
-
-        $pendingCommissions = AffiliateCommission::where('affiliate_id', $affiliate->id)
-            ->where('status', 'pending')
-            ->sum('commission_amount');
-
-        $approvedCommissions = AffiliateCommission::where('affiliate_id', $affiliate->id)
-            ->where('status', 'approved')
-            ->sum('commission_amount');
+        $commissionStats = AffiliateCommission::where('affiliate_id', $affiliate->id)
+            ->selectRaw("
+                COALESCE(SUM(CASE WHEN status = 'pending' THEN commission_amount ELSE 0 END), 0) as pending_commissions,
+                COALESCE(SUM(CASE WHEN status = 'approved' THEN commission_amount ELSE 0 END), 0) as approved_commissions
+            ")->first();
 
         $recentCommissions = AffiliateCommission::where('affiliate_id', $affiliate->id)
             ->with('order')
@@ -76,10 +68,15 @@ class AffiliateController extends Controller
             ->get();
 
         return view('frontend.affiliate.dashboard', compact(
-            'affiliate', 'todayClicks', 'monthClicks', 'totalConversions', 'totalClicks',
-            'pendingCommissions', 'approvedCommissions',
-            'recentCommissions', 'recentPayouts', 'topProducts'
-        ));
+            'affiliate', 'recentCommissions', 'recentPayouts', 'topProducts'
+        ) + [
+            'todayClicks' => $clickStats->today_clicks,
+            'monthClicks' => $clickStats->month_clicks,
+            'totalConversions' => $clickStats->total_conversions,
+            'totalClicks' => $clickStats->total_clicks,
+            'pendingCommissions' => $commissionStats->pending_commissions,
+            'approvedCommissions' => $commissionStats->approved_commissions,
+        ]);
     }
 
     public function register(Request $request)

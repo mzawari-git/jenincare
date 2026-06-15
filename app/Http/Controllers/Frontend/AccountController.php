@@ -15,6 +15,7 @@ class AccountController extends Controller
     public function index()
     {
         $orders = Order::where('user_id', Auth::id())
+            ->with('items')
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
@@ -27,6 +28,7 @@ class AccountController extends Controller
     public function orders()
     {
         $orders = Order::where('user_id', Auth::id())
+            ->with('items')
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 

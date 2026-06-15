@@ -39,6 +39,7 @@ use App\Http\Controllers\Admin\MetaProToolsController;
 use App\Http\Controllers\Admin\MetaAdvancedController;
 use App\Http\Controllers\Admin\GoogleAdsController;
 use App\Http\Controllers\Admin\SocialAuthController;
+use App\Http\Controllers\Admin\StoreSceneController;
 
 Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
 
@@ -587,4 +588,31 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::post('/reports/{id}/generate', [MetaAdvancedController::class, 'generateReport'])->name('reports.generate');
         Route::delete('/reports/{id}', [MetaAdvancedController::class, 'deleteAutomatedReport'])->name('reports.destroy');
     });
+
+    // ============================================================
+    // Virtual Store (360° Tour)
+    // ============================================================
+    Route::get('/store-scenes', [StoreSceneController::class, 'index'])->name('admin.store-scenes.index');
+    Route::get('/store-scenes/create', [StoreSceneController::class, 'create'])->name('admin.store-scenes.create');
+    Route::post('/store-scenes', [StoreSceneController::class, 'store'])->name('admin.store-scenes.store');
+    Route::get('/store-scenes/{storeScene}/edit', [StoreSceneController::class, 'edit'])->name('admin.store-scenes.edit');
+    Route::put('/store-scenes/{storeScene}', [StoreSceneController::class, 'update'])->name('admin.store-scenes.update');
+    Route::delete('/store-scenes/{storeScene}', [StoreSceneController::class, 'destroy'])->name('admin.store-scenes.destroy');
+
+    // Hotspots
+    Route::get('/store-scenes/{storeScene}/hotspots', [StoreSceneController::class, 'hotspots'])->name('admin.store-scenes.hotspots');
+    Route::post('/store-scenes/{storeScene}/hotspots', [StoreSceneController::class, 'storeHotspot'])->name('admin.store-scenes.hotspots.store');
+    Route::delete('/store-scenes/hotspots/{hotspot}', [StoreSceneController::class, 'destroyHotspot'])->name('admin.store-scenes.hotspots.destroy');
+
+    // Connections
+    Route::get('/store-scenes/{storeScene}/connections', [StoreSceneController::class, 'connections'])->name('admin.store-scenes.connections');
+    Route::post('/store-scenes/{storeScene}/connections', [StoreSceneController::class, 'storeConnection'])->name('admin.store-scenes.connections.store');
+    Route::delete('/store-scenes/connections/{connection}', [StoreSceneController::class, 'destroyConnection'])->name('admin.store-scenes.connections.destroy');
+
+    // 3D Objects
+    Route::get('/store-scenes/{storeScene}/3d-objects', [StoreSceneController::class, 'objects3d'])->name('admin.store-scenes.3d-objects');
+    Route::post('/store-scenes/{storeScene}/3d-objects', [StoreSceneController::class, 'storeObject3d'])->name('admin.store-scenes.3d-objects.store');
+    Route::put('/store-scenes/{storeScene}/3d-objects/{object}', [StoreSceneController::class, 'updateObject3d'])->name('admin.store-scenes.3d-objects.update');
+    Route::delete('/store-scenes/{storeScene}/3d-objects/{object}', [StoreSceneController::class, 'destroyObject3d'])->name('admin.store-scenes.3d-objects.destroy');
+    Route::post('/store-scenes/{storeScene}/toggle-3d', [StoreSceneController::class, 'toggle3d'])->name('admin.store-scenes.toggle-3d');
 });

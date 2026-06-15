@@ -20,20 +20,21 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $totalOrders = Order::count();
-        $totalRevenue = Order::where('status', '!=', 'cancelled')->sum('total_amount');
+        $orderStats = Order::selectRaw("
+            COUNT(*) as total_orders,
+            COALESCE(SUM(CASE WHEN status != 'cancelled' THEN total_amount ELSE 0 END), 0) as total_revenue,
+            COALESCE(SUM(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE 0 END), 0) as today_orders,
+            COALESCE(SUM(CASE WHEN DATE(created_at) = CURDATE() AND status != 'cancelled' THEN total_amount ELSE 0 END), 0) as today_revenue,
+            COALESCE(SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END), 0) as pending_orders,
+            COALESCE(SUM(CASE WHEN status IN ('confirmed','processing','shipped') THEN 1 ELSE 0 END), 0) as processing_orders,
+            COALESCE(SUM(CASE WHEN status IN ('completed','delivered') THEN 1 ELSE 0 END), 0) as completed_orders,
+            COALESCE(SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END), 0) as cancelled_orders
+        ")->first();
+
         $totalCustomers = User::where('role', 'customer')->count();
         $totalProducts = Product::count();
 
-        $todayOrders = Order::whereDate('created_at', today())->count();
-        $todayRevenue = Order::whereDate('created_at', today())->where('status', '!=', 'cancelled')->sum('total_amount');
-
-        $pendingOrders = Order::where('status', 'pending')->count();
-        $processingOrders = Order::whereIn('status', ['confirmed', 'processing', 'shipped'])->count();
-        $completedOrders = Order::whereIn('status', ['completed', 'delivered'])->count();
-        $cancelledOrders = Order::where('status', 'cancelled')->count();
-
-        $lowStockProducts = Product::where('track_inventory', true)->where('stock_quantity', '>', 0)->where('stock_quantity', '<=', 10)->count();
+        $lowStockProducts = Product::where('track_inventory', true)->whereBetween('stock_quantity', [1, 10])->count();
         $outOfStockProducts = Product::where('track_inventory', true)->where('stock_quantity', 0)->count();
 
         $recentOrders = Order::with('user')->latest()->take(8)->get();
@@ -42,9 +43,8 @@ class DashboardController extends Controller
 
         $monthlyRevenue = Order::select(
             DB::raw('MONTH(created_at) as month'),
-            DB::raw('SUM(total_amount) as total')
+            DB::raw('COALESCE(SUM(CASE WHEN status != \'cancelled\' THEN total_amount ELSE 0 END), 0) as total')
         )
-            ->where('status', '!=', 'cancelled')
             ->whereYear('created_at', date('Y'))
             ->groupBy('month')
             ->orderBy('month')
@@ -57,13 +57,20 @@ class DashboardController extends Controller
         $deliveryStats = $this->getDeliveryStats();
 
         return view('admin.dashboard', compact(
-            'totalOrders', 'totalRevenue', 'totalCustomers', 'totalProducts',
-            'todayOrders', 'todayRevenue',
-            'pendingOrders', 'processingOrders', 'completedOrders', 'cancelledOrders',
+            'totalCustomers', 'totalProducts',
             'lowStockProducts', 'outOfStockProducts',
             'recentOrders', 'topProducts', 'monthlyRevenue',
             'chartData', 'analytics', 'b2bStats', 'deliveryStats'
-        ));
+        ) + [
+            'totalOrders' => $orderStats->total_orders,
+            'totalRevenue' => $orderStats->total_revenue,
+            'todayOrders' => $orderStats->today_orders,
+            'todayRevenue' => $orderStats->today_revenue,
+            'pendingOrders' => $orderStats->pending_orders,
+            'processingOrders' => $orderStats->processing_orders,
+            'completedOrders' => $orderStats->completed_orders,
+            'cancelledOrders' => $orderStats->cancelled_orders,
+        ]);
     }
 
     private function getChartData(): array
@@ -96,12 +103,19 @@ class DashboardController extends Controller
 
         $weekDays = $last30Days->map(fn($date) => Carbon::parse($date)->format('d/m'));
 
+        $statusCounts = Order::selectRaw("
+            COALESCE(SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END), 0) as pending,
+            COALESCE(SUM(CASE WHEN status IN ('confirmed','processing') THEN 1 ELSE 0 END), 0) as processing,
+            COALESCE(SUM(CASE WHEN status = 'shipped' THEN 1 ELSE 0 END), 0) as shipped,
+            COALESCE(SUM(CASE WHEN status IN ('completed','delivered') THEN 1 ELSE 0 END), 0) as completed,
+            COALESCE(SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END), 0) as cancelled
+        ")->first();
         $statusDistribution = [
-            'pending' => Order::where('status', 'pending')->count(),
-            'processing' => Order::whereIn('status', ['confirmed', 'processing'])->count(),
-            'shipped' => Order::where('status', 'shipped')->count(),
-            'completed' => Order::whereIn('status', ['completed', 'delivered'])->count(),
-            'cancelled' => Order::where('status', 'cancelled')->count(),
+            'pending' => $statusCounts->pending ?? 0,
+            'processing' => $statusCounts->processing ?? 0,
+            'shipped' => $statusCounts->shipped ?? 0,
+            'completed' => $statusCounts->completed ?? 0,
+            'cancelled' => $statusCounts->cancelled ?? 0,
         ];
 
         $paymentMethods = Order::select('payment_method', DB::raw('COUNT(*) as count'))
@@ -145,23 +159,25 @@ class DashboardController extends Controller
 
     private function getAnalyticsData(): array
     {
-        $lastWeekRevenue = Order::where('status', '!=', 'cancelled')
-            ->where('created_at', '>=', Carbon::now()->subDays(7))
-            ->sum('total_amount');
+        $revenuePeriods = Order::where('status', '!=', 'cancelled')
+            ->where('created_at', '>=', Carbon::now()->subDays(14))
+            ->selectRaw("
+                COALESCE(SUM(CASE WHEN created_at >= ? THEN total_amount ELSE 0 END), 0) as last_week_revenue,
+                COALESCE(SUM(CASE WHEN created_at < ? AND created_at >= ? THEN total_amount ELSE 0 END), 0) as prev_week_revenue,
+                COALESCE(AVG(total_amount), 0) as avg_order_value
+            ", [Carbon::now()->subDays(7), Carbon::now()->subDays(7), Carbon::now()->subDays(14)])
+            ->first();
 
-        $previousWeekRevenue = Order::where('status', '!=', 'cancelled')
-            ->whereBetween('created_at', [Carbon::now()->subDays(14), Carbon::now()->subDays(7)])
-            ->sum('total_amount');
-
+        $lastWeekRevenue = $revenuePeriods->last_week_revenue;
+        $previousWeekRevenue = $revenuePeriods->prev_week_revenue;
         $revenueGrowth = $previousWeekRevenue > 0
             ? round((($lastWeekRevenue - $previousWeekRevenue) / $previousWeekRevenue) * 100, 1)
             : 0;
 
-        $avgOrderValue = Order::where('status', '!=', 'cancelled')
-            ->avg('total_amount') ?? 0;
-
-        $conversionRate = Order::where('status', '!=', 'cancelled')->count() > 0
-            ? round((Order::where('status', '!=', 'cancelled')->count() / max(User::count(), 1)) * 100, 2)
+        $totalOrders = Order::where('status', '!=', 'cancelled')->count();
+        $totalUsers = User::count();
+        $conversionRate = $totalOrders > 0
+            ? round(($totalOrders / max($totalUsers, 1)) * 100, 2)
             : 0;
 
         $newCustomers = User::where('role', 'customer')
@@ -188,58 +204,66 @@ class DashboardController extends Controller
 
         return [
             'revenueGrowth' => $revenueGrowth,
-            'avgOrderValue' => round($avgOrderValue, 2),
+            'avgOrderValue' => round($revenuePeriods->avg_order_value, 2),
             'conversionRate' => $conversionRate,
             'newCustomers' => $newCustomers,
             'returningCustomers' => $returningCustomers,
             'cartAbandonment' => $cartAbandonment,
             'topCities' => $topCities,
-            'customerLifetimeValue' => Order::where('status', '!=', 'cancelled')->avg('total_amount') ?? 0,
+            'customerLifetimeValue' => round($revenuePeriods->avg_order_value, 2),
         ];
     }
 
     private function getB2BStats(): array
     {
-        $totalCompanies = Company::count();
-        $activeCompanies = Company::where('status', 'active')->count();
-        $pendingCompanies = Company::where('status', 'pending')->count();
+        $companyStats = Company::selectRaw("
+            COUNT(*) as total_companies,
+            COALESCE(SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END), 0) as active_companies,
+            COALESCE(SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END), 0) as pending_companies,
+            COALESCE(SUM(credit_limit), 0) as total_credit,
+            COALESCE(SUM(current_balance), 0) as used_credit
+        ")->first();
 
-        $totalCredit = Company::sum('credit_limit');
-        $usedCredit = Company::sum('current_balance');
-        $availableCredit = $totalCredit - $usedCredit;
+        $availableCredit = $companyStats->total_credit - $companyStats->used_credit;
 
-        $b2bOrders = Order::where('order_type', 'b2b')->count();
-        $b2bRevenue = Order::where('order_type', 'b2b')->where('status', '!=', 'cancelled')->sum('total_amount');
+        $b2bStats = Order::where('order_type', 'b2b')
+            ->selectRaw("
+                COUNT(*) as b2b_orders,
+                COALESCE(SUM(CASE WHEN status != 'cancelled' THEN total_amount ELSE 0 END), 0) as b2b_revenue
+            ")->first();
 
         $topCompanies = Company::orderByDesc('lifetime_value')
             ->limit(5)
             ->get(['company_name_ar', 'lifetime_value', 'total_orders']);
 
         return [
-            'totalCompanies' => $totalCompanies,
-            'activeCompanies' => $activeCompanies,
-            'pendingCompanies' => $pendingCompanies,
-            'totalCredit' => $totalCredit,
-            'usedCredit' => $usedCredit,
+            'totalCompanies' => $companyStats->total_companies,
+            'activeCompanies' => $companyStats->active_companies,
+            'pendingCompanies' => $companyStats->pending_companies,
+            'totalCredit' => $companyStats->total_credit,
+            'usedCredit' => $companyStats->used_credit,
             'availableCredit' => $availableCredit,
-            'b2bOrders' => $b2bOrders,
-            'b2bRevenue' => $b2bRevenue,
+            'b2bOrders' => $b2bStats->b2b_orders,
+            'b2bRevenue' => $b2bStats->b2b_revenue,
             'topCompanies' => $topCompanies,
         ];
     }
 
     private function getDeliveryStats(): array
     {
-        $totalDeliveries = Delivery::count();
-        $pendingDeliveries = Delivery::where('status', 'pending')->count();
-        $activeDeliveries = Delivery::whereIn('status', ['assigned', 'picked_up', 'in_transit', 'out_for_delivery'])->count();
-        $completedDeliveries = Delivery::where('status', 'delivered')->count();
-        $failedDeliveries = Delivery::whereIn('status', ['failed', 'attempted', 'returned'])->count();
+        $deliveryStats = Delivery::selectRaw("
+            COUNT(*) as total_deliveries,
+            COALESCE(SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END), 0) as pending_deliveries,
+            COALESCE(SUM(CASE WHEN status IN ('assigned','picked_up','in_transit','out_for_delivery') THEN 1 ELSE 0 END), 0) as active_deliveries,
+            COALESCE(SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END), 0) as completed_deliveries,
+            COALESCE(SUM(CASE WHEN status IN ('failed','attempted','returned') THEN 1 ELSE 0 END), 0) as failed_deliveries,
+            COALESCE(SUM(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE 0 END), 0) as today_deliveries,
+            COALESCE(SUM(CASE WHEN DATE(delivered_at) = CURDATE() THEN 1 ELSE 0 END), 0) as today_completed
+        ")->first();
 
-        $todayDeliveries = Delivery::whereDate('created_at', today())->count();
-        $todayCompleted = Delivery::whereDate('delivered_at', today())->count();
-
-        $successRate = $totalDeliveries > 0 ? round(($completedDeliveries / $totalDeliveries) * 100, 1) : 0;
+        $successRate = $deliveryStats->total_deliveries > 0
+            ? round(($deliveryStats->completed_deliveries / $deliveryStats->total_deliveries) * 100, 1)
+            : 0;
 
         $recentDeliveries = Delivery::with('order')
             ->latest()
@@ -254,17 +278,23 @@ class DashboardController extends Controller
             ->pluck('count', 'driver_name');
 
         $deliveryByStatus = [
-            'pending' => $pendingDeliveries,
-            'active' => $activeDeliveries,
-            'completed' => $completedDeliveries,
-            'failed' => $failedDeliveries,
+            'pending' => $deliveryStats->pending_deliveries,
+            'active' => $deliveryStats->active_deliveries,
+            'completed' => $deliveryStats->completed_deliveries,
+            'failed' => $deliveryStats->failed_deliveries,
         ];
 
         return compact(
-            'totalDeliveries', 'pendingDeliveries', 'activeDeliveries',
-            'completedDeliveries', 'failedDeliveries', 'todayDeliveries',
-            'todayCompleted', 'successRate', 'recentDeliveries', 'drivers', 'deliveryByStatus'
-        );
+            'successRate', 'recentDeliveries', 'drivers', 'deliveryByStatus'
+        ) + [
+            'totalDeliveries' => $deliveryStats->total_deliveries,
+            'pendingDeliveries' => $deliveryStats->pending_deliveries,
+            'activeDeliveries' => $deliveryStats->active_deliveries,
+            'completedDeliveries' => $deliveryStats->completed_deliveries,
+            'failedDeliveries' => $deliveryStats->failed_deliveries,
+            'todayDeliveries' => $deliveryStats->today_deliveries,
+            'todayCompleted' => $deliveryStats->today_completed,
+        ];
     }
 
     public function skinAnalyzerStats()

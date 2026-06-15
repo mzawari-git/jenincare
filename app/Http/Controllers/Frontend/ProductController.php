@@ -22,6 +22,7 @@ class ProductController extends Controller
 
         $relatedProducts = Product::active()
             ->showInB2C()
+            ->with('category')
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->limit(4)
@@ -32,7 +33,7 @@ class ProductController extends Controller
 
     public function quickView($id)
     {
-        $product = Product::active()->showInB2C()->findOrFail($id);
+        $product = Product::active()->showInB2C()->with('category')->findOrFail($id);
         return response()->json([
             'id' => $product->id,
             'name' => $product->name_ar,

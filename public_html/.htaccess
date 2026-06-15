@@ -1,3 +1,6 @@
 RewriteEngine On
 CGIPassAuth On
+
+# Only rewrite to public/ if not already there
+RewriteCond %{REQUEST_URI} !^/jenincare/public/
 RewriteRule ^(.*)$ public/$1 [L]

@@ -406,6 +406,17 @@
 
             <nav class="nav-section">
                 <div class="section-title" onclick="toggleSection(this)">
+                    المتجر الافتراضي <i class="fas fa-chevron-down collapse-icon"></i>
+                </div>
+                <div class="nav-items">
+                    <a href="{{ route('admin.store-scenes.index') }}" class="nav-item {{ request()->routeIs('admin.store-scenes.*') ? 'active' : '' }}">
+                        <i class="fas fa-store"></i> <span>إدارة المشاهد</span>
+                    </a>
+                </div>
+            </nav>
+
+            <nav class="nav-section">
+                <div class="section-title" onclick="toggleSection(this)">
                     التوصيل <i class="fas fa-chevron-down collapse-icon"></i>
                 </div>
                 <div class="nav-items">

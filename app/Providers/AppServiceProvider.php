@@ -188,7 +188,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         try {
-            $dbSettings = \App\Models\Setting::pluck('value', 'key')->toArray();
+            $dbSettings = \Illuminate\Support\Facades\Cache::remember('service_oauth_settings', 3600, function () {
+                return \App\Models\Setting::whereIn('key', [
+                    'google_client_id', 'google_client_secret',
+                    'facebook_client_id', 'facebook_client_secret',
+                ])->pluck('value', 'key')->toArray();
+            });
 
             if (!empty($dbSettings['google_client_id']) && !empty($dbSettings['google_client_secret'])) {
                 config([
@@ -314,7 +319,7 @@ class AppServiceProvider extends ServiceProvider
             }
         });
 
-        // Share cart count with all views (cached per request via static)
+        // Share cart count with all views (cached per request)
         View::composer('*', function ($view) {
             static $cartCount = null;
             if ($cartCount !== null) {
@@ -324,17 +329,22 @@ class AppServiceProvider extends ServiceProvider
             try {
                 $cartCount = 0;
                 if (Auth::check()) {
-                    $cart = Cart::where('user_id', Auth::id())->where('is_active', true)->first();
+                    $cartCount = Cart::where('user_id', Auth::id())
+                        ->where('is_active', true)
+                        ->withCount(['items as total_qty' => function ($q) {
+                            $q->select(\Illuminate\Support\Facades\DB::raw('COALESCE(SUM(quantity), 0)'));
+                        }])
+                        ->value('total_qty') ?? 0;
                 } else {
                     $sessionId = Session::getId();
                     if ($sessionId) {
-                        $cart = Cart::where('session_id', $sessionId)->where('is_active', true)->first();
-                    } else {
-                        $cart = null;
+                        $cartCount = Cart::where('session_id', $sessionId)
+                            ->where('is_active', true)
+                            ->withCount(['items as total_qty' => function ($q) {
+                                $q->select(\Illuminate\Support\Facades\DB::raw('COALESCE(SUM(quantity), 0)'));
+                            }])
+                            ->value('total_qty') ?? 0;
                     }
-                }
-                if ($cart) {
-                    $cartCount = $cart->items()->sum('quantity');
                 }
                 $view->with('cartCount', $cartCount);
             } catch (\Exception $e) {

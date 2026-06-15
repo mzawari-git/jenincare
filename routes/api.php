@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ScanController;
 use App\Http\Controllers\Webhook\ShopifyController;
 use App\Http\Controllers\Webhook\WooCommerceController;
+use App\Http\Controllers\Api\VirtualStoreController as ApiVirtualStoreController;
 
 if (app()->environment('local', 'testing')) {
     Route::get('/setup-token', function () {
@@ -227,6 +228,18 @@ Route::get('/admin/auth/me', [\App\Http\Controllers\Admin\AuthController::class,
 Route::get('/v1/health', function () {
     return response()->json(['status' => 'ok', 'version' => '1.0', 'time' => now()]);
 });
+
+// Virtual Store API (public)
+Route::get('/virtual-store/scenes', [ApiVirtualStoreController::class, 'scenes']);
+Route::get('/virtual-store/scene/{id}', [ApiVirtualStoreController::class, 'scene']);
+Route::get('/virtual-store/hotspot-products', [ApiVirtualStoreController::class, 'hotspotProducts']);
+
+// 3D Store API
+Route::get('/store-3d/scenes', [\App\Http\Controllers\Api\Store3dController::class, 'scenes']);
+Route::get('/store-3d/scenes/{sceneId}/objects', [\App\Http\Controllers\Api\Store3dController::class, 'objects']);
+Route::get('/store-3d/products', [\App\Http\Controllers\Api\Store3dController::class, 'products']);
+Route::get('/store-3d/shelves', [\App\Http\Controllers\Api\Store3dController::class, 'shelves']);
+Route::get('/store-3d/object-types', [\App\Http\Controllers\Api\Store3dController::class, 'objectTypes']);
 
 Route::prefix('admin')->middleware(['auth:api'])->group(function () {
     // Dashboard

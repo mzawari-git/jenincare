@@ -15,6 +15,7 @@
             <nav class="hidden lg:flex items-center gap-6 text-sm font-bold">
                 <a href="{{ route('home') }}" class="nav-link {{ request()->routeIs('home')?'active':'' }}">????????</a>
                 <a href="{{ route('shop') }}" class="nav-link {{ request()->routeIs('shop')?'active':'' }}">??????</a>
+                <a href="{{ route('virtual-store.index') }}" class="nav-link {{ request()->routeIs('virtual-store*')?'active':'' }}"><i class="ph ph-globe-hemisphere-west"></i> ?????? ???????</a>
                 <a href="{{ route('b2b') }}" class="nav-link">???????</a>
                 <a href="{{ route('affiliate.landing') }}" class="nav-link">?????</a>
                 <a href="{{ route('blog.index') }}" class="nav-link">?????</a>
@@ -87,6 +88,11 @@
                 <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-storefront text-base" style="color:var(--ink-dim);"></i></span>
                 <span>??????</span>
                 @if(request()->routeIs('shop'))<i class="ph ph-caret-left ms-auto" style="color:var(--brand-500);"></i>@endif
+            </a>
+            <a href="{{ route('virtual-store.index') }}" class="mobile-link {{ request()->routeIs('virtual-store*')?'active':'' }}">
+                <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-globe-hemisphere-west text-base" style="color:var(--ink-dim);"></i></span>
+                <span>?????? ???????</span>
+                @if(request()->routeIs('virtual-store*'))<i class="ph ph-caret-left ms-auto" style="color:var(--brand-500);"></i>@endif
             </a>
             <a href="{{ route('b2b') }}" class="mobile-link {{ request()->routeIs('b2b')?'active':'' }}">
                 <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-buildings text-base" style="color:var(--ink-dim);"></i></span>
