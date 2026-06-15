@@ -3,7 +3,7 @@
   "scripts": {
     "build": "tailwindcss -i css/app.css -o public/css/tailwind.css --minify && vite build",
     "build:tailwind": "tailwindcss -i css/app.css -o public/css/tailwind.css --minify",
-    "build:3d": "vite build",
+    "build:3d": "vite build && node -e \"const fs=require('fs');const s='public/dist',d='public_html/public/dist';if(fs.existsSync(d))fs.rmSync(d,{recursive:true});fs.cpSync(s,d,{recursive:true});fs.cpSync('public/fonts','public_html/public/fonts',{recursive:true});const imgSrc='public/images/panoramas',imgDst='public_html/public/images/panoramas';if(!fs.existsSync(imgDst)){fs.mkdirSync(imgDst,{recursive:true})}fs.cpSync(imgSrc,imgDst,{recursive:true});\"",
     "watch": "tailwindcss -i css/app.css -o public/css/tailwind.css --watch",
     "dev:3d": "vite"
   },

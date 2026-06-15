@@ -58,7 +58,10 @@ class VirtualStoreController extends Controller
 
     public function store3d()
     {
-        return view('frontend.virtual-store.3d-store');
+        // The 3D store is a self-contained HTML page (no layout needed)
+        return response(view('frontend.virtual-store.3d-store', [
+            'csrf_token' => csrf_token(),
+        ]));
     }
 
     public function store3dScene($slug)

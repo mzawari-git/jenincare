@@ -18,7 +18,7 @@ export default function Section({ section, isActive }) {
                 <meshStandardMaterial
                     color={color}
                     transparent
-                    opacity={0.15}
+                    opacity={0.25}
                     roughness={0.8}
                 />
             </mesh>
@@ -33,7 +33,7 @@ export default function Section({ section, isActive }) {
                 <meshStandardMaterial
                     color={color}
                     transparent
-                    opacity={isActive ? 0.5 : 0.15}
+                    opacity={isActive ? 0.6 : 0.25}
                     emissive={color}
                     emissiveIntensity={isActive ? 0.3 : 0}
                 />
@@ -42,17 +42,17 @@ export default function Section({ section, isActive }) {
         [position, size, color, isActive]
     );
 
-    // Back wall
+    // Display wall on entrance-facing side (+Z)
     const wall = useMemo(
         () => (
-            <mesh position={[position[0], 2, position[2] - size[2] / 2 - 0.5]} receiveShadow>
+            <mesh position={[position[0], 2, position[2] + size[2] / 2 + 0.5]} receiveShadow>
                 <boxGeometry args={[size[0] + 0.5, 4, 0.2]} />
                 <meshStandardMaterial
-                    color="#1a1a2e"
+                    color="#e8e0d8"
                     roughness={0.9}
-                    metalness={0.2}
+                    metalness={0}
                     transparent
-                    opacity={0.6}
+                    opacity={0.85}
                 />
             </mesh>
         ),
@@ -66,13 +66,13 @@ export default function Section({ section, isActive }) {
             {wall}
 
             {/* Section Sign */}
-            <group position={[position[0], 3.2, position[2] - size[2] / 2 - 0.3]}>
+            <group position={[position[0], 3.2, position[2] + size[2] / 2 + 0.3]}>
                 <mesh>
                     <planeGeometry args={[4, 0.8]} />
                     <meshStandardMaterial
-                        color="#0f0f1a"
+                        color="#f0ece4"
                         transparent
-                        opacity={0.8}
+                        opacity={0.9}
                         side={THREE.DoubleSide}
                     />
                 </mesh>
@@ -97,7 +97,7 @@ export default function Section({ section, isActive }) {
             ].map((p, i) => (
                 <mesh key={i} position={[position[0] + p[0], 2, position[2] + p[2]]}>
                     <cylinderGeometry args={[0.08, 0.1, 4, 8]} />
-                    <meshStandardMaterial color="#2a2a4a" metalness={0.5} roughness={0.5} />
+                    <meshStandardMaterial color="#ddd8d0" metalness={0.1} roughness={0.8} />
                 </mesh>
             ))}
 
