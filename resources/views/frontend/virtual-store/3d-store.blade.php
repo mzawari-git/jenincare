@@ -457,31 +457,39 @@ scene.fog = new THREE.Fog(0x0a0812, 160, 480);
 
 // FOV = 85 درجة لزاوية رؤية واسعة
 const camera = new THREE.PerspectiveCamera(85, window.innerWidth / window.innerHeight, 0.4, 800);
-camera.position.set(0, CAMH, D / 2 * 25 - 60);
+// نبدأ عند المدخل (مقدمة الغرفة) متجهين نحو داخل المتجر (-Z)
+camera.position.set(0, CAMH, D / 2 - 1.5);
 camera.rotation.order = 'YXZ';
 
 // ============================================================
 //  LIGHTING
 // ============================================================
-scene.add(new THREE.AmbientLight(0xfff5ea, 0.50));
+scene.add(new THREE.AmbientLight(0xfff5ea, 0.35));
 
+// ضوء سقفي اتجاهي واحد يُسقط الظلال على كامل الغرفة
+// (نتجنّب عشرات المصابيح المُسقِطة للظل لئلا نتجاوز حد وحدات النسيج في WebGL)
+const sun = new THREE.DirectionalLight(0xfff5ea, 0.55);
+sun.position.set(W * 0.3, H + 8, D * 0.25);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -W;  sun.shadow.camera.right = W;
+sun.shadow.camera.top = D;    sun.shadow.camera.bottom = -D;
+sun.shadow.camera.near = 1;   sun.shadow.camera.far = H * 3;
+scene.add(sun);
+
+// مصابيح سقف موزّعة داخل حدود الغرفة (بدون ظل) لإضاءة متساوية
 function ceiling(x, z) {
-  const pl = new THREE.PointLight(0xfff8ee, 2.5, 88, 1.2);
+  const pl = new THREE.PointLight(0xfff8ee, 0.85, 64, 1.6);
   pl.position.set(x, H - 2, z);
-  pl.castShadow = true;
-  pl.shadow.mapSize.set(512, 512);
   scene.add(pl);
-  const g = new THREE.Mesh(new THREE.SphereGeometry(0.88, 8, 8),
+  const g = new THREE.Mesh(new THREE.SphereGeometry(0.72, 10, 10),
     new THREE.MeshBasicMaterial({ color: 0xfff8d0 }));
   g.position.copy(pl.position);
   scene.add(g);
 }
-// مصابيح موزعة على المساحة
-for (let xi = -3; xi <= 3; xi++) {
-  for (let zi = -4; zi <= 4; zi++) {
-    ceiling(xi * 5.0, zi * 5.0);
-  }
-}
+const L_COLS = [-W / 4, W / 4];          // عمودان داخل العرض (±8)
+const L_ROWS = [-8, -4, 0, 4, 8];        // خمسة صفوف على طول العمق (±10)
+for (const lx of L_COLS) for (const lz of L_ROWS) ceiling(lx, lz);
 
 // اضاءة جانبية ملونة
 const pinkLight = new THREE.PointLight(0xff6b9d, 0.8, 56);
@@ -569,33 +577,34 @@ function buildUnit(cx, cy, cz, uw, uh, ud, ns, side) {
 // ============================================================
 //  BUILD ALL SHELVES
 // ============================================================
-// الجدار الأيسر  (X≈-1.83) — عمق 5م = 5 وحدات
+// الجدار الأيسر  (X≈-1.83) — عمق 5م = 5 وحدات موزعة على كامل العمق
 const LX = -(W / 2 - SD / 2 - WT);
 for (let i = 0; i < 5; i++) {
-  const z = -D / 2 + 0.5 + i * 1.0;
+  const z = -D / 2 + 2.0 + i * 4.0;
   buildUnit(LX, 0, z, 1.0, SH, SD, NS, 'left');
   shelfZones.push({ x: LX, z, side: 'left', prods: PRODS.left, label: '💊 عناية بالبشرة والفيتامينات' });
 }
 
-// الجدار الأيمن  (X≈+1.83) — عمق 5م = 5 وحدات
+// الجدار الأيمن  (X≈+1.83) — عمق 5م = 5 وحدات موزعة على كامل العمق
 const RX = W / 2 - SD / 2 - WT;
 for (let i = 0; i < 5; i++) {
-  const z = -D / 2 + 0.5 + i * 1.0;
+  const z = -D / 2 + 2.0 + i * 4.0;
   buildUnit(RX, 0, z, 1.0, SH, SD, NS, 'right');
   shelfZones.push({ x: RX, z, side: 'right', prods: PRODS.right, label: '💇 صبغات الشعر والعناية' });
 }
 
-// الجدار الخلفي  (Z≈-2.33) — عرض 4م = 4 وحدات
+// الجدار الخلفي  (Z≈-2.33) — عرض 4م = 4 وحدات موزعة على كامل العرض
 const BZ = -(D / 2 - SD / 2 - WT);
 for (let i = 0; i < 4; i++) {
-  const x = -W / 2 + 0.5 + i * 1.0;
+  const x = -W / 2 + 2.0 + i * 4.0;
   buildUnit(x, 0, BZ, 1.0, SH, SD, NS, 'back');
   shelfZones.push({ x, z: BZ, side: 'back', prods: PRODS.back, label: '🎁 عطور وهدايا وكوزماتيك' });
 }
 
 // الجزيرة المركزية (2م × 1م) في منتصف العمق
-buildUnit(0, 0, -0.5, 2.0, 1.45, 1.0, 3, 'island');
-shelfZones.push({ x: 0, z: -0.5, side: 'island', prods: PRODS.island, label: '💄 أحمر شفاه ومكياج' });
+const ISO_Z = -0.5;
+buildUnit(0, 0, ISO_Z, 2.0, 1.45, 1.0, 3, 'island');
+shelfZones.push({ x: 0, z: ISO_Z, side: 'island', prods: PRODS.island, label: '💄 أحمر شفاه ومكياج' });
 
 // ============================================================
 //  PRODUCT BOXES ON SHELVES
@@ -629,7 +638,7 @@ function placeRow(side, baseX, baseZ, prods, unitIdx, shelfIdx) {
     if (side === 'left')  { px = baseX + SD / 2 - pd / 2 - 0.02; pz = baseZ + off; }
     if (side === 'right') { px = baseX - SD / 2 + pd / 2 + 0.02; pz = baseZ + off; }
     if (side === 'back')  { pz = baseZ + SD / 2 - pd / 2 - 0.02; px = baseX + off; }
-    if (side === 'island'){ px = off * 1.8; pz = -0.5; }
+    if (side === 'island'){ px = off * 1.8; pz = ISO_Z; }
 
     const m = new THREE.Mesh(new THREE.BoxGeometry(pw, ph, pd), pmat);
     m.position.set(px, py, pz);
@@ -655,7 +664,7 @@ for (let s = 0; s < 3; s++) placeRow('island', 0, ISO_Z, PRODS.island, 0, s);
 //  FPS CONTROLS
 // ============================================================
 const keys = {};
-let yaw = Math.PI, pitch = 0;
+let yaw = 0, pitch = 0;
 let locked = false, drag = false, mx0 = 0, my0 = 0;
 
 canvas.addEventListener('click', () => { if (gameOn) canvas.requestPointerLock(); });
@@ -701,10 +710,10 @@ function isMobile() { return window.innerWidth <= 768 || 'ontouchstart' in windo
 // ============================================================
 //  COLLISION
 // ============================================================
-//  عرض 4م → X: ±2  |  عمق 5م → Z: ±2.5
+//  عرض 4م = ±8 وحدة على X  |  عمق 5م = ±10 وحدة على Z  (الوحدة = 25سم)
 const CM = 0.38;
-const hW = W / 2 - CM;  // 1.62
-const hD = D / 2 - CM;  // 2.12
+const hW = W / 2 - CM;  // 7.62
+const hD = D / 2 - CM;  // 9.62
 
 const colliders = [
   // يسار (X ≈ -1.83 → الممر عند X=-1.52)
