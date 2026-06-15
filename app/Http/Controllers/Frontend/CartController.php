@@ -74,11 +74,20 @@ class CartController extends Controller
     public function update(Request $request)
     {
         $request->validate([
-            'cart_item_id' => 'required|exists:cart_items,id',
+            'cart_item_id' => 'required_without:product_id|exists:cart_items,id',
+            'product_id' => 'required_without:cart_item_id|exists:products,id',
             'quantity' => 'required|integer|min:0'
         ]);
 
-        $cartItem = CartItem::findOrFail($request->cart_item_id);
+        if ($request->product_id && !$request->cart_item_id) {
+            $cart = $this->getCart();
+            $cartItem = $cart->items()->where('product_id', $request->product_id)->first();
+            if (!$cartItem) {
+                return response()->json(['success' => false, 'message' => 'Item not in cart'], 404);
+            }
+        } else {
+            $cartItem = CartItem::findOrFail($request->cart_item_id);
+        }
         $cart = $this->getCart();
 
         if ($request->quantity == 0) {
@@ -108,10 +117,19 @@ class CartController extends Controller
     public function remove(Request $request)
     {
         $request->validate([
-            'cart_item_id' => 'required|exists:cart_items,id'
+            'cart_item_id' => 'required_without:product_id|exists:cart_items,id',
+            'product_id' => 'required_without:cart_item_id|exists:products,id',
         ]);
 
-        $cartItem = CartItem::findOrFail($request->cart_item_id);
+        if ($request->product_id && !$request->cart_item_id) {
+            $cart = $this->getCart();
+            $cartItem = $cart->items()->where('product_id', $request->product_id)->first();
+            if (!$cartItem) {
+                return response()->json(['success' => false, 'message' => 'Item not in cart'], 404);
+            }
+        } else {
+            $cartItem = CartItem::findOrFail($request->cart_item_id);
+        }
         $cartItem->delete();
 
         $cart = $this->getCart();

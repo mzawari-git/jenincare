@@ -14,7 +14,8 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;font-family:'Cairo',sans-serif;background:#0a0a0a}
-canvas#c{display:block;width:100vw!important;height:100vh!important;position:fixed;top:0;left:0;z-index:1;cursor:crosshair}
+canvas#c{display:block;width:100vw!important;height:100vh!important;position:fixed;top:0;left:0;z-index:1;cursor:grab}
+canvas#c:active{cursor:grabbing}
 
 /* START SCREEN */
 #startScreen{
@@ -291,6 +292,7 @@ canvas#c{display:block;width:100vw!important;height:100vh!important;position:fix
     <span class="hk">A D</span><span class="hs">يمين/يسار</span>
     <span class="hs">|</span>
     <span class="hk">🖱️ اسحب</span><span class="hs">للنظر</span>
+    <span class="hk">نقرتين</span><span class="hs">تثبيت</span>
   </div>
   <div id="proxRing">
     <div class="prx-dot"></div>
@@ -445,80 +447,84 @@ const PRODS = {
 // ============================================================
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled = false;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0a0812);
-// ضباب يتناسب مع مساحة 5000سم
-scene.fog = new THREE.Fog(0x0a0812, 160, 480);
+scene.background = new THREE.Color(0x224466);
+scene.fog = new THREE.Fog(0x0a0812, 15, 40);
 
 // FOV = 85 درجة لزاوية رؤية واسعة
 const camera = new THREE.PerspectiveCamera(85, window.innerWidth / window.innerHeight, 0.4, 800);
-camera.position.set(0, CAMH, D / 2 * 25 - 60);
+camera.position.set(0, CAMH, D / 2 - 1.5);
 camera.rotation.order = 'YXZ';
 
 // ============================================================
 //  LIGHTING
 // ============================================================
-scene.add(new THREE.AmbientLight(0xfff5ea, 0.50));
+scene.add(new THREE.AmbientLight(0xfff5ea, 0.7));
+const frontLight = new THREE.DirectionalLight(0xffffff, 0.8);
+frontLight.position.set(0, 10, 12);
+scene.add(frontLight);
 
-function ceiling(x, z) {
-  const pl = new THREE.PointLight(0xfff8ee, 2.5, 88, 1.2);
-  pl.position.set(x, H - 2, z);
-  pl.castShadow = true;
-  pl.shadow.mapSize.set(512, 512);
+// إضاءة السقف - 5 مصابيح فقط بدلاً من 63
+const PL_POS = [
+  [0,     0],   [0,     6],
+  [0,    -6],   [-5,    4],
+  [5,    -4],
+];
+for (const [zx, zz] of PL_POS) {
+  const pl = new THREE.PointLight(0xfff8ee, 1.8, 70, 1.6);
+  pl.position.set(zx, H - 2, zz);
   scene.add(pl);
   const g = new THREE.Mesh(new THREE.SphereGeometry(0.88, 8, 8),
     new THREE.MeshBasicMaterial({ color: 0xfff8d0 }));
   g.position.copy(pl.position);
   scene.add(g);
 }
-// مصابيح موزعة على المساحة
-for (let xi = -3; xi <= 3; xi++) {
-  for (let zi = -4; zi <= 4; zi++) {
-    ceiling(xi * 5.0, zi * 5.0);
-  }
-}
 
 // اضاءة جانبية ملونة
-const pinkLight = new THREE.PointLight(0xff6b9d, 0.8, 56);
+const pinkLight = new THREE.PointLight(0xff6b9d, 0.5, 56);
 pinkLight.position.set(-W/2 + 12, H/2, 0);
 scene.add(pinkLight);
 
-const blueLight = new THREE.PointLight(0x6bb5ff, 0.8, 56);
+const blueLight = new THREE.PointLight(0x6bb5ff, 0.5, 56);
 blueLight.position.set(W/2 - 12, H/2, 0);
 scene.add(blueLight);
 
 // ============================================================
 //  MATERIALS
 // ============================================================
-function mat(c, r = 0.8, m = 0) {
-  return new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m });
+function mat(c) {
+  return new THREE.MeshBasicMaterial({ color: c });
 }
+function basicMat(c) { return new THREE.MeshBasicMaterial({ color: c }); }
 const M = {
-  floor:  mat(0xd2c4ae, 0.88),
-  wall:   mat(0xf3ede6, 0.85),
-  ceil:   mat(0xfafafa, 0.9),
-  frame:  mat(0x1c1c1c, 0.65, 0.1),
-  board:  mat(0xfcfcfc, 0.78),
-  door:   mat(0x2a2a2a, 0.6, 0.2),
-  glass:  new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.22, roughness: 0.05 }),
+  floor:  basicMat(0xd2c4ae),
+  wall:   basicMat(0xd9c8b2),
+  ceil:   basicMat(0xfafafa),
+  frame:  basicMat(0x1c1c1c),
+  board:  basicMat(0xfcfcfc),
+  door:   basicMat(0x2a2a2a),
+  glass:  new THREE.MeshBasicMaterial({ color: 0x88ccff, transparent: true, opacity: 0.22 }),
 };
 
 // ============================================================
 //  BOX HELPER
 // ============================================================
 function box(w, h, d, mat, x, y, z) {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-  m.position.set(x, y, z);
-  m.castShadow = true;
-  m.receiveShadow = true;
-  scene.add(m);
-  return m;
+  try {
+    const geo = new THREE.BoxGeometry(Math.abs(w), Math.abs(h), Math.abs(d));
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+
+    scene.add(m);
+    return m;
+  } catch (e) { console.error('box error:', e); return null; }
 }
+
+
 
 // ============================================================
 //  ROOM (عرض 4000سم، عمق 5000سم، ارتفاع 400سم)
@@ -597,6 +603,13 @@ for (let i = 0; i < 4; i++) {
 buildUnit(0, 0, -0.5, 2.0, 1.45, 1.0, 3, 'island');
 shelfZones.push({ x: 0, z: -0.5, side: 'island', prods: PRODS.island, label: '💄 أحمر شفاه ومكياج' });
 
+// DIAGNOSTIC: bright red box 2 units in front of camera
+const diagMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+const diagBox = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), diagMat);
+diagBox.position.set(0, CAMH, D/2 - 1.5 - 2);
+scene.add(diagBox);
+console.log('DIAGNOSTIC: red box at', diagBox.position.x.toFixed(2), diagBox.position.y.toFixed(2), diagBox.position.z.toFixed(2), 'camera at 0', CAMH, (D/2-1.5).toFixed(2));
+
 // ============================================================
 //  PRODUCT BOXES ON SHELVES
 // ============================================================
@@ -611,18 +624,22 @@ function placeRow(side, baseX, baseZ, prods, unitIdx, shelfIdx) {
   const isPerfume = p.zone.includes('عطر') || p.zone.includes('مسك');
   const isLip     = p.zone.includes('شفاه');
 
-  let pw = 0.075, ph = 0.10, pd = 0.055;
-  if (isBottle)  { pw = 0.055; ph = 0.18; pd = 0.055; }
-  if (isGift)    { pw = 0.11;  ph = 0.11; pd = 0.08; }
-  if (isPerfume) { pw = 0.048; ph = 0.13; pd = 0.038; }
-  if (isLip)     { pw = 0.022; ph = 0.11; pd = 0.022; }
-
-  const pmat = new THREE.MeshStandardMaterial({
-    color: c, roughness: 0.45, metalness: 0.12,
-    emissive: c, emissiveIntensity: 0.06,
-  });
+  let pw = 0.12, ph = 0.16, pd = 0.09;
+  if (isBottle)  { pw = 0.09; ph = 0.28; pd = 0.09; }
+  if (isGift)    { pw = 0.17; ph = 0.17; pd = 0.12; }
+  if (isPerfume) { pw = 0.08; ph = 0.20; pd = 0.06; }
+  if (isLip)     { pw = 0.035; ph = 0.17; pd = 0.035; }
 
   const count = Math.min(6, Math.floor(0.9 / (pw + 0.018)));
+  const isTall = isBottle || isPerfume || isLip;
+  const pmat = new THREE.MeshBasicMaterial({ color: c });
+  // add one green giant cube at eye level, then one per row for diagnostic
+  if (unitIdx === 0 && shelfIdx === 0 && side === 'left') {
+    const dm = new THREE.Mesh(new THREE.BoxGeometry(3,3,3), new THREE.MeshBasicMaterial({color:0x00ff00}));
+    dm.position.set(0, CAMH, D/2 - 1.5 - 5);
+    scene.add(dm);
+    console.log('GREEN giant cube at', dm.position.x, dm.position.y, dm.position.z);
+  }
   for (let k = 0; k < count; k++) {
     const off = (k - (count - 1) / 2) * (pw + 0.018);
     let px = 0, py = y0 + ph / 2, pz = 0;
@@ -630,36 +647,39 @@ function placeRow(side, baseX, baseZ, prods, unitIdx, shelfIdx) {
     if (side === 'right') { px = baseX - SD / 2 + pd / 2 + 0.02; pz = baseZ + off; }
     if (side === 'back')  { pz = baseZ + SD / 2 - pd / 2 - 0.02; px = baseX + off; }
     if (side === 'island'){ px = off * 1.8; pz = -0.5; }
-
-    const m = new THREE.Mesh(new THREE.BoxGeometry(pw, ph, pd), pmat);
+    const geo = isTall
+      ? new THREE.CylinderGeometry(pw * 0.75, pw * 0.85, ph, 10)
+      : new THREE.BoxGeometry(pw, ph, pd);
+    const m = new THREE.Mesh(geo, pmat);
     m.position.set(px, py, pz);
-    m.castShadow = true;
+    m.rotation.y = Math.random() * Math.PI * 2;
     m.userData = { product: p };
     scene.add(m);
   }
 }
 
 // يسار
-for (let u = 0; u < 5; u++) for (let s = 0; s < NS; s++)
-  placeRow('left', LX, -D/2+2.0+u*4.0, PRODS.left, u, s);
-// يمين
-for (let u = 0; u < 5; u++) for (let s = 0; s < NS; s++)
-  placeRow('right', RX, -D/2+2.0+u*4.0, PRODS.right, u, s);
-// خلف
-for (let u = 0; u < 4; u++) for (let s = 0; s < NS; s++)
-  placeRow('back', -W/2+2.0+u*4.0, BZ, PRODS.back, u, s);
-// جزيرة
-for (let s = 0; s < 3; s++) placeRow('island', 0, ISO_Z, PRODS.island, 0, s);
+let prodCount = 0;
+for (let u = 0; u < 5; u++) for (let s = 0; s < NS; s++) { placeRow('left', LX, -D/2+2.0+u*4.0, PRODS.left, u, s); prodCount += Math.min(6, Math.floor(0.9 / (0.075 + 0.018))); }
+for (let u = 0; u < 5; u++) for (let s = 0; s < NS; s++) { placeRow('right', RX, -D/2+2.0+u*4.0, PRODS.right, u, s); prodCount += Math.min(6, Math.floor(0.9 / (0.075 + 0.018))); }
+for (let u = 0; u < 4; u++) for (let s = 0; s < NS; s++) { placeRow('back', -W/2+2.0+u*4.0, BZ, PRODS.back, u, s); prodCount += Math.min(6, Math.floor(0.9 / (0.075 + 0.018))); }
+for (let s = 0; s < 3; s++) { placeRow('island', 0, -0.5, PRODS.island, 0, s); prodCount += Math.min(6, Math.floor(0.9 / (0.075 + 0.018))); }
+console.log('Products created:', prodCount, 'Total scene objects:', scene.children.length);
 
 // ============================================================
 //  FPS CONTROLS
 // ============================================================
 const keys = {};
-let yaw = Math.PI, pitch = 0;
+let yaw = 0, pitch = 0;
 let locked = false, drag = false, mx0 = 0, my0 = 0;
 
-canvas.addEventListener('click', () => { if (gameOn) canvas.requestPointerLock(); });
-document.addEventListener('pointerlockchange', () => { locked = !!document.pointerLockElement; });
+// Double-click or right-click for pointer lock (optional)
+canvas.addEventListener('dblclick', () => { if (gameOn) canvas.requestPointerLock(); });
+canvas.addEventListener('contextmenu', e => { e.preventDefault(); if (gameOn) canvas.requestPointerLock(); });
+document.addEventListener('pointerlockchange', () => {
+  locked = !!document.pointerLockElement;
+  if (!locked) drag = false; // clean up on unlock
+});
 document.addEventListener('mousemove', e => {
   if (locked)        { yaw -= e.movementX * LSPD; pitch -= e.movementY * LSPD; }
   else if (drag && gameOn) {
@@ -669,7 +689,10 @@ document.addEventListener('mousemove', e => {
   }
   pitch = Math.max(-1.18, Math.min(1.18, pitch));
 });
-canvas.addEventListener('mousedown', e => { if (!locked && gameOn) { drag = true; mx0 = e.clientX; my0 = e.clientY; } });
+canvas.addEventListener('mousedown', e => {
+  if (e.button !== 0) return; // left click only
+  if (!locked && gameOn) { drag = true; mx0 = e.clientX; my0 = e.clientY; }
+});
 document.addEventListener('mouseup', () => { drag = false; });
 document.addEventListener('keydown', e => { keys[e.code] = true; });
 document.addEventListener('keyup',   e => { keys[e.code] = false; });
@@ -751,12 +774,13 @@ const card = document.getElementById('prodCard');
 const zoneLbl = document.getElementById('zoneLabel');
 
 function checkProx() {
-  const cx = camera.position.x, cz = camera.position.z;
-  let near = null, nearD = PROX;
+  const cx = camera.position.x, cz = camera.position.z, px2 = PROX * PROX;
+  let near = null, nearD2 = px2;
   for (const z of shelfZones) {
-    const d = Math.hypot(cx - z.x, cz - z.z);
-    if (d < nearD) { nearD = d; near = z; }
+    const dx = cx - z.x, dz = cz - z.z, d2 = dx * dx + dz * dz;
+    if (d2 < nearD2) { nearD2 = d2; near = z; }
   }
+  const nearD = Math.sqrt(nearD2);
   const ring = document.getElementById('proxRing');
   if (near && nearD < PROX * 0.65) {
     ring.style.opacity = '0';
