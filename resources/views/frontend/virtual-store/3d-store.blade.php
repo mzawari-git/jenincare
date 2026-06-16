@@ -14,8 +14,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;font-family:'Cairo',sans-serif;background:#0a0a0a}
-canvas#c{display:block;width:100vw!important;height:100vh!important;position:fixed;top:0;left:0;z-index:1;cursor:grab}
-canvas#c:active{cursor:grabbing}
+canvas#c{display:block;width:100vw!important;height:100vh!important;position:fixed;top:0;left:0;z-index:1;cursor:crosshair}
 
 /* START SCREEN */
 #startScreen{
@@ -258,7 +257,7 @@ canvas#c:active{cursor:grabbing}
   <div class="logo">🏪 جنين كير</div>
   <div class="tagline">تجوّل داخل المتجر واختر منتجاتك</div>
   <div class="info-grid">
-    <div class="info-box"><div class="ic">📐</div><strong>12×15×4 م</strong><span>أبعاد المتجر الحقيقية</span></div>
+    <div class="info-box"><div class="ic">📐</div><strong>4×5×4 م</strong><span>أبعاد المتجر الحقيقية</span></div>
     <div class="info-box"><div class="ic">🚶</div><strong>تجوّل حر</strong><span>W A S D + الفأرة</span></div>
     <div class="info-box"><div class="ic">🛒</div><strong>أضف للسلة</strong><span>مباشرة من المتجر</span></div>
   </div>
@@ -292,7 +291,6 @@ canvas#c:active{cursor:grabbing}
     <span class="hk">A D</span><span class="hs">يمين/يسار</span>
     <span class="hs">|</span>
     <span class="hk">🖱️ اسحب</span><span class="hs">للنظر</span>
-    <span class="hk">نقرتين</span><span class="hs">تثبيت</span>
   </div>
   <div id="proxRing">
     <div class="prx-dot"></div>
@@ -356,23 +354,23 @@ function initApp() {
 
 // ============================================================
 //  CONFIG -- 1 Three.js unit = 25cm
-//  W=48  (48x25cm = 1200cm = 12m)
-//  D=60  (60x25cm = 1500cm = 15m)
+//  W=16  (16x25cm = 400cm = 4000mm)
+//  D=20  (20x25cm = 500cm = 5000mm)
 //  H=16  (16x25cm = 400cm = ارتفاع 4م)
 // ============================================================
-const W  = 48;    // عرض 12م
-const D  = 60;    // عمق 15م
+const W  = 16;    // عرض 4000سم
+const D  = 20;    // عمق 5000سم
 const H  = 16;    // ارتفاع 4م
 const WT = 0.48;  // سماكة الجدار
-const SD = 2.0;   // عمق الرف
+const SD = 1.20;  // عمق الرف
 const ST = 0.14;  // سماكة لوح الرف
 const SH = 15.4;  // ارتفاع وحدة الرف (385سم)
 const SU = 4.0;   // عرض وحدة الرف
 const NS = 6;     // عدد طوابق كل وحدة
-const SPEED = 0.35;   // سرعة مناسبة للمساحة الأكبر
+const SPEED = 0.22;   // سرعة مناسبة للمساحة
 const LSPD  = 0.0020;
 const CAMH  = 6.88;   // 172cm / 25 = 6.88 وحدة
-const PROX  = 8.0;    // مسافة اكتشاف الرف
+const PROX  = 6.0;    // مسافة اكتشاف الرف
 
 // ============================================================
 //  PRODUCTS DATA
@@ -442,89 +440,166 @@ const PRODS = {
   ],
 };
 
+// منتجات الموقع الحقيقية (تُمرَّر من الـ controller) — تستبدل بيانات العرض حيثما توفّرت
+const SERVER_PRODS = @json($shelfProducts ?? []);
+['left', 'right', 'back', 'island'].forEach(z => {
+  const list = SERVER_PRODS[z];
+  if (Array.isArray(list) && list.length) {
+    PRODS[z] = list.map(p => ({
+      id: p.id,
+      name: p.name,
+      price: p.price,
+      old: p.old || null,
+      slug: p.slug,
+      image: p.image || '',
+      zone: p.zone || '',
+      emoji: '🧴',
+      color: 0xdddddd,
+    }));
+  }
+});
+
 // ============================================================
 //  SCENE, RENDERER, CAMERA
 // ============================================================
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = false;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x224466);
-scene.fog = new THREE.Fog(0x0a0812, 15, 40);
+scene.background = new THREE.Color(0x0a0812);
+// ضباب يتناسب مع مساحة 5000سم
+scene.fog = new THREE.Fog(0x0a0812, 160, 480);
 
 // FOV = 85 درجة لزاوية رؤية واسعة
 const camera = new THREE.PerspectiveCamera(85, window.innerWidth / window.innerHeight, 0.4, 800);
+// نبدأ عند المدخل (مقدمة الغرفة) متجهين نحو داخل المتجر (-Z)
 camera.position.set(0, CAMH, D / 2 - 1.5);
 camera.rotation.order = 'YXZ';
 
 // ============================================================
 //  LIGHTING
 // ============================================================
-scene.add(new THREE.AmbientLight(0xfff5ea, 0.7));
-const frontLight = new THREE.DirectionalLight(0xffffff, 0.8);
-frontLight.position.set(0, 10, 12);
-scene.add(frontLight);
+scene.add(new THREE.AmbientLight(0xfff5ea, 0.35));
 
-// إضاءة السقف - 5 مصابيح فقط بدلاً من 63
-const PL_POS = [
-  [0,  18],  [0,   4],
-  [0, -10],  [0, -18],
-  [-7, 10],  [7, -10],
-];
-for (const [zx, zz] of PL_POS) {
-  const pl = new THREE.PointLight(0xfff8ee, 1.8, 70, 1.6);
-  pl.position.set(zx, H - 2, zz);
+// ضوء سقفي اتجاهي واحد يُسقط الظلال على كامل الغرفة
+// (نتجنّب عشرات المصابيح المُسقِطة للظل لئلا نتجاوز حد وحدات النسيج في WebGL)
+const sun = new THREE.DirectionalLight(0xfff5ea, 0.55);
+sun.position.set(W * 0.3, H + 8, D * 0.25);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -W;  sun.shadow.camera.right = W;
+sun.shadow.camera.top = D;    sun.shadow.camera.bottom = -D;
+sun.shadow.camera.near = 1;   sun.shadow.camera.far = H * 3;
+scene.add(sun);
+
+// مصابيح سقف موزّعة داخل حدود الغرفة (بدون ظل) لإضاءة متساوية
+function ceiling(x, z) {
+  const pl = new THREE.PointLight(0xfff8ee, 0.85, 64, 1.6);
+  pl.position.set(x, H - 2, z);
   scene.add(pl);
-  const g = new THREE.Mesh(new THREE.SphereGeometry(0.88, 8, 8),
+  const g = new THREE.Mesh(new THREE.SphereGeometry(0.72, 10, 10),
     new THREE.MeshBasicMaterial({ color: 0xfff8d0 }));
   g.position.copy(pl.position);
   scene.add(g);
 }
+const L_COLS = [-W / 4, W / 4];          // عمودان داخل العرض (±8)
+const L_ROWS = [-8, -4, 0, 4, 8];        // خمسة صفوف على طول العمق (±10)
+for (const lx of L_COLS) for (const lz of L_ROWS) ceiling(lx, lz);
 
 // اضاءة جانبية ملونة
-const pinkLight = new THREE.PointLight(0xff6b9d, 0.5, 56);
+const pinkLight = new THREE.PointLight(0xff6b9d, 0.8, 56);
 pinkLight.position.set(-W/2 + 12, H/2, 0);
 scene.add(pinkLight);
 
-const blueLight = new THREE.PointLight(0x6bb5ff, 0.5, 56);
+const blueLight = new THREE.PointLight(0x6bb5ff, 0.8, 56);
 blueLight.position.set(W/2 - 12, H/2, 0);
 scene.add(blueLight);
 
 // ============================================================
 //  MATERIALS
 // ============================================================
-function mat(c) {
-  return new THREE.MeshBasicMaterial({ color: c });
+function mat(c, r = 0.8, m = 0) {
+  return new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m });
 }
-function basicMat(c) { return new THREE.MeshBasicMaterial({ color: c }); }
 const M = {
-  floor:  basicMat(0xd2c4ae),
-  wall:   basicMat(0xd9c8b2),
-  ceil:   basicMat(0xfafafa),
-  frame:  basicMat(0x1c1c1c),
-  board:  basicMat(0xfcfcfc),
-  door:   basicMat(0x2a2a2a),
-  glass:  new THREE.MeshBasicMaterial({ color: 0x88ccff, transparent: true, opacity: 0.22 }),
+  floor:  mat(0xd2c4ae, 0.88),
+  wall:   mat(0xf3ede6, 0.85),
+  ceil:   mat(0xfafafa, 0.9),
+  frame:  mat(0x1c1c1c, 0.65, 0.1),
+  board:  mat(0xfcfcfc, 0.78),
+  door:   mat(0x2a2a2a, 0.6, 0.2),
+  glass:  new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.22, roughness: 0.05 }),
 };
+
+const USE_REAL_WALL_PHOTOS = true;
+const PANEL_W = 3.55;
+const PANEL_H = H - 0.48;
+const WALL_PHOTOS = {
+  left: [
+    '/images/virtual-store/walls/wall-10.jpeg',
+    '/images/virtual-store/walls/wall-11.jpeg',
+    '/images/virtual-store/walls/wall-09.jpeg',
+    '/images/virtual-store/walls/wall-08.jpeg',
+    '/images/virtual-store/walls/wall-01.jpeg',
+  ],
+  right: [
+    '/images/virtual-store/walls/wall-02.jpeg',
+    '/images/virtual-store/walls/wall-03.jpeg',
+    '/images/virtual-store/walls/wall-04.jpeg',
+    '/images/virtual-store/walls/wall-05.jpeg',
+    '/images/virtual-store/walls/wall-06.jpeg',
+  ],
+  back: [
+    '/images/virtual-store/walls/wall-07.jpeg',
+    '/images/virtual-store/walls/wall-01.jpeg',
+    '/images/virtual-store/walls/wall-02.jpeg',
+    '/images/virtual-store/walls/wall-03.jpeg',
+  ],
+};
+const photoLoader = new THREE.TextureLoader();
+
+function photoMat(url, targetAspect) {
+  const tx = photoLoader.load(url);
+  tx.encoding = THREE.sRGBEncoding;
+  tx.minFilter = THREE.LinearFilter;
+  tx.magFilter = THREE.LinearFilter;
+  tx.wrapS = THREE.ClampToEdgeWrapping;
+  tx.wrapT = THREE.ClampToEdgeWrapping;
+
+  const sourceAspect = 0.75;
+  if (targetAspect < sourceAspect) {
+    tx.repeat.x = targetAspect / sourceAspect;
+    tx.offset.x = (1 - tx.repeat.x) / 2;
+  }
+
+  return new THREE.MeshBasicMaterial({ map: tx, side: THREE.DoubleSide });
+}
+
+function photoPanel(url, x, y, z, w, h, rotY) {
+  const geo = new THREE.PlaneGeometry(w, h);
+  const mesh = new THREE.Mesh(geo, photoMat(url, w / h));
+  mesh.position.set(x, y, z);
+  mesh.rotation.y = rotY;
+  mesh.renderOrder = 1;
+  scene.add(mesh);
+  return mesh;
+}
 
 // ============================================================
 //  BOX HELPER
 // ============================================================
 function box(w, h, d, mat, x, y, z) {
-  try {
-    const geo = new THREE.BoxGeometry(Math.abs(w), Math.abs(h), Math.abs(d));
-    const m = new THREE.Mesh(geo, mat);
-    m.position.set(x, y, z);
-
-    scene.add(m);
-    return m;
-  } catch (e) { console.error('box error:', e); return null; }
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.position.set(x, y, z);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  scene.add(m);
+  return m;
 }
-
-
 
 // ============================================================
 //  ROOM (عرض 4000سم، عمق 5000سم، ارتفاع 400سم)
@@ -534,14 +609,58 @@ box(W + WT * 2, WT, D + WT * 2, M.ceil,  0, H + WT / 2, 0);
 box(W + WT * 2, H, WT, M.wall, 0, H / 2, -D / 2 - WT / 2);
 box(WT, H, D, M.wall, -W / 2 - WT / 2, H / 2, 0);
 box(WT, H, D, M.wall,  W / 2 + WT / 2, H / 2, 0);
-// جدار امامي
-box(W / 2 - 8.4, H, WT, M.wall, -W / 4 - 4.2, H / 2, D / 2 + WT / 2);
-box(W / 2 - 8.4, H, WT, M.wall,  W / 4 + 4.2, H / 2, D / 2 + WT / 2);
-// عتبة واطار
-box(16.8, 4.48, WT, M.wall, 0, H - 2.24, D / 2 + WT / 2);
-box(0.96, H, WT * 2, M.door, -8.4, H / 2, D / 2 + WT / 2);
-box(0.96, H, WT * 2, M.door,  8.4, H / 2, D / 2 + WT / 2);
-box(16.0, 35.2, 0.28, M.glass, 0, H/2, D/2 + 0.16);
+// ===== واجهة المدخل الزجاجية (Glass storefront + glass doors) =====
+const ZF   = D / 2 + WT / 2;     // مستوى الجدار الأمامي
+const OP_W = 15.4;               // عرض فتحة المدخل
+const OP_H = H - 4.48;           // ارتفاع الفتحة حتى العتبة (≈11.52)
+
+// عتبة علوية فوق المدخل
+box(W + WT * 2, 4.48, WT, M.wall, 0, H - 2.24, ZF);
+
+// لوح الزجاج الكبير للواجهة
+const storeGlass = new THREE.MeshStandardMaterial({
+  color: 0xbfe9ff, transparent: true, opacity: 0.30,
+  roughness: 0.04, metalness: 0.15, side: THREE.DoubleSide,
+});
+const frontGlass = new THREE.Mesh(new THREE.PlaneGeometry(OP_W, OP_H), storeGlass);
+frontGlass.position.set(0, OP_H / 2, ZF - 0.02);
+scene.add(frontGlass);
+
+// إطار ألمنيوم للواجهة وللباب الزجاجي المنزلق
+const FR = new THREE.MeshStandardMaterial({ color: 0xd8dde2, roughness: 0.35, metalness: 0.85 });
+function frameBar(w, h, x, y) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.22), FR);
+  m.position.set(x, y, ZF + 0.04);
+  scene.add(m);
+}
+frameBar(OP_W + 0.3, 0.3, 0, 0.15);        // قضيب سفلي
+frameBar(OP_W + 0.3, 0.3, 0, OP_H - 0.1);  // قضيب علوي
+frameBar(0.3, OP_H, -OP_W / 2, OP_H / 2);  // قائم يسار
+frameBar(0.3, OP_H,  OP_W / 2, OP_H / 2);  // قائم يمين
+frameBar(0.28, OP_H, 0, OP_H / 2);         // فاصل وسط (بابان)
+frameBar(OP_W / 2, 0.2, -OP_W / 4, 1.2);   // قاعدة الباب الأيسر
+frameBar(OP_W / 2, 0.2,  OP_W / 4, 1.2);   // قاعدة الباب الأيمن
+
+// مقابض البابين الزجاجيين
+const HANDLE = new THREE.MeshStandardMaterial({ color: 0x9aa3ab, roughness: 0.3, metalness: 0.9 });
+[-0.55, 0.55].forEach(hx => {
+  const hnd = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.7, 0.14), HANDLE);
+  hnd.position.set(hx, 3.4, ZF + 0.12);
+  scene.add(hnd);
+});
+
+if (USE_REAL_WALL_PHOTOS) {
+  for (let i = 0; i < 5; i++) {
+    const z = -D / 2 + 2.0 + i * 4.0;
+    photoPanel(WALL_PHOTOS.left[i], -W / 2 + 0.08, PANEL_H / 2 + 0.25, z, PANEL_W, PANEL_H, Math.PI / 2);
+    photoPanel(WALL_PHOTOS.right[i], W / 2 - 0.08, PANEL_H / 2 + 0.25, z, PANEL_W, PANEL_H, -Math.PI / 2);
+  }
+
+  for (let i = 0; i < 4; i++) {
+    const x = -W / 2 + 2.0 + i * 4.0;
+    photoPanel(WALL_PHOTOS.back[i], x, PANEL_H / 2 + 0.25, -D / 2 + 0.08, PANEL_W, PANEL_H, 0);
+  }
+}
 
 // ============================================================
 //  SHELF UNIT BUILDER
@@ -549,6 +668,8 @@ box(16.0, 35.2, 0.28, M.glass, 0, H/2, D/2 + 0.16);
 const shelfZones = [];
 
 function buildUnit(cx, cy, cz, uw, uh, ud, ns, side) {
+  if (USE_REAL_WALL_PHOTOS && side !== 'island') return;
+
   const f = M.frame, b = M.board;
   // الجانبان
   if (side !== 'back') {
@@ -561,10 +682,12 @@ function buildUnit(cx, cy, cz, uw, uh, ud, ns, side) {
   // لوح القاع
   box(uw, ST, ud, f, cx, cy + ST / 2, cz);
   // لوح الخلفية الداكنة
-  if (side === 'left')  box(ST * 0.4, uh, ud * 0.85, mat(0x111111, 0.95), cx + uw / 2 - ST / 2, cy + uh / 2, cz);
-  if (side === 'right') box(ST * 0.4, uh, ud * 0.85, mat(0x111111, 0.95), cx - uw / 2 + ST / 2, cy + uh / 2, cz);
-  if (side === 'back')  box(uw * 0.95, uh, ST * 0.4, mat(0x111111, 0.95), cx, cy + uh / 2, cz + ud / 2 - ST / 2);
-  if (side === 'island')box(uw, uh, ST * 0.4, mat(0x111111, 0.95), cx, cy + uh / 2, cz);
+  if (!USE_REAL_WALL_PHOTOS || side === 'island') {
+    if (side === 'left')  box(ST * 0.4, uh, ud * 0.85, mat(0x111111, 0.95), cx + uw / 2 - ST / 2, cy + uh / 2, cz);
+    if (side === 'right') box(ST * 0.4, uh, ud * 0.85, mat(0x111111, 0.95), cx - uw / 2 + ST / 2, cy + uh / 2, cz);
+    if (side === 'back')  box(uw * 0.95, uh, ST * 0.4, mat(0x111111, 0.95), cx, cy + uh / 2, cz + ud / 2 - ST / 2);
+    if (side === 'island')box(uw, uh, ST * 0.4, mat(0x111111, 0.95), cx, cy + uh / 2, cz);
+  }
   // طوابق الرف
   const sp = uh / ns;
   for (let i = 0; i <= ns; i++) {
@@ -575,40 +698,34 @@ function buildUnit(cx, cy, cz, uw, uh, ud, ns, side) {
 // ============================================================
 //  BUILD ALL SHELVES
 // ============================================================
-// الجدار الأيسر — 5 وحدات موزعة على العمق
+// الجدار الأيسر  (X≈-1.83) — عمق 5م = 5 وحدات موزعة على كامل العمق
 const LX = -(W / 2 - SD / 2 - WT);
 for (let i = 0; i < 5; i++) {
-  const z = -D / 2 + 5 + i * 10;
-  buildUnit(LX, 0, z, 1.0, SH, SD, NS, 'left');
+  const z = -D / 2 + 2.0 + i * 4.0;
+  buildUnit(LX, 0, z, 1.0, SH, PANEL_W, NS, 'left');
   shelfZones.push({ x: LX, z, side: 'left', prods: PRODS.left, label: '💊 عناية بالبشرة والفيتامينات' });
 }
 
-// الجدار الأيمن — 5 وحدات موزعة على العمق
+// الجدار الأيمن  (X≈+1.83) — عمق 5م = 5 وحدات موزعة على كامل العمق
 const RX = W / 2 - SD / 2 - WT;
 for (let i = 0; i < 5; i++) {
-  const z = -D / 2 + 5 + i * 10;
-  buildUnit(RX, 0, z, 1.0, SH, SD, NS, 'right');
+  const z = -D / 2 + 2.0 + i * 4.0;
+  buildUnit(RX, 0, z, 1.0, SH, PANEL_W, NS, 'right');
   shelfZones.push({ x: RX, z, side: 'right', prods: PRODS.right, label: '💇 صبغات الشعر والعناية' });
 }
 
-// الجدار الخلفي — 4 وحدات موزعة على العرض
+// الجدار الخلفي  (Z≈-2.33) — عرض 4م = 4 وحدات موزعة على كامل العرض
 const BZ = -(D / 2 - SD / 2 - WT);
 for (let i = 0; i < 4; i++) {
-  const x = -W / 2 + 5 + i * 11;
-  buildUnit(x, 0, BZ, 1.0, SH, SD, NS, 'back');
+  const x = -W / 2 + 2.0 + i * 4.0;
+  buildUnit(x, 0, BZ, PANEL_W, SH, SD, NS, 'back');
   shelfZones.push({ x, z: BZ, side: 'back', prods: PRODS.back, label: '🎁 عطور وهدايا وكوزماتيك' });
 }
 
-// الجزيرة المركزية — أمام منتصف المتجر
-buildUnit(0, 0, 2.0, 2.0, 1.45, 1.0, 3, 'island');
-shelfZones.push({ x: 0, z: 2.0, side: 'island', prods: PRODS.island, label: '💄 أحمر شفاه ومكياج' });
-
-// DIAGNOSTIC: bright red box 2 units in front of camera
-const diagMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-const diagBox = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), diagMat);
-diagBox.position.set(0, CAMH, D/2 - 1.5 - 2);
-scene.add(diagBox);
-console.log('DIAGNOSTIC: red box at', diagBox.position.x.toFixed(2), diagBox.position.y.toFixed(2), diagBox.position.z.toFixed(2), 'camera at 0', CAMH, (D/2-1.5).toFixed(2));
+// الجزيرة المركزية (2م × 1م) في منتصف العمق
+const ISO_Z = -0.5;
+buildUnit(0, 0, ISO_Z, 2.0, 1.45, 1.0, 3, 'island');
+shelfZones.push({ x: 0, z: ISO_Z, side: 'island', prods: PRODS.island, label: '💄 أحمر شفاه ومكياج' });
 
 // ============================================================
 //  PRODUCT BOXES ON SHELVES
@@ -616,6 +733,8 @@ console.log('DIAGNOSTIC: red box at', diagBox.position.x.toFixed(2), diagBox.pos
 const sp = SH / NS;
 
 function placeRow(side, baseX, baseZ, prods, unitIdx, shelfIdx) {
+  if (USE_REAL_WALL_PHOTOS) return;
+
   const y0 = shelfIdx * sp + ST + 0.07;
   const p  = prods[(unitIdx * NS + shelfIdx) % prods.length];
   const c  = new THREE.Color(p.color);
@@ -624,47 +743,82 @@ function placeRow(side, baseX, baseZ, prods, unitIdx, shelfIdx) {
   const isPerfume = p.zone.includes('عطر') || p.zone.includes('مسك');
   const isLip     = p.zone.includes('شفاه');
 
-  let pw = 0.12, ph = 0.16, pd = 0.09;
-  if (isBottle)  { pw = 0.09; ph = 0.28; pd = 0.09; }
-  if (isGift)    { pw = 0.17; ph = 0.17; pd = 0.12; }
-  if (isPerfume) { pw = 0.08; ph = 0.20; pd = 0.06; }
-  if (isLip)     { pw = 0.035; ph = 0.17; pd = 0.035; }
+  let pw = 0.075, ph = 0.10, pd = 0.055;
+  if (isBottle)  { pw = 0.055; ph = 0.18; pd = 0.055; }
+  if (isGift)    { pw = 0.11;  ph = 0.11; pd = 0.08; }
+  if (isPerfume) { pw = 0.048; ph = 0.13; pd = 0.038; }
+  if (isLip)     { pw = 0.022; ph = 0.11; pd = 0.022; }
+
+  const pmat = new THREE.MeshStandardMaterial({
+    color: c, roughness: 0.45, metalness: 0.12,
+    emissive: c, emissiveIntensity: 0.06,
+  });
 
   const count = Math.min(6, Math.floor(0.9 / (pw + 0.018)));
-  const isTall = isBottle || isPerfume || isLip;
-  const pmat = new THREE.MeshBasicMaterial({ color: c });
-  // add one green giant cube at eye level, then one per row for diagnostic
-  if (unitIdx === 0 && shelfIdx === 0 && side === 'left') {
-    const dm = new THREE.Mesh(new THREE.BoxGeometry(3,3,3), new THREE.MeshBasicMaterial({color:0x00ff00}));
-    dm.position.set(0, CAMH, D/2 - 1.5 - 5);
-    scene.add(dm);
-    console.log('GREEN giant cube at', dm.position.x, dm.position.y, dm.position.z);
-  }
   for (let k = 0; k < count; k++) {
     const off = (k - (count - 1) / 2) * (pw + 0.018);
     let px = 0, py = y0 + ph / 2, pz = 0;
     if (side === 'left')  { px = baseX + SD / 2 - pd / 2 - 0.02; pz = baseZ + off; }
     if (side === 'right') { px = baseX - SD / 2 + pd / 2 + 0.02; pz = baseZ + off; }
     if (side === 'back')  { pz = baseZ + SD / 2 - pd / 2 - 0.02; px = baseX + off; }
-    if (side === 'island'){ px = off * 1.8; pz = -0.5; }
-    const geo = isTall
-      ? new THREE.CylinderGeometry(pw * 0.75, pw * 0.85, ph, 10)
-      : new THREE.BoxGeometry(pw, ph, pd);
-    const m = new THREE.Mesh(geo, pmat);
+    if (side === 'island'){ px = off * 1.8; pz = ISO_Z; }
+
+    const m = new THREE.Mesh(new THREE.BoxGeometry(pw, ph, pd), pmat);
     m.position.set(px, py, pz);
-    m.rotation.y = Math.random() * Math.PI * 2;
+    m.castShadow = true;
     m.userData = { product: p };
     scene.add(m);
   }
 }
 
 // يسار
-let prodCount = 0;
-for (let u = 0; u < 5; u++) for (let s = 0; s < NS; s++) { placeRow('left', LX, -D/2+5+u*10, PRODS.left, u, s); prodCount += Math.min(6, Math.floor(0.9 / (0.075 + 0.018))); }
-for (let u = 0; u < 5; u++) for (let s = 0; s < NS; s++) { placeRow('right', RX, -D/2+5+u*10, PRODS.right, u, s); prodCount += Math.min(6, Math.floor(0.9 / (0.075 + 0.018))); }
-for (let u = 0; u < 4; u++) for (let s = 0; s < NS; s++) { placeRow('back', -W/2+5+u*11, BZ, PRODS.back, u, s); prodCount += Math.min(6, Math.floor(0.9 / (0.075 + 0.018))); }
-for (let s = 0; s < 3; s++) { placeRow('island', 0, 2.0, PRODS.island, 0, s); prodCount += Math.min(6, Math.floor(0.9 / (0.075 + 0.018))); }
-console.log('Products created:', prodCount, 'Total scene objects:', scene.children.length);
+for (let u = 0; u < 5; u++) for (let s = 0; s < NS; s++)
+  placeRow('left', LX, -D/2+2.0+u*4.0, PRODS.left, u, s);
+// يمين
+for (let u = 0; u < 5; u++) for (let s = 0; s < NS; s++)
+  placeRow('right', RX, -D/2+2.0+u*4.0, PRODS.right, u, s);
+// خلف
+for (let u = 0; u < 4; u++) for (let s = 0; s < NS; s++)
+  placeRow('back', -W/2+2.0+u*4.0, BZ, PRODS.back, u, s);
+// جزيرة — ألواح صور المنتجات الحقيقية واقفة على الطاولة المركزية
+const islandTexLoader = new THREE.TextureLoader();
+function islandPanel(p, x, y, z, rotY) {
+  const w = 0.42, h = 0.56;
+  let mat;
+  if (p.image) {
+    const tx = islandTexLoader.load(p.image);
+    tx.encoding = THREE.sRGBEncoding;
+    tx.minFilter = THREE.LinearFilter;
+    tx.magFilter = THREE.LinearFilter;
+    mat = new THREE.MeshBasicMaterial({ map: tx, transparent: true, side: THREE.DoubleSide });
+  } else {
+    mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(p.color || 0xdddddd), roughness: 0.5, metalness: 0.1 });
+  }
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+  mesh.position.set(x, y + h / 2, z);
+  mesh.rotation.y = rotY;
+  mesh.userData = { product: p };
+  scene.add(mesh);
+}
+
+function placeIslandProducts() {
+  const items = PRODS.island.slice(0, 8);
+  const topY = 1.45 + 0.02;
+  const half = Math.ceil(items.length / 2);
+  const front = items.slice(0, half);
+  const back  = items.slice(half);
+  const spanFor = n => (i) => n > 1 ? (i - (n - 1) / 2) * (1.7 / (n - 1)) : 0;
+  const fx = spanFor(front.length);
+  front.forEach((p, i) => islandPanel(p, fx(i), topY, ISO_Z + 0.42, 0));
+  const bx = spanFor(back.length);
+  back.forEach((p, i) => islandPanel(p, bx(i), topY, ISO_Z - 0.42, Math.PI));
+}
+
+if (USE_REAL_WALL_PHOTOS) {
+  placeIslandProducts();
+} else {
+  for (let s = 0; s < 3; s++) placeRow('island', 0, ISO_Z, PRODS.island, 0, s);
+}
 
 // ============================================================
 //  FPS CONTROLS
@@ -673,13 +827,8 @@ const keys = {};
 let yaw = 0, pitch = 0;
 let locked = false, drag = false, mx0 = 0, my0 = 0;
 
-// Double-click or right-click for pointer lock (optional)
-canvas.addEventListener('dblclick', () => { if (gameOn) canvas.requestPointerLock(); });
-canvas.addEventListener('contextmenu', e => { e.preventDefault(); if (gameOn) canvas.requestPointerLock(); });
-document.addEventListener('pointerlockchange', () => {
-  locked = !!document.pointerLockElement;
-  if (!locked) drag = false; // clean up on unlock
-});
+canvas.addEventListener('click', () => { if (gameOn) canvas.requestPointerLock(); });
+document.addEventListener('pointerlockchange', () => { locked = !!document.pointerLockElement; });
 document.addEventListener('mousemove', e => {
   if (locked)        { yaw -= e.movementX * LSPD; pitch -= e.movementY * LSPD; }
   else if (drag && gameOn) {
@@ -689,10 +838,7 @@ document.addEventListener('mousemove', e => {
   }
   pitch = Math.max(-1.18, Math.min(1.18, pitch));
 });
-canvas.addEventListener('mousedown', e => {
-  if (e.button !== 0) return; // left click only
-  if (!locked && gameOn) { drag = true; mx0 = e.clientX; my0 = e.clientY; }
-});
+canvas.addEventListener('mousedown', e => { if (!locked && gameOn) { drag = true; mx0 = e.clientX; my0 = e.clientY; } });
 document.addEventListener('mouseup', () => { drag = false; });
 document.addEventListener('keydown', e => { keys[e.code] = true; });
 document.addEventListener('keyup',   e => { keys[e.code] = false; });
@@ -724,16 +870,20 @@ function isMobile() { return window.innerWidth <= 768 || 'ontouchstart' in windo
 // ============================================================
 //  COLLISION
 // ============================================================
-//  عرض 12م → X: ±6  |  عمق 15م → Z: ±7.5
-const CM = 0.5;
-const hW = W / 2 - CM;  // 23.5
-const hD = D / 2 - CM;  // 29.5
+//  عرض 4م = ±8 وحدة على X  |  عمق 5م = ±10 وحدة على Z  (الوحدة = 25سم)
+const CM = 0.38;
+const hW = W / 2 - CM;  // 7.62
+const hD = D / 2 - CM;  // 9.62
 
 const colliders = [
+  // يسار (X ≈ -1.83 → الممر عند X=-1.52)
   { xn: LX + SD / 2 + CM * 0.3, xx: W, zn: -D / 2, zx: D / 2 },
+  // يمين (X ≈ +1.83 → الممر عند X=+1.52)
   { xn: -W, xx: RX - SD / 2 - CM * 0.3, zn: -D / 2, zx: D / 2 },
+  // خلف (Z ≈ -2.33)
   { xn: -W / 2, xx: W / 2, zn: BZ - SD / 2 - CM * 0.3, zx: D / 2 },
-  { xn: -1.08, xx: 1.08, zn: -0.5, zx: 4.5 },
+  // جزيرة
+  { xn: -1.08, xx: 1.08, zn: -1.08, zx: 0.08 },
 ].map(c => ({ xMin: -c.xx, xMax: -c.xn, zMin: c.zn, zMax: c.zx }));
 
 // تبسيط: استخدم حدود مباشرة
@@ -741,7 +891,7 @@ const WALLS = [
   { xMin: -Infinity, xMax: -(W/2 - SD - CM * 0.6), zMin: -D/2, zMax: D/2 },  // يسار
   { xMin:  (W/2 - SD - CM * 0.6), xMax: Infinity,  zMin: -D/2, zMax: D/2 },  // يمين
   { xMin: -W/2, xMax: W/2, zMin: -Infinity, zMax: -(D/2 - SD - CM * 0.6) }, // خلف
-  { xMin: -1.1, xMax:  1.1, zMin: -0.5, zMax: 4.5 },  // جزيرة
+  { xMin: -1.1, xMax:  1.1, zMin: -1.1, zMax: 0.1 },  // جزيرة
 ];
 
 function clamp(pos) {
@@ -770,13 +920,12 @@ const card = document.getElementById('prodCard');
 const zoneLbl = document.getElementById('zoneLabel');
 
 function checkProx() {
-  const cx = camera.position.x, cz = camera.position.z, px2 = PROX * PROX;
-  let near = null, nearD2 = px2;
+  const cx = camera.position.x, cz = camera.position.z;
+  let near = null, nearD = PROX;
   for (const z of shelfZones) {
-    const dx = cx - z.x, dz = cz - z.z, d2 = dx * dx + dz * dz;
-    if (d2 < nearD2) { nearD2 = d2; near = z; }
+    const d = Math.hypot(cx - z.x, cz - z.z);
+    if (d < nearD) { nearD = d; near = z; }
   }
-  const nearD = Math.sqrt(nearD2);
   const ring = document.getElementById('proxRing');
   if (near && nearD < PROX * 0.65) {
     ring.style.opacity = '0';
@@ -798,11 +947,21 @@ function showCard(zone) {
   const p = ps[idx];
   if (p === curProd && cardShowing) return;
   curProd = p; cardShowing = true;
-  document.getElementById('pEmoji').textContent = p.emoji || '🧴';
+  const imgEl = document.getElementById('pEmoji');
+  if (p.image) {
+    imgEl.textContent = '';
+    imgEl.style.backgroundImage = `url('${p.image}')`;
+    imgEl.style.backgroundSize = 'contain';
+    imgEl.style.backgroundRepeat = 'no-repeat';
+    imgEl.style.backgroundPosition = 'center';
+  } else {
+    imgEl.style.backgroundImage = '';
+    imgEl.textContent = p.emoji || '🧴';
+  }
   document.getElementById('pZone').textContent  = p.zone;
   document.getElementById('pName').textContent  = p.name;
   document.getElementById('pPrice').textContent = p.price;
-  document.getElementById('pOld').textContent   = p.price > 30 ? `${Math.round(p.price * 1.2)}₪` : '';
+  document.getElementById('pOld').textContent   = p.old ? `${p.old}₪` : '';
   document.getElementById('viewBtn').href = `/product/${p.slug}`;
   card.dataset.pid = p.id;
   card.style.display = 'block';
@@ -867,9 +1026,9 @@ window.doAddToCart = function () {
 // ============================================================
 const mc = document.getElementById('mmapCanvas');
 const mx = mc.getContext('2d');
-// نسبة: عرض 12م → 116px | عمق 15م → 96px
-const scX = mc.width  / W;
-const scZ = mc.height / D;
+// نسبة: عرض 4م → 116px | عمق 5م → 96px
+const scX = mc.width  / W;  // 29
+const scZ = mc.height / D;  // 19.2
 
 function drawMap() {
   mx.clearRect(0, 0, mc.width, mc.height);
