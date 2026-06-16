@@ -562,28 +562,29 @@ const M = {
 };
 
 const USE_REAL_WALL_PHOTOS = true;
+const BASE_PATH = window.location.pathname.replace(/\/virtual-store\/3d.*$/, '') + '/';
 const PANEL_W = 3.55;
 const PANEL_H = H - 0.48;
 const WALL_PHOTOS = {
   left: [
-    '/images/virtual-store/walls/wall-10.jpeg',
-    '/images/virtual-store/walls/wall-11.jpeg',
-    '/images/virtual-store/walls/wall-09.jpeg',
-    '/images/virtual-store/walls/wall-08.jpeg',
-    '/images/virtual-store/walls/wall-01.jpeg',
+    BASE_PATH + 'images/virtual-store/walls/wall-10.jpeg',
+    BASE_PATH + 'images/virtual-store/walls/wall-11.jpeg',
+    BASE_PATH + 'images/virtual-store/walls/wall-09.jpeg',
+    BASE_PATH + 'images/virtual-store/walls/wall-08.jpeg',
+    BASE_PATH + 'images/virtual-store/walls/wall-01.jpeg',
   ],
   right: [
-    '/images/virtual-store/walls/wall-02.jpeg',
-    '/images/virtual-store/walls/wall-03.jpeg',
-    '/images/virtual-store/walls/wall-04.jpeg',
-    '/images/virtual-store/walls/wall-05.jpeg',
-    '/images/virtual-store/walls/wall-06.jpeg',
+    BASE_PATH + 'images/virtual-store/walls/wall-02.jpeg',
+    BASE_PATH + 'images/virtual-store/walls/wall-03.jpeg',
+    BASE_PATH + 'images/virtual-store/walls/wall-04.jpeg',
+    BASE_PATH + 'images/virtual-store/walls/wall-05.jpeg',
+    BASE_PATH + 'images/virtual-store/walls/wall-06.jpeg',
   ],
   back: [
-    '/images/virtual-store/walls/wall-07.jpeg',
-    '/images/virtual-store/walls/wall-01.jpeg',
-    '/images/virtual-store/walls/wall-02.jpeg',
-    '/images/virtual-store/walls/wall-03.jpeg',
+    BASE_PATH + 'images/virtual-store/walls/wall-07.jpeg',
+    BASE_PATH + 'images/virtual-store/walls/wall-01.jpeg',
+    BASE_PATH + 'images/virtual-store/walls/wall-02.jpeg',
+    BASE_PATH + 'images/virtual-store/walls/wall-03.jpeg',
   ],
 };
 const photoLoader = new THREE.TextureLoader();
