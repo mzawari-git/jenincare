@@ -30,7 +30,7 @@ canvas#c{display:block;width:100vw!important;height:100vh!important;position:fix
   background-clip:text;margin-bottom:10px;
 }
 .tagline{color:rgba(255,255,255,0.65);font-size:clamp(14px,2.5vw,19px);margin-bottom:36px}
-.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:min(90vw,460px);margin-bottom:36px}
+.info-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:min(92vw,500px);margin-bottom:36px}
 .info-box{
   background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
   border-radius:14px;padding:16px 10px;text-align:center;
@@ -259,7 +259,8 @@ canvas#c{display:block;width:100vw!important;height:100vh!important;position:fix
   <div class="info-grid">
     <div class="info-box"><div class="ic">📐</div><strong>4×5×4 م</strong><span>أبعاد المتجر الحقيقية</span></div>
     <div class="info-box"><div class="ic">🚶</div><strong>تجوّل حر</strong><span>W A S D + الفأرة</span></div>
-    <div class="info-box"><div class="ic">🛒</div><strong>أضف للسلة</strong><span>مباشرة من المتجر</span></div>
+    <div class="info-box"><div class="ic">🛒</div><strong>أضف للسلة</strong><span>منتجات حقيقية من المتجر</span></div>
+    <div class="info-box"><div class="ic">🔄</div><strong>يتجدّد تلقائياً</strong><span>جميع المنتجات تظهر بالتناوب</span></div>
   </div>
   <button id="enterBtn">🚪 ادخل المتجر</button>
 </div>
@@ -442,20 +443,45 @@ const PRODS = {
 
 // منتجات الموقع الحقيقية (تُمرَّر من الـ controller) — تستبدل بيانات العرض حيثما توفّرت
 const SERVER_PRODS = @json($shelfProducts ?? []);
+const ZONE_STYLE = {
+  left:   { color: 0xEC4899, emoji: '🧴' },
+  right:  { color: 0x8B5CF6, emoji: '💇' },
+  back:   { color: 0xF59E0B, emoji: '🎁' },
+  island: { color: 0xEF4444, emoji: '💄' },
+};
+const CAT_EMOJI = {
+  'العناية بالشعر': '💇', 'صبغات الشعر': '🎨', 'العناية بالأظافر': '💅',
+  'المكياج والتجميل': '💄', 'العناية بالبشرة': '🧴', 'أجهزة العناية بالبشرة': '🔬',
+  'إزالة الشعر': '⚡', 'العطور': '🌹', 'منتجات مسك': '🌸',
+  'تجهيز الصالونات': '👑', 'العناية بالجسم': '✨', 'العروض': '🎁',
+  'الباديكير': '👣', 'الحجامة': '🩸', 'العناية باللحية': '🧔',
+  'الرموش': '👀', 'البيرسينج': '💎',
+};
 ['left', 'right', 'back', 'island'].forEach(z => {
   const list = SERVER_PRODS[z];
   if (Array.isArray(list) && list.length) {
-    PRODS[z] = list.map(p => ({
-      id: p.id,
-      name: p.name,
-      price: p.price,
-      old: p.old || null,
-      slug: p.slug,
-      image: p.image || '',
-      zone: p.zone || '',
-      emoji: '🧴',
-      color: 0xdddddd,
-    }));
+    PRODS[z] = list.map(p => {
+      const zoneStyle = ZONE_STYLE[z] || { color: 0xdddddd, emoji: '🧴' };
+      let emoji = zoneStyle.emoji;
+      let color = zoneStyle.color;
+      for (const [kw, e] of Object.entries(CAT_EMOJI)) {
+        if ((p.zone || '').includes(kw) || (p.cat || '').includes(kw)) {
+          emoji = e;
+          color = (e === '💇' || e === '🎨') ? 0x8B5CF6 :
+                  (e === '💄' || e === '💅') ? 0xEC4899 :
+                  (e === '🌹' || e === '🌸') ? 0xF59E0B :
+                  (e === '👑' || e === '🔬') ? 0x3B82F6 :
+                  (e === '🎁' || e === '⚡') ? 0xEF4444 :
+                  (e === '🧔' || e === '👣') ? 0x10B981 : color;
+          break;
+        }
+      }
+      return {
+        id: p.id, name: p.name, price: p.price,
+        old: p.old || null, slug: p.slug, image: p.image || '',
+        zone: p.zone || '', emoji, color, cat: p.cat || '',
+      };
+    });
   }
 });
 
@@ -771,22 +797,115 @@ function placeRow(side, baseX, baseZ, prods, unitIdx, shelfIdx) {
   }
 }
 
-// يسار
-for (let u = 0; u < 5; u++) for (let s = 0; s < NS; s++)
-  placeRow('left', LX, -D/2+2.0+u*4.0, PRODS.left, u, s);
-// يمين
-for (let u = 0; u < 5; u++) for (let s = 0; s < NS; s++)
-  placeRow('right', RX, -D/2+2.0+u*4.0, PRODS.right, u, s);
-// خلف
-for (let u = 0; u < 4; u++) for (let s = 0; s < NS; s++)
-  placeRow('back', -W/2+2.0+u*4.0, BZ, PRODS.back, u, s);
+// ============================================================
+//  WALL PRODUCT PANELS — real product images floating on all walls
+// ============================================================
+const wallTexLoader = new THREE.TextureLoader();
+const wallPanelMeshes = [];
+
+function wallPanel(p, x, y, z, rotY, scaleW, scaleH) {
+  const w = scaleW || 0.38, h = scaleH || 0.50;
+  let mat;
+  if (p.image) {
+    const tx = wallTexLoader.load(p.image);
+    tx.encoding = THREE.sRGBEncoding;
+    tx.minFilter = THREE.LinearFilter;
+    tx.magFilter = THREE.LinearFilter;
+    mat = new THREE.MeshBasicMaterial({ map: tx, transparent: true, side: THREE.DoubleSide });
+  } else {
+    mat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(p.color || 0xdddddd),
+      roughness: 0.5, metalness: 0.1,
+    });
+  }
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+  mesh.position.set(x, y + h / 2, z);
+  mesh.rotation.y = rotY;
+  mesh.userData = { product: p };
+  scene.add(mesh);
+  wallPanelMeshes.push(mesh);
+  return mesh;
+}
+
+// Carousel offset — increments every few seconds to show different products
+let carouselOffset = 0;
+const CAROUSEL_INTERVAL = 5000; // 5 seconds
+
+// Update wall panel textures to show next batch of products
+function cycleWallDisplay() {
+  carouselOffset++;
+  // Rebuild all wall panels with shifted product indices
+  rebuildWallPanels();
+}
+
+function clearWallPanels() {
+  for (const m of wallPanelMeshes) {
+    scene.remove(m);
+    if (m.material.map) m.material.map.dispose();
+    m.material.dispose();
+  }
+  wallPanelMeshes.length = 0;
+}
+
+function rebuildWallPanels() {
+  clearWallPanels();
+  const PANELS_PER_ZONE = 3;
+  const PAD = 0.6;
+
+  // Left wall — 5 zones
+  for (let u = 0; u < 5; u++) {
+    const z = -D / 2 + 2.0 + u * 4.0;
+    const prods = PRODS.left;
+    if (!prods || !prods.length) continue;
+    for (let s = 0; s < PANELS_PER_ZONE; s++) {
+      const idx = ((u * PANELS_PER_ZONE + s) + carouselOffset) % prods.length;
+      const p = prods[idx];
+      if (!p) continue;
+      const yy = 1.2 + s * 0.7;
+      const rot = Math.PI / 2;
+      wallPanel(p, LX + 0.25, yy, z + (s - 1) * 0.35, rot);
+    }
+  }
+
+  // Right wall — 5 zones
+  for (let u = 0; u < 5; u++) {
+    const z = -D / 2 + 2.0 + u * 4.0;
+    const prods = PRODS.right;
+    if (!prods || !prods.length) continue;
+    for (let s = 0; s < PANELS_PER_ZONE; s++) {
+      const idx = ((u * PANELS_PER_ZONE + s) + carouselOffset) % prods.length;
+      const p = prods[idx];
+      if (!p) continue;
+      const yy = 1.2 + s * 0.7;
+      const rot = -Math.PI / 2;
+      wallPanel(p, RX - 0.25, yy, z + (s - 1) * 0.35, rot);
+    }
+  }
+
+  // Back wall — 4 zones
+  for (let u = 0; u < 4; u++) {
+    const x = -W / 2 + 2.0 + u * 4.0;
+    const prods = PRODS.back;
+    if (!prods || !prods.length) continue;
+    for (let s = 0; s < PANELS_PER_ZONE; s++) {
+      const idx = ((u * PANELS_PER_ZONE + s) + carouselOffset) % prods.length;
+      const p = prods[idx];
+      if (!p) continue;
+      const yy = 1.2 + s * 0.7;
+      wallPanel(p, x + (s - 1) * 0.35, yy, BZ + 0.25, 0);
+    }
+  }
+
+  // Island — keep existing but also cycle
+  placeIslandProducts();
+}
+
 // جزيرة — ألواح صور المنتجات الحقيقية واقفة على الطاولة المركزية
-const islandTexLoader = new THREE.TextureLoader();
 function islandPanel(p, x, y, z, rotY) {
   const w = 0.42, h = 0.56;
   let mat;
   if (p.image) {
-    const tx = islandTexLoader.load(p.image);
+    const tx = wallTexLoader.load(p.image);
     tx.encoding = THREE.sRGBEncoding;
     tx.minFilter = THREE.LinearFilter;
     tx.magFilter = THREE.LinearFilter;
@@ -799,26 +918,48 @@ function islandPanel(p, x, y, z, rotY) {
   mesh.rotation.y = rotY;
   mesh.userData = { product: p };
   scene.add(mesh);
+  return mesh;
 }
 
+let islandMeshes = [];
 function placeIslandProducts() {
-  const items = PRODS.island.slice(0, 8);
+  // Remove old island panels
+  for (const m of islandMeshes) {
+    scene.remove(m);
+    if (m.material.map) m.material.map.dispose();
+    m.material.dispose();
+  }
+  islandMeshes = [];
+
+  const items = PRODS.island;
+  if (!items || !items.length) return;
   const topY = 1.45 + 0.02;
-  const half = Math.ceil(items.length / 2);
-  const front = items.slice(0, half);
-  const back  = items.slice(half);
+  const visible = Math.min(8, items.length);
+  const selected = [];
+  for (let i = 0; i < visible; i++) {
+    selected.push(items[(i + carouselOffset) % items.length]);
+  }
+  const half = Math.ceil(selected.length / 2);
+  const front = selected.slice(0, half);
+  const back = selected.slice(half);
   const spanFor = n => (i) => n > 1 ? (i - (n - 1) / 2) * (1.7 / (n - 1)) : 0;
   const fx = spanFor(front.length);
-  front.forEach((p, i) => islandPanel(p, fx(i), topY, ISO_Z + 0.42, 0));
+  front.forEach((p, i) => {
+    const m = islandPanel(p, fx(i), topY, ISO_Z + 0.42, 0);
+    if (m) islandMeshes.push(m);
+  });
   const bx = spanFor(back.length);
-  back.forEach((p, i) => islandPanel(p, bx(i), topY, ISO_Z - 0.42, Math.PI));
+  back.forEach((p, i) => {
+    const m = islandPanel(p, bx(i), topY, ISO_Z - 0.42, Math.PI);
+    if (m) islandMeshes.push(m);
+  });
 }
 
-if (USE_REAL_WALL_PHOTOS) {
-  placeIslandProducts();
-} else {
-  for (let s = 0; s < 3; s++) placeRow('island', 0, ISO_Z, PRODS.island, 0, s);
-}
+// Initial build
+rebuildWallPanels();
+
+// Start carousel cycling
+setInterval(cycleWallDisplay, CAROUSEL_INTERVAL);
 
 // ============================================================
 //  FPS CONTROLS

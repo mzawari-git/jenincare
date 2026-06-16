@@ -83,11 +83,10 @@ class VirtualStoreController extends Controller
 
         $products = Product::active()
             ->showInB2C()
-            ->with('category:id,name_ar,name_en')
+            ->with('category:id,name_ar,name_en,slug')
             ->whereNotNull('main_image')
             ->orderBy('is_featured', 'desc')
             ->orderBy('sales_count', 'desc')
-            ->take(120)
             ->get();
 
         $fallbackOrder = array_keys($zones);
@@ -119,6 +118,7 @@ class VirtualStoreController extends Controller
                 'slug'  => $p->slug,
                 'image' => $p->main_image_url ?? '',
                 'zone'  => $p->category?->name_ar ?? '',
+                'cat'   => $p->category?->slug ?? '',
             ];
         }
 
