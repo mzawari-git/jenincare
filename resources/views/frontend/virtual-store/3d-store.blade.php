@@ -258,7 +258,7 @@ canvas#c:active{cursor:grabbing}
   <div class="logo">🏪 جنين كير</div>
   <div class="tagline">تجوّل داخل المتجر واختر منتجاتك</div>
   <div class="info-grid">
-    <div class="info-box"><div class="ic">📐</div><strong>4×5×4 م</strong><span>أبعاد المتجر الحقيقية</span></div>
+    <div class="info-box"><div class="ic">📐</div><strong>12×15×4 م</strong><span>أبعاد المتجر الحقيقية</span></div>
     <div class="info-box"><div class="ic">🚶</div><strong>تجوّل حر</strong><span>W A S D + الفأرة</span></div>
     <div class="info-box"><div class="ic">🛒</div><strong>أضف للسلة</strong><span>مباشرة من المتجر</span></div>
   </div>
@@ -356,23 +356,23 @@ function initApp() {
 
 // ============================================================
 //  CONFIG -- 1 Three.js unit = 25cm
-//  W=16  (16x25cm = 400cm = 4000mm)
-//  D=20  (20x25cm = 500cm = 5000mm)
+//  W=48  (48x25cm = 1200cm = 12m)
+//  D=60  (60x25cm = 1500cm = 15m)
 //  H=16  (16x25cm = 400cm = ارتفاع 4م)
 // ============================================================
-const W  = 16;    // عرض 4000سم
-const D  = 20;    // عمق 5000سم
+const W  = 48;    // عرض 12م
+const D  = 60;    // عمق 15م
 const H  = 16;    // ارتفاع 4م
 const WT = 0.48;  // سماكة الجدار
-const SD = 1.20;  // عمق الرف
+const SD = 2.0;   // عمق الرف
 const ST = 0.14;  // سماكة لوح الرف
 const SH = 15.4;  // ارتفاع وحدة الرف (385سم)
 const SU = 4.0;   // عرض وحدة الرف
 const NS = 6;     // عدد طوابق كل وحدة
-const SPEED = 0.22;   // سرعة مناسبة للمساحة
+const SPEED = 0.35;   // سرعة مناسبة للمساحة الأكبر
 const LSPD  = 0.0020;
 const CAMH  = 6.88;   // 172cm / 25 = 6.88 وحدة
-const PROX  = 6.0;    // مسافة اكتشاف الرف
+const PROX  = 8.0;    // مسافة اكتشاف الرف
 
 // ============================================================
 //  PRODUCTS DATA
@@ -470,9 +470,9 @@ scene.add(frontLight);
 
 // إضاءة السقف - 5 مصابيح فقط بدلاً من 63
 const PL_POS = [
-  [0,     0],   [0,     6],
-  [0,    -6],   [-5,    4],
-  [5,    -4],
+  [0,  18],  [0,   4],
+  [0, -10],  [0, -18],
+  [-7, 10],  [7, -10],
 ];
 for (const [zx, zz] of PL_POS) {
   const pl = new THREE.PointLight(0xfff8ee, 1.8, 70, 1.6);
@@ -575,33 +575,33 @@ function buildUnit(cx, cy, cz, uw, uh, ud, ns, side) {
 // ============================================================
 //  BUILD ALL SHELVES
 // ============================================================
-// الجدار الأيسر  (X≈-1.83) — عمق 5م = 5 وحدات
+// الجدار الأيسر — 5 وحدات موزعة على العمق
 const LX = -(W / 2 - SD / 2 - WT);
 for (let i = 0; i < 5; i++) {
-  const z = -D / 2 + 0.5 + i * 1.0;
+  const z = -D / 2 + 5 + i * 10;
   buildUnit(LX, 0, z, 1.0, SH, SD, NS, 'left');
   shelfZones.push({ x: LX, z, side: 'left', prods: PRODS.left, label: '💊 عناية بالبشرة والفيتامينات' });
 }
 
-// الجدار الأيمن  (X≈+1.83) — عمق 5م = 5 وحدات
+// الجدار الأيمن — 5 وحدات موزعة على العمق
 const RX = W / 2 - SD / 2 - WT;
 for (let i = 0; i < 5; i++) {
-  const z = -D / 2 + 0.5 + i * 1.0;
+  const z = -D / 2 + 5 + i * 10;
   buildUnit(RX, 0, z, 1.0, SH, SD, NS, 'right');
   shelfZones.push({ x: RX, z, side: 'right', prods: PRODS.right, label: '💇 صبغات الشعر والعناية' });
 }
 
-// الجدار الخلفي  (Z≈-2.33) — عرض 4م = 4 وحدات
+// الجدار الخلفي — 4 وحدات موزعة على العرض
 const BZ = -(D / 2 - SD / 2 - WT);
 for (let i = 0; i < 4; i++) {
-  const x = -W / 2 + 0.5 + i * 1.0;
+  const x = -W / 2 + 5 + i * 11;
   buildUnit(x, 0, BZ, 1.0, SH, SD, NS, 'back');
   shelfZones.push({ x, z: BZ, side: 'back', prods: PRODS.back, label: '🎁 عطور وهدايا وكوزماتيك' });
 }
 
-// الجزيرة المركزية (2م × 1م) في منتصف العمق
-buildUnit(0, 0, -0.5, 2.0, 1.45, 1.0, 3, 'island');
-shelfZones.push({ x: 0, z: -0.5, side: 'island', prods: PRODS.island, label: '💄 أحمر شفاه ومكياج' });
+// الجزيرة المركزية — أمام منتصف المتجر
+buildUnit(0, 0, 2.0, 2.0, 1.45, 1.0, 3, 'island');
+shelfZones.push({ x: 0, z: 2.0, side: 'island', prods: PRODS.island, label: '💄 أحمر شفاه ومكياج' });
 
 // DIAGNOSTIC: bright red box 2 units in front of camera
 const diagMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
@@ -660,10 +660,10 @@ function placeRow(side, baseX, baseZ, prods, unitIdx, shelfIdx) {
 
 // يسار
 let prodCount = 0;
-for (let u = 0; u < 5; u++) for (let s = 0; s < NS; s++) { placeRow('left', LX, -D/2+2.0+u*4.0, PRODS.left, u, s); prodCount += Math.min(6, Math.floor(0.9 / (0.075 + 0.018))); }
-for (let u = 0; u < 5; u++) for (let s = 0; s < NS; s++) { placeRow('right', RX, -D/2+2.0+u*4.0, PRODS.right, u, s); prodCount += Math.min(6, Math.floor(0.9 / (0.075 + 0.018))); }
-for (let u = 0; u < 4; u++) for (let s = 0; s < NS; s++) { placeRow('back', -W/2+2.0+u*4.0, BZ, PRODS.back, u, s); prodCount += Math.min(6, Math.floor(0.9 / (0.075 + 0.018))); }
-for (let s = 0; s < 3; s++) { placeRow('island', 0, -0.5, PRODS.island, 0, s); prodCount += Math.min(6, Math.floor(0.9 / (0.075 + 0.018))); }
+for (let u = 0; u < 5; u++) for (let s = 0; s < NS; s++) { placeRow('left', LX, -D/2+5+u*10, PRODS.left, u, s); prodCount += Math.min(6, Math.floor(0.9 / (0.075 + 0.018))); }
+for (let u = 0; u < 5; u++) for (let s = 0; s < NS; s++) { placeRow('right', RX, -D/2+5+u*10, PRODS.right, u, s); prodCount += Math.min(6, Math.floor(0.9 / (0.075 + 0.018))); }
+for (let u = 0; u < 4; u++) for (let s = 0; s < NS; s++) { placeRow('back', -W/2+5+u*11, BZ, PRODS.back, u, s); prodCount += Math.min(6, Math.floor(0.9 / (0.075 + 0.018))); }
+for (let s = 0; s < 3; s++) { placeRow('island', 0, 2.0, PRODS.island, 0, s); prodCount += Math.min(6, Math.floor(0.9 / (0.075 + 0.018))); }
 console.log('Products created:', prodCount, 'Total scene objects:', scene.children.length);
 
 // ============================================================
@@ -724,20 +724,16 @@ function isMobile() { return window.innerWidth <= 768 || 'ontouchstart' in windo
 // ============================================================
 //  COLLISION
 // ============================================================
-//  عرض 4م → X: ±2  |  عمق 5م → Z: ±2.5
-const CM = 0.38;
-const hW = W / 2 - CM;  // 1.62
-const hD = D / 2 - CM;  // 2.12
+//  عرض 12م → X: ±6  |  عمق 15م → Z: ±7.5
+const CM = 0.5;
+const hW = W / 2 - CM;  // 23.5
+const hD = D / 2 - CM;  // 29.5
 
 const colliders = [
-  // يسار (X ≈ -1.83 → الممر عند X=-1.52)
   { xn: LX + SD / 2 + CM * 0.3, xx: W, zn: -D / 2, zx: D / 2 },
-  // يمين (X ≈ +1.83 → الممر عند X=+1.52)
   { xn: -W, xx: RX - SD / 2 - CM * 0.3, zn: -D / 2, zx: D / 2 },
-  // خلف (Z ≈ -2.33)
   { xn: -W / 2, xx: W / 2, zn: BZ - SD / 2 - CM * 0.3, zx: D / 2 },
-  // جزيرة
-  { xn: -1.08, xx: 1.08, zn: -1.08, zx: 0.08 },
+  { xn: -1.08, xx: 1.08, zn: -0.5, zx: 4.5 },
 ].map(c => ({ xMin: -c.xx, xMax: -c.xn, zMin: c.zn, zMax: c.zx }));
 
 // تبسيط: استخدم حدود مباشرة
@@ -745,7 +741,7 @@ const WALLS = [
   { xMin: -Infinity, xMax: -(W/2 - SD - CM * 0.6), zMin: -D/2, zMax: D/2 },  // يسار
   { xMin:  (W/2 - SD - CM * 0.6), xMax: Infinity,  zMin: -D/2, zMax: D/2 },  // يمين
   { xMin: -W/2, xMax: W/2, zMin: -Infinity, zMax: -(D/2 - SD - CM * 0.6) }, // خلف
-  { xMin: -1.1, xMax:  1.1, zMin: -1.1, zMax: 0.1 },  // جزيرة
+  { xMin: -1.1, xMax:  1.1, zMin: -0.5, zMax: 4.5 },  // جزيرة
 ];
 
 function clamp(pos) {
@@ -871,9 +867,9 @@ window.doAddToCart = function () {
 // ============================================================
 const mc = document.getElementById('mmapCanvas');
 const mx = mc.getContext('2d');
-// نسبة: عرض 4م → 116px | عمق 5م → 96px
-const scX = mc.width  / W;  // 29
-const scZ = mc.height / D;  // 19.2
+// نسبة: عرض 12م → 116px | عمق 15م → 96px
+const scX = mc.width  / W;
+const scZ = mc.height / D;
 
 function drawMap() {
   mx.clearRect(0, 0, mc.width, mc.height);
