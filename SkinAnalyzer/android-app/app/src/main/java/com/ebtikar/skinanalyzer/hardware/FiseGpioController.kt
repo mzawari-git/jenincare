@@ -361,16 +361,25 @@ class FiseGpioController @Inject constructor(
     }
 
     private fun suExec(cmd: String): Boolean {
-        if (_hasRoot != true) return false
         return try {
-            val proc = Runtime.getRuntime().exec(arrayOf(_suPath, "-c", cmd))
-            val exit = proc.waitFor()
-            if (exit == 0) true else {
-                Timber.d("suExec: cmd='$cmd' exit=$exit via $_suPath")
-                false
+            val pathsToTry = if (_hasRoot == true) listOf(_suPath) else listOf("/system/bin/su", "/sbin/su", "/system/xbin/su", "/su/bin/su", "/vendor/bin/su", "/data/adb/magisk/su", "/data/adb/ksu/bin/su")
+            for (path in pathsToTry) {
+                try {
+                    val proc = Runtime.getRuntime().exec(arrayOf(path, "-c", cmd))
+                    val exit = proc.waitFor()
+                    if (exit == 0) {
+                        if (_hasRoot != true) {
+                            _hasRoot = true
+                            _suPath = path
+                            Timber.i("Root discovered at $path during command execution")
+                        }
+                        return true
+                    }
+                } catch (_: Exception) {}
             }
+            false
         } catch (e: Exception) {
-            Timber.d("suExec failed via $_suPath: ${e.message}")
+            Timber.d("suExec failed: ${e.message}")
             false
         }
     }
