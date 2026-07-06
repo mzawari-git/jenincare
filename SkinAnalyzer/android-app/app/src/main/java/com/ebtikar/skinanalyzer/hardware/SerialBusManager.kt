@@ -107,8 +107,6 @@ class SerialBusManager @Inject constructor(
             serialPort = driver.ports.first().also { port ->
                 port.open(connection)
                 port.setParameters(BAUD_RATE, DATA_BITS, STOP_BITS, PARITY)
-                port.dtr = true
-                port.rts = true
             }
 
             ioManager = SerialInputOutputManager(serialPort!!, this).also { it.start() }
@@ -182,28 +180,16 @@ class SerialBusManager @Inject constructor(
                 port.write(payload, 1000)
                 Timber.d("TX [Attempt $attempt]: ${spectrum.name} -> ${payload.joinToString(" ") { "0x%02X".format(it) }}")
 
-                val ackReceived = waitForAck(startTime)
+                delay(50)
 
                 val elapsed = System.currentTimeMillis() - startTime
                 val stats = _commandStats.value
                 _commandStats.value = stats.copy(
                     totalSent = stats.totalSent + 1,
-                    totalAcks = if (ackReceived) stats.totalAcks + 1 else stats.totalAcks,
-                    totalNacks = if (!ackReceived && lastResponse.value?.firstOrNull() == NACK_BYTE) stats.totalNacks + 1 else stats.totalNacks,
-                    totalTimeouts = if (!ackReceived) stats.totalTimeouts + 1 else stats.totalTimeouts,
-                    avgResponseTimeMs = if (stats.totalSent > 0) (stats.avgResponseTimeMs * stats.totalSent + elapsed) / (stats.totalSent + 1) else elapsed,
                     lastCommandTimeMs = elapsed
                 )
 
-                if (ackReceived) {
-                    Timber.d("ACK received for ${spectrum.name} in ${elapsed}ms")
-                    return Result.success(Unit)
-                } else {
-                    Timber.w("No ACK for ${spectrum.name} (attempt $attempt/$MAX_RETRIES)")
-                    if (attempt < MAX_RETRIES) {
-                        delay(100L * attempt)
-                    }
-                }
+                return Result.success(Unit)
             } catch (e: Exception) {
                 lastException = e
                 _lastError.value = e.message
@@ -286,8 +272,7 @@ class SerialBusManager @Inject constructor(
     }
 
     private fun buildCommandPayload(commandByte: Byte): ByteArray {
-        val checksum = (HEADER_BYTE.toInt() + 0x01 + commandByte.toInt() and 0xFF).toByte()
-        return byteArrayOf(HEADER_BYTE, 0x01, commandByte, checksum, FOOTER_BYTE)
+        return byteArrayOf(HEADER_BYTE, 0x01, commandByte, FOOTER_BYTE)
     }
 
     override fun onNewData(data: ByteArray) {
