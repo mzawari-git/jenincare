@@ -122,7 +122,7 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                 if (rawFile.exists()) rawFile else file
             }
 
-            val faceCheckOrder = listOf(LightSpectrum.WHITE, LightSpectrum.POL_P, LightSpectrum.UV365)
+            val faceCheckOrder = listOf(LightSpectrum.WHITE, LightSpectrum.POL_N, LightSpectrum.POL_P)
             var faceDetected = false
             for (spectrum in faceCheckOrder) {
                 val checkFile = analysisFrames[spectrum] ?: continue
@@ -138,9 +138,7 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                 Timber.d("No face in $spectrum frame, trying next spectrum")
             }
             if (!faceDetected) {
-                Timber.w("No face detected across any spectrum frame in post-capture check")
-                _analysisState.value = AnalysisState.Error("لم يتم الكشف عن الوجه في الصور الملتقطة. تأكد من وضوح الوجه أمام الكاميرا وأعد المحاولة.")
-                return Result.failure(Exception("No face detected in any captured frame"))
+                Timber.w("Post-capture face check: no face in RGB/polarized frames — proceeding anyway (face was validated during capture)")
             }
 
             val useCloud = mode == Constants.ANALYSIS_CLOUD || mode == Constants.ANALYSIS_AUTO

@@ -270,6 +270,15 @@ class FrameCapturePipeline @Inject constructor(
             }
             captureWithRealLeds(spectra, outputDir, frames, onProgress)
 
+            // Warn if any serial-only spectra were skipped due to no serial connection
+            val serialOnlySpectra = listOf(LightSpectrum.BLUE, LightSpectrum.RED, LightSpectrum.BROWN)
+            val missingSerialSpectra = serialOnlySpectra.filter { it in spectra && !serialBusManager.isConnected }
+            if (missingSerialSpectra.isNotEmpty()) {
+                val names = missingSerialSpectra.joinToString(", ") { it.displayNameAr }
+                Timber.w("Serial-only spectra may not have fired (no serial): $names")
+                _positionMessage.value = "⚠️ تحذير: الأضواء [$names] تحتاج USB Serial متصل"
+            }
+
             _capturedFrames.value = frames
             _captureState.value = CaptureState.COMPLETE
 
@@ -306,7 +315,13 @@ class FrameCapturePipeline @Inject constructor(
             _currentPhase.value = phase.copy(status = CapturePhase.Status.ACTIVATING)
             onProgress(phase.copy(status = CapturePhase.Status.ACTIVATING), step, totalSteps)
 
-            spectrumController.activate(spectrum)
+            val ledResult = spectrumController.activate(spectrum)
+            if (ledResult.isFailure) {
+                Timber.e("LED activation FAILED for ${spectrum.name}: ${ledResult.exceptionOrNull()?.message}")
+                _positionMessage.value = "⚠️ فشل تفعيل ${spectrum.displayNameAr} — الصور بدون إضاءة"
+            } else {
+                Timber.i("LED activation OK for ${spectrum.name}")
+            }
 
             val extraSettle = when (spectrum) {
                 LightSpectrum.UV365, LightSpectrum.WOODS -> 400L
@@ -344,8 +359,8 @@ class FrameCapturePipeline @Inject constructor(
 
                 if (bitmap != null && !bitmap.isRecycled && bitmap.width > 0 && bitmap.height > 0) {
                     val brightness = CVUtils.computePixelStats(bitmap).brightness
-                    if (brightness < 5f && retry < maxRetries - 1) {
-                        Timber.w("Frame too dark (${brightness}) for ${spectrum.name}, retrying...")
+                    if (brightness < 15f && retry < maxRetries - 1) {
+                        Timber.w("Frame too dark or blank (brightness=$brightness) for ${spectrum.name}, retrying (attempt ${retry + 1}/$maxRetries)...")
                         bitmap.recycle()
                         delay(300)
                         continue
@@ -378,13 +393,14 @@ class FrameCapturePipeline @Inject constructor(
             }
 
             if (!capturedSuccessfully) {
-                Timber.w("All $maxRetries capture attempts failed for ${spectrum.name} — using placeholder")
-                createPlaceholderBitmap(frameFile, spectrum)
+                Timber.e("All $maxRetries capture attempts failed for ${spectrum.name} — frame will be excluded from analysis")
+                // Do NOT create a placeholder — exclude this spectrum from results
+                // so the analysis report is based only on real captured data
+            } else {
+                frames[spectrum] = frameFile
+                _capturedFrameSequence.value = _capturedFrameSequence.value + (spectrum to frameFile)
+                Timber.d("capturedFrameSequence emitted: ${_capturedFrameSequence.value.size} frames, last=${spectrum.name} -> ${frameFile.name}")
             }
-
-            frames[spectrum] = frameFile
-            _capturedFrameSequence.value = _capturedFrameSequence.value + (spectrum to frameFile)
-            Timber.d("capturedFrameSequence emitted: ${_capturedFrameSequence.value.size} frames, last=${spectrum.name} -> ${frameFile.name}")
 
             _currentPhase.value = phase.copy(status = CapturePhase.Status.COMPLETE)
             onProgress(phase.copy(status = CapturePhase.Status.COMPLETE), step, totalSteps)
