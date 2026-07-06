@@ -107,11 +107,7 @@ class SpectrumController @Inject constructor(
         }
 
         Timber.e("No working GPIO or serial for ${spectrum.name}. LED will NOT turn on.")
-        currentSpectrum = spectrum
-        _currentSpectrumFlow.value = spectrum
-        notifyListeners(spectrum)
-        delay(spectrum.settlingWindowMs)
-        return Result.success(Unit)
+        return Result.failure(IllegalStateException("No LED hardware for ${spectrum.name}: GPIO=${fiseGpio.isAvailable}, serial=${serialBus.isConnected}"))
     }
 
     suspend fun executeCaptureSequence(
