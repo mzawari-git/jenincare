@@ -461,12 +461,32 @@
             </LinearLayout>
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTestRoot"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:text="فحص Root (تجربة كل الطرق)"
+                android:textSize="13sp"
+                app:cornerRadius="12dp" />
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRebindFise"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="8dp"
                 android:text="إصلاح FISE GPIO (إعادة الربط)"
+                android:textSize="13sp"
+                app:cornerRadius="12dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnExportGpio"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:text="تصدير GPIO مباشرة (بدون root)"
                 android:textSize="13sp"
                 app:cornerRadius="12dp" />
 

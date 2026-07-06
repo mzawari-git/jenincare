@@ -98,6 +98,30 @@ class DiagnosticsActivity : AppCompatActivity() {
             runAllTests()
         }
 
+        binding.btnTestRoot.setOnClickListener {
+            binding.btnTestRoot.isEnabled = false
+            binding.btnTestRoot.text = "جارٍ الفحص..."
+            scope.launch(Dispatchers.IO) {
+                testAllRootMethods()
+                withContext(Dispatchers.Main) {
+                    binding.btnTestRoot.isEnabled = true
+                    binding.btnTestRoot.text = "فحص Root (تجربة كل الطرق)"
+                }
+            }
+        }
+
+        binding.btnExportGpio.setOnClickListener {
+            binding.btnExportGpio.isEnabled = false
+            binding.btnExportGpio.text = "جارٍ التصدير..."
+            scope.launch(Dispatchers.IO) {
+                tryDirectGpioExport()
+                withContext(Dispatchers.Main) {
+                    binding.btnExportGpio.isEnabled = true
+                    binding.btnExportGpio.text = "تصدير GPIO مباشرة (بدون root)"
+                }
+            }
+        }
+
         binding.btnRebindFise.setOnClickListener {
             binding.btnRebindFise.isEnabled = false
             binding.btnRebindFise.text = "جارٍ إعادة الربط..."
@@ -465,6 +489,140 @@ class DiagnosticsActivity : AppCompatActivity() {
             startActivity(intent)
         } catch (e: Exception) {
             android.widget.Toast.makeText(this, "لا يمكن فتح المتصفح. تحقق من اتصال الإنترنت.", android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private suspend fun testAllRootMethods() {
+        withContext(Dispatchers.Main) { appendLog("=== فحص Root الشامل ===") }
+
+        val suPaths = listOf("/system/bin/su", "/sbin/su", "/system/xbin/su", "/su/bin/su", "/vendor/bin/su", "/data/adb/magisk/su", "/data/adb/ksu/bin/su", "/data/adb/ap/su", "/system/su")
+        for (p in suPaths) {
+            val exists = java.io.File(p).exists()
+            if (exists) {
+                withContext(Dispatchers.Main) { appendLog("  $p: موجود ✓") }
+                val methods = listOf(
+                    arrayOf(p, "-c", "id"),
+                    arrayOf(p, "-c", "id"),
+                    arrayOf(p, "0", "id"),
+                    arrayOf(p, "-0", "id"),
+                    arrayOf(p, "root", "id")
+                )
+                for (cmd in methods) {
+                    try {
+                        val proc = Runtime.getRuntime().exec(cmd)
+                        val stdout = proc.inputStream.bufferedReader().readText().trim()
+                        val stderr = proc.errorStream.bufferedReader().readText().trim()
+                        val exit = proc.waitFor()
+                        val cmdStr = cmd.joinToString(" ")
+                        withContext(Dispatchers.Main) {
+                            appendLog("    $cmdStr → exit=$exit stdout=[$stdout] stderr=[$stderr]")
+                        }
+                        if (exit == 0 && stdout.contains("uid=0")) {
+                            withContext(Dispatchers.Main) { appendLog("    ★ ROOT FOUND via: $cmdStr") }
+                            return
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) { appendLog("    ${cmd.joinToString(" ")} → EXCEPTION: ${e.message}") }
+                    }
+                }
+            }
+        }
+
+        withContext(Dispatchers.Main) { appendLog("  فحص 'sh -c id':") }
+        try {
+            val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "id"))
+            val stdout = proc.inputStream.bufferedReader().readText().trim()
+            val exit = proc.waitFor()
+            withContext(Dispatchers.Main) { appendLog("    sh -c id → exit=$exit stdout=[$stdout]") }
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) { appendLog("    sh -c id → EXCEPTION: ${e.message}") }
+        }
+
+        withContext(Dispatchers.Main) { appendLog("  فحص محاكاة 'su' بدون root:") }
+        try {
+            val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo test_root | su 2>&1; echo EXIT=\$?"))
+            val stdout = proc.inputStream.bufferedReader().readText().trim()
+            val exit = proc.waitFor()
+            withContext(Dispatchers.Main) { appendLog("    su piped → exit=$exit output=[$stdout]") }
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) { appendLog("    su piped → EXCEPTION: ${e.message}") }
+        }
+
+        withContext(Dispatchers.Main) { appendLog("  فحص 'echo > /sys/class/gpio/export':") }
+        try {
+            val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo 34 > /sys/class/gpio/export 2>&1; echo EXIT=\$?"))
+            val stdout = proc.inputStream.bufferedReader().readText().trim()
+            val exit = proc.waitFor()
+            withContext(Dispatchers.Main) { appendLog("    sh echo export → exit=$exit output=[$stdout]") }
+            val gpio34 = java.io.File("/sys/class/gpio/gpio34").exists()
+            withContext(Dispatchers.Main) { appendLog("    gpio34 exists after: $gpio34") }
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) { appendLog("    sh echo export → EXCEPTION: ${e.message}") }
+        }
+
+        withContext(Dispatchers.Main) {
+            appendLog("=== اكتمل فحص Root ===")
+            appendLog("النتيجة: su موجود لكن لا يمنح صلاحيات root")
+            appendLog("الحل: يحتاج Magisk أو ADB لتشغيل setup_gpio.ps1")
+        }
+    }
+
+    private suspend fun tryDirectGpioExport() {
+        withContext(Dispatchers.Main) { appendLog("=== محاولة تصدير GPIO مباشرة ===") }
+        val gpios = listOf(34, 149, 45, 54, 56)
+
+        for (gpio in gpios) {
+            val exists = java.io.File("/sys/class/gpio/gpio$gpio").exists()
+            if (exists) {
+                withContext(Dispatchers.Main) { appendLog("  gpio$gpio: موجود بالفعل ✓") }
+                continue
+            }
+            withContext(Dispatchers.Main) { appendLog("  gpio$gpio: غير موجود، محاولة التصدير...") }
+
+            val methods = listOf(
+                "echo $gpio > /sys/class/gpio/export" to "sh direct",
+                "su -c 'echo $gpio > /sys/class/gpio/export'" to "su -c",
+                "sh -c 'echo $gpio > /sys/class/gpio/export'" to "sh -c"
+            )
+            var exported = false
+            for ((cmd, label) in methods) {
+                try {
+                    val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", cmd))
+                    val err = proc.errorStream.bufferedReader().readText().trim()
+                    val exit = proc.waitFor()
+                    withContext(Dispatchers.Main) { appendLog("    $label → exit=$exit err=[$err]") }
+                    if (exit == 0 && java.io.File("/sys/class/gpio/gpio$gpio").exists()) {
+                        withContext(Dispatchers.Main) { appendLog("    ★ gpio$gpio تم التصدير بنجاح عبر $label") }
+                        exported = true
+                        break
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) { appendLog("    $label → EXCEPTION: ${e.message}") }
+                }
+            }
+            if (!exported) {
+                withContext(Dispatchers.Main) { appendLog("    gpio$gpio: فشل التصدير بكل الطرق ✗") }
+            }
+        }
+
+        for (gpio in gpios) {
+            val dir = java.io.File("/sys/class/gpio/gpio$gpio")
+            if (dir.exists()) {
+                try {
+                    Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo out > /sys/class/gpio/gpio$gpio/direction")).waitFor()
+                    Runtime.getRuntime().exec(arrayOf("sh", "-c", "chmod 666 /sys/class/gpio/gpio$gpio/value")).waitFor()
+                    Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo 1 > /sys/class/gpio/gpio$gpio/value")).waitFor()
+                    withContext(Dispatchers.Main) { appendLog("  gpio$gpio: direction=out, value=1, chmod=666 ✓") }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) { appendLog("  gpio$gpio: إعداد الاتجاه فشل: ${e.message}") }
+                }
+            }
+        }
+
+        val ok = fiseGpioController.recheckAvailability()
+        withContext(Dispatchers.Main) {
+            appendLog("→ GPIO status after export: ${if (ok) "✓ متاح" else "✗ لا يزال غير متاح"}")
+            updateGpioStatus()
         }
     }
 
