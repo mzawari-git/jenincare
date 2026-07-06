@@ -1,5 +1,6 @@
 package com.ebtikar.skinanalyzer.ui.diagnostics
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -144,6 +145,64 @@ class DiagnosticsActivity : AppCompatActivity() {
                 binding.btnTestLeds.text = "اختبار الأضواء (تفعيل تسلسلي)"
             }
         }
+
+        binding.btnShareLog.setOnClickListener {
+            shareDiagnostics()
+        }
+    }
+
+    private fun shareDiagnostics() {
+        val gpio = fiseGpioController
+        val report = buildString {
+            appendLine("=== SkinAnalyzer Diagnostics ===")
+            appendLine("Version: ${com.ebtikar.skinanalyzer.BuildConfig.VERSION_NAME} (${com.ebtikar.skinanalyzer.BuildConfig.VERSION_CODE})")
+            appendLine("Build: ${com.ebtikar.skinanalyzer.BuildConfig.BUILD_TYPE}")
+            appendLine("Time: ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date())}")
+            appendLine()
+            appendLine("--- GPIO ---")
+            appendLine("Available: ${gpio.isAvailable}")
+            appendLine("Root: ${gpio.hasRoot}")
+            appendLine("SELinux: ${gpio.selinuxEnforcing}")
+            appendLine("Status: ${gpio.statusMessage}")
+            for (i in 0..4) {
+                val gpioNum = when(i) { 0->34; 1->149; 2->45; 3->54; 4->56; else->0 }
+                val dir = java.io.File("/sys/class/gpio/gpio$gpioNum")
+                val file = java.io.File("/sys/class/gpio/gpio$gpioNum/value")
+                val exists = dir.exists()
+                val canWrite = try { file.canWrite() } catch (_: Exception) { false }
+                val readback = try { file.readText().trim() } catch (_: Exception) { "?" }
+                appendLine("  gpio$gpioNum: dir=$exists, write=$canWrite, value=$readback")
+            }
+            appendLine()
+            appendLine("--- Serial Bus ---")
+            appendLine("Connected: ${serialBusManager.isConnected}")
+            appendLine("State: ${serialBusManager.connectionState.value}")
+            appendLine("Error: ${serialBusManager.lastError.value}")
+            val driver = serialBusManager.findDriver()
+            appendLine("Driver found: ${driver?.device?.deviceName ?: "none"}")
+            appendLine()
+            appendLine("--- Camera ---")
+            val camId = cameraManager.findBestCamera()
+            appendLine("Camera: ${camId ?: "not found"}")
+            appendLine("Ready: ${cameraManager.isReady}")
+            appendLine()
+            appendLine("--- Network ---")
+            appendLine("Online: ${networkMonitor.isOnline()}")
+            appendLine()
+            appendLine("--- Log Output ---")
+            appendLine(binding.tvLogOutput.text.toString())
+        }
+
+        val file = java.io.File(cacheDir, "diagnostics.txt")
+        file.writeText(report)
+
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, report)
+            putExtra(Intent.EXTRA_SUBJECT, "SkinAnalyzer Diagnostics")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(Intent.createChooser(intent, "مشاركة تقرير التشخيص"))
     }
 
     private suspend fun execShellSu(cmd: String): Boolean {
