@@ -64,7 +64,6 @@ class SpectrumController @Inject constructor(
             currentSpectrum = spectrum
             _currentSpectrumFlow.value = spectrum
             notifyListeners(spectrum)
-            delay(spectrum.settlingWindowMs)
             return Result.success(Unit)
         }
         if (spectrum == LightSpectrum.ALL) {
@@ -75,7 +74,6 @@ class SpectrumController @Inject constructor(
             currentSpectrum = spectrum
             _currentSpectrumFlow.value = spectrum
             notifyListeners(spectrum)
-            delay(spectrum.settlingWindowMs)
             return Result.success(Unit)
         }
 
@@ -86,7 +84,6 @@ class SpectrumController @Inject constructor(
                 currentSpectrum = spectrum
                 _currentSpectrumFlow.value = spectrum
                 notifyListeners(spectrum)
-                delay(spectrum.settlingWindowMs)
                 return Result.success(Unit)
             }
             Timber.e("FISE GPIO activation FAILED for ${spectrum.name}")
@@ -99,7 +96,6 @@ class SpectrumController @Inject constructor(
                 currentSpectrum = spectrum
                 _currentSpectrumFlow.value = spectrum
                 notifyListeners(spectrum)
-                delay(spectrum.settlingWindowMs)
                 Timber.d("Spectrum activated via serial: ${spectrum.name}")
                 return Result.success(Unit)
             }

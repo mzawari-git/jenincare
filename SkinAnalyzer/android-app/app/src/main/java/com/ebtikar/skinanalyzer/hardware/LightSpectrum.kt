@@ -12,56 +12,56 @@ enum class LightSpectrum(
     WHITE(
         "White Light (RGB Daylight)",
         "الضوء المرئي (RGB)",
-        0x01, 120, 5500,
+        0x01, 50, 5500,
         "#FFFFFF",
         "Surface analysis: pores, wrinkles, skin tone"
     ),
     POL_P(
         "Cross-Polarized Light",
         "ضوء مستقطب متقاطع",
-        0x07, 150, 0,
+        0x07, 50, 0,
         "#E0E0FF",
         "Blood vessels, redness, rosacea, deep pigmentation"
     ),
     POL_N(
         "Parallel-Polarized Light",
         "ضوء مستقطب موازٍ",
-        0x08, 150, 0,
+        0x08, 50, 0,
         "#FFE0E0",
         "Fine lines, texture, surface condition"
     ),
     UV365(
         "UV Light 365nm",
         "الأشعة فوق البنفسجية 365nm",
-        0x02, 300, 365,
+        0x02, 50, 365,
         "#9B59B6",
         "Porphyrins, sun damage, sebum"
     ),
     WOODS(
         "Wood's Light",
         "ضوء وودز السريري",
-        0x03, 300, 365,
+        0x03, 50, 365,
         "#8E44AD",
         "Hydration levels, deep melasma"
     ),
     BLUE(
         "Blue Light 465nm",
         "ضوء أزرق 465nm",
-        0x04, 150, 465,
+        0x04, 50, 465,
         "#3498DB",
         "Acne bacteria & sebum"
     ),
     RED(
         "Red Light 630nm",
         "ضوء أحمر 630nm",
-        0x05, 120, 630,
+        0x05, 50, 630,
         "#E74C3C",
         "Vascular & collagen"
     ),
     BROWN(
         "Brown Light 590nm",
         "ضوء بني 590nm",
-        0x06, 120, 590,
+        0x06, 50, 590,
         "#D35400",
         "Deep pigmentation & spots"
     ),

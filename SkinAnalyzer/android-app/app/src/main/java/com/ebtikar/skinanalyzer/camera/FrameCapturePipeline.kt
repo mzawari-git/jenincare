@@ -306,11 +306,11 @@ class FrameCapturePipeline @Inject constructor(
         val totalSteps = spectra.size
         _captureState.value = CaptureState.CAPTURING
 
-        Timber.i("captureWithRealLeds: serialBusManager.isConnected=${serialBusManager.isConnected}")
+        Timber.i("captureWithRealLeds HIGH-SPEED STROBE: ${spectra.size} spectra, serialBusManager.isConnected=${serialBusManager.isConnected}")
 
         for ((stepIndex, spectrum) in spectra.withIndex()) {
             val step = stepIndex + 1
-            val phase = CapturePhase(stepIndex, spectrum, spectrum.settlingWindowMs)
+            val phase = CapturePhase(stepIndex, spectrum, 50L)
 
             _currentPhase.value = phase.copy(status = CapturePhase.Status.ACTIVATING)
             onProgress(phase.copy(status = CapturePhase.Status.ACTIVATING), step, totalSteps)
@@ -318,36 +318,19 @@ class FrameCapturePipeline @Inject constructor(
             val ledResult = spectrumController.activate(spectrum)
             if (ledResult.isFailure) {
                 Timber.e("LED activation FAILED for ${spectrum.name}: ${ledResult.exceptionOrNull()?.message}")
-                _positionMessage.value = "⚠️ فشل تفعيل ${spectrum.displayNameAr} — الصور بدون إضاءة"
+                _positionMessage.value = "⚠️ فشل تفعيل ${spectrum.displayNameAr}"
             } else {
-                Timber.i("LED activation OK for ${spectrum.name}")
+                Timber.i("LED OK: ${spectrum.name}")
             }
 
-            val extraSettle = when (spectrum) {
-                LightSpectrum.UV365, LightSpectrum.WOODS -> 400L
-                LightSpectrum.POL_P, LightSpectrum.POL_N -> 200L
-                LightSpectrum.BLUE, LightSpectrum.RED, LightSpectrum.BROWN -> 300L
-                else -> 100L
-            }
-            kotlinx.coroutines.delay(spectrum.settlingWindowMs + extraSettle)
-
-            _currentPhase.value = phase.copy(status = CapturePhase.Status.SETTLING)
-            onProgress(phase.copy(status = CapturePhase.Status.SETTLING), step, totalSteps)
-            kotlinx.coroutines.delay(300)
-
-            _captureState.value = CaptureState.COUNTDOWN
-            for (count in 3 downTo 1) {
-                _countdownValue.value = count
-                kotlinx.coroutines.delay(400)
-            }
-            _countdownValue.value = 0
+            kotlinx.coroutines.delay(50)
 
             _currentPhase.value = phase.copy(status = CapturePhase.Status.CAPTURING)
             onProgress(phase.copy(status = CapturePhase.Status.CAPTURING), step, totalSteps)
 
             val frameFile = File(outputDir, "frame_${spectrum.name}.jpg")
             var capturedSuccessfully = false
-            val maxRetries = 3
+            val maxRetries = 2
 
             for (retry in 0 until maxRetries) {
                 val bitmap = try {
@@ -358,16 +341,8 @@ class FrameCapturePipeline @Inject constructor(
                 }
 
                 if (bitmap != null && !bitmap.isRecycled && bitmap.width > 0 && bitmap.height > 0) {
-                    val brightness = CVUtils.computePixelStats(bitmap).brightness
-                    if (brightness < 15f && retry < maxRetries - 1) {
-                        Timber.w("Frame too dark or blank (brightness=$brightness) for ${spectrum.name}, retrying (attempt ${retry + 1}/$maxRetries)...")
-                        bitmap.recycle()
-                        delay(300)
-                        continue
-                    }
-
                     _captureFlash.value = true
-                    delay(80)
+                    delay(50)
                     _captureFlash.value = false
 
                     val rawFile = File(outputDir, "frame_${spectrum.name}_raw.jpg")
@@ -387,27 +362,23 @@ class FrameCapturePipeline @Inject constructor(
                     if (bitmap != null && !bitmap.isRecycled) bitmap.recycle()
                     if (retry < maxRetries - 1) {
                         Timber.w("Capture attempt ${retry + 1} failed for ${spectrum.name}, retrying...")
-                        delay(200)
+                        delay(30)
                     }
                 }
             }
 
+            spectrumController.activate(LightSpectrum.OFF)
+
             if (!capturedSuccessfully) {
-                Timber.e("All $maxRetries capture attempts failed for ${spectrum.name} — frame will be excluded from analysis")
-                // Do NOT create a placeholder — exclude this spectrum from results
-                // so the analysis report is based only on real captured data
+                Timber.e("All $maxRetries capture attempts failed for ${spectrum.name} — frame excluded")
             } else {
                 frames[spectrum] = frameFile
                 _capturedFrameSequence.value = _capturedFrameSequence.value + (spectrum to frameFile)
-                Timber.d("capturedFrameSequence emitted: ${_capturedFrameSequence.value.size} frames, last=${spectrum.name} -> ${frameFile.name}")
+                Timber.d("Frame captured: ${spectrum.name} -> ${frameFile.name}")
             }
 
             _currentPhase.value = phase.copy(status = CapturePhase.Status.COMPLETE)
             onProgress(phase.copy(status = CapturePhase.Status.COMPLETE), step, totalSteps)
-
-            if (stepIndex < spectra.size - 1) {
-                kotlinx.coroutines.delay(400)
-            }
         }
 
         _faceGuideVisible.value = false
