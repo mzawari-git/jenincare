@@ -31,6 +31,8 @@ import com.ebtikar.skinanalyzer.camera.CapturePhase
 import com.ebtikar.skinanalyzer.camera.FrameCapturePipeline
 import com.ebtikar.skinanalyzer.camera.USBCameraManager
 import com.ebtikar.skinanalyzer.databinding.ActivityAnalysisBinding
+import com.ebtikar.skinanalyzer.hardware.FiseGpioController
+import com.ebtikar.skinanalyzer.hardware.SerialBusManager
 import com.ebtikar.skinanalyzer.hardware.LightSpectrum
 import com.ebtikar.skinanalyzer.ui.report.ReportActivity
 import com.ebtikar.skinanalyzer.util.Constants
@@ -53,6 +55,8 @@ class AnalysisActivity : BaseCameraActivity() {
     @Inject lateinit var cameraManager: USBCameraManager
     @Inject lateinit var capturePipeline: FrameCapturePipeline
     @Inject lateinit var preferencesManager: PreferencesManager
+    @Inject lateinit var fiseGpioController: FiseGpioController
+    @Inject lateinit var serialBusManager: SerialBusManager
 
     private var isScanning = false
     private var analysisInitialized = false
@@ -139,9 +143,81 @@ class AnalysisActivity : BaseCameraActivity() {
             }
             val validSurface = Surface(currentSurface)
             analysisInitialized = true
-            viewModel.initializeAnalysis(validSurface)
+            runOnUiThread {
+                checkLightingHardware {
+                    viewModel.initializeAnalysis(validSurface)
+                }
+            }
         }
         binding.cameraPreview.post { cameraManager.rotateTextureView(binding.cameraPreview) }
+    }
+
+    /**
+     * Checks lighting hardware before starting the capture pipeline.
+     * Shows a blocking dialog if NO lights are connected at all.
+     * Shows a soft warning if only serial-only lights (BLUE/RED/BROWN) are missing.
+     */
+    private fun checkLightingHardware(onReady: () -> Unit) {
+        val gpioAvailable = fiseGpioController.isAvailable
+        val serialAvailable = serialBusManager.isConnected
+        val rootManagerDetected = fiseGpioController.rootManagerDetected
+
+        Timber.i("Hardware pre-check: gpio=$gpioAvailable, serial=$serialAvailable, rootMgr=$rootManagerDetected")
+
+        when {
+            // No hardware at all — block the scan
+            !gpioAvailable && !serialAvailable -> {
+                val message = if (rootManagerDetected) {
+                    "تم العثور على تطبيق Root على الجهاز لكنه لم يمنح الصلاحية بعد.\n\n" +
+                    "الخطوات:\n" +
+                    "1. افتح تطبيق Root (Magisk أو SuperSU)\n" +
+                    "2. ابحث عنSkinAnalyzer في قائمة الأذونات\n" +
+                    "3. اختر \"منح\" أو \"Allow\"\n" +
+                    "4. أعد تشغيل هذا التطبيق\n\n" +
+                    "هل تريد المتابعة بدون إضاءة؟"
+                } else {
+                    "لم يتم الكشف عن أي ضوء تشخيص متصل.\n\n" +
+                    "يجب تشغيل setup_gpio.ps1 عبر ADB بعد كل إعادة تشغيل.\n\n" +
+                    "هل تريد المتابعة بدون إضاءة؟ (ستكون الصور بالإضاءة الطبيعية فقط)"
+                }
+                android.app.AlertDialog.Builder(this)
+                    .setTitle("⚠️ أضواء التشخيص غير متصلة")
+                    .setMessage(message)
+                    .setCancelable(false)
+                    .setPositiveButton("متابعة بدون إضاءة") { _, _ -> onReady() }
+                    .setNegativeButton("إلغاء الفحص") { _, _ -> finish() }
+                    .apply {
+                        if (rootManagerDetected) {
+                            setNeutralButton("فتح تطبيق Root") { _, _ ->
+                                openRootManager()
+                                finish()
+                            }
+                        }
+                    }
+                    .show()
+            }
+
+            // GPIO OK but no serial — BLUE/RED/BROWN won't fire
+            gpioAvailable && !serialAvailable -> {
+                android.app.AlertDialog.Builder(this)
+                    .setTitle("معلومة: بعض الأضواء غير متصلة")
+                    .setMessage(
+                        "الأضواء التالية تحتاج USB Serial متصل:\n" +
+                        "• ضوء أزرق 465nm\n• ضوء أحمر 630nm\n• ضوء بني 590nm\n\n" +
+                        "الأضواء الخمسة الأخرى ستعمل بشكل صحيح. هل تريد المتابعة؟"
+                    )
+                    .setCancelable(false)
+                    .setPositiveButton("متابعة (5 أضواء فقط)") { _, _ -> onReady() }
+                    .setNegativeButton("إلغاء") { _, _ -> finish() }
+                    .show()
+            }
+
+            // All hardware ready
+            else -> {
+                Timber.i("All lighting hardware ready (gpio=$gpioAvailable, serial=$serialAvailable)")
+                onReady()
+            }
+        }
     }
 
     private fun setupUI() {
@@ -412,6 +488,22 @@ class AnalysisActivity : BaseCameraActivity() {
             android.graphics.Color.parseColor(phase.spectrum.colorHex)
         } catch (_: Exception) { android.graphics.Color.WHITE }
         binding.tvCurrentSpectrum.setTextColor(spectrumColor)
+    }
+
+    private fun openRootManager() {
+        val pkg = fiseGpioController.detectedRootManagerPackage
+        if (pkg != null) {
+            try {
+                val intent = packageManager.getLaunchIntentForPackage(pkg)
+                if (intent != null) {
+                    startActivity(intent)
+                    return
+                }
+            } catch (_: Exception) {}
+        }
+        val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+        intent.data = android.net.Uri.fromParts("package", packageName, null)
+        startActivity(intent)
     }
 
     private fun navigateToReport() {

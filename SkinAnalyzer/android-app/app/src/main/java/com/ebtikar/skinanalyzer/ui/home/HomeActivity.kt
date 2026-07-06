@@ -290,59 +290,21 @@ class HomeActivity : AppCompatActivity() {
             appendLine()
             appendLine("**Device**: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} | Android ${android.os.Build.VERSION.RELEASE}")
             appendLine("**App**: v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
-            appendLine("**Time**: ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date())}")
             appendLine()
-            appendLine("### GPIO")
-            appendLine("- Available: `${gpio.isAvailable}` | Root: `${gpio.hasRoot}` | SELinux: `${gpio.selinuxEnforcing}`")
+            appendLine("### GPIO: available=${gpio.isAvailable}, root=${gpio.hasRoot}, rootMgr=${gpio.rootManagerDetected}, SELinux=${gpio.selinuxEnforcing}")
             appendLine("- Status: ${gpio.statusMessage}")
             for (i in 0..4) {
                 val gpioNum = when(i) { 0->34; 1->149; 2->45; 3->54; 4->56; else->0 }
                 val exists = java.io.File("/sys/class/gpio/gpio$gpioNum").exists()
-                val readback = try { java.io.File("/sys/class/gpio/gpio$gpioNum/value").readText().trim() } catch (_: Exception) { "?" }
-                appendLine("  - gpio$gpioNum: exists=$exists, value=$readback")
+                appendLine("  - gpio$gpioNum: exists=$exists")
             }
-            val exportFile = java.io.File("/sys/class/gpio/export")
-            appendLine("  - export writable: ${try { exportFile.canWrite() } catch (_: Exception) { false }}")
-            val fiseUnbind = java.io.File("/sys/bus/platform/drivers/fise_gpio/unbind")
-            appendLine("  - fise unbind: exists=${fiseUnbind.exists()}, write=${try { fiseUnbind.canWrite() } catch (_: Exception) { false }}")
-            appendLine("### Serial: `${serialBusManager.isConnected}` | Error: `${serialBusManager.lastError.value}`")
-            appendLine("### Root check")
-            val suPaths = listOf("/system/bin/su", "/sbin/su", "/system/xbin/su", "/vendor/bin/su")
-            for (p in suPaths) {
-                if (java.io.File(p).exists()) {
-                    try {
-                        val proc = Runtime.getRuntime().exec(arrayOf(p, "-c", "id"))
-                        val out = proc.inputStream.bufferedReader().readText().trim()
-                        val err = proc.errorStream.bufferedReader().readText().trim()
-                        val exit = proc.waitFor()
-                        appendLine("  - $p: exit=$out[$out] err[$err]")
-                    } catch (e: Exception) {
-                        appendLine("  - $p: EXCEPTION ${e.message}")
-                    }
-                }
-            }
-            try {
-                val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "which su 2>/dev/null || echo none"))
-                val w = proc.inputStream.bufferedReader().readText().trim()
-                proc.waitFor()
-                appendLine("  - which su: $w")
-            } catch (_: Exception) {}
-            try {
-                val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "id"))
-                val id = proc.inputStream.bufferedReader().readText().trim()
-                proc.waitFor()
-                appendLine("  - sh id: $id")
-            } catch (_: Exception) {}
-            appendLine("### USB Devices")
-            for (info in serialBusManager.listAllUsbDevices()) {
-                appendLine("  - $info")
-            }
+            appendLine("### Serial: ${serialBusManager.isConnected}")
+            appendLine("### USB: ${serialBusManager.listAllUsbDevices().joinToString("; ")}")
             val camMgr = getSystemService(Context.CAMERA_SERVICE) as? android.hardware.camera2.CameraManager
-            val camList = camMgr?.cameraIdList?.toList() ?: emptyList()
-            appendLine("### Camera: ${if (camList.isEmpty()) "none" else camList.joinToString()} (${camList.size} cameras)")
+            appendLine("### Camera: ${camMgr?.cameraIdList?.joinToString() ?: "none"}")
         }
 
-        val title = "LED Hardware Not Available - v${BuildConfig.VERSION_NAME} - ${android.os.Build.MODEL}"
+        val title = "LED Not Available - v${BuildConfig.VERSION_NAME} - ${android.os.Build.MODEL}"
         val url = "https://github.com/mzawari-git/jenincare/issues/new?title=${android.net.Uri.encode(title)}&body=${android.net.Uri.encode(report)}"
         try {
             startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)))

@@ -36,6 +36,10 @@ class FiseGpioController @Inject constructor(
     private var _hasRoot: Boolean? = null
     val hasRoot: Boolean get() = _hasRoot ?: false
     private var _suPath: String = "su"
+    private var _rootManagerDetected = false
+    val rootManagerDetected: Boolean get() = _rootManagerDetected
+    var detectedRootManagerPackage: String? = null
+        private set
 
     init {
         detectRoot()
@@ -78,8 +82,12 @@ class FiseGpioController @Inject constructor(
             Timber.i("Standard GPIO controller available: 5 channels (gpios=${gpioMap.values}), SELinux=$selinuxEnforcing")
             turnAllOff()
         } else {
-            _statusMessage = "⚠️ أضواء التشخيص غير متصلة. Root=${if (hasRoot) "yes" else "no"}. قم بتشغيل: setup_gpio.ps1 عبر ADB"
-            Timber.e("GPIO NOT available after all attempts (SELinux=$selinuxEnforcing, root=$hasRoot, suPath=$_suPath)")
+            _statusMessage = if (_rootManagerDetected) {
+                "⚠️ أضواء التشخيص غير متصلة. افتح تطبيق Root وامنح الصلاحية لـ SkinAnalyzer"
+            } else {
+                "⚠️ أضواء التشخيص غير متصلة. قم بتشغيل: setup_gpio.ps1 عبر ADB"
+            }
+            Timber.e("GPIO NOT available after all attempts (SELinux=$selinuxEnforcing, root=$hasRoot, rootMgr=$_rootManagerDetected, suPath=$_suPath)")
             gpioFiles.forEach { (idx, file) ->
                 Timber.e("  GPIO $idx (gpio${gpioMap[idx]}): dir=${File("/sys/class/gpio/gpio${gpioMap[idx]}").exists()}, exists=${file.exists()}, canWrite=${file.canWrite()}, readback=${try { file.readText().trim() } catch (_: Exception) { "?" }}")
             }
@@ -142,8 +150,12 @@ class FiseGpioController @Inject constructor(
             Timber.i("GPIO re-check: finally available after direct export!")
             turnAllOff()
         } else {
-            _statusMessage = "⚠️ أضواء التشخيص غير متصلة. قم بتشغيل: .\\setup_gpio.ps1 في PowerShell (root=$hasRoot)"
-            Timber.w("GPIO re-check: still unavailable after all attempts. SELinux=$selinuxEnforcing")
+            _statusMessage = if (_rootManagerDetected) {
+                "⚠️ أضواء التشخيص غير متصلة. افتح تطبيق Root وامنح الصلاحية لـ SkinAnalyzer"
+            } else {
+                "⚠️ أضواء التشخيص غير متصلة. قم بتشغيل: .\\setup_gpio.ps1 في PowerShell"
+            }
+            Timber.w("GPIO re-check: still unavailable. rootMgr=$_rootManagerDetected, SELinux=$selinuxEnforcing")
             gpioFiles.forEach { (idx, file) ->
                 Timber.w("  GPIO $idx (${gpioMap[idx]}): exists=${file.exists()}, canWrite=${file.canWrite()}, readback=${try { file.readText().trim() } catch (_: Exception) { "?" }}")
             }
@@ -315,21 +327,30 @@ class FiseGpioController @Inject constructor(
             "/data/adb/magisk/su", "/data/adb/ksu/bin/su", "/data/adb/ap/su",
             "/system/su", "/system/bin/su-backup", "/system/usr/su"
         )
+
+        var foundRootManager = false
+
         for (path in suPaths) {
             if (java.io.File(path).exists()) {
+                foundRootManager = true
                 val invocations = listOf(
                     arrayOf(path, "-c", "id"),
                     arrayOf(path, "0", "id"),
                     arrayOf(path, "-0", "id"),
                     arrayOf(path, "root", "id"),
-                    arrayOf(path, "-c", "id"),
                 )
                 for (cmd in invocations) {
                     try {
                         val proc = Runtime.getRuntime().exec(cmd)
+                        val completed = proc.waitFor(3, java.util.concurrent.TimeUnit.SECONDS)
+                        if (!completed) {
+                            proc.destroyForcibly()
+                            Timber.w("su detectRoot timeout at $path — root manager may need permission grant")
+                            continue
+                        }
                         val output = proc.inputStream.bufferedReader().readText().trim()
                         val err = proc.errorStream.bufferedReader().readText().trim()
-                        val exit = proc.waitFor()
+                        val exit = proc.exitValue()
                         Timber.i("su check: cmd=${cmd.joinToString(" ")}, exit=$exit, stdout=$output, stderr=$err")
                         if (exit == 0 && (output.contains("uid=0") || output.contains("root"))) {
                             _hasRoot = true
@@ -346,20 +367,30 @@ class FiseGpioController @Inject constructor(
 
         try {
             val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "which su 2>/dev/null || echo 'not found'"))
-            val whichResult = proc.inputStream.bufferedReader().readText().trim()
-            val exit = proc.waitFor()
-            Timber.i("which su result: exit=$exit, output=$whichResult")
-            if (exit == 0 && whichResult.isNotEmpty() && whichResult != "not found" && java.io.File(whichResult).exists()) {
-                val proc2 = Runtime.getRuntime().exec(arrayOf(whichResult, "-c", "id"))
-                val output = proc2.inputStream.bufferedReader().readText().trim()
-                val exit2 = proc2.waitFor()
-                Timber.i("which su execution: exit=$exit2, output=$output")
-                if (exit2 == 0 && (output.contains("uid=0") || output.contains("root"))) {
-                    _hasRoot = true
-                    _suPath = whichResult
-                    Timber.i("ROOT DETECTED via which: $whichResult -> $output")
-                    return
+            val completed = proc.waitFor(3, java.util.concurrent.TimeUnit.SECONDS)
+            if (completed) {
+                val whichResult = proc.inputStream.bufferedReader().readText().trim()
+                val exit = proc.exitValue()
+                Timber.i("which su result: exit=$exit, output=$whichResult")
+                if (exit == 0 && whichResult.isNotEmpty() && whichResult != "not found" && java.io.File(whichResult).exists()) {
+                    val proc2 = Runtime.getRuntime().exec(arrayOf(whichResult, "-c", "id"))
+                    val completed2 = proc2.waitFor(3, java.util.concurrent.TimeUnit.SECONDS)
+                    if (completed2) {
+                        val output = proc2.inputStream.bufferedReader().readText().trim()
+                        val exit2 = proc2.exitValue()
+                        Timber.i("which su execution: exit=$exit2, output=$output")
+                        if (exit2 == 0 && (output.contains("uid=0") || output.contains("root"))) {
+                            _hasRoot = true
+                            _suPath = whichResult
+                            Timber.i("ROOT DETECTED via which: $whichResult -> $output")
+                            return
+                        }
+                    } else {
+                        proc2.destroyForcibly()
+                    }
                 }
+            } else {
+                proc.destroyForcibly()
             }
         } catch (e: Exception) {
             Timber.d("which su failed: ${e.message}")
@@ -367,14 +398,19 @@ class FiseGpioController @Inject constructor(
 
         try {
             val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "id"))
-            val output = proc.inputStream.bufferedReader().readText().trim()
-            val exit = proc.waitFor()
-            Timber.i("sh id result: exit=$exit, output=$output")
-            if (exit == 0 && output.contains("uid=0")) {
-                _hasRoot = true
-                _suPath = "sh"
-                Timber.i("ROOT DETECTED via sh id: $output")
-                return
+            val completed = proc.waitFor(3, java.util.concurrent.TimeUnit.SECONDS)
+            if (completed) {
+                val output = proc.inputStream.bufferedReader().readText().trim()
+                val exit = proc.exitValue()
+                Timber.i("sh id result: exit=$exit, output=$output")
+                if (exit == 0 && output.contains("uid=0")) {
+                    _hasRoot = true
+                    _suPath = "sh"
+                    Timber.i("ROOT DETECTED via sh id: $output")
+                    return
+                }
+            } else {
+                proc.destroyForcibly()
             }
         } catch (e: Exception) {
             Timber.d("sh id failed: ${e.message}")
@@ -387,7 +423,37 @@ class FiseGpioController @Inject constructor(
         val gpio34Exists = java.io.File("/sys/class/gpio/gpio34").exists()
 
         _hasRoot = false
-        Timber.w("NO ROOT FOUND (checked ${suPaths.size} paths + which + sh id). FISE driver bound=$fiseDriverBound, /sys/class/gpio/export writable=$gpioExportExists, gpio34 exists=$gpio34Exists")
+        if (foundRootManager) {
+            _rootManagerDetected = true
+            detectedRootManagerPackage = detectRootManagerPackage()
+            Timber.w("ROOT MANAGER FOUND (pkg=$detectedRootManagerPackage) but NOT GRANTED to this app. Open root manager and grant permission to SkinAnalyzer.")
+        } else {
+            Timber.w("NO ROOT MANAGER found (checked ${suPaths.size} paths). FISE driver bound=$fiseDriverBound, gpioExport writable=$gpioExportExists, gpio34 exists=$gpio34Exists")
+        }
+    }
+
+    private fun detectRootManagerPackage(): String? {
+        val knownPackages = listOf(
+            "com.topjohnwu.magisk",
+            "eu.chainfire.supersu",
+            "com.koushikdutta.superuser",
+            "com.thirdparty.superuser",
+            "com.noshufou.android.su",
+            "com.kingroot.kinguser",
+            "com.kingo.root",
+            "me.phh.superuser",
+            "com.tsng.hidemyapplist",
+            "io.github.vvb2060.magisk"
+        )
+        for (pkg in knownPackages) {
+            try {
+                val pm = context.packageManager
+                pm.getPackageInfo(pkg, 0)
+                Timber.i("Found root manager: $pkg")
+                return pkg
+            } catch (_: Exception) {}
+        }
+        return null
     }
 
     private fun suExec(cmd: String): Boolean {
@@ -396,7 +462,13 @@ class FiseGpioController @Inject constructor(
             for (path in pathsToTry) {
                 try {
                     val proc = Runtime.getRuntime().exec(arrayOf(path, "-c", cmd))
-                    val exit = proc.waitFor()
+                    val completed = proc.waitFor(3, java.util.concurrent.TimeUnit.SECONDS)
+                    if (!completed) {
+                        proc.destroyForcibly()
+                        Timber.w("su timeout at $path (3s) — root manager may need permission grant")
+                        continue
+                    }
+                    val exit = proc.exitValue()
                     if (exit == 0) {
                         if (_hasRoot != true) {
                             _hasRoot = true
