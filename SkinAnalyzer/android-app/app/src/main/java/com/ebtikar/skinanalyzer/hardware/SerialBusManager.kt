@@ -84,14 +84,58 @@ class SerialBusManager @Inject constructor(
 
     fun findDriver(): UsbSerialDriver? {
         val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
+
         val drivers = UsbSerialProber.getDefaultProber().findAllDrivers(usbManager)
-        return drivers.firstOrNull().also { driver ->
-            if (driver != null) {
-                Timber.i("Found USB serial driver: ${driver.device.deviceName}")
-            } else {
-                Timber.w("No USB serial driver found")
+        if (drivers.isNotEmpty()) {
+            val driver = drivers.first()
+            Timber.i("Found USB serial driver (default prober): ${driver.device.deviceName} (${driver.device.vendorId}/${driver.device.productId})")
+            return driver
+        }
+
+        Timber.w("Default prober found nothing. Scanning ALL USB devices...")
+        val allDevices = usbManager.deviceList
+        Timber.i("Total USB devices: ${allDevices.size}")
+        for ((name, device) in allDevices) {
+            Timber.i("USB device: $name, VID=${device.vendorId}, PID=${device.productId}, class=${device.deviceClass}, name=${device.deviceName}")
+            val result = tryAllDriverTypes(usbManager, device)
+            if (result != null) return result
+        }
+
+        Timber.e("No USB serial device found after scanning ${allDevices.size} devices")
+        return null
+    }
+
+    private fun tryAllDriverTypes(usbManager: android.hardware.usb.UsbManager, device: UsbDevice): UsbSerialDriver? {
+        val driverClasses = listOf(
+            com.hoho.android.usbserial.driver.CdcAcmSerialDriver::class.java,
+            com.hoho.android.usbserial.driver.Ch34xSerialDriver::class.java,
+            com.hoho.android.usbserial.driver.Cp21xxSerialDriver::class.java,
+            com.hoho.android.usbserial.driver.FtdiSerialDriver::class.java,
+            com.hoho.android.usbserial.driver.ProlificSerialDriver::class.java
+        )
+        for (clazz in driverClasses) {
+            try {
+                val constructor = clazz.getConstructor(UsbDevice::class.java)
+                val driver = constructor.newInstance(device) as UsbSerialDriver
+                if (driver.ports.isNotEmpty()) {
+                    Timber.i("Successfully created driver ${clazz.simpleName} for ${device.deviceName}")
+                    return driver
+                }
+            } catch (e: Exception) {
+                Timber.d("Driver ${clazz.simpleName} failed for ${device.deviceName}: ${e.message}")
             }
         }
+        return null
+    }
+
+    fun listAllUsbDevices(): List<String> {
+        val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
+        val result = mutableListOf<String>()
+        for ((name, device) in usbManager.deviceList) {
+            val hasPermission = usbManager.hasPermission(device)
+            result.add("$name: VID=${device.vendorId} PID=${device.productId} class=${device.deviceClass} perm=$hasPermission name=${device.productName ?: device.deviceName}")
+        }
+        return result
     }
 
     fun connect(driver: UsbSerialDriver): Result<Unit> {

@@ -312,7 +312,14 @@ class DiagnosticsActivity : AppCompatActivity() {
 
     private fun updateUsbStatus() {
         val isConnected = serialBusManager.isConnected
-        binding.tvUsbStatus.text = if (isConnected) "متصل" else "غير متصل"
+        val usbDevices = serialBusManager.listAllUsbDevices()
+        binding.tvUsbStatus.text = if (isConnected) {
+            "متصل"
+        } else if (usbDevices.isNotEmpty()) {
+            "พบ ${usbDevices.size} جهاز USB (غير متصل)"
+        } else {
+            "غير متصل — لا توجد أجهزة USB"
+        }
         binding.dotUsb.setBackgroundResource(
             if (isConnected) R.drawable.shape_status_dot_green else R.drawable.shape_status_dot_purple
         )
@@ -493,6 +500,61 @@ class DiagnosticsActivity : AppCompatActivity() {
     }
 
     private suspend fun testAllRootMethods() {
+        withContext(Dispatchers.Main) { appendLog("=== فحص USB Devices ===") }
+        val usbDevices = serialBusManager.listAllUsbDevices()
+        if (usbDevices.isEmpty()) {
+            withContext(Dispatchers.Main) { appendLog("  لا توجد أجهزة USB متصلة") }
+        } else {
+            for (info in usbDevices) {
+                withContext(Dispatchers.Main) { appendLog("  $info") }
+            }
+        }
+
+        withContext(Dispatchers.Main) { appendLog("=== فحص FISE Driver Sysfs ===") }
+        val fiseDir = java.io.File("/sys/bus/platform/drivers/fise_gpio")
+        if (fiseDir.exists()) {
+            withContext(Dispatchers.Main) { appendLog("  fise_gpio dir: EXISTS") }
+            try {
+                val files = fiseDir.listFiles()
+                if (files != null) {
+                    for (f in files) {
+                        val canRead = try { f.canRead() } catch (_: Exception) { false }
+                        val canWrite = try { f.canWrite() } catch (_: Exception) { false }
+                        val content = if (canRead && f.isFile) try { f.readText().trim().take(100) } catch (_: Exception) { "?" } else if (f.isDirectory) "DIR" else "?"
+                        withContext(Dispatchers.Main) { appendLog("    ${f.name}: read=$canRead write=$canWrite content=[$content]") }
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { appendLog("  Error listing fise: ${e.message}") }
+            }
+        } else {
+            withContext(Dispatchers.Main) { appendLog("  fise_gpio dir: NOT FOUND") }
+        }
+
+        withContext(Dispatchers.Main) { appendLog("=== فحص GPIO sysfs ===") }
+        val gpioDir = java.io.File("/sys/class/gpio")
+        if (gpioDir.exists()) {
+            try {
+                val exportFile = java.io.File("/sys/class/gpio/export")
+                val canWrite = try { exportFile.canWrite() } catch (_: Exception) { false }
+                val exportContent = try { exportFile.readText().trim() } catch (_: Exception) { "?" }
+                withContext(Dispatchers.Main) { appendLog("  /sys/class/gpio/export: write=$canWrite content=[$exportContent]") }
+            } catch (_: Exception) {}
+
+            try {
+                val files = gpioDir.listFiles()
+                val gpioCount = files?.count { it.name.startsWith("gpio") } ?: 0
+                withContext(Dispatchers.Main) { appendLog("  Exported GPIOs: $gpioCount") }
+                if (files != null) {
+                    for (f in files.filter { it.name.startsWith("gpio") }) {
+                        withContext(Dispatchers.Main) { appendLog("    ${f.name}: isDir=${f.isDirectory}") }
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { appendLog("  Error: ${e.message}") }
+            }
+        }
+
         withContext(Dispatchers.Main) { appendLog("=== فحص Root الشامل ===") }
 
         val suPaths = listOf("/system/bin/su", "/sbin/su", "/system/xbin/su", "/su/bin/su", "/vendor/bin/su", "/data/adb/magisk/su", "/data/adb/ksu/bin/su", "/data/adb/ap/su", "/system/su")

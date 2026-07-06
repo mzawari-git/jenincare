@@ -297,7 +297,12 @@ class FiseGpioController @Inject constructor(
     private fun shellExec(cmd: String): Boolean {
         return try {
             val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", cmd))
+            val stdout = proc.inputStream.bufferedReader().readText().trim()
+            val stderr = proc.errorStream.bufferedReader().readText().trim()
             val exit = proc.waitFor()
+            if (exit != 0) {
+                Timber.d("shellExec failed: cmd=$cmd, exit=$exit, stderr=$stderr")
+            }
             exit == 0
         } catch (e: Exception) {
             false
@@ -312,20 +317,29 @@ class FiseGpioController @Inject constructor(
         )
         for (path in suPaths) {
             if (java.io.File(path).exists()) {
-                try {
-                    val proc = Runtime.getRuntime().exec(arrayOf(path, "-c", "id"))
-                    val output = proc.inputStream.bufferedReader().readText().trim()
-                    val err = proc.errorStream.bufferedReader().readText().trim()
-                    val exit = proc.waitFor()
-                    Timber.i("su check: path=$path, exit=$exit, stdout=$output, stderr=$err")
-                    if (exit == 0 && output.contains("uid=0")) {
-                        _hasRoot = true
-                        _suPath = path
-                        Timber.i("ROOT DETECTED at $path: $output")
-                        return
+                val invocations = listOf(
+                    arrayOf(path, "-c", "id"),
+                    arrayOf(path, "0", "id"),
+                    arrayOf(path, "-0", "id"),
+                    arrayOf(path, "root", "id"),
+                    arrayOf(path, "-c", "id"),
+                )
+                for (cmd in invocations) {
+                    try {
+                        val proc = Runtime.getRuntime().exec(cmd)
+                        val output = proc.inputStream.bufferedReader().readText().trim()
+                        val err = proc.errorStream.bufferedReader().readText().trim()
+                        val exit = proc.waitFor()
+                        Timber.i("su check: cmd=${cmd.joinToString(" ")}, exit=$exit, stdout=$output, stderr=$err")
+                        if (exit == 0 && (output.contains("uid=0") || output.contains("root"))) {
+                            _hasRoot = true
+                            _suPath = path
+                            Timber.i("ROOT DETECTED at $path via ${cmd.joinToString(" ")}: $output")
+                            return
+                        }
+                    } catch (e: Exception) {
+                        Timber.d("su check failed for ${cmd.joinToString(" ")}: ${e.message}")
                     }
-                } catch (e: Exception) {
-                    Timber.d("su check failed for $path: ${e.message}")
                 }
             }
         }
@@ -339,7 +353,8 @@ class FiseGpioController @Inject constructor(
                 val proc2 = Runtime.getRuntime().exec(arrayOf(whichResult, "-c", "id"))
                 val output = proc2.inputStream.bufferedReader().readText().trim()
                 val exit2 = proc2.waitFor()
-                if (exit2 == 0 && output.contains("uid=0")) {
+                Timber.i("which su execution: exit=$exit2, output=$output")
+                if (exit2 == 0 && (output.contains("uid=0") || output.contains("root"))) {
                     _hasRoot = true
                     _suPath = whichResult
                     Timber.i("ROOT DETECTED via which: $whichResult -> $output")
@@ -350,6 +365,21 @@ class FiseGpioController @Inject constructor(
             Timber.d("which su failed: ${e.message}")
         }
 
+        try {
+            val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "id"))
+            val output = proc.inputStream.bufferedReader().readText().trim()
+            val exit = proc.waitFor()
+            Timber.i("sh id result: exit=$exit, output=$output")
+            if (exit == 0 && output.contains("uid=0")) {
+                _hasRoot = true
+                _suPath = "sh"
+                Timber.i("ROOT DETECTED via sh id: $output")
+                return
+            }
+        } catch (e: Exception) {
+            Timber.d("sh id failed: ${e.message}")
+        }
+
         val fiseDriverBound = try {
             java.io.File("/sys/bus/platform/drivers/fise_gpio").listFiles()?.isNotEmpty() == true
         } catch (_: Exception) { false }
@@ -357,7 +387,7 @@ class FiseGpioController @Inject constructor(
         val gpio34Exists = java.io.File("/sys/class/gpio/gpio34").exists()
 
         _hasRoot = false
-        Timber.w("NO ROOT FOUND (checked ${suPaths.size} paths + which). FISE driver bound=$fiseDriverBound, /sys/class/gpio/export writable=$gpioExportExists, gpio34 exists=$gpio34Exists")
+        Timber.w("NO ROOT FOUND (checked ${suPaths.size} paths + which + sh id). FISE driver bound=$fiseDriverBound, /sys/class/gpio/export writable=$gpioExportExists, gpio34 exists=$gpio34Exists")
     }
 
     private fun suExec(cmd: String): Boolean {
