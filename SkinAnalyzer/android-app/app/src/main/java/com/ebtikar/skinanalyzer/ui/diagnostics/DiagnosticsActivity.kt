@@ -173,6 +173,12 @@ class DiagnosticsActivity : AppCompatActivity() {
                 val readback = try { file.readText().trim() } catch (_: Exception) { "?" }
                 appendLine("  gpio$gpioNum: dir=$exists, write=$canWrite, value=$readback")
             }
+            val exportFile = java.io.File("/sys/class/gpio/export")
+            appendLine("  /sys/class/gpio/export: exists=${exportFile.exists()}, canWrite=${try { exportFile.canWrite() } catch (_: Exception) { false }}")
+            val fiseUnbind = java.io.File("/sys/bus/platform/drivers/fise_gpio/unbind")
+            appendLine("  fise_gpio/unbind: exists=${fiseUnbind.exists()}, canWrite=${try { fiseUnbind.canWrite() } catch (_: Exception) { false }}")
+            val fiseDir = java.io.File("/sys/bus/platform/drivers/fise_gpio")
+            appendLine("  fise_gpio dir: exists=${fiseDir.exists()}, files=${try { fiseDir.listFiles()?.map { it.name }?.joinToString() } catch (_: Exception) { "?" }}")
             appendLine()
             appendLine("--- Serial Bus ---")
             appendLine("Connected: ${serialBusManager.isConnected}")
@@ -180,6 +186,29 @@ class DiagnosticsActivity : AppCompatActivity() {
             appendLine("Error: ${serialBusManager.lastError.value}")
             val driver = serialBusManager.findDriver()
             appendLine("Driver found: ${driver?.device?.deviceName ?: "none"}")
+            appendLine()
+            appendLine("--- su paths check ---")
+            val suPaths = listOf("/system/bin/su", "/sbin/su", "/system/xbin/su", "/su/bin/su", "/vendor/bin/su", "/data/adb/magisk/su", "/data/adb/ksu/bin/su")
+            for (p in suPaths) {
+                val f = java.io.File(p)
+                appendLine("  $p: exists=${f.exists()}, canExec=${try { f.canExecute() } catch (_: Exception) { false }}")
+            }
+            try {
+                val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "which su 2>/dev/null || echo not_found"))
+                val whichResult = proc.inputStream.bufferedReader().readText().trim()
+                proc.waitFor()
+                appendLine("  which su: $whichResult")
+            } catch (e: Exception) {
+                appendLine("  which su: error ${e.message}")
+            }
+            try {
+                val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "id"))
+                val idResult = proc.inputStream.bufferedReader().readText().trim()
+                proc.waitFor()
+                appendLine("  id: $idResult")
+            } catch (e: Exception) {
+                appendLine("  id: error ${e.message}")
+            }
             appendLine()
             appendLine("--- Camera ---")
             val camId = cameraManager.findBestCamera()
