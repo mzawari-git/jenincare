@@ -37,6 +37,26 @@ class SpectrumController @Inject constructor(
 
     val currentLight: LightSpectrum get() = currentSpectrum
 
+    suspend fun ensureHardwareReady(): Boolean {
+        var anyReady = false
+        if (!fiseGpio.isAvailable) {
+            Timber.i("GPIO unavailable, attempting recheck...")
+            val gpioOk = fiseGpio.recheckAvailability()
+            if (gpioOk) anyReady = true
+        } else {
+            anyReady = true
+        }
+        if (!serialBus.isConnected) {
+            Timber.i("Serial bus not connected, attempting auto-connect...")
+            val serialResult = serialBus.autoConnect()
+            if (serialResult.isSuccess) anyReady = true
+        } else {
+            anyReady = true
+        }
+        Timber.i("ensureHardwareReady: gpio=${fiseGpio.isAvailable}, serial=${serialBus.isConnected}, anyReady=$anyReady")
+        return anyReady
+    }
+
     suspend fun activate(spectrum: LightSpectrum): Result<Unit> {
         if (spectrum == LightSpectrum.OFF) {
             fiseGpio.turnAllOff()
@@ -59,13 +79,24 @@ class SpectrumController @Inject constructor(
             return Result.success(Unit)
         }
 
+        if (serialBus.isConnected) {
+            Timber.d("Activating spectrum via serial bus: ${spectrum.name}")
+            val result = serialBus.sendCommand(spectrum)
+            if (result.isSuccess) {
+                currentSpectrum = spectrum
+                _currentSpectrumFlow.value = spectrum
+                notifyListeners(spectrum)
+                delay(spectrum.settlingWindowMs)
+                Timber.d("Spectrum activated via serial: ${spectrum.name}")
+                return Result.success(Unit)
+            }
+            Timber.w("Serial activation failed for ${spectrum.name}: ${result.exceptionOrNull()?.message}")
+        }
+
         if (fiseGpio.supportsSpectrum(spectrum)) {
             Timber.d("Activating spectrum via FISE GPIO: ${spectrum.name}")
             val ok = fiseGpio.activateSpectrum(spectrum)
             if (ok) {
-                if (serialBus.isConnected) {
-                    serialBus.sendCommand(LightSpectrum.OFF)
-                }
                 currentSpectrum = spectrum
                 _currentSpectrumFlow.value = spectrum
                 notifyListeners(spectrum)
@@ -75,23 +106,11 @@ class SpectrumController @Inject constructor(
             Timber.e("FISE GPIO activation FAILED for ${spectrum.name}")
         }
 
-        fiseGpio.turnAllOff()
-
-        if (serialBus.isConnected) {
-            Timber.d("Activating spectrum via serial bus: ${spectrum.name}")
-            return serialBus.sendCommand(spectrum).also { result ->
-                if (result.isSuccess) {
-                    currentSpectrum = spectrum
-                    _currentSpectrumFlow.value = spectrum
-                    notifyListeners(spectrum)
-                    Timber.d("Spectrum activated via serial: ${spectrum.name}")
-                } else {
-                    Timber.e("Failed to activate ${spectrum.name}: ${result.exceptionOrNull()?.message}")
-                }
-            }
+        if (serialBus.isConnected || fiseGpio.isAvailable) {
+            fiseGpio.turnAllOff()
         }
 
-        Timber.e("No working GPIO or serial for ${spectrum.name}. Simulating — LED will NOT turn on.")
+        Timber.e("No working GPIO or serial for ${spectrum.name}. LED will NOT turn on.")
         currentSpectrum = spectrum
         _currentSpectrumFlow.value = spectrum
         notifyListeners(spectrum)

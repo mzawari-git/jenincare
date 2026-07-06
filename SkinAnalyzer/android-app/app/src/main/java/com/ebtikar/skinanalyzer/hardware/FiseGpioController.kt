@@ -33,7 +33,12 @@ class FiseGpioController @Inject constructor(
     private var _statusMessage = ""
     val statusMessage: String get() = _statusMessage
 
+    private var _hasRoot: Boolean? = null
+    val hasRoot: Boolean get() = _hasRoot ?: false
+    private var _suPath: String = "su"
+
     init {
+        detectRoot()
         checkSelinux()
         if (!setupGpio()) {
             Timber.w("Initial GPIO setup failed. Trying FISE driver rebind...")
@@ -73,8 +78,8 @@ class FiseGpioController @Inject constructor(
             Timber.i("Standard GPIO controller available: 5 channels (gpios=${gpioMap.values}), SELinux=$selinuxEnforcing")
             turnAllOff()
         } else {
-            _statusMessage = "⚠️ أضواء التشخيص غير متصلة. قم بتشغيل: setup_gpio.ps1 عبر ADB"
-            Timber.e("GPIO NOT available after all attempts (SELinux=$selinuxEnforcing)")
+            _statusMessage = "⚠️ أضواء التشخيص غير متصلة. Root=${if (hasRoot) "yes" else "no"}. قم بتشغيل: setup_gpio.ps1 عبر ADB"
+            Timber.e("GPIO NOT available after all attempts (SELinux=$selinuxEnforcing, root=$hasRoot, suPath=$_suPath)")
             gpioFiles.forEach { (idx, file) ->
                 Timber.e("  GPIO $idx (gpio${gpioMap[idx]}): dir=${File("/sys/class/gpio/gpio${gpioMap[idx]}").exists()}, exists=${file.exists()}, canWrite=${file.canWrite()}, readback=${try { file.readText().trim() } catch (_: Exception) { "?" }}")
             }
@@ -92,7 +97,7 @@ class FiseGpioController @Inject constructor(
 
     suspend fun recheckAvailability(): Boolean {
         if (_available) return true
-        Timber.i("Rechecking GPIO availability at runtime...")
+        Timber.i("Rechecking GPIO availability at runtime (root=$hasRoot, suPath=$_suPath)...")
         checkSelinux()
 
         if (setupGpio()) {
@@ -111,7 +116,7 @@ class FiseGpioController @Inject constructor(
             }
         }
 
-        Timber.i("GPIO re-check: FISE rebind failed. Trying direct export for each pin...")
+        Timber.i("GPIO re-check: FISE rebind failed. Trying direct export for each pin (root=$hasRoot)...")
         var anyExported = false
         for ((_, gpioNum) in gpioMap) {
             val dir = File("/sys/class/gpio/gpio$gpioNum")
@@ -137,7 +142,7 @@ class FiseGpioController @Inject constructor(
             Timber.i("GPIO re-check: finally available after direct export!")
             turnAllOff()
         } else {
-            _statusMessage = "⚠️ أضواء التشخيص غير متصلة. قم بتشغيل: .\\setup_gpio.ps1 في PowerShell"
+            _statusMessage = "⚠️ أضواء التشخيص غير متصلة. قم بتشغيل: .\\setup_gpio.ps1 في PowerShell (root=$hasRoot)"
             Timber.w("GPIO re-check: still unavailable after all attempts. SELinux=$selinuxEnforcing")
             gpioFiles.forEach { (idx, file) ->
                 Timber.w("  GPIO $idx (${gpioMap[idx]}): exists=${file.exists()}, canWrite=${file.canWrite()}, readback=${try { file.readText().trim() } catch (_: Exception) { "?" }}")
@@ -299,16 +304,38 @@ class FiseGpioController @Inject constructor(
         }
     }
 
+    private fun detectRoot() {
+        val suPaths = listOf("/system/bin/su", "/sbin/su", "/system/xbin/su", "/su/bin/su", "/vendor/bin/su")
+        for (path in suPaths) {
+            if (java.io.File(path).exists()) {
+                try {
+                    val proc = Runtime.getRuntime().exec(arrayOf(path, "-c", "id"))
+                    val output = proc.inputStream.bufferedReader().readText()
+                    val exit = proc.waitFor()
+                    if (exit == 0 && output.contains("uid=0")) {
+                        _hasRoot = true
+                        _suPath = path
+                        Timber.i("Root detected at $path: $output")
+                        return
+                    }
+                } catch (_: Exception) {}
+            }
+        }
+        _hasRoot = false
+        Timber.w("No root access found (checked ${suPaths.size} paths)")
+    }
+
     private fun suExec(cmd: String): Boolean {
+        if (_hasRoot != true) return false
         return try {
-            val proc = Runtime.getRuntime().exec(arrayOf("su", "-c", cmd))
+            val proc = Runtime.getRuntime().exec(arrayOf(_suPath, "-c", cmd))
             val exit = proc.waitFor()
             if (exit == 0) true else {
-                Timber.d("suExec: cmd='$cmd' exit=$exit")
+                Timber.d("suExec: cmd='$cmd' exit=$exit via $_suPath")
                 false
             }
         } catch (e: Exception) {
-            Timber.d("suExec failed: ${e.message}")
+            Timber.d("suExec failed via $_suPath: ${e.message}")
             false
         }
     }

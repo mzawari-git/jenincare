@@ -117,8 +117,22 @@ class FrameCapturePipeline @Inject constructor(
                 if (gpioOk) {
                     _positionMessage.value = "تم توصيل أضواء التشخيص ✓"
                 } else {
-                    _positionMessage.value = "⚠️ أضواء التشخيص غير متصلة — قم بتشغيل setup_gpio.ps1 عبر ADB"
-                    Timber.e("GPIO unavailable after runtime re-init. Scan will proceed without LED hardware.")
+                    _positionMessage.value = "⚠️ أضواء التشخيص غير متصلة — جاري المحاولة عبر USB Serial..."
+                    Timber.e("GPIO unavailable after runtime re-init.")
+                }
+            }
+
+            if (!serialBusManager.isConnected) {
+                Timber.i("Serial bus not connected, attempting auto-connect...")
+                _positionMessage.value = "جاري توصيل أضواء USB..."
+                val serialResult = serialBusManager.autoConnect()
+                if (serialResult.isSuccess) {
+                    Timber.i("Serial bus auto-connected successfully")
+                    if (_positionMessage.value?.contains("غير متصلة") == true) {
+                        _positionMessage.value = "تم توصيل أضواء USB ✓"
+                    }
+                } else {
+                    Timber.w("Serial bus auto-connect failed: ${serialResult.exceptionOrNull()?.message}")
                 }
             }
 
@@ -258,17 +272,15 @@ class FrameCapturePipeline @Inject constructor(
             val gpioAvailable = fiseGpioController.isAvailable
             val ledConnected = serialConnected || gpioAvailable
 
-            Timber.i("Hardware check: serialConnected=$serialConnected, gpioAvailable=$gpioAvailable, selinux=${fiseGpioController.selinuxEnforcing}, ledConnected=$ledConnected")
+            Timber.i("Hardware check: serialConnected=$serialConnected, gpioAvailable=$gpioAvailable, selinux=${fiseGpioController.selinuxEnforcing}, root=${fiseGpioController.hasRoot}, ledConnected=$ledConnected")
 
             if (!ledConnected) {
                 Timber.e("No LED hardware detected (GPIO unavailable, serial disconnected) — LEDs will NOT turn on during scan")
-                _positionMessage.value = "⚠️ لا توجد أضواء تشخيص — الصور ستكون بدون إضاءة. قم بتشغيل setup_gpio.ps1 أو توصيل USB"
-            }
-            if (gpioAvailable) {
-                Timber.i("Using FISE GPIO direct write")
-            }
-            if (serialConnected) {
-                Timber.i("Serial bus connected - using serial path")
+                _positionMessage.value = "⚠️ لا توجد أضواء تشخيص — الصور ستكون بدون إضاءة"
+            } else {
+                if (gpioAvailable) Timber.i("Using FISE GPIO direct write (5 LEDs)")
+                if (serialConnected) Timber.i("Using serial bus (3+ LEDs)")
+                _positionMessage.value = "تم توصيل أضواء التشخيص ✓"
             }
             captureWithRealLeds(spectra, outputDir, frames, onProgress)
 

@@ -66,6 +66,22 @@ class SerialBusManager @Inject constructor(
 
     val isConnected: Boolean get() = serialPort?.isOpen == true
 
+    suspend fun autoConnect(): Result<Unit> {
+        if (isConnected) return Result.success(Unit)
+        Timber.i("Auto-connecting serial bus...")
+        val driver = findDriver() ?: run {
+            Timber.w("No USB serial device found for auto-connect")
+            return Result.failure(IllegalStateException("No USB serial device found"))
+        }
+        return connect(driver).also { result ->
+            if (result.isSuccess) {
+                Timber.i("Serial bus auto-connected successfully to ${driver.device.deviceName}")
+            } else {
+                Timber.e("Serial bus auto-connect failed: ${result.exceptionOrNull()?.message}")
+            }
+        }
+    }
+
     fun findDriver(): UsbSerialDriver? {
         val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
         val drivers = UsbSerialProber.getDefaultProber().findAllDrivers(usbManager)
