@@ -33,6 +33,7 @@ import com.ebtikar.skinanalyzer.ui.settings.SettingsActivity
 import com.ebtikar.skinanalyzer.util.PreferencesManager
 import com.ebtikar.skinanalyzer.util.UpdateChecker
 import com.ebtikar.skinanalyzer.util.UpdateInfo
+import com.ebtikar.skinanalyzer.BuildConfig
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -227,9 +228,40 @@ class HomeActivity : AppCompatActivity() {
     private fun runStartupLedTest() {
         scope.launch(Dispatchers.IO) {
             if (!fiseGpioController.isAvailable) {
-                Timber.w("GPIO not available at startup, trying re-init...")
-                val ok = fiseGpioController.recheckAvailability()
-                Timber.i("Startup GPIO re-init: available=$ok")
+                Timber.w("GPIO not available at startup, trying ALL methods...")
+
+                val fiseUnbind = try { Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo fise_gpio > /sys/bus/platform/drivers/fise_gpio/unbind 2>&1")).waitFor() } catch (_: Exception) { -1 }
+                Timber.i("FISE unbind attempt: exit=$fiseUnbind")
+                delay(200)
+                val fiseBind = try { Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo fise_gpio > /sys/bus/platform/drivers/fise_gpio/bind 2>&1")).waitFor() } catch (_: Exception) { -1 }
+                Timber.i("FISE bind attempt: exit=$fiseBind")
+                delay(300)
+
+                for (gpioNum in listOf(34, 149, 45, 54, 56)) {
+                    val dir = java.io.File("/sys/class/gpio/gpio$gpioNum")
+                    if (!dir.exists()) {
+                        val exit = try { Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo $gpioNum > /sys/class/gpio/export 2>&1")).waitFor() } catch (_: Exception) { -1 }
+                        Timber.i("GPIO export $gpioNum: exit=$exit")
+                        delay(80)
+                        try { Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo out > /sys/class/gpio/gpio$gpioNum/direction")).waitFor() } catch (_: Exception) {}
+                        try { Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo 1 > /sys/class/gpio/gpio$gpioNum/value")).waitFor() } catch (_: Exception) {}
+                        try { Runtime.getRuntime().exec(arrayOf("sh", "-c", "chmod 666 /sys/class/gpio/gpio$gpioNum/value")).waitFor() } catch (_: Exception) {}
+                    }
+                }
+
+                val recheck = fiseGpioController.recheckAvailability()
+                Timber.i("Startup GPIO re-init after all methods: available=$recheck")
+            }
+
+            val gpioAvailable = fiseGpioController.isAvailable
+            val serialAvailable = serialBusManager.isConnected
+
+            if (!gpioAvailable && !serialAvailable) {
+                Timber.e("LED hardware NOT available after all startup methods. Auto-reporting to GitHub...")
+                withContext(Dispatchers.Main) {
+                    autoReportToGithub()
+                }
+                return@launch
             }
 
             val testSpectra = listOf(
@@ -237,37 +269,85 @@ class HomeActivity : AppCompatActivity() {
                 LightSpectrum.POL_P, LightSpectrum.POL_N
             )
 
-            for (retry in 1..3) {
-                val gpioAvailable = fiseGpioController.isAvailable
-                val serialAvailable = serialBusManager.isConnected
-                Timber.i("Startup LED self-test (attempt $retry/3): gpio=$gpioAvailable, serial=$serialAvailable")
-
-                if (!gpioAvailable && !serialAvailable) {
-                    if (retry < 3) {
-                        Timber.w("No LED hardware on attempt $retry, waiting 1s...")
-                        delay(1000)
-                        fiseGpioController.recheckAvailability()
-                        continue
-                    } else {
-                        Timber.e("No LED hardware after 3 attempts. GPIO=${fiseGpioController.isAvailable}, Serial=${serialBusManager.isConnected}. LED self-test SKIPPED.")
-                        Timber.e("To fix: run setup_gpio.ps1 via ADB after every reboot")
-                        return@launch
-                    }
+            for (spectrum in testSpectra) {
+                try {
+                    val result = spectrumController.activate(spectrum)
+                    Timber.d("Startup LED test: ${spectrum.name} -> ${if (result.isSuccess) "OK" else "FAIL"}")
+                    delay(200)
+                } catch (e: Exception) {
+                    Timber.w(e, "Startup LED test failed for ${spectrum.name}")
                 }
-
-                for (spectrum in testSpectra) {
-                    try {
-                        val result = spectrumController.activate(spectrum)
-                        Timber.d("Startup LED test: ${spectrum.name} -> ${if (result.isSuccess) "OK" else "FAIL: ${result.exceptionOrNull()?.message}"}")
-                        delay(200)
-                    } catch (e: Exception) {
-                        Timber.w(e, "Startup LED test failed for ${spectrum.name}")
-                    }
-                }
-                spectrumController.activate(LightSpectrum.OFF)
-                Timber.i("Startup LED self-test complete on attempt $retry: gpio=$gpioAvailable, serial=$serialAvailable")
-                break
             }
+            spectrumController.activate(LightSpectrum.OFF)
+            Timber.i("Startup LED self-test complete: gpio=$gpioAvailable, serial=$serialAvailable")
+        }
+    }
+
+    private fun autoReportToGithub() {
+        val gpio = fiseGpioController
+        val report = buildString {
+            appendLine("## Auto Report: LED Hardware Not Available")
+            appendLine()
+            appendLine("**Device**: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} | Android ${android.os.Build.VERSION.RELEASE}")
+            appendLine("**App**: v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+            appendLine("**Time**: ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date())}")
+            appendLine()
+            appendLine("### GPIO")
+            appendLine("- Available: `${gpio.isAvailable}` | Root: `${gpio.hasRoot}` | SELinux: `${gpio.selinuxEnforcing}`")
+            appendLine("- Status: ${gpio.statusMessage}")
+            for (i in 0..4) {
+                val gpioNum = when(i) { 0->34; 1->149; 2->45; 3->54; 4->56; else->0 }
+                val exists = java.io.File("/sys/class/gpio/gpio$gpioNum").exists()
+                val readback = try { java.io.File("/sys/class/gpio/gpio$gpioNum/value").readText().trim() } catch (_: Exception) { "?" }
+                appendLine("  - gpio$gpioNum: exists=$exists, value=$readback")
+            }
+            val exportFile = java.io.File("/sys/class/gpio/export")
+            appendLine("  - export writable: ${try { exportFile.canWrite() } catch (_: Exception) { false }}")
+            val fiseUnbind = java.io.File("/sys/bus/platform/drivers/fise_gpio/unbind")
+            appendLine("  - fise unbind: exists=${fiseUnbind.exists()}, write=${try { fiseUnbind.canWrite() } catch (_: Exception) { false }}")
+            appendLine("### Serial: `${serialBusManager.isConnected}` | Error: `${serialBusManager.lastError.value}`")
+            appendLine("### Root check")
+            val suPaths = listOf("/system/bin/su", "/sbin/su", "/system/xbin/su", "/vendor/bin/su")
+            for (p in suPaths) {
+                if (java.io.File(p).exists()) {
+                    try {
+                        val proc = Runtime.getRuntime().exec(arrayOf(p, "-c", "id"))
+                        val out = proc.inputStream.bufferedReader().readText().trim()
+                        val err = proc.errorStream.bufferedReader().readText().trim()
+                        val exit = proc.waitFor()
+                        appendLine("  - $p: exit=$out[$out] err[$err]")
+                    } catch (e: Exception) {
+                        appendLine("  - $p: EXCEPTION ${e.message}")
+                    }
+                }
+            }
+            try {
+                val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "which su 2>/dev/null || echo none"))
+                val w = proc.inputStream.bufferedReader().readText().trim()
+                proc.waitFor()
+                appendLine("  - which su: $w")
+            } catch (_: Exception) {}
+            try {
+                val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "id"))
+                val id = proc.inputStream.bufferedReader().readText().trim()
+                proc.waitFor()
+                appendLine("  - sh id: $id")
+            } catch (_: Exception) {}
+            appendLine("### USB Devices")
+            for (info in serialBusManager.listAllUsbDevices()) {
+                appendLine("  - $info")
+            }
+            val camMgr = getSystemService(Context.CAMERA_SERVICE) as? android.hardware.camera2.CameraManager
+            val camList = camMgr?.cameraIdList?.toList() ?: emptyList()
+            appendLine("### Camera: ${if (camList.isEmpty()) "none" else camList.joinToString()} (${camList.size} cameras)")
+        }
+
+        val title = "LED Hardware Not Available - v${BuildConfig.VERSION_NAME} - ${android.os.Build.MODEL}"
+        val url = "https://github.com/mzawari-git/jenincare/issues/new?title=${android.net.Uri.encode(title)}&body=${android.net.Uri.encode(report)}"
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to open GitHub issue")
         }
     }
 
