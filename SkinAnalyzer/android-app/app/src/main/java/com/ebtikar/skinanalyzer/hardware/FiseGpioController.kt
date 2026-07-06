@@ -305,24 +305,59 @@ class FiseGpioController @Inject constructor(
     }
 
     private fun detectRoot() {
-        val suPaths = listOf("/system/bin/su", "/sbin/su", "/system/xbin/su", "/su/bin/su", "/vendor/bin/su")
+        val suPaths = listOf(
+            "/system/bin/su", "/sbin/su", "/system/xbin/su", "/su/bin/su", "/vendor/bin/su",
+            "/data/adb/magisk/su", "/data/adb/ksu/bin/su", "/data/adb/ap/su",
+            "/system/su", "/system/bin/su-backup", "/system/usr/su"
+        )
         for (path in suPaths) {
             if (java.io.File(path).exists()) {
                 try {
                     val proc = Runtime.getRuntime().exec(arrayOf(path, "-c", "id"))
-                    val output = proc.inputStream.bufferedReader().readText()
+                    val output = proc.inputStream.bufferedReader().readText().trim()
+                    val err = proc.errorStream.bufferedReader().readText().trim()
                     val exit = proc.waitFor()
+                    Timber.i("su check: path=$path, exit=$exit, stdout=$output, stderr=$err")
                     if (exit == 0 && output.contains("uid=0")) {
                         _hasRoot = true
                         _suPath = path
-                        Timber.i("Root detected at $path: $output")
+                        Timber.i("ROOT DETECTED at $path: $output")
                         return
                     }
-                } catch (_: Exception) {}
+                } catch (e: Exception) {
+                    Timber.d("su check failed for $path: ${e.message}")
+                }
             }
         }
+
+        try {
+            val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "which su 2>/dev/null || echo 'not found'"))
+            val whichResult = proc.inputStream.bufferedReader().readText().trim()
+            val exit = proc.waitFor()
+            Timber.i("which su result: exit=$exit, output=$whichResult")
+            if (exit == 0 && whichResult.isNotEmpty() && whichResult != "not found" && java.io.File(whichResult).exists()) {
+                val proc2 = Runtime.getRuntime().exec(arrayOf(whichResult, "-c", "id"))
+                val output = proc2.inputStream.bufferedReader().readText().trim()
+                val exit2 = proc2.waitFor()
+                if (exit2 == 0 && output.contains("uid=0")) {
+                    _hasRoot = true
+                    _suPath = whichResult
+                    Timber.i("ROOT DETECTED via which: $whichResult -> $output")
+                    return
+                }
+            }
+        } catch (e: Exception) {
+            Timber.d("which su failed: ${e.message}")
+        }
+
+        val fiseDriverBound = try {
+            java.io.File("/sys/bus/platform/drivers/fise_gpio").listFiles()?.isNotEmpty() == true
+        } catch (_: Exception) { false }
+        val gpioExportExists = try { java.io.File("/sys/class/gpio/export").canWrite() } catch (_: Exception) { false }
+        val gpio34Exists = java.io.File("/sys/class/gpio/gpio34").exists()
+
         _hasRoot = false
-        Timber.w("No root access found (checked ${suPaths.size} paths)")
+        Timber.w("NO ROOT FOUND (checked ${suPaths.size} paths + which). FISE driver bound=$fiseDriverBound, /sys/class/gpio/export writable=$gpioExportExists, gpio34 exists=$gpio34Exists")
     }
 
     private fun suExec(cmd: String): Boolean {
