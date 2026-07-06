@@ -1,0 +1,171 @@
+package com.ebtikar.skinanalyzer.ui.scan
+
+import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
+import android.graphics.RectF
+import android.util.AttributeSet
+import android.view.View
+
+class FaceGuideOverlay @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = 0
+) : View(context, attrs, defStyleAttr) {
+
+    private val overlayPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#99000000")
+        style = Paint.Style.FILL
+    }
+
+    private val clearPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
+    }
+
+    private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#FF00D4FF")
+        style = Paint.Style.STROKE
+        strokeWidth = 3f
+        isAntiAlias = true
+    }
+
+    private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#3300D4FF")
+        style = Paint.Style.STROKE
+        strokeWidth = 12f
+        isAntiAlias = true
+    }
+
+    private val bracketPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#FFD4AF37")
+        style = Paint.Style.STROKE
+        strokeWidth = 4f
+        strokeCap = Paint.Cap.ROUND
+        isAntiAlias = true
+    }
+
+    private val gridPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#1A00D4FF")
+        style = Paint.Style.STROKE
+        strokeWidth = 1f
+        isAntiAlias = true
+    }
+
+    private val markPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#6600D4FF")
+        style = Paint.Style.STROKE
+        strokeWidth = 1f
+        isAntiAlias = true
+    }
+
+    private val faceRect = RectF()
+    private var cornerRadius = 24f
+
+    init {
+        setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+    }
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        val density = resources.displayMetrics.density
+        val faceW = (280f * density).coerceAtMost(w * 0.65f)
+        val faceH = (350f * density).coerceAtMost(h * 0.75f)
+        val left = (w - faceW) / 2f
+        val top = (h - faceH) / 2f
+        faceRect.set(left, top, left + faceW, top + faceH)
+        cornerRadius = 24f * density
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        val sc = canvas.saveLayer(0f, 0f, width.toFloat(), height.toFloat(), null)
+
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), overlayPaint)
+
+        canvas.drawRoundRect(faceRect, cornerRadius, cornerRadius, clearPaint)
+        canvas.restoreToCount(sc)
+
+        drawInnerGrid(canvas)
+
+        canvas.drawRoundRect(faceRect, cornerRadius, cornerRadius, glowPaint)
+        canvas.drawRoundRect(faceRect, cornerRadius, cornerRadius, borderPaint)
+
+        drawCornerBrackets(canvas)
+        drawMeasurementMarks(canvas)
+    }
+
+    private fun drawInnerGrid(canvas: Canvas) {
+        val density = resources.displayMetrics.density
+        val gridSpacing = 30f * density
+        var y = faceRect.top + gridSpacing
+        while (y < faceRect.bottom) {
+            gridPaint.alpha = 40
+            canvas.drawLine(faceRect.left + 4f, y, faceRect.right - 4f, y, gridPaint)
+            y += gridSpacing
+        }
+    }
+
+    private fun drawCornerBrackets(canvas: Canvas) {
+        val density = resources.displayMetrics.density
+        val bracketLen = 36f * density
+        val inset = 6f * density
+
+        bracketPaint.alpha = 220
+
+        val corners = listOf(
+            faceRect.left - inset to faceRect.top - inset,
+            faceRect.right + inset to faceRect.top - inset,
+            faceRect.left - inset to faceRect.bottom + inset,
+            faceRect.right + inset to faceRect.bottom + inset
+        )
+
+        for ((x, y) in corners) {
+            val isLeft = x < width / 2f
+            val isTop = y < height / 2f
+            val signX = if (isLeft) 1f else -1f
+            val signY = if (isTop) 1f else -1f
+
+            canvas.drawLine(x, y, x + signX * bracketLen, y, bracketPaint)
+            canvas.drawLine(x, y, x, y + signY * bracketLen, bracketPaint)
+        }
+    }
+
+    private fun drawMeasurementMarks(canvas: Canvas) {
+        val density = resources.displayMetrics.density
+        val markLen = 8f * density
+        val step = 40f * density
+
+        var pos = faceRect.top + step
+        while (pos < faceRect.bottom) {
+            markPaint.alpha = 120
+            canvas.drawLine(faceRect.left - markLen, pos, faceRect.left, pos, markPaint)
+            canvas.drawLine(faceRect.right, pos, faceRect.right + markLen, pos, markPaint)
+            pos += step
+        }
+
+        pos = faceRect.left + step
+        while (pos < faceRect.right) {
+            markPaint.alpha = 120
+            canvas.drawLine(pos, faceRect.top - markLen, pos, faceRect.top, markPaint)
+            canvas.drawLine(pos, faceRect.bottom, pos, faceRect.bottom + markLen, markPaint)
+            pos += step
+        }
+    }
+
+    fun getFaceRect(): RectF = faceRect
+    fun getFaceCenterY(): Float = faceRect.centerY()
+
+    fun setFacePosition(centerX: Float, centerY: Float) {
+        if (centerX < 0f || centerX > 1f || centerY < 0f || centerY > 1f) return
+        val density = resources.displayMetrics.density
+        val faceW = (280f * density).coerceAtMost(width * 0.65f)
+        val faceH = (350f * density).coerceAtMost(height * 0.75f)
+        val cx = centerX * width
+        val cy = centerY * height
+        val left = (cx - faceW / 2f).coerceIn(0f, (width - faceW).toFloat())
+        val top = (cy - faceH / 2f).coerceIn(0f, (height - faceH).toFloat())
+        faceRect.set(left, top, left + faceW, top + faceH)
+        invalidate()
+    }
+}

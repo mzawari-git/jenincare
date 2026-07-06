@@ -13,8 +13,8 @@ abstract class BaseCameraActivity : AppCompatActivity() {
     protected lateinit var binding: ActivityAnalysisBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         binding = ActivityAnalysisBinding.inflate(layoutInflater)
         setContentView(binding.root)
 

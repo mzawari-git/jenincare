@@ -119,10 +119,10 @@ data class ApiAnalysisResponse(
                 type = type,
                 score = apiMetric.score,
                 severity = when {
-                    apiMetric.score >= 85f -> MetricSeverity.EXCELLENT
-                    apiMetric.score >= 70f -> MetricSeverity.GOOD
-                    apiMetric.score >= 55f -> MetricSeverity.FAIR
-                    apiMetric.score >= 35f -> MetricSeverity.POOR
+                    apiMetric.score >= 72f -> MetricSeverity.EXCELLENT
+                    apiMetric.score >= 55f -> MetricSeverity.GOOD
+                    apiMetric.score >= 35f -> MetricSeverity.FAIR
+                    apiMetric.score >= 20f -> MetricSeverity.POOR
                     else -> MetricSeverity.CRITICAL
                 },
                 details = apiMetric.details
@@ -164,7 +164,7 @@ data class ApiProduct(
     val brand: String = "",
     val category: String = "",
     val price: Float = 0f,
-    val currency: String = "SAR",
+    val currency: String = "ILS",
     val match_score: Float = 0f,
     val reason: String = "",
     val reason_ar: String = ""

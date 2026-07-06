@@ -1,8 +1,15 @@
 package com.ebtikar.skinanalyzer.ui.report
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.Matrix
+import com.ebtikar.skinanalyzer.ai.CVUtils
+import android.media.ExifInterface
 import android.os.Bundle
+import timber.log.Timber
 import android.view.LayoutInflater
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
@@ -18,9 +25,12 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.ebtikar.skinanalyzer.R
 import com.ebtikar.skinanalyzer.databinding.ActivityReportBinding
+import com.ebtikar.skinanalyzer.hardware.LightSpectrum
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.chip.Chip
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.io.File
 
 @AndroidEntryPoint
 class ReportActivity : AppCompatActivity() {
@@ -93,7 +103,7 @@ class ReportActivity : AppCompatActivity() {
                 launch {
                     viewModel.metrics.collect { metrics ->
                         metricsAdapter.submitList(metrics)
-                        binding.tvMetricCount.text = "${metrics.size}/14"
+                        binding.tvMetricCount.text = "${metrics.size}/${com.ebtikar.skinanalyzer.model.SkinMetric.TOTAL_METRICS}"
                     }
                 }
 
@@ -106,7 +116,6 @@ class ReportActivity : AppCompatActivity() {
                 launch {
                     viewModel.skinProfile.collect { profile ->
                         binding.tvSkinType.text = profile.skinTypeAr
-                        binding.tvFitzpatrick.text = "Fitzpatrick ${profile.fitzpatrickLevel}"
                     }
                 }
 
@@ -119,6 +128,12 @@ class ReportActivity : AppCompatActivity() {
                 launch {
                     viewModel.productRecommendations.collect { products ->
                         productAdapter.submitList(products)
+                    }
+                }
+
+                launch {
+                    viewModel.capturedImages.collect { images ->
+                        populateCapturedImages(images)
                     }
                 }
 
@@ -223,12 +238,116 @@ class ReportActivity : AppCompatActivity() {
         }
     }
 
+    private fun populateCapturedImages(images: Map<LightSpectrum, File>) {
+        binding.containerCapturedImages.removeAllViews()
+        if (images.isEmpty()) {
+            binding.containerCapturedImages.visibility = android.view.View.GONE
+            return
+        }
+        binding.containerCapturedImages.visibility = android.view.View.VISIBLE
+
+        val spectra = LightSpectrum.CAPTURE_SEQUENCE.filter { images.containsKey(it) }
+        val rowSize = 2
+        spectra.chunked(rowSize).forEach { rowSpectra ->
+            val rowLayout = LinearLayout(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                orientation = LinearLayout.HORIZONTAL
+            }
+            for (spectrum in rowSpectra) {
+                val file = images[spectrum] ?: continue
+                val card = MaterialCardView(this).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f
+                    ).apply {
+                        marginEnd = 6
+                        bottomMargin = 6
+                    }
+                    radius = resources.getDimension(R.dimen.corner_sm)
+                    cardElevation = 0f
+                    setCardBackgroundColor(resources.getColor(R.color.surface_card, theme))
+                    strokeWidth = 1
+                    setStrokeColor(resources.getColor(R.color.border_card, theme))
+                }
+
+                val innerLayout = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(4, 4, 4, 4)
+                }
+
+                val bitmap = loadBitmapWithRotation(file)
+                if (bitmap != null) {
+                    val iv = ZoomableImageView(this).apply {
+                        layoutParams = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            280.dpToPx()
+                        )
+                        setImageBitmap(bitmap)
+                    }
+                    innerLayout.addView(iv)
+                }
+
+                val label = TextView(this).apply {
+                    text = spectrum.displayName
+                    textSize = 9f
+                    setTextColor(resources.getColor(R.color.text_muted, theme))
+                    gravity = android.view.Gravity.CENTER_HORIZONTAL
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                }
+                innerLayout.addView(label)
+                card.addView(innerLayout)
+                rowLayout.addView(card)
+            }
+            binding.containerCapturedImages.addView(rowLayout)
+        }
+    }
+
+    private fun loadBitmapWithRotation(file: File): Bitmap? {
+        val bitmap = CVUtils.decodeSampled(file, 640) ?: return null
+        if (bitmap.isRecycled) { Timber.w("loadBitmapWithRotation: decoded bitmap already recycled"); return null }
+        Timber.d("loadBitmapWithRotation: decoded ${bitmap.width}x${bitmap.height} from ${file.name}")
+        try {
+            val exif = ExifInterface(file.absolutePath)
+            val orientation = exif.getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL
+            )
+            val degree = when (orientation) {
+                ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+                ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+                ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+                else -> 0f
+            }
+            if (degree != 0f) {
+                val matrix = Matrix().apply { postRotate(degree) }
+                val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+                if (rotated !== bitmap) bitmap.recycle()
+                return rotated
+            }
+            if (bitmap.width > bitmap.height) {
+                val matrix = Matrix().apply { postRotate(90f) }
+                val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+                if (rotated !== bitmap) bitmap.recycle()
+                return rotated
+            }
+        } catch (_: Exception) { }
+        return bitmap
+    }
+
+    private fun Int.dpToPx(): Int =
+        (this * resources.displayMetrics.density).toInt()
+
     private fun getScoreLabel(score: Float): String {
         return when {
-            score >= 85f -> getString(R.string.score_excellent)
-            score >= 70f -> getString(R.string.score_good)
-            score >= 55f -> getString(R.string.score_fair)
-            score >= 35f -> getString(R.string.score_poor)
+            score >= 72f -> getString(R.string.score_excellent)
+            score >= 55f -> getString(R.string.score_good)
+            score >= 35f -> getString(R.string.score_fair)
+            score >= 20f -> getString(R.string.score_poor)
             else -> getString(R.string.score_critical)
         }
     }
@@ -245,8 +364,9 @@ class ReportActivity : AppCompatActivity() {
         com.ebtikar.skinanalyzer.model.SkinMetric.Type.DARK_CIRCLES -> "الهالات الداكنة"
         com.ebtikar.skinanalyzer.model.SkinMetric.Type.BLACKHEADS -> "الرؤوس السوداء"
         com.ebtikar.skinanalyzer.model.SkinMetric.Type.ACNE -> "حب الشباب"
-        com.ebtikar.skinanalyzer.model.SkinMetric.Type.COLLAGEN -> "الكولاجين"
         com.ebtikar.skinanalyzer.model.SkinMetric.Type.SKIN_TONE -> "لون البشرة"
         com.ebtikar.skinanalyzer.model.SkinMetric.Type.SENSITIVITY -> "الحساسية"
+        com.ebtikar.skinanalyzer.model.SkinMetric.Type.ROSACEA -> "الوردية"
+        com.ebtikar.skinanalyzer.model.SkinMetric.Type.MELASMA -> "الكلف"
     }
 }

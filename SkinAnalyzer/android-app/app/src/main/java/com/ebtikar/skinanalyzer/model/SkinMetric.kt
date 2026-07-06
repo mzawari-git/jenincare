@@ -10,12 +10,12 @@ enum class SkinZone {
     FULL_FACE
 }
 
-enum class MetricSeverity {
-    EXCELLENT,
-    GOOD,
-    FAIR,
-    POOR,
-    CRITICAL
+enum class MetricSeverity(val displayAr: String) {
+    EXCELLENT("ممتاز"),
+    GOOD("جيد"),
+    FAIR("متوسط"),
+    POOR("ضعيف"),
+    CRITICAL("شديد")
 }
 
 enum class MetricTrend {
@@ -55,14 +55,15 @@ data class SkinMetric(
         DARK_CIRCLES,
         BLACKHEADS,
         ACNE,
-        COLLAGEN,
         SKIN_TONE,
-        SENSITIVITY
+        SENSITIVITY,
+        ROSACEA,
+        MELASMA
     }
 
     companion object {
         val ALL_TYPES = Type.entries.toList()
-        const val TOTAL_METRICS = 14
+        const val TOTAL_METRICS = 15
     }
 }
 
@@ -74,7 +75,7 @@ data class ProductRecommendation(
     val brand: String = "",
     val category: String = "",
     val price: Float = 0f,
-    val currency: String = "SAR",
+    val currency: String = "ILS",
     val imageUrl: String = "",
     val matchScore: Float = 0f,
     val reason: String = "",
@@ -85,10 +86,8 @@ data class ProductRecommendation(
 data class SkinProfile(
     val skinType: String = "mixed",
     val skinTypeAr: String = "مختلطة",
-    val fitzpatrickLevel: Int = 3,
     val hydrationLevel: String = "moderate",
     val sensitivityLevel: String = "low",
-    val ageEstimate: Int = 0,
     val primaryConcerns: List<String> = emptyList(),
     val primaryConcernsAr: List<String> = emptyList()
 )

@@ -1,5 +1,6 @@
 package com.ebtikar.skinanalyzer.data.repository
 
+import com.ebtikar.skinanalyzer.ai.FeatureExtractor
 import com.ebtikar.skinanalyzer.camera.FrameCapturePipeline
 import com.ebtikar.skinanalyzer.core.provider.AnalysisProviderManager
 import com.ebtikar.skinanalyzer.data.local.SkinReportDao
@@ -30,6 +31,7 @@ class SkinAnalysisRepositoryTest {
     private lateinit var mockProviderManager: AnalysisProviderManager
     private lateinit var mockReportDao: SkinReportDao
     private lateinit var mockEngine: MockAnalysisEngine
+    private lateinit var mockFeatureExtractor: FeatureExtractor
 
     @Before
     fun setup() {
@@ -37,6 +39,7 @@ class SkinAnalysisRepositoryTest {
         mockProviderManager = mock()
         mockReportDao = mock()
         mockEngine = MockAnalysisEngine()
+        mockFeatureExtractor = mock()
     }
 
     @Test
@@ -45,7 +48,7 @@ class SkinAnalysisRepositoryTest {
         whenever(context.filesDir).thenReturn(File("/tmp/test"))
 
         repository = SkinAnalysisRepositoryImpl(
-            context, mockCapturePipeline, mockProviderManager, mockReportDao, mockEngine
+            context, mockCapturePipeline, mockProviderManager, mockReportDao, mockEngine, mockFeatureExtractor
         )
 
         assertEquals(AnalysisState.Idle, repository.getAnalysisState().value)
@@ -57,7 +60,7 @@ class SkinAnalysisRepositoryTest {
         whenever(context.filesDir).thenReturn(File("/tmp/test"))
 
         repository = SkinAnalysisRepositoryImpl(
-            context, mockCapturePipeline, mockProviderManager, mockReportDao, mockEngine
+            context, mockCapturePipeline, mockProviderManager, mockReportDao, mockEngine, mockFeatureExtractor
         )
 
         val report = SkinAnalysisReport(
@@ -84,7 +87,7 @@ class SkinAnalysisRepositoryTest {
         whenever(context.filesDir).thenReturn(tempDir)
 
         repository = SkinAnalysisRepositoryImpl(
-            context, mockCapturePipeline, mockProviderManager, mockReportDao, mockEngine
+            context, mockCapturePipeline, mockProviderManager, mockReportDao, mockEngine, mockFeatureExtractor
         )
 
         repository.deleteReport("test-id")
@@ -98,7 +101,7 @@ class SkinAnalysisRepositoryTest {
         whenever(context.filesDir).thenReturn(File("/tmp/test"))
 
         repository = SkinAnalysisRepositoryImpl(
-            context, mockCapturePipeline, mockProviderManager, mockReportDao, mockEngine
+            context, mockCapturePipeline, mockProviderManager, mockReportDao, mockEngine, mockFeatureExtractor
         )
 
         whenever(mockReportDao.getReportCount()).thenReturn(5)

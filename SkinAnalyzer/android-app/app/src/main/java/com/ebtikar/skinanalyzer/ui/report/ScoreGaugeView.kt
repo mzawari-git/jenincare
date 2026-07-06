@@ -172,4 +172,10 @@ class ScoreGaugeView @JvmOverloads constructor(
             start()
         }
     }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        animator?.cancel()
+        animator = null
+    }
 }

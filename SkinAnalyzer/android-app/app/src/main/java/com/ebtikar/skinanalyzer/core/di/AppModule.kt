@@ -6,6 +6,7 @@ import com.ebtikar.skinanalyzer.ai.LocalTFLiteProvider
 import com.ebtikar.skinanalyzer.core.provider.AnalysisProviderManager
 import com.ebtikar.skinanalyzer.data.repository.SkinAnalysisRepository
 import com.ebtikar.skinanalyzer.data.repository.SkinAnalysisRepositoryImpl
+import com.ebtikar.skinanalyzer.hardware.FiseGpioController
 import com.ebtikar.skinanalyzer.hardware.SerialBusManager
 import com.ebtikar.skinanalyzer.hardware.SpectrumController
 import com.ebtikar.skinanalyzer.camera.FrameCapturePipeline
@@ -14,6 +15,8 @@ import com.ebtikar.skinanalyzer.ai.TFLiteEngine
 import com.ebtikar.skinanalyzer.ai.FaceLandmarkDetector
 import com.ebtikar.skinanalyzer.ai.FeatureExtractor
 import com.ebtikar.skinanalyzer.util.NetworkMonitor
+import com.ebtikar.skinanalyzer.util.PreferencesManager
+import com.ebtikar.skinanalyzer.util.UpdateChecker
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -34,8 +37,14 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideSpectrumController(serialBus: SerialBusManager): SpectrumController {
-        return SpectrumController(serialBus)
+    fun provideFiseGpioController(@ApplicationContext context: Context): FiseGpioController {
+        return FiseGpioController(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSpectrumController(serialBus: SerialBusManager, fiseGpio: FiseGpioController): SpectrumController {
+        return SpectrumController(serialBus, fiseGpio)
     }
 
     @Provides
@@ -50,9 +59,11 @@ object AppModule {
         spectrumController: SpectrumController,
         cameraManager: USBCameraManager,
         serialBusManager: SerialBusManager,
-        faceDetector: FaceLandmarkDetector
+        faceDetector: FaceLandmarkDetector,
+        fiseGpioController: FiseGpioController,
+        preferencesManager: PreferencesManager
     ): FrameCapturePipeline {
-        return FrameCapturePipeline(spectrumController, cameraManager, serialBusManager, faceDetector)
+        return FrameCapturePipeline(spectrumController, cameraManager, serialBusManager, faceDetector, fiseGpioController, preferencesManager)
     }
 
     @Provides
@@ -78,6 +89,13 @@ object AppModule {
     fun provideNetworkMonitor(@ApplicationContext context: Context): NetworkMonitor {
         return NetworkMonitor(context)
     }
+
+    @Provides
+    @Singleton
+    fun provideUpdateChecker(@ApplicationContext context: Context): UpdateChecker {
+        return UpdateChecker(context)
+    }
+
 
     @Provides
     @Singleton

@@ -116,9 +116,10 @@ class ReportMetricAdapter : ListAdapter<SkinMetric, ReportMetricAdapter.MetricVi
             SkinMetric.Type.DARK_CIRCLES  -> "الهالات الداكنة"
             SkinMetric.Type.BLACKHEADS    -> "الرؤوس السوداء"
             SkinMetric.Type.ACNE          -> "حب الشباب"
-            SkinMetric.Type.COLLAGEN      -> "الكولاجين"
             SkinMetric.Type.SKIN_TONE     -> "لون البشرة"
             SkinMetric.Type.SENSITIVITY   -> "الحساسية"
+            SkinMetric.Type.ROSACEA       -> "الوردية"
+            SkinMetric.Type.MELASMA       -> "الكلف"
         }
 
         private fun SkinMetric.Type.iconRes(): Int = when (this) {
@@ -133,9 +134,10 @@ class ReportMetricAdapter : ListAdapter<SkinMetric, ReportMetricAdapter.MetricVi
             SkinMetric.Type.DARK_CIRCLES  -> R.drawable.ic_metric_dark_circles
             SkinMetric.Type.BLACKHEADS    -> R.drawable.ic_metric_pores
             SkinMetric.Type.ACNE          -> R.drawable.ic_metric_sensitivity
-            SkinMetric.Type.COLLAGEN      -> R.drawable.ic_metric_elasticity
             SkinMetric.Type.SKIN_TONE     -> R.drawable.ic_metric_texture
             SkinMetric.Type.SENSITIVITY   -> R.drawable.ic_metric_sensitivity
+            SkinMetric.Type.ROSACEA       -> R.drawable.ic_metric_rosacea
+            SkinMetric.Type.MELASMA       -> R.drawable.ic_metric_melasma
         }
 
         private fun SkinMetric.Type.iconBgHex(): String = when (this) {
@@ -150,9 +152,10 @@ class ReportMetricAdapter : ListAdapter<SkinMetric, ReportMetricAdapter.MetricVi
             SkinMetric.Type.DARK_CIRCLES -> "#1A475569"
             SkinMetric.Type.BLACKHEADS   -> "#1A64748B"
             SkinMetric.Type.ACNE         -> "#1AF43F5E"
-            SkinMetric.Type.COLLAGEN     -> "#1A10B981"
             SkinMetric.Type.SKIN_TONE    -> "#1AFBBF24"
             SkinMetric.Type.SENSITIVITY  -> "#1AEAB308"
+            SkinMetric.Type.ROSACEA      -> "#1AE11D48"
+            SkinMetric.Type.MELASMA      -> "#1AD35400"
         }
 
         private fun SkinMetric.Type.iconTintHex(): String = when (this) {
@@ -167,9 +170,10 @@ class ReportMetricAdapter : ListAdapter<SkinMetric, ReportMetricAdapter.MetricVi
             SkinMetric.Type.DARK_CIRCLES -> "#FF94A3B8"
             SkinMetric.Type.BLACKHEADS   -> "#FF94A3B8"
             SkinMetric.Type.ACNE         -> "#FFF43F5E"
-            SkinMetric.Type.COLLAGEN     -> "#FF10B981"
             SkinMetric.Type.SKIN_TONE    -> "#FFFBBF24"
             SkinMetric.Type.SENSITIVITY  -> "#FFEAB308"
+            SkinMetric.Type.ROSACEA      -> "#FFE11D48"
+            SkinMetric.Type.MELASMA      -> "#FFD35400"
         }
 
         private fun MetricSeverity.colorHex(): String = when (this) {

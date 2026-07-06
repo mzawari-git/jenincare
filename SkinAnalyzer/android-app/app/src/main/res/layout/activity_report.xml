@@ -7,20 +7,21 @@
     android:background="@color/background_primary"
     android:orientation="vertical">
 
+    <!-- ═══ TOP BAR ═══ -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="64dp"
-        android:background="@color/background_secondary"
+        android:background="@color/white"
+        android:elevation="4dp"
         android:gravity="center_vertical"
-        android:orientation="horizontal"
         android:paddingHorizontal="24dp">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnBack"
             style="@style/Button.Icon"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="8dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginEnd="12dp"
             app:icon="@drawable/ic_back"
             app:iconTint="@color/text_secondary"
             app:cornerRadius="12dp" />
@@ -36,13 +37,15 @@
                 android:layout_height="wrap_content"
                 android:text="تقرير تحليل البشرة"
                 android:textColor="@color/text_primary"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                android:textSize="17sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium" />
 
             <TextView
                 android:id="@+id/tvReportDate"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
                 android:textColor="@color/text_muted"
                 android:textSize="12sp"
                 tools:text="6 يونيو 2026 — 08:30 م" />
@@ -84,14 +87,16 @@
         android:layout_height="1dp"
         android:background="@color/divider" />
 
+    <!-- ═══ TWO-PANEL CONTENT ═══ -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="horizontal">
 
+        <!-- ═══ LEFT PANEL — SCORE & SUMMARY ═══ -->
         <ScrollView
-            android:layout_width="280dp"
+            android:layout_width="300dp"
             android:layout_height="match_parent"
             android:background="@color/background_secondary"
             android:fillViewport="false"
@@ -104,35 +109,53 @@
                 android:paddingHorizontal="20dp"
                 android:paddingVertical="20dp">
 
-                <com.ebtikar.skinanalyzer.ui.report.ScoreGaugeView
-                    android:id="@+id/gaugeOverallScore"
-                    android:layout_width="180dp"
-                    android:layout_height="180dp"
-                    android:layout_gravity="center_horizontal" />
-
-                <TextView
-                    android:id="@+id/tvOverallScore"
-                    android:layout_width="wrap_content"
+                <!-- Score Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="4dp"
-                    android:textColor="@color/primary"
-                    android:textSize="42sp"
-                    android:textStyle="bold"
-                    tools:text="82" />
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="@color/white"
+                    app:strokeColor="@color/border_card"
+                    app:strokeWidth="1dp">
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipScoreLabel"
-                    style="@style/Chip.Status.Good"
-                    android:layout_width="wrap_content"
-                    android:layout_height="30dp"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="4dp"
-                    android:checkable="false"
-                    android:clickable="false"
-                    android:text="ممتاز"
-                    android:textSize="13sp" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingVertical="24dp">
 
+                        <com.ebtikar.skinanalyzer.ui.report.ScoreGaugeView
+                            android:id="@+id/gaugeOverallScore"
+                            android:layout_width="160dp"
+                            android:layout_height="160dp" />
+
+                        <TextView
+                            android:id="@+id/tvOverallScore"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:textColor="@color/primary"
+                            android:textSize="40sp"
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif-medium"
+                            tools:text="82" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipScoreLabel"
+                            style="@style/Chip.Status.Good"
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:layout_marginTop="6dp"
+                            android:checkable="false"
+                            android:clickable="false"
+                            android:text="ممتاز"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Stats Row -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -144,8 +167,8 @@
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="6dp"
                         android:layout_weight="1"
-                        app:cardBackgroundColor="@color/surface_card"
-                        app:cardCornerRadius="12dp"
+                        app:cardBackgroundColor="@color/white"
+                        app:cardCornerRadius="14dp"
                         app:cardElevation="0dp"
                         app:strokeColor="@color/border_card"
                         app:strokeWidth="1dp">
@@ -155,23 +178,25 @@
                             android:layout_height="wrap_content"
                             android:gravity="center"
                             android:orientation="vertical"
-                            android:padding="10dp">
+                            android:padding="12dp">
 
                             <TextView
                                 android:id="@+id/tvMetricCount"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:textColor="@color/primary"
-                                android:textSize="16sp"
+                                android:textSize="18sp"
                                 android:textStyle="bold"
+                                android:fontFamily="sans-serif-medium"
                                 tools:text="14/14" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
                                 android:text="مؤشرات"
                                 android:textColor="@color/text_muted"
-                                android:textSize="10sp" />
+                                android:textSize="11sp" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
@@ -180,8 +205,8 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
                         android:layout_weight="1"
-                        app:cardBackgroundColor="@color/surface_card"
-                        app:cardCornerRadius="12dp"
+                        app:cardBackgroundColor="@color/white"
+                        app:cardCornerRadius="14dp"
                         app:cardElevation="0dp"
                         app:strokeColor="@color/border_card"
                         app:strokeWidth="1dp">
@@ -191,23 +216,25 @@
                             android:layout_height="wrap_content"
                             android:gravity="center"
                             android:orientation="vertical"
-                            android:padding="10dp">
+                            android:padding="12dp">
 
                             <TextView
                                 android:id="@+id/tvAnalysisTime"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:textColor="@color/accent_gold"
-                                android:textSize="16sp"
+                                android:textSize="18sp"
                                 android:textStyle="bold"
+                                android:fontFamily="sans-serif-medium"
                                 tools:text="1.2s" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
                                 android:text="الوقت"
                                 android:textColor="@color/text_muted"
-                                android:textSize="10sp" />
+                                android:textSize="11sp" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
@@ -215,9 +242,10 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:layout_marginVertical="16dp"
+                    android:layout_marginVertical="20dp"
                     android:background="@color/divider" />
 
+                <!-- AI Analysis -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -230,9 +258,9 @@
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    app:cardBackgroundColor="@color/surface_card"
-                    app:cardCornerRadius="14dp"
+                    android:layout_marginTop="10dp"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="16dp"
                     app:cardElevation="0dp"
                     app:strokeColor="@color/border_glow"
                     app:strokeWidth="1dp">
@@ -241,7 +269,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="14dp">
+                        android:padding="16dp">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -260,8 +288,9 @@
                                 android:layout_height="wrap_content"
                                 android:text="DERMA AI"
                                 android:textColor="@color/primary"
-                                android:textSize="11sp"
-                                android:textStyle="bold" />
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                android:fontFamily="sans-serif-medium" />
 
                             <Space
                                 android:layout_width="0dp"
@@ -281,10 +310,10 @@
                             android:id="@+id/tvAiAnalysis"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:lineSpacingMultiplier="1.6"
+                            android:layout_marginTop="12dp"
+                            android:lineSpacingMultiplier="1.7"
                             android:textColor="@color/text_secondary"
-                            android:textSize="12sp"
+                            android:textSize="13sp"
                             tools:text="تحليل شامل للبشرة — نوع البشرة: مختلطة. النتيجة الإجمالية: 82/100" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -292,9 +321,10 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:layout_marginVertical="16dp"
+                    android:layout_marginVertical="20dp"
                     android:background="@color/divider" />
 
+                <!-- Skin Type -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -307,9 +337,9 @@
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    app:cardBackgroundColor="@color/surface_card"
-                    app:cardCornerRadius="14dp"
+                    android:layout_marginTop="10dp"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="16dp"
                     app:cardElevation="0dp"
                     app:strokeColor="@color/border_card"
                     app:strokeWidth="1dp">
@@ -319,12 +349,12 @@
                         android:layout_height="wrap_content"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
-                        android:padding="14dp">
+                        android:padding="16dp">
 
                         <View
                             android:id="@+id/viewSkinTone"
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
                             android:layout_marginEnd="12dp"
                             android:background="@drawable/shape_skin_tone_swatch" />
 
@@ -339,16 +369,19 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:textColor="@color/text_primary"
-                                android:textSize="14sp"
+                                android:textSize="15sp"
                                 android:textStyle="bold"
+                                android:fontFamily="sans-serif-medium"
                                 tools:text="مختلطة" />
 
                             <TextView
                                 android:id="@+id/tvFitzpatrick"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
                                 android:textColor="@color/text_muted"
-                                android:textSize="11sp"
+                                android:textSize="12sp"
+                                android:visibility="gone"
                                 tools:text="Fitzpatrick III" />
                         </LinearLayout>
                     </LinearLayout>
@@ -357,9 +390,10 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:layout_marginVertical="16dp"
+                    android:layout_marginVertical="20dp"
                     android:background="@color/divider" />
 
+                <!-- Top Concerns -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -373,7 +407,7 @@
                     android:id="@+id/chipGroupConcerns"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="10dp"
                     app:chipSpacingVertical="6dp"
                     app:chipSpacingHorizontal="6dp" />
 
@@ -389,6 +423,7 @@
             android:layout_height="match_parent"
             android:background="@color/divider" />
 
+        <!-- ═══ RIGHT PANEL — DETAILS ═══ -->
         <ScrollView
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -402,6 +437,30 @@
                 android:orientation="vertical"
                 android:padding="20dp">
 
+                <!-- Captured Images -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.08"
+                    android:text="الصور الملتقطة"
+                    android:textColor="@color/text_muted"
+                    android:textSize="11sp"
+                    android:textAllCaps="true" />
+
+                <LinearLayout
+                    android:id="@+id/containerCapturedImages"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="vertical" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginVertical="20dp"
+                    android:background="@color/divider" />
+
+                <!-- Detailed Metrics -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -415,7 +474,7 @@
                     android:id="@+id/rvMetrics"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="10dp"
                     android:clipToPadding="false"
                     android:nestedScrollingEnabled="false"
                     android:overScrollMode="never" />
@@ -423,9 +482,10 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:layout_marginVertical="16dp"
+                    android:layout_marginVertical="20dp"
                     android:background="@color/divider" />
 
+                <!-- Radar Chart -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -438,9 +498,9 @@
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    app:cardBackgroundColor="@color/surface_card"
-                    app:cardCornerRadius="18dp"
+                    android:layout_marginTop="10dp"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="20dp"
                     app:cardElevation="0dp"
                     app:strokeColor="@color/border_card"
                     app:strokeWidth="1dp">
@@ -455,9 +515,10 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:layout_marginVertical="16dp"
+                    android:layout_marginVertical="20dp"
                     android:background="@color/divider" />
 
+                <!-- Expert Tips -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -471,15 +532,16 @@
                     android:id="@+id/containerTips"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="10dp"
                     android:orientation="vertical" />
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:layout_marginVertical="16dp"
+                    android:layout_marginVertical="20dp"
                     android:background="@color/divider" />
 
+                <!-- Product Recommendations -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -493,7 +555,7 @@
                     android:id="@+id/rvProducts"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="10dp"
                     android:clipToPadding="false"
                     android:nestedScrollingEnabled="false"
                     android:overScrollMode="never" />

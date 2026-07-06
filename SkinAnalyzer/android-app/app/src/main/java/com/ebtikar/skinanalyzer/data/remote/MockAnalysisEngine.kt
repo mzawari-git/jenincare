@@ -1,6 +1,7 @@
 package com.ebtikar.skinanalyzer.data.remote
 
 import com.ebtikar.skinanalyzer.core.provider.AnalysisResult
+import com.ebtikar.skinanalyzer.data.knowledge.SkinKnowledgeRepository
 import com.ebtikar.skinanalyzer.model.MetricSeverity
 import com.ebtikar.skinanalyzer.model.MetricTrend
 import com.ebtikar.skinanalyzer.model.ProductRecommendation
@@ -12,12 +13,15 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class MockAnalysisEngine @Inject constructor() {
+class MockAnalysisEngine @Inject constructor(
+    private val knowledgeRepository: SkinKnowledgeRepository
+) {
 
     suspend fun generateMockResult(providerName: String): AnalysisResult {
         delay(1500)
 
         val metrics = mutableMapOf<SkinMetric.Type, SkinMetric>()
+        val knowledge = knowledgeRepository.getKnowledge()
 
         val spectrumMetrics = mapOf(
             SkinMetric.Type.MOISTURE to (60..90).random().toFloat(),
@@ -31,9 +35,10 @@ class MockAnalysisEngine @Inject constructor() {
             SkinMetric.Type.DARK_CIRCLES to (48..80).random().toFloat(),
             SkinMetric.Type.BLACKHEADS to (45..78).random().toFloat(),
             SkinMetric.Type.ACNE to (50..82).random().toFloat(),
-            SkinMetric.Type.COLLAGEN to (58..85).random().toFloat(),
             SkinMetric.Type.SKIN_TONE to (70..92).random().toFloat(),
-            SkinMetric.Type.SENSITIVITY to (55..85).random().toFloat()
+            SkinMetric.Type.SENSITIVITY to (55..85).random().toFloat(),
+            SkinMetric.Type.ROSACEA to (50..85).random().toFloat(),
+            SkinMetric.Type.MELASMA to (48..84).random().toFloat()
         )
 
         for ((type, score) in spectrumMetrics) {
@@ -48,8 +53,8 @@ class MockAnalysisEngine @Inject constructor() {
                 type = type,
                 score = score,
                 severity = severity,
-                details = getDetailsForMetric(type, score, severity),
-                recommendations = getRecommendationsForMetric(type, score, severity),
+                details = getDetailsForMetric(type, score, severity, knowledge),
+                recommendations = getRecommendationsForMetric(type, severity, knowledge),
                 trend = trend,
                 previousScore = previousScore,
                 confidence = (75..95).random() / 100f
@@ -102,7 +107,6 @@ class MockAnalysisEngine @Inject constructor() {
         return SkinProfile(
             skinType = skinType,
             skinTypeAr = skinTypeAr,
-            fitzpatrickLevel = (2..5).random(),
             hydrationLevel = when {
                 moisture >= 70f -> "high"
                 moisture >= 50f -> "moderate"
@@ -113,7 +117,6 @@ class MockAnalysisEngine @Inject constructor() {
                 sensitivity >= 50f -> "moderate"
                 else -> "high"
             },
-            ageEstimate = (22..45).random(),
             primaryConcerns = concerns,
             primaryConcernsAr = concernsAr
         )
@@ -121,24 +124,16 @@ class MockAnalysisEngine @Inject constructor() {
 
     fun generateExpertTips(metrics: Map<SkinMetric.Type, SkinMetric>): List<String> {
         val tips = mutableListOf<String>()
+        val knowledge = runCatching { knowledgeRepository.getCachedKnowledge() }.getOrNull()
         val sorted = metrics.entries.sortedBy { it.value.score }
 
-        sorted.take(3).forEach { (type, metric) ->
-            when (type) {
-                SkinMetric.Type.MOISTURE -> tips.add("اشربي كمية كافية من الماء يومياً (8 أكواب) واستخدمي مرطباً يحتوي على حمض الهيالورونيك")
-                SkinMetric.Type.PORES -> tips.add("استخدمي غسولاً يحتوي على حمض الساليسيليك لتنظيف المسام بعمق مرتين أسبوعياً")
-                SkinMetric.Type.SEBUM -> tips.add("تجنبي المنتجات الدهنية واستخدمي سيروم النياسيناميد للتحكم في الإفرازات الدهنية")
-                SkinMetric.Type.WRINKLES -> tips.add("واظبي على استخدام كريم مضاد للتجاعيد يحتوي على الريتينول ليلاً وواقي شمس نهاراً")
-                SkinMetric.Type.TEXTURE -> tips.add("قشري بشرتك بلطف مرة إلى مرتين أسبوعياً باستخدام مقشر كيميائي يحتوي على AHA")
-                SkinMetric.Type.UV_SPOTS -> tips.add("استخدمي واقي شمس SPF 50+ يومياً حتى في الأيام الغائمة وأعيدي وضعه كل ساعتين")
-                SkinMetric.Type.VASCULAR -> tips.add("تجنبي الماء الساخن على الوجه واستخدمي منتجات مهدئة تحتوي على Centella Asiatica")
-                SkinMetric.Type.PIGMENTATION -> tips.add("استخدمي سيروم فيتامين سي صباحاً وواقي شمس باستمرار لتوحيد لون البشرة")
-                SkinMetric.Type.DARK_CIRCLES -> tips.add("احصلي على نوم كافٍ (7-8 ساعات) واستخدمي كريم عين يحتوي على الكافيين")
-                SkinMetric.Type.BLACKHEADS -> tips.add("استخدمي ماسك الطين الأسبوعي ومنتجات BHA لتنظيف المسام من الرؤوس السوداء")
-                SkinMetric.Type.ACNE -> tips.add("تجنبي لمس الوجه واستخدمي منتجات خالية من الزيوت وعلاج موضعي بحمض الأزيلايك")
-                SkinMetric.Type.COLLAGEN -> tips.add("تناولي أطعمة غنية بفيتامين C واستخدمي سيروم الببتيدات لتحفيز إنتاج الكولاجين")
-                SkinMetric.Type.SKIN_TONE -> tips.add("واظبي على روتين توحيد اللون مع سيروم الأربوتين وفيتامين سي صباحاً")
-                SkinMetric.Type.SENSITIVITY -> tips.add("استخدمي منتجات خالية من العطور والكحول واختبري أي منتج جديد على منطقة صغيرة أولاً")
+        sorted.take(3).forEach { (type, _) ->
+            val metricKey = type.name
+            val metricTips = knowledge?.metrics?.get(metricKey)?.tipsAr
+            if (!metricTips.isNullOrEmpty()) {
+                tips.add(metricTips.random())
+            } else {
+                tips.add(fallbackTip(type))
             }
         }
 
@@ -148,80 +143,39 @@ class MockAnalysisEngine @Inject constructor() {
 
     fun generateProductRecommendations(metrics: Map<SkinMetric.Type, SkinMetric>): List<ProductRecommendation> {
         val products = mutableListOf<ProductRecommendation>()
+        val knowledge = runCatching { knowledgeRepository.getCachedKnowledge() }.getOrNull()
         val sorted = metrics.entries.sortedBy { it.value.score }
 
         sorted.take(4).forEach { (type, _) ->
-            when (type) {
-                SkinMetric.Type.MOISTURE -> products.add(
-                    ProductRecommendation(
-                        id = "p1", name = "Hyaluronic Acid Serum", nameAr = "سيروم حمض الهيالورونيك",
-                        brand = "JeniCare", category = "serum", price = 189f, currency = "SAR",
-                        matchScore = 0.95f, reason = "Deep hydration", reasonAr = "ترطيب عميق للبشرة الجافة"
-                    )
-                )
-                SkinMetric.Type.PORES -> products.add(
-                    ProductRecommendation(
-                        id = "p2", name = "BHA Pore Minimizer", nameAr = "غسول تصغير المسام",
-                        brand = "JeniCare", category = "cleanser", price = 149f, currency = "SAR",
-                        matchScore = 0.92f, reason = "Pore cleansing", reasonAr = "تنظيف عميق وتقليص المسام"
-                    )
-                )
-                SkinMetric.Type.WRINKLES -> products.add(
-                    ProductRecommendation(
-                        id = "p3", name = "Retinol Night Cream", nameAr = "كريم الريتينول الليلي",
-                        brand = "JeniCare", category = "cream", price = 249f, currency = "SAR",
-                        matchScore = 0.90f, reason = "Anti-aging", reasonAr = "مكافحة التجاعيد وشد البشرة"
-                    )
-                )
-                SkinMetric.Type.UV_SPOTS -> products.add(
-                    ProductRecommendation(
-                        id = "p4", name = "SPF 50+ Sunscreen", nameAr = "واقي شمس SPF 50+",
-                        brand = "JeniCare", category = "sunscreen", price = 129f, currency = "SAR",
-                        matchScore = 0.93f, reason = "UV protection", reasonAr = "حماية فائقة من أشعة الشمس"
-                    )
-                )
-                SkinMetric.Type.PIGMENTATION -> products.add(
-                    ProductRecommendation(
-                        id = "p5", name = "Vitamin C Brightening Serum", nameAr = "سيروم فيتامين سي المفتح",
-                        brand = "JeniCare", category = "serum", price = 199f, currency = "SAR",
-                        matchScore = 0.91f, reason = "Brightening", reasonAr = "تفتيح وتوحيد لون البشرة"
-                    )
-                )
-                SkinMetric.Type.ACNE -> products.add(
-                    ProductRecommendation(
-                        id = "p6", name = "Tea Tree Oil Gel", nameAr = "جل شجرة الشاي",
-                        brand = "JeniCare", category = "treatment", price = 99f, currency = "SAR",
-                        matchScore = 0.88f, reason = "Acne treatment", reasonAr = "علاج حب الشباب والالتهابات"
-                    )
-                )
-                SkinMetric.Type.DARK_CIRCLES -> products.add(
-                    ProductRecommendation(
-                        id = "p7", name = "Eye Cream with Caffeine", nameAr = "كريم العين بالكافيين",
-                        brand = "JeniCare", category = "eye_care", price = 159f, currency = "SAR",
-                        matchScore = 0.89f, reason = "Dark circle reduction", reasonAr = "تقليل الهالات الداكنة حول العين"
-                    )
-                )
-                SkinMetric.Type.COLLAGEN -> products.add(
-                    ProductRecommendation(
-                        id = "p8", name = "Peptide Complex Serum", nameAr = "سيروم الببتيدات المعقدة",
-                        brand = "JeniCare", category = "serum", price = 279f, currency = "SAR",
-                        matchScore = 0.87f, reason = "Collagen boost", reasonAr = "تحفيز إنتاج الكولاجين وشد البشرة"
-                    )
-                )
-                else -> products.add(
-                    ProductRecommendation(
-                        id = "p_def", name = "Daily Moisturizer", nameAr = "مرطب يومي متعدد الفوائد",
-                        brand = "JeniCare", category = "moisturizer", price = 139f, currency = "SAR",
-                        matchScore = 0.80f, reason = "Daily care", reasonAr = "عناية يومية شاملة للبشرة"
-                    )
-                )
+            val matched = knowledge?.products
+                ?.filter { type.name in it.bestForMetrics }
+                ?.maxByOrNull { it.matchScore }
+            if (matched != null) {
+                products.add(ProductRecommendation(
+                    id = matched.id,
+                    name = matched.name,
+                    nameAr = matched.nameAr,
+                    brand = matched.brand,
+                    category = matched.category,
+                    price = matched.price,
+                    currency = matched.currency,
+                    matchScore = matched.matchScore,
+                    reason = matched.reason,
+                    reasonAr = matched.reasonAr
+                ))
+            } else {
+                products.add(fallbackProduct(type))
             }
         }
 
         return products.sortedByDescending { it.matchScore }
     }
 
-    private fun getDetailsForMetric(type: SkinMetric.Type, score: Float, severity: MetricSeverity): String {
+    private fun getDetailsForMetric(type: SkinMetric.Type, score: Float, severity: MetricSeverity, knowledge: com.ebtikar.skinanalyzer.data.knowledge.SkinKnowledgeBase?): String {
+        val metricKey = type.name
+        val description = knowledge?.metrics?.get(metricKey)?.descriptions?.get(severity.name)
+        if (!description.isNullOrBlank()) return description
+
         return when (type) {
             SkinMetric.Type.MOISTURE -> when (severity) {
                 MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "مستوى الرطوبة مثالي — البشرة مرطبة بشكل كافٍ"
@@ -278,11 +232,6 @@ class MockAnalysisEngine @Inject constructor() {
                 MetricSeverity.FAIR -> "بثور خفيفة متفرقة"
                 else -> "حب شباب نشط والتهابات واضحة"
             }
-            SkinMetric.Type.COLLAGEN -> when (severity) {
-                MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "مرونة عالية — كولاجين كثيف"
-                MetricSeverity.FAIR -> "مرونة متوسطة — بداية فقدان الكولاجين"
-                else -> "فقدان ملحوظ في المرونة والكولاجين"
-            }
             SkinMetric.Type.SKIN_TONE -> when (severity) {
                 MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لون بشرة متجانس ومشرق"
                 MetricSeverity.FAIR -> "اختلافات طفيفة في اللون"
@@ -293,13 +242,32 @@ class MockAnalysisEngine @Inject constructor() {
                 MetricSeverity.FAIR -> "حساسية خفيفة لبعض المكونات"
                 else -> "بشرة شديدة الحساسية — استخدمي منتجات لطيفة"
             }
+            SkinMetric.Type.ROSACEA -> when (severity) {
+                MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لا توجد علامات وردية — بشرة صافية"
+                MetricSeverity.FAIR -> "احمرار خفيف قد يكون بداية وردية"
+                else -> "علامات وردية واضحة — التهاب واحمرار مزمن"
+            }
+            SkinMetric.Type.MELASMA -> when (severity) {
+                MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لا توجد علامات كلف — تصبغ موحد"
+                MetricSeverity.FAIR -> "تصبغ خفيف في بعض المناطق"
+                else -> "كلف عميق واسع الانتشار — يحتاج علاج مكثف"
+            }
         }
     }
 
-    private fun getRecommendationsForMetric(type: SkinMetric.Type, score: Float, severity: MetricSeverity): List<String> {
+    private fun getRecommendationsForMetric(type: SkinMetric.Type, severity: MetricSeverity, knowledge: com.ebtikar.skinanalyzer.data.knowledge.SkinKnowledgeBase?): List<String> {
         if (severity == MetricSeverity.EXCELLENT || severity == MetricSeverity.GOOD) {
             return listOf("حافظي على روتينك الحالي — النتائج ممتازة")
         }
+
+        val metricKey = type.name
+        val tips = knowledge?.metrics?.get(metricKey)?.tipsAr
+        if (!tips.isNullOrEmpty()) {
+            return tips.take(3).ifEmpty {
+                listOf("حافظي على روتينك الحالي — النتائج ممتازة")
+            }
+        }
+
         return when (type) {
             SkinMetric.Type.MOISTURE -> listOf(
                 "استخدمي سيروم حمض الهيالورونيك صباحاً ومساءً",
@@ -356,11 +324,6 @@ class MockAnalysisEngine @Inject constructor() {
                 "تجنبي لمس الوجه وتغيير أغطية الوسائد أسبوعياً",
                 "راجعي طبيب جلدية إذا استمر الانتشار"
             )
-            SkinMetric.Type.COLLAGEN -> listOf(
-                "سيروم الببتيدات + فيتامين سي يومياً",
-                "تناولي مكملات الكولاجين البحرية",
-                "فكري في علاج microneedling مع مختص"
-            )
             SkinMetric.Type.SKIN_TONE -> listOf(
                 "سيروم فيتامين سي 15-20% صباحاً",
                 "تقشير خفيف بحمض اللاكتيك أسبوعياً",
@@ -371,15 +334,96 @@ class MockAnalysisEngine @Inject constructor() {
                 "اختبري أي منتج جديد على منطقة صغيرة أولاً",
                 "استخدمي كريم حاجز يحتوي على سيراميد"
             )
+            SkinMetric.Type.ROSACEA -> listOf(
+                "تجنبي الأطعمة الحارة والمشروبات الساخنة التي تزيد الوردية",
+                "استخدمي واقي شمس معدني SPF 50+ يومياً",
+                "طبقي سيروم النياسيناميد لتهدئة الاحمرار"
+            )
+            SkinMetric.Type.MELASMA -> listOf(
+                "واقي شمس صارم SPF 50+ كل ساعتين — الكلف يتفاقم مع الشمس",
+                "استخدمي كريم تفتيح يحتوي على الأربوتين أو حمض الكوجيك",
+                "فكري في علاجات التقشير الكيميائي أو الليزر مع طبيب جلدية"
+            )
         }
+    }
+
+    private fun fallbackTip(type: SkinMetric.Type): String = when (type) {
+        SkinMetric.Type.MOISTURE -> "اشربي كمية كافية من الماء يومياً (8 أكواب) واستخدمي مرطباً يحتوي على حمض الهيالورونيك"
+        SkinMetric.Type.PORES -> "استخدمي غسولاً يحتوي على حمض الساليسيليك لتنظيف المسام بعمق مرتين أسبوعياً"
+        SkinMetric.Type.SEBUM -> "تجنبي المنتجات الدهنية واستخدمي سيروم النياسيناميد للتحكم في الإفرازات الدهنية"
+        SkinMetric.Type.WRINKLES -> "واظبي على استخدام كريم مضاد للتجاعيد يحتوي على الريتينول ليلاً وواقي شمس نهاراً"
+        SkinMetric.Type.TEXTURE -> "قشري بشرتك بلطف مرة إلى مرتين أسبوعياً باستخدام مقشر كيميائي يحتوي على AHA"
+        SkinMetric.Type.UV_SPOTS -> "استخدمي واقي شمس SPF 50+ يومياً حتى في الأيام الغائمة وأعيدي وضعه كل ساعتين"
+        SkinMetric.Type.VASCULAR -> "تجنبي الماء الساخن على الوجه واستخدمي منتجات مهدئة تحتوي على Centella Asiatica"
+        SkinMetric.Type.PIGMENTATION -> "استخدمي سيروم فيتامين سي صباحاً وواقي شمس باستمرار لتوحيد لون البشرة"
+        SkinMetric.Type.DARK_CIRCLES -> "احصلي على نوم كافٍ (7-8 ساعات) واستخدمي كريم عين يحتوي على الكافيين"
+        SkinMetric.Type.BLACKHEADS -> "استخدمي ماسك الطين الأسبوعي ومنتجات BHA لتنظيف المسام من الرؤوس السوداء"
+        SkinMetric.Type.ACNE -> "تجنبي لمس الوجه واستخدمي منتجات خالية من الزيوت وعلاج موضعي بحمض الأزيلايك"
+        SkinMetric.Type.SKIN_TONE -> "واظبي على روتين توحيد اللون مع سيروم الأربوتين وفيتامين سي صباحاً"
+        SkinMetric.Type.SENSITIVITY -> "استخدمي منتجات خالية من العطور والكحول واختبري أي منتج جديد على منطقة صغيرة أولاً"
+        SkinMetric.Type.ROSACEA -> "الوردية تحتاج عناية خاصة — تجنبي المهيجات الحرارية واستخدمي منتجات مهدئة تحتوي على النياسيناميد والأزولين"
+        SkinMetric.Type.MELASMA -> "الكلف العميق يحتاج إلى واقي شمس صارم SPF 50+ يومياً وعلاج موضعي بمثبطات التيروزيناز مثل الأربوتين"
+    }
+
+    private fun fallbackProduct(type: SkinMetric.Type): ProductRecommendation = when (type) {
+        SkinMetric.Type.MOISTURE -> ProductRecommendation(
+            id = "p1", name = "Hyaluronic Acid Serum", nameAr = "سيروم حمض الهيالورونيك",
+                    brand = "JeniCare", category = "serum", price = 189f, currency = "ILS",
+            matchScore = 0.95f, reason = "Deep hydration", reasonAr = "ترطيب عميق للبشرة الجافة"
+        )
+        SkinMetric.Type.PORES -> ProductRecommendation(
+            id = "p2", name = "BHA Pore Minimizer", nameAr = "غسول تصغير المسام",
+            brand = "JeniCare", category = "cleanser", price = 149f, currency = "ILS",
+            matchScore = 0.92f, reason = "Pore cleansing", reasonAr = "تنظيف عميق وتقليص المسام"
+        )
+        SkinMetric.Type.WRINKLES -> ProductRecommendation(
+            id = "p3", name = "Retinol Night Cream", nameAr = "كريم الريتينول الليلي",
+            brand = "JeniCare", category = "cream", price = 249f, currency = "ILS",
+            matchScore = 0.90f, reason = "Anti-aging", reasonAr = "مكافحة التجاعيد وشد البشرة"
+        )
+        SkinMetric.Type.UV_SPOTS -> ProductRecommendation(
+            id = "p4", name = "SPF 50+ Sunscreen", nameAr = "واقي شمس SPF 50+",
+            brand = "JeniCare", category = "sunscreen", price = 129f, currency = "ILS",
+            matchScore = 0.93f, reason = "UV protection", reasonAr = "حماية فائقة من أشعة الشمس"
+        )
+        SkinMetric.Type.PIGMENTATION -> ProductRecommendation(
+            id = "p5", name = "Vitamin C Brightening Serum", nameAr = "سيروم فيتامين سي المفتح",
+            brand = "JeniCare", category = "serum", price = 199f, currency = "ILS",
+            matchScore = 0.91f, reason = "Brightening", reasonAr = "تفتيح وتوحيد لون البشرة"
+        )
+        SkinMetric.Type.ACNE -> ProductRecommendation(
+            id = "p6", name = "Tea Tree Oil Gel", nameAr = "جل شجرة الشاي",
+            brand = "JeniCare", category = "treatment", price = 99f, currency = "ILS",
+            matchScore = 0.88f, reason = "Acne treatment", reasonAr = "علاج حب الشباب والالتهابات"
+        )
+        SkinMetric.Type.DARK_CIRCLES -> ProductRecommendation(
+            id = "p7", name = "Eye Cream with Caffeine", nameAr = "كريم العين بالكافيين",
+            brand = "JeniCare", category = "eye_care", price = 159f, currency = "ILS",
+            matchScore = 0.89f, reason = "Dark circle reduction", reasonAr = "تقليل الهالات الداكنة حول العين"
+        )
+        SkinMetric.Type.ROSACEA -> ProductRecommendation(
+            id = "p10", name = "Niacinamide & Zinc Serum", nameAr = "سيروم النياسيناميد والزنك",
+            brand = "JeniCare", category = "serum", price = 179f, currency = "ILS",
+            matchScore = 0.89f, reason = "Soothing redness", reasonAr = "تهدئة الاحمرار وعلاج الوردية"
+        )
+        SkinMetric.Type.MELASMA -> ProductRecommendation(
+            id = "p11", name = "Arbutin Dark Spot Corrector", nameAr = "مصحح البقع الداكنة بالأربوتين",
+            brand = "JeniCare", category = "treatment", price = 209f, currency = "ILS",
+            matchScore = 0.88f, reason = "Melasma treatment", reasonAr = "علاج الكلف والتصبغات العميقة"
+        )
+        else -> ProductRecommendation(
+            id = "p_def", name = "Daily Moisturizer", nameAr = "مرطب يومي متعدد الفوائد",
+            brand = "JeniCare", category = "moisturizer", price = 139f, currency = "ILS",
+            matchScore = 0.80f, reason = "Daily care", reasonAr = "عناية يومية شاملة للبشرة"
+        )
     }
 
     private fun classifyMockScore(score: Float): MetricSeverity {
         return when {
-            score >= 85f -> MetricSeverity.EXCELLENT
-            score >= 70f -> MetricSeverity.GOOD
-            score >= 55f -> MetricSeverity.FAIR
-            score >= 35f -> MetricSeverity.POOR
+            score >= 72f -> MetricSeverity.EXCELLENT
+            score >= 55f -> MetricSeverity.GOOD
+            score >= 35f -> MetricSeverity.FAIR
+            score >= 20f -> MetricSeverity.POOR
             else -> MetricSeverity.CRITICAL
         }
     }
@@ -396,8 +440,9 @@ class MockAnalysisEngine @Inject constructor() {
         SkinMetric.Type.DARK_CIRCLES -> "الهالات الداكنة"
         SkinMetric.Type.BLACKHEADS -> "الرؤوس السوداء"
         SkinMetric.Type.ACNE -> "حب الشباب"
-        SkinMetric.Type.COLLAGEN -> "الكولاجين"
         SkinMetric.Type.SKIN_TONE -> "لون البشرة"
         SkinMetric.Type.SENSITIVITY -> "الحساسية"
+        SkinMetric.Type.ROSACEA -> "الوردية"
+        SkinMetric.Type.MELASMA -> "الكلف"
     }
 }

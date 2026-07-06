@@ -50,7 +50,7 @@ object ImageUtils {
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 
-    fun saveBitmap(bitmap: Bitmap, file: File, quality: Int = 95): Boolean {
+    fun saveBitmap(bitmap: Bitmap, file: File, quality: Int = 100): Boolean {
         return try {
             FileOutputStream(file).use { fos ->
                 bitmap.compress(Bitmap.CompressFormat.JPEG, quality, fos)
@@ -69,6 +69,10 @@ object ImageUtils {
     }
 
     fun applySpectralFilter(source: Bitmap, spectrumName: String): Bitmap {
+        if (source.isRecycled) {
+            Timber.w("applySpectralFilter: source bitmap recycled for $spectrumName — returning blank")
+            return Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+        }
         val w = source.width
         val h = source.height
         val result = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
@@ -77,13 +81,16 @@ object ImageUtils {
 
         when (spectrumName) {
             "WHITE" -> {
+                val exposure = 1.12f
+                val contrast = 1.08f
+                val mid = 128f
                 for (i in pixels.indices) {
                     val r = (pixels[i] shr 16) and 0xFF
                     val g = (pixels[i] shr 8) and 0xFF
                     val b = pixels[i] and 0xFF
-                    val nr = min(255, (r * 1.05f).toInt())
-                    val ng = min(255, (g * 1.05f).toInt())
-                    val nb = min(255, (b * 1.08f).toInt())
+                    val nr = ((r - mid) * contrast + mid * exposure).toInt().coerceIn(0, 255)
+                    val ng = ((g - mid) * contrast + mid * exposure).toInt().coerceIn(0, 255)
+                    val nb = ((b - mid) * contrast + mid * exposure).toInt().coerceIn(0, 255)
                     pixels[i] = (0xFF shl 24) or (nr shl 16) or (ng shl 8) or nb
                 }
             }
@@ -92,13 +99,13 @@ object ImageUtils {
                     val r = (pixels[i] shr 16) and 0xFF
                     val g = (pixels[i] shr 8) and 0xFF
                     val b = pixels[i] and 0xFF
-                    val nr = min(255, (r * 0.3f + 30).toInt())
-                    val ng = min(255, (g * 0.4f + 20).toInt())
-                    val nb = min(255, (b * 1.6f).toInt())
-                    val gray = ((nr + ng + nb) / 3)
-                    val contrast = ((gray - 128) * 1.8f + 128).toInt().coerceIn(0, 255)
-                    val cb = min(255, (contrast * 1.3f).toInt())
-                    pixels[i] = (0xFF shl 24) or (contrast shl 16) or (contrast shl 8) or cb
+                    val lum = r * 0.299f + g * 0.587f + b * 0.114f
+                    val contrast = ((lum - 128f) * 1.6f + 128f).coerceIn(0f, 255f)
+                    val nr = (lum * 0.35f + contrast * 0.25f + 25f).toInt().coerceIn(0, 255)
+                    val ng = (lum * 0.30f + contrast * 0.20f + 20f).toInt().coerceIn(0, 255)
+                    val nb = (lum * 0.25f + b * 0.60f + 60f).toInt().coerceIn(0, 255)
+                    val porphyrinBoost = if (r > g + 20 && r > b + 20) 60 else 0
+                    pixels[i] = (0xFF shl 24) or ((nr + porphyrinBoost).coerceIn(0, 255) shl 16) or (ng shl 8) or nb
                 }
             }
             "POL_P" -> {
@@ -106,12 +113,14 @@ object ImageUtils {
                     val r = (pixels[i] shr 16) and 0xFF
                     val g = (pixels[i] shr 8) and 0xFF
                     val b = pixels[i] and 0xFF
-                    val gray = ((r + g + b) / 3)
-                    val contrast = ((gray - 128) * 1.5f + 128).toInt().coerceIn(0, 255)
-                    val nr = min(255, (contrast * 0.7f + r * 0.3f).toInt())
-                    val ng = min(255, (contrast * 0.5f + g * 0.5f).toInt())
-                    val nb = min(255, (contrast * 0.9f + b * 0.1f).toInt())
-                    pixels[i] = (0xFF shl 24) or (nr shl 16) or (ng shl 8) or nb
+                    val bright = r * 0.299f + g * 0.587f + b * 0.114f
+                    val surfaceGlare = if (bright > 200f) (bright - 200f) / 55f else 0f
+                    val deepTissue = ((bright - 128f) * 1.3f + 128f).coerceIn(0f, 255f)
+                    val nr = (r * 0.85f + deepTissue * 0.40f).toInt().coerceIn(0, 255)
+                    val ng = (g * 0.35f + deepTissue * 0.25f).toInt().coerceIn(0, 255)
+                    val nb = (b * 0.30f + deepTissue * 0.30f).toInt().coerceIn(0, 255)
+                    val redBoost = if (r > g * 1.3f && r > b * 1.3f) 30 else 0
+                    pixels[i] = (0xFF shl 24) or ((nr + redBoost).coerceIn(0, 255) shl 16) or (ng shl 8) or nb
                 }
             }
             "POL_N" -> {
@@ -119,11 +128,11 @@ object ImageUtils {
                     val r = (pixels[i] shr 16) and 0xFF
                     val g = (pixels[i] shr 8) and 0xFF
                     val b = pixels[i] and 0xFF
-                    val bright = (r * 0.299f + g * 0.587f + b * 0.114f)
-                    val sharpen = (bright * 1.4f - 50f).coerceIn(0f, 255f)
-                    val nr = min(255, (r * 0.4f + sharpen * 0.6f).toInt())
-                    val ng = min(255, (g * 0.3f + sharpen * 0.7f).toInt())
-                    val nb = min(255, (b * 0.3f + sharpen * 0.7f).toInt())
+                    val bright = r * 0.299f + g * 0.587f + b * 0.114f
+                    val textureDetail = (bright * 0.3f + (bright - 128f) * 1.4f + 128f).coerceIn(0f, 255f)
+                    val nr = (textureDetail * 0.30f + r * 0.25f).toInt().coerceIn(0, 255)
+                    val ng = (textureDetail * 0.35f + g * 0.25f).toInt().coerceIn(0, 255)
+                    val nb = (textureDetail * 0.35f + b * 0.25f).toInt().coerceIn(0, 255)
                     pixels[i] = (0xFF shl 24) or (nr shl 16) or (ng shl 8) or nb
                 }
             }
@@ -132,12 +141,12 @@ object ImageUtils {
                     val r = (pixels[i] shr 16) and 0xFF
                     val g = (pixels[i] shr 8) and 0xFF
                     val b = pixels[i] and 0xFF
-                    val nr = min(255, (r * 0.5f + 40).toInt())
-                    val ng = min(255, (g * 1.4f).toInt())
-                    val nb = min(255, (b * 1.5f).toInt())
-                    val gray = ((nr + ng + nb) / 3)
-                    val contrast = ((gray - 128) * 1.6f + 128).toInt().coerceIn(0, 255)
-                    pixels[i] = (0xFF shl 24) or (nr shl 16) or (contrast shl 8) or nb
+                    val lum = r * 0.299f + g * 0.587f + b * 0.114f
+                    val nr = (lum * 0.20f + 15f).toInt().coerceIn(0, 255)
+                    val ng = (lum * 0.50f + g * 0.30f + 20f).toInt().coerceIn(0, 255)
+                    val nb = (lum * 0.30f + b * 0.80f + 50f).toInt().coerceIn(0, 255)
+                    val greenFluorescence = if (g > r * 1.5f && g > b * 1.2f) 40 else 0
+                    pixels[i] = (0xFF shl 24) or (nr shl 16) or ((ng + greenFluorescence).coerceIn(0, 255) shl 8) or nb
                 }
             }
             "BLUE" -> {

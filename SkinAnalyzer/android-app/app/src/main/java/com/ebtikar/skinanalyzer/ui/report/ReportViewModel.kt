@@ -260,8 +260,9 @@ class ReportViewModel @Inject constructor(
         SkinMetric.Type.DARK_CIRCLES -> "الهالات"
         SkinMetric.Type.BLACKHEADS -> "الرؤوس"
         SkinMetric.Type.ACNE -> "الحب"
-        SkinMetric.Type.COLLAGEN -> "الكولاجين"
         SkinMetric.Type.SKIN_TONE -> "اللون"
         SkinMetric.Type.SENSITIVITY -> "الحساسية"
+        SkinMetric.Type.ROSACEA -> "الوردية"
+        SkinMetric.Type.MELASMA -> "الكلف"
     }
 }

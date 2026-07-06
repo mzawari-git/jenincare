@@ -3,11 +3,16 @@ package com.ebtikar.skinanalyzer.data.repository
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import androidx.core.graphics.blue
-import androidx.core.graphics.green
-import androidx.core.graphics.red
+import com.ebtikar.skinanalyzer.ai.AdvancedSkinAnalyzer
+import com.ebtikar.skinanalyzer.ai.CVUtils
+import com.ebtikar.skinanalyzer.ai.FaceLandmarkDetector
+import com.ebtikar.skinanalyzer.ai.FeatureExtractor
+import com.ebtikar.skinanalyzer.ai.LocalTFLiteProvider
+import com.ebtikar.skinanalyzer.ai.OpenCVSkinAnalyzer
 import com.ebtikar.skinanalyzer.camera.FrameCapturePipeline
 import com.ebtikar.skinanalyzer.core.provider.AnalysisProviderManager
+import com.ebtikar.skinanalyzer.data.knowledge.MetricKnowledge
+import com.ebtikar.skinanalyzer.data.knowledge.SkinKnowledgeRepository
 import com.ebtikar.skinanalyzer.data.local.SkinReportDao
 import com.ebtikar.skinanalyzer.data.local.SkinReportEntity
 import com.ebtikar.skinanalyzer.data.remote.CloudUploadService
@@ -20,17 +25,20 @@ import com.ebtikar.skinanalyzer.model.SkinAnalysisReport
 import com.ebtikar.skinanalyzer.model.SkinMetric
 import com.ebtikar.skinanalyzer.model.SkinProfile
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.math.sqrt
 
 @Singleton
 class SkinAnalysisRepositoryImpl @Inject constructor(
@@ -39,7 +47,13 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
     private val providerManager: AnalysisProviderManager,
     private val reportDao: SkinReportDao,
     private val mockEngine: MockAnalysisEngine,
-    private val cloudUploadService: CloudUploadService
+    private val cloudUploadService: CloudUploadService,
+    private val featureExtractor: FeatureExtractor,
+    private val openCVSkinAnalyzer: OpenCVSkinAnalyzer,
+    private val advancedSkinAnalyzer: AdvancedSkinAnalyzer,
+    private val localTFLiteProvider: LocalTFLiteProvider,
+    private val knowledgeRepository: SkinKnowledgeRepository,
+    private val faceLandmarkDetector: FaceLandmarkDetector
 ) : SkinAnalysisRepository {
 
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
@@ -54,6 +68,10 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
     ): Result<Map<LightSpectrum, File>> {
         return try {
             _analysisState.value = AnalysisState.Initializing
+
+            CoroutineScope(Dispatchers.IO).launch {
+                knowledgeRepository.refreshFromRemote()
+            }
 
             val spectra = LightSpectrum.getSpectraForDiagnosisMode(diagnosisMode)
             val total = spectra.size
@@ -90,7 +108,8 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                 _analysisState.value = AnalysisState.Error(result.exceptionOrNull()?.message ?: "Capture failed")
                 result
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
+            Timber.e(e, "startAnalysis failed")
             _analysisState.value = AnalysisState.Error(e.message ?: "Unknown error")
             Result.failure(e)
         }
@@ -98,228 +117,439 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
 
     override suspend fun analyzeImages(frames: Map<LightSpectrum, File>, mode: String): Result<SkinAnalysisReport> {
         return try {
+            val analysisFrames = frames.mapValues { (_, file) ->
+                val rawFile = File(file.parentFile, file.nameWithoutExtension + "_raw.jpg")
+                if (rawFile.exists()) rawFile else file
+            }
+
+            val faceCheckOrder = listOf(LightSpectrum.WHITE, LightSpectrum.POL_P, LightSpectrum.UV365)
+            var faceDetected = false
+            for (spectrum in faceCheckOrder) {
+                val checkFile = analysisFrames[spectrum] ?: continue
+                if (!checkFile.exists()) continue
+                val checkBitmap = CVUtils.decodeSampled(checkFile, 640) ?: continue
+                val faces = faceLandmarkDetector.detectFaces(checkBitmap)
+                checkBitmap.recycle()
+                if (faces.isNotEmpty()) {
+                    Timber.i("Face confirmed in $spectrum frame: ${faces.size} face(s)")
+                    faceDetected = true
+                    break
+                }
+                Timber.d("No face in $spectrum frame, trying next spectrum")
+            }
+            if (!faceDetected) {
+                Timber.w("No face detected across any spectrum frame in post-capture check")
+                _analysisState.value = AnalysisState.Error("لم يتم الكشف عن الوجه في الصور الملتقطة. تأكد من وضوح الوجه أمام الكاميرا وأعد المحاولة.")
+                return Result.failure(Exception("No face detected in any captured frame"))
+            }
+
             val useCloud = mode == Constants.ANALYSIS_CLOUD || mode == Constants.ANALYSIS_AUTO
             val useLocal = mode == Constants.ANALYSIS_LOCAL || mode == Constants.ANALYSIS_AUTO
 
             if (useCloud) {
-                val apiResult = cloudUploadService.uploadAndAnalyze(frames)
+                val apiResult = cloudUploadService.uploadAndAnalyze(analysisFrames)
                 if (apiResult.isSuccess) {
                     _analysisState.value = AnalysisState.Analyzing("Cloud_API")
-                    Timber.i("Cloud API analysis successful")
+                    val cloudReport = apiResult.getOrNull()
+                    Timber.i("Engine used: Cloud_API — providerName=${cloudReport?.providerName}, metrics=${cloudReport?.metrics?.size}, confidence=${cloudReport?.confidence}")
                     return apiResult
                 }
                 if (mode == Constants.ANALYSIS_CLOUD) {
                     return Result.failure(apiResult.exceptionOrNull() ?: Exception("Cloud analysis failed"))
                 }
-                Timber.w("Cloud API failed, falling back to local pixel analysis: ${apiResult.exceptionOrNull()?.message}")
+                Timber.w("Cloud API failed, falling back to local analysis: ${apiResult.exceptionOrNull()?.message}")
             }
 
-            _analysisState.value = AnalysisState.Analyzing("Pixel_Analysis_Engine")
-
-            val pixelMetrics = performPixelAnalysis(frames)
-
-            if (pixelMetrics.isEmpty()) {
-                val mockResult = mockEngine.generateMockResult("Fallback_Mock")
-                val metrics = SkinMetric.ALL_TYPES.map { type ->
-                    mockResult.metrics[type] ?: SkinMetric(type = type, score = 0f, severity = MetricSeverity.CRITICAL, details = "No data")
+            if (useLocal) {
+                _analysisState.value = AnalysisState.Analyzing("Local_TFLite")
+                val localMetrics = performLocalTFLiteAnalysis(analysisFrames)
+                if (localMetrics.isNotEmpty()) {
+                    val crossValidated = localMetrics.toMutableMap()
+                    validateCrossSpectrum(crossValidated)
+                    val metricsList = SkinMetric.ALL_TYPES.mapNotNull { type ->
+                        crossValidated[type]
+                    }
+                    val metricsMap = metricsList.associateBy { it.type }
+                    val expertTips = mockEngine.generateExpertTips(metricsMap)
+                    val products = mockEngine.generateProductRecommendations(metricsMap)
+                    val skinProfile = mockEngine.generateSkinProfile(metricsMap)
+                    val report = SkinAnalysisReport(
+                        providerName = "Local_TFLite_Engine",
+                        overallScore = metricsList.map { it.score }.average().toFloat(),
+                        metrics = metricsList, executionTimeMs = 1500,
+                        aiAnalysisTextAr = generateAIAnalysisText(metricsList, skinProfile),
+                        expertTipsAr = expertTips, productRecommendations = products,
+                        skinProfile = skinProfile, confidence = 0.88f
+                    )
+                    Timber.i("Engine used: Local_TFLite_Engine — metrics=${metricsList.size}, overallScore=${report.overallScore}")
+                    return Result.success(report)
                 }
-                val metricsMap = metrics.associateBy { it.type }
-                val expertTips = mockEngine.generateExpertTips(metricsMap)
-                val products = mockEngine.generateProductRecommendations(metricsMap)
-                val skinProfile = mockEngine.generateSkinProfile(metricsMap)
-                val report = SkinAnalysisReport(
-                    providerName = mockResult.providerName,
-                    overallScore = metrics.map { it.score }.average().toFloat(),
-                    metrics = metrics, executionTimeMs = mockResult.executionTimeMs,
-                    aiAnalysisTextAr = generateAIAnalysisText(metrics, skinProfile),
-                    expertTipsAr = expertTips, productRecommendations = products,
-                    skinProfile = skinProfile, confidence = mockResult.confidence
-                )
-                Result.success(report)
-            } else {
-                val metricsList = SkinMetric.ALL_TYPES.map { type ->
-                    pixelMetrics[type] ?: SkinMetric(type = type, score = 60f, severity = MetricSeverity.FAIR, details = "No spectral data")
+                Timber.w("TFLite analysis returned no metrics, falling back to advanced analysis")
+            }
+
+            _analysisState.value = AnalysisState.Analyzing("Advanced_Analysis_Engine")
+
+            Timber.i("analysis: frames.size=${analysisFrames.size}, existingFiles=${analysisFrames.count { it.value.exists() }}")
+            analysisFrames.forEach { (s, f) -> Timber.d("  frame ${s.name}: exists=${f.exists()}, size=${f.length()}") }
+
+            val advancedMetrics = try {
+                performAdvancedAnalysis(analysisFrames)
+            } catch (e: Throwable) {
+                Timber.e(e, "Advanced analysis engine failed completely")
+                emptyMap()
+            }
+            Timber.i("Advanced analysis returned ${advancedMetrics.size} metric types: ${advancedMetrics.keys.joinToString { it.name }}")
+            if (advancedMetrics.size >= 5) {
+                val crossValidated = advancedMetrics.toMutableMap()
+                validateCrossSpectrum(crossValidated)
+                val metricsList = SkinMetric.ALL_TYPES.mapNotNull { type ->
+                    crossValidated[type]
                 }
                 val metricsMap = metricsList.associateBy { it.type }
                 val expertTips = mockEngine.generateExpertTips(metricsMap)
                 val products = mockEngine.generateProductRecommendations(metricsMap)
                 val skinProfile = mockEngine.generateSkinProfile(metricsMap)
                 val report = SkinAnalysisReport(
-                    providerName = "Pixel_Analysis_Engine",
+                    providerName = "Advanced_MediaPipe_Engine",
                     overallScore = metricsList.map { it.score }.average().toFloat(),
-                    metrics = metricsList, executionTimeMs = 800,
+                    metrics = metricsList, executionTimeMs = 1200,
+                    aiAnalysisTextAr = generateAIAnalysisText(metricsList, skinProfile),
+                    expertTipsAr = expertTips, productRecommendations = products,
+                    skinProfile = skinProfile, confidence = 0.92f
+                )
+                Timber.i("Engine used: Advanced_MediaPipe_Engine — metrics=${metricsList.size}, overallScore=${report.overallScore}")
+                return Result.success(report)
+            }
+
+            _analysisState.value = AnalysisState.Analyzing("CV_Analysis_Engine")
+
+            val whiteFile = analysisFrames.entries.find { it.key == LightSpectrum.WHITE }?.value
+            Timber.i("OpenCV analysis: whiteFile=${whiteFile?.name}, exists=${whiteFile?.exists()}")
+            val pixelMetrics = try {
+                withContext(Dispatchers.Default) {
+                    openCVSkinAnalyzer.analyze(analysisFrames, whiteFile)
+                }
+            } catch (e: Throwable) {
+                Timber.e(e, "OpenCV analysis engine failed completely")
+                emptyMap()
+            }
+            Timber.i("OpenCV analysis returned ${pixelMetrics.size} metric types: ${pixelMetrics.keys.joinToString { it.name }}")
+
+            if (pixelMetrics.size >= 5) {
+                val crossValidated = pixelMetrics.toMutableMap()
+                validateCrossSpectrum(crossValidated)
+                val metricsList = SkinMetric.ALL_TYPES.mapNotNull { type ->
+                    crossValidated[type]
+                }
+                val metricsMap = metricsList.associateBy { it.type }
+                val expertTips = mockEngine.generateExpertTips(metricsMap)
+                val products = mockEngine.generateProductRecommendations(metricsMap)
+                val skinProfile = mockEngine.generateSkinProfile(metricsMap)
+                val report = SkinAnalysisReport(
+                    providerName = "CV_Analysis_Engine",
+                    overallScore = metricsList.map { it.score }.average().toFloat(),
+                    metrics = metricsList, executionTimeMs = 1200,
                     aiAnalysisTextAr = generateAIAnalysisText(metricsList, skinProfile),
                     expertTipsAr = expertTips, productRecommendations = products,
                     skinProfile = skinProfile, confidence = 0.82f
                 )
+                Timber.i("Engine used: CV_Analysis_Engine — metrics=${metricsList.size}, overallScore=${report.overallScore}")
                 Result.success(report)
+            } else {
+                Timber.w("OpenCV analysis returned only ${pixelMetrics.size} metrics — insufficient for analysis")
+                _analysisState.value = AnalysisState.Error("لم يتمكن التحليل من استخراج بيانات كافية. تأكد من وجود الوجه بشكل واضح أمام الكاميرا وأعد المحاولة.")
+                return Result.failure(Exception("Insufficient metrics: only ${pixelMetrics.size} types extracted"))
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
+            Timber.e(e, "analyzeImages failed")
             _analysisState.value = AnalysisState.Error(e.message ?: "Analysis failed")
             Result.failure(e)
+        }
+    }
+
+    private fun validateCrossSpectrum(metrics: MutableMap<SkinMetric.Type, SkinMetric>) {
+        val uvSpots = metrics[SkinMetric.Type.UV_SPOTS]?.score ?: return
+        val pigmentation = metrics[SkinMetric.Type.PIGMENTATION]?.score ?: return
+        val vascular = metrics[SkinMetric.Type.VASCULAR]?.score ?: return
+        val sensitivity = metrics[SkinMetric.Type.SENSITIVITY]?.score ?: return
+        val rosacea = metrics[SkinMetric.Type.ROSACEA]?.score ?: return
+        val acne = metrics[SkinMetric.Type.ACNE]?.score ?: return
+        val blackheads = metrics[SkinMetric.Type.BLACKHEADS]?.score ?: return
+        val sebum = metrics[SkinMetric.Type.SEBUM]?.score ?: return
+        val moisture = metrics[SkinMetric.Type.MOISTURE]?.score ?: return
+        val wrinkles = metrics[SkinMetric.Type.WRINKLES]?.score ?: return
+
+        if (pigmentation > uvSpots + 15f && uvSpots < 85f) {
+            val adjusted = (uvSpots + pigmentation) / 2f
+            metrics[SkinMetric.Type.PIGMENTATION] = metrics[SkinMetric.Type.PIGMENTATION]!!.copy(score = adjusted, details = metrics[SkinMetric.Type.PIGMENTATION]!!.details + " | تم تعديله بناءً على تحليل UV")
+            metrics[SkinMetric.Type.UV_SPOTS] = metrics[SkinMetric.Type.UV_SPOTS]!!.copy(score = adjusted, details = metrics[SkinMetric.Type.UV_SPOTS]!!.details + " | تم تعديله بناءً على تحليل التصبغ")
+        }
+
+        val polAvg = (vascular + sensitivity + rosacea) / 3f
+        if (maxOf(vascular, sensitivity, rosacea) - minOf(vascular, sensitivity, rosacea) > 20f) {
+            val adjusted = polAvg
+            metrics[SkinMetric.Type.VASCULAR] = metrics[SkinMetric.Type.VASCULAR]!!.copy(score = adjusted, details = metrics[SkinMetric.Type.VASCULAR]!!.details + " | معدّل عبر المؤشرات")
+            metrics[SkinMetric.Type.SENSITIVITY] = metrics[SkinMetric.Type.SENSITIVITY]!!.copy(score = adjusted, details = metrics[SkinMetric.Type.SENSITIVITY]!!.details + " | معدّل عبر المؤشرات")
+            metrics[SkinMetric.Type.ROSACEA] = metrics[SkinMetric.Type.ROSACEA]!!.copy(score = adjusted, details = metrics[SkinMetric.Type.ROSACEA]!!.details + " | معدّل عبر المؤشرات")
+        }
+
+        if (sebum < 60f && (acne < 80f || blackheads < 80f)) {
+            if (acne > 70f && sebum > 30f) {
+                metrics[SkinMetric.Type.ACNE] = metrics[SkinMetric.Type.ACNE]!!.copy(score = (acne + (100f - sebum)) / 2f, details = metrics[SkinMetric.Type.ACNE]!!.details + " | تم تعديله بناءً على الدهون")
+                metrics[SkinMetric.Type.SEBUM] = metrics[SkinMetric.Type.SEBUM]!!.copy(score = (sebum + (100f - acne)) / 2f, details = metrics[SkinMetric.Type.SEBUM]!!.details + " | تم تعديله بناءً على حب الشباب")
+            }
+        }
+
+        if (moisture < 60f && wrinkles > 60f) {
+            val adjustedWrinkles = (wrinkles + (100f - moisture)) / 2f
+            metrics[SkinMetric.Type.WRINKLES] = metrics[SkinMetric.Type.WRINKLES]!!.copy(score = adjustedWrinkles, details = metrics[SkinMetric.Type.WRINKLES]!!.details + " | تم تعديله بناءً على الرطوبة")
         }
     }
 
     private fun generateAIAnalysisText(metrics: List<SkinMetric>, profile: SkinProfile): String {
         val score = metrics.map { it.score }.average().toFloat()
         val excellent = metrics.count { it.severity == MetricSeverity.EXCELLENT || it.severity == MetricSeverity.GOOD }
+        val fair = metrics.count { it.severity == MetricSeverity.FAIR }
         val needsAttention = metrics.count { it.severity == MetricSeverity.POOR || it.severity == MetricSeverity.CRITICAL }
         val topConcern = metrics.minByOrNull { it.score }
+        val knowledge = knowledgeRepository.getCachedKnowledge()
+
+        fun getMetricKnowledge(type: SkinMetric.Type): MetricKnowledge? =
+            knowledge.metrics[type.name]
+
+        fun getDescription(type: SkinMetric.Type, severity: MetricSeverity): String {
+            val desc = getMetricKnowledge(type)?.descriptions?.get(severity.name)
+            if (!desc.isNullOrBlank()) return desc
+            return when (type) {
+                SkinMetric.Type.MOISTURE -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "مستوى الرطوبة مثالي"; MetricSeverity.FAIR -> "رطوبة متوسطة"; else -> "جفاف واضح" }
+                SkinMetric.Type.PORES -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "المسام ضيقة ومنتظمة"; MetricSeverity.FAIR -> "بعض المسام الواسعة"; else -> "مسام واسعة" }
+                SkinMetric.Type.SEBUM -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "إفراز دهني متوازن"; MetricSeverity.FAIR -> "زيادة طفيفة"; else -> "إفراز دهني زائد" }
+                SkinMetric.Type.WRINKLES -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "خطوط دقيقة قليلة"; MetricSeverity.FAIR -> "خطوط تعبير واضحة"; else -> "تجاعيد عميقة" }
+                SkinMetric.Type.TEXTURE -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "ملمس ناعم ومتجانس"; MetricSeverity.FAIR -> "خشونة خفيفة"; else -> "ملمس خشن" }
+                SkinMetric.Type.UV_SPOTS -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لا توجد أضرار شمس"; MetricSeverity.FAIR -> "بقع شمس خفيفة"; else -> "أضرار شمس متقدمة" }
+                SkinMetric.Type.VASCULAR -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "دورة دموية صحية"; MetricSeverity.FAIR -> "احمرار خفيف"; else -> "احمرار واضح" }
+                SkinMetric.Type.PIGMENTATION -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لون بشرة موحد"; MetricSeverity.FAIR -> "تصبغات خفيفة"; else -> "تصبغات غامقة" }
+                SkinMetric.Type.DARK_CIRCLES -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "منطقة العين مشرقة"; MetricSeverity.FAIR -> "هالات خفيفة"; else -> "هالات داكنة" }
+                SkinMetric.Type.BLACKHEADS -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "مسام نظيفة"; MetricSeverity.FAIR -> "رؤوس سوداء خفيفة"; else -> "انتشار واسع" }
+                SkinMetric.Type.ACNE -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لا توجد بثور نشطة"; MetricSeverity.FAIR -> "بثور خفيفة"; else -> "حب شباب نشط" }
+                SkinMetric.Type.SKIN_TONE -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لون بشرة متجانس"; MetricSeverity.FAIR -> "اختلافات طفيفة"; else -> "عدم تجانس واضح" }
+                SkinMetric.Type.SENSITIVITY -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "بشرة غير حساسة"; MetricSeverity.FAIR -> "حساسية خفيفة"; else -> "بشرة شديدة الحساسية" }
+                SkinMetric.Type.ROSACEA -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لا توجد علامات وردية"; MetricSeverity.FAIR -> "احمرار خفيف"; else -> "علامات وردية واضحة" }
+                SkinMetric.Type.MELASMA -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لا توجد علامات كلف"; MetricSeverity.FAIR -> "تصبغ خفيف"; else -> "كلف عميق" }
+            }
+        }
+
+        fun getCauses(type: SkinMetric.Type): List<String> =
+            getMetricKnowledge(type)?.causesAr?.filter { it.isNotBlank() } ?: emptyList()
+
+        fun getTips(type: SkinMetric.Type): List<String> =
+            getMetricKnowledge(type)?.tipsAr?.filter { it.isNotBlank() } ?: emptyList()
+
+        fun getIngredients(type: SkinMetric.Type): List<String> =
+            getMetricKnowledge(type)?.ingredientsAr?.filter { it.isNotBlank() } ?: emptyList()
 
         val sb = StringBuilder()
         sb.append("تحليل شامل للبشرة — ")
         sb.append("نوع البشرة: ${profile.skinTypeAr}")
-        if (profile.ageEstimate > 0) sb.append("، العمر التقديري: ${profile.ageEstimate} سنة")
-        sb.append("。\n\n")
+        sb.append("\n\n")
 
         sb.append("النتيجة الإجمالية: ${"%.1f".format(score)}/100 — ")
         sb.append(when {
-            score >= 85f -> "حالة البشرة ممتازة بشكل عام"
-            score >= 70f -> "حالة البشرة جيدة مع بعض المؤشرات التي تحتاج متابعة"
-            score >= 55f -> "حالة البشرة متوسطة — هناك مجالات للتحسين"
+            score >= 72f -> "حالة البشرة ممتازة بشكل عام"
+            score >= 55f -> "حالة البشرة جيدة مع بعض المؤشرات التي تحتاج متابعة"
+            score >= 35f -> "حالة البشرة متوسطة — هناك مجالات للتحسين"
             else -> "البشرة تحتاج عناية مركزة في عدة مؤشرات"
         })
-        sb.append("。\n\n")
+        sb.append("\n\n")
 
         sb.append("المؤشرات الإيجابية: $excellent من ${metrics.size} مؤشر في الحالة الجيدة أو الممتازة")
+        sb.append("، والمتوسطة: $fair")
         if (needsAttention > 0) {
-            sb.append("。\n")
-            sb.append("المؤشرات التي تحتاج اهتمام: $needsAttention مؤشر")
+            sb.append("، والتي تحتاج اهتماماً: $needsAttention مؤشر")
             topConcern?.let {
-                sb.append("، أكثرها إلحاحاً: ${getArabicName(it.type)}")
+                sb.append(" (أكثرها إلحاحاً: ${getArabicName(it.type)})")
             }
+        }
+        sb.append("\n\n")
+
+        for (metric in metrics) {
+            sb.append("【${getArabicName(metric.type)}】— ${"%.0f".format(metric.score)}/100 (${metric.severity.displayAr})\n")
+            sb.append(getDescription(metric.type, metric.severity))
+            sb.append("\n")
+
+            if (metric.severity == MetricSeverity.POOR || metric.severity == MetricSeverity.CRITICAL) {
+                val causes = getCauses(metric.type)
+                if (causes.isNotEmpty()) {
+                    sb.append("الأسباب: ${causes.take(2).joinToString("، ")}")
+                    sb.append("\n")
+                }
+                val tips = getTips(metric.type)
+                if (tips.isNotEmpty()) {
+                    sb.append("نصائح: ${tips.take(2).joinToString("، ")}")
+                    sb.append("\n")
+                }
+                val ing = getIngredients(metric.type)
+                if (ing.isNotEmpty()) {
+                    sb.append("مكونات مفيدة: ${ing.take(3).joinToString("، ")}")
+                    sb.append("\n")
+                }
+            } else if (metric.severity == MetricSeverity.FAIR) {
+                val tips = getTips(metric.type)
+                if (tips.isNotEmpty()) {
+                    sb.append("نصيحة: ${tips.first()}")
+                    sb.append("\n")
+                }
+            }
+            sb.append("\n")
         }
 
         if (profile.primaryConcernsAr.isNotEmpty()) {
-            sb.append("。\n\n")
-            sb.append("أبرز المخاوف: ${profile.primaryConcernsAr.joinToString("، ")}")
+            sb.append("أبرز المخاوف المذكورة: ${profile.primaryConcernsAr.joinToString("، ")}")
+            sb.append("\n\n")
+        }
+
+        val goodIngredients = mutableSetOf<String>()
+        for (metric in metrics) {
+            if (metric.severity == MetricSeverity.POOR || metric.severity == MetricSeverity.CRITICAL) {
+                goodIngredients.addAll(getIngredients(metric.type))
+            }
+        }
+        if (goodIngredients.isNotEmpty()) {
+            sb.append("مكونات مقترحة للعناية: ${goodIngredients.take(5).joinToString("، ")}")
+            sb.append("\n")
         }
 
         return sb.toString()
     }
 
-    private fun performPixelAnalysis(frames: Map<LightSpectrum, File>): Map<SkinMetric.Type, SkinMetric> {
-        val metrics = mutableMapOf<SkinMetric.Type, SkinMetric>()
-        val startTime = System.currentTimeMillis()
+    private suspend fun performLocalTFLiteAnalysis(frames: Map<LightSpectrum, File>): Map<SkinMetric.Type, SkinMetric> {
+        return try {
+            if (!localTFLiteProvider.isAvailable()) {
+                val initResult = localTFLiteProvider.initialize()
+                if (initResult.isFailure) {
+                    Timber.w("TFLite init failed: ${initResult.exceptionOrNull()?.message}")
+                    return emptyMap()
+                }
+            }
 
+            val imageMap = mutableMapOf<String, File>()
+            for ((spectrum, file) in frames) {
+                if (file.exists()) imageMap[spectrum.name] = file
+            }
+
+            if (imageMap.isEmpty()) return emptyMap()
+
+            val result = localTFLiteProvider.analyze(imageMap)
+
+            if (result.warnings.isNotEmpty()) {
+                Timber.w("TFLite analysis warnings: ${result.warnings}")
+            }
+
+            Timber.i("TFLite analysis: ${result.metrics.size} metrics, confidence=${result.confidence}")
+            result.metrics
+        } catch (e: Exception) {
+            Timber.e(e, "TFLite analysis failed")
+            emptyMap()
+        }
+    }
+
+    private suspend fun performBasicPixelAnalysis(frames: Map<LightSpectrum, File>): Map<SkinMetric.Type, SkinMetric> = withContext(Dispatchers.Default) {
+        val metrics = mutableMapOf<SkinMetric.Type, SkinMetric>()
         for ((spectrum, file) in frames) {
             if (!file.exists()) continue
+            val bitmap = try { CVUtils.decodeSampled(file) } catch (e: Exception) { Timber.e(e, "decode failed for ${file.name}"); null } ?: continue
+            try {
+                val stats = CVUtils.computePixelStats(bitmap)
+                val texture = CVUtils.laplacianVariance(bitmap)
+                val spots = CVUtils.adaptiveThresholdSpots(bitmap)
+                val redness = CVUtils.hsvRednessIndex(bitmap)
+                val specular = CVUtils.specularHighlightRatio(bitmap)
+                val uniformity = CVUtils.labColorUniformity(bitmap)
+                val edgeRatio = CVUtils.cannyEdgeRatio(bitmap)
+                val gaborTexture = CVUtils.gaborTextureEnergy(bitmap)
+                val lbp = CVUtils.localBinaryPattern(bitmap, 2)
+                val morphGrad = CVUtils.morphologicalGradient(bitmap, 3)
+                val wrinkleDepth = CVUtils.wrinkleDepthEstimate(bitmap)
+                val edgeHist = CVUtils.edgeDirectionHistogram(bitmap)
+                val vascularComplexity = CVUtils.vascularPatternComplexity(bitmap)
+                val inflammatory = CVUtils.inflammatoryMarkerDetection(bitmap)
+                val poreDensity = CVUtils.poreDensityEstimate(bitmap)
+                val (sebumDist, sebumUniformity) = CVUtils.sebumDistributionAnalysis(bitmap)
+                val skinBarrier = CVUtils.skinBarrierEstimate(bitmap)
+                val pigHetero = CVUtils.pigmentationHeterogeneity(bitmap)
 
-            val bitmap = BitmapFactory.decodeFile(file.absolutePath) ?: continue
-            val stats = computePixelStats(bitmap)
-            bitmap.recycle()
-
-            val scoreMap = mapSpectrumToMetrics(spectrum, stats)
-            for ((type, score) in scoreMap) {
-                val severity = when {
-                    score >= 85f -> MetricSeverity.EXCELLENT
-                    score >= 70f -> MetricSeverity.GOOD
-                    score >= 55f -> MetricSeverity.FAIR
-                    score >= 35f -> MetricSeverity.POOR
-                    else -> MetricSeverity.CRITICAL
+                when (spectrum) {
+                    LightSpectrum.WHITE -> {
+                        val texScore = CVUtils.calibratedScore(texture * 0.3f + gaborTexture * 0.4f + lbp * 0.3f, 50f, 5f)
+                        val poreScore = CVUtils.calibratedScore(poreDensity * 0.5f + morphGrad / 100f * 0.3f + (1f - specular) * 0.2f, 55f, 5f)
+                        val toneScore = CVUtils.calibratedScore(uniformity + CVUtils.colorHistogramAnalysis(bitmap) / 10f, 25f, 2f)
+                        metrics[SkinMetric.Type.TEXTURE] = SkinMetric(SkinMetric.Type.TEXTURE, texScore, classify(cvScore = texScore), details = "تحليل متعدد المقياس - الضوء الأبيض")
+                        metrics[SkinMetric.Type.SKIN_TONE] = SkinMetric(SkinMetric.Type.SKIN_TONE, toneScore, classify(cvScore = toneScore), details = "تحليل لون البشرة - الضوء الأبيض")
+                        metrics[SkinMetric.Type.PORES] = SkinMetric(SkinMetric.Type.PORES, poreScore, classify(cvScore = poreScore), details = "تحليل كثافة المسام - الضوء الأبيض")
+                    }
+                    LightSpectrum.UV365 -> {
+                        val uvSpots = CVUtils.calibratedScore(spots * 0.6f + morphGrad / 100f * 0.4f, 0.15f, 0.005f)
+                        val pigmentation = CVUtils.calibratedScore(stats.contrast * 0.5f + pigHetero * 0.5f, 35f, 3f)
+                        metrics[SkinMetric.Type.UV_SPOTS] = SkinMetric(SkinMetric.Type.UV_SPOTS, uvSpots, classify(cvScore = uvSpots), details = "تحليل البقع UV - Morphological + Adaptive")
+                        metrics[SkinMetric.Type.PIGMENTATION] = SkinMetric(SkinMetric.Type.PIGMENTATION, pigmentation, classify(cvScore = pigmentation), details = "تحليل التصبغ - LAB Variance + Histogram")
+                    }
+                    LightSpectrum.POL_P -> {
+                        val v = CVUtils.calibratedScore(redness * 0.5f + vascularComplexity * 0.3f + inflammatory * 0.2f, 0.25f, 0.02f)
+                        val s = CVUtils.calibratedScore(redness * 0.6f + inflammatory * 0.4f, 0.20f, 0.015f)
+                        val r = CVUtils.calibratedScore((redness + vascularComplexity) / 2f, 0.18f, 0.01f)
+                        metrics[SkinMetric.Type.VASCULAR] = SkinMetric(SkinMetric.Type.VASCULAR, v, classify(cvScore = v), details = "تحليل الأوعية - Vascular Pattern + Inflammatory")
+                        metrics[SkinMetric.Type.SENSITIVITY] = SkinMetric(SkinMetric.Type.SENSITIVITY, s, classify(cvScore = s), details = "تحليل الحساسية - Redness + Inflammatory")
+                        metrics[SkinMetric.Type.ROSACEA] = SkinMetric(SkinMetric.Type.ROSACEA, r, classify(cvScore = r), details = "تحليل الوردية - Vascular Complexity")
+                    }
+                    LightSpectrum.POL_N -> {
+                        val wrinkleScore = CVUtils.calibratedScore(edgeRatio * 0.3f + wrinkleDepth * 0.3f + edgeHist * 0.2f + lbp * 0.2f, 0.15f, 0.003f)
+                        metrics[SkinMetric.Type.WRINKLES] = SkinMetric(SkinMetric.Type.WRINKLES, wrinkleScore, classify(cvScore = wrinkleScore), details = "تحليل التجاعيد - Edge + Gabor + LBP")
+                    }
+                    LightSpectrum.WOODS -> {
+                        val moistureScore = CVUtils.calibratedScoreInverted(stats.brightness / 100f * 0.6f + skinBarrier * 0.4f, 0.05f, 0.85f)
+                        val melasmaSpots = CVUtils.adaptiveThresholdSpots(bitmap)
+                        val melasmaScore = CVUtils.calibratedScore(melasmaSpots * 0.6f + pigHetero * 0.4f, 0.15f, 0.005f)
+                        metrics[SkinMetric.Type.MOISTURE] = SkinMetric(SkinMetric.Type.MOISTURE, moistureScore, classify(cvScore = moistureScore), details = "تحليل الرطوبة - Brightness + Barrier")
+                        metrics[SkinMetric.Type.MELASMA] = SkinMetric(SkinMetric.Type.MELASMA, melasmaScore, classify(cvScore = melasmaScore), details = "تحليل الكلف - Spots + Heterogeneity")
+                    }
+                    LightSpectrum.BLUE -> {
+                        val sebumScore = CVUtils.calibratedScoreInverted(stats.meanB / 255f * 0.5f + sebumDist * 0.3f + morphGrad / 100f * 0.2f, 0.15f, 0.55f)
+                        val acneScore = CVUtils.calibratedScore(spots * 0.6f + morphGrad / 100f * 0.4f, 0.15f, 0.003f)
+                        val blackheadScore = CVUtils.calibratedScore(spots * 0.5f + (1f - sebumUniformity / 50f) * 0.3f + morphGrad / 100f * 0.2f, 0.12f, 0.005f)
+                        metrics[SkinMetric.Type.SEBUM] = SkinMetric(SkinMetric.Type.SEBUM, sebumScore, classify(cvScore = sebumScore), details = "تحليل الدهون - Blue + Distribution + Morphology")
+                        metrics[SkinMetric.Type.ACNE] = SkinMetric(SkinMetric.Type.ACNE, acneScore, classify(cvScore = acneScore), details = "تحليل حب الشباب - Adaptive + Morphological")
+                        metrics[SkinMetric.Type.BLACKHEADS] = SkinMetric(SkinMetric.Type.BLACKHEADS, blackheadScore, classify(cvScore = blackheadScore), details = "تحليل الرؤوس السوداء - Spots + Texture + Morphology")
+                    }
+                    LightSpectrum.RED -> {
+                        val vascularScore = CVUtils.calibratedScore(redness * 0.6f + vascularComplexity * 0.4f, 0.25f, 0.02f)
+                        metrics[SkinMetric.Type.VASCULAR] = SkinMetric(SkinMetric.Type.VASCULAR, vascularScore, classify(cvScore = vascularScore), details = "تحليل الأوعية - Redness + Complexity")
+                    }
+                    LightSpectrum.BROWN -> {
+                        val texture = CVUtils.localBinaryPattern(bitmap, 3)
+                        val darkCircleScore = CVUtils.calibratedScore(spots * 0.5f + texture * 0.3f + morphGrad / 100f * 0.2f, 0.14f, 0.005f)
+                        metrics[SkinMetric.Type.DARK_CIRCLES] = SkinMetric(SkinMetric.Type.DARK_CIRCLES, darkCircleScore, classify(cvScore = darkCircleScore), details = "تحليل الهالات - Spots + LBP + Morphology")
+                    }
+                    else -> {}
                 }
-                metrics[type] = SkinMetric(
-                    type = type,
-                    score = score,
-                    severity = severity,
-                    details = "Analyzed via ${spectrum.displayName}"
-                )
+            } catch (e: Exception) {
+                Timber.e(e, "performBasicPixelAnalysis: spectrum ${spectrum.name} failed")
             }
+            bitmap.recycle()
         }
-
-        Timber.i("Pixel analysis complete: ${metrics.size} metrics in ${System.currentTimeMillis() - startTime}ms")
-        return metrics
+        metrics
     }
 
-    private data class PixelStats(
-        val meanR: Float, val meanG: Float, val meanB: Float,
-        val brightness: Float, val variance: Float, val contrast: Float
-    )
-
-    private fun computePixelStats(bitmap: Bitmap): PixelStats {
-        val sampleSize = 8
-        val w = bitmap.width / sampleSize
-        val h = bitmap.height / sampleSize
-        var sumR = 0L
-        var sumG = 0L
-        var sumB = 0L
-        var sumBright = 0L
-        var count = 0
-        val brightnessValues = mutableListOf<Float>()
-
-        for (y in 0 until h) {
-            for (x in 0 until w) {
-                val pixel = bitmap.getPixel(x * sampleSize, y * sampleSize)
-                val r = pixel.red
-                val g = pixel.green
-                val b = pixel.blue
-                val bright = (r * 0.299f + g * 0.587f + b * 0.114f)
-                sumR += r
-                sumG += g
-                sumB += b
-                sumBright += bright.toLong()
-                brightnessValues.add(bright)
-                count++
-            }
-        }
-
-        if (count == 0) return PixelStats(0f, 0f, 0f, 0f, 0f, 0f)
-
-        val meanR = (sumR.toFloat() / count)
-        val meanG = (sumG.toFloat() / count)
-        val meanB = (sumB.toFloat() / count)
-        val meanBright = (sumBright.toFloat() / count)
-
-        val variance = brightnessValues.map { (it - meanBright) * (it - meanBright) }.average().toFloat()
-        val contrast = sqrt(variance) / 255f * 100f
-
-        return PixelStats(
-            meanR = meanR, meanG = meanG, meanB = meanB,
-            brightness = meanBright / 255f * 100f,
-            variance = variance / 100f,
-            contrast = contrast
-        )
+    private fun classify(cvScore: Float): MetricSeverity = when {
+        cvScore >= 72f -> MetricSeverity.EXCELLENT
+        cvScore >= 55f -> MetricSeverity.GOOD
+        cvScore >= 35f -> MetricSeverity.FAIR
+        cvScore >= 20f -> MetricSeverity.POOR
+        else -> MetricSeverity.CRITICAL
     }
 
-    private fun mapSpectrumToMetrics(spectrum: LightSpectrum, stats: PixelStats): Map<SkinMetric.Type, Float> {
-        return when (spectrum) {
-            LightSpectrum.WHITE -> mapOf(
-                SkinMetric.Type.TEXTURE to (stats.contrast * 1.2f).coerceIn(30f, 95f),
-                SkinMetric.Type.SKIN_TONE to ((255f - stats.variance) / 3f).coerceIn(30f, 95f),
-                SkinMetric.Type.PORES to (stats.brightness * 0.8f + 20f).coerceIn(30f, 90f)
-            )
-            LightSpectrum.UV365 -> mapOf(
-                SkinMetric.Type.UV_SPOTS to (stats.variance * 2.5f + 30f).coerceIn(25f, 90f),
-                SkinMetric.Type.PIGMENTATION to (stats.contrast * 1.5f).coerceIn(25f, 90f)
-            )
-            LightSpectrum.POL_P -> mapOf(
-                SkinMetric.Type.VASCULAR to (stats.meanR * 0.5f + 30f).coerceIn(30f, 92f),
-                SkinMetric.Type.SENSITIVITY to ((255f - stats.meanR) * 0.4f + 20f).coerceIn(25f, 90f)
-            )
-            LightSpectrum.POL_N -> mapOf(
-                SkinMetric.Type.SEBUM to (stats.brightness * 0.7f + 25f).coerceIn(25f, 88f),
-                SkinMetric.Type.BLACKHEADS to (stats.variance * 1.8f + 30f).coerceIn(20f, 88f)
-            )
-            LightSpectrum.WOODS -> mapOf(
-                SkinMetric.Type.ACNE to (stats.contrast * 1.3f + 25f).coerceIn(20f, 90f),
-                SkinMetric.Type.MOISTURE to (stats.brightness * 0.9f).coerceIn(30f, 95f)
-            )
-            LightSpectrum.BLUE -> mapOf(
-                SkinMetric.Type.SEBUM to (stats.meanB * 0.5f + 25f).coerceIn(20f, 90f),
-                SkinMetric.Type.ACNE to ((255f - stats.brightness) * 0.5f + 25f).coerceIn(20f, 85f)
-            )
-            LightSpectrum.RED -> mapOf(
-                SkinMetric.Type.COLLAGEN to ((255f - stats.meanR) * 0.5f + 30f).coerceIn(30f, 95f),
-                SkinMetric.Type.WRINKLES to (stats.contrast * 1.1f + 25f).coerceIn(30f, 90f)
-            )
-            LightSpectrum.BROWN -> mapOf(
-                SkinMetric.Type.PIGMENTATION to (stats.contrast * 1.4f).coerceIn(25f, 88f),
-                SkinMetric.Type.DARK_CIRCLES to (stats.brightness * 0.8f + 15f).coerceIn(20f, 85f)
-            )
-            else -> mapOf(
-                SkinMetric.Type.MOISTURE to (stats.brightness * 0.8f + 20f).coerceIn(30f, 92f)
-            )
-        }
+    private suspend fun performAdvancedAnalysis(frames: Map<LightSpectrum, File>): Map<SkinMetric.Type, SkinMetric> {
+        val whiteFile = frames.entries.find { it.key == LightSpectrum.WHITE }?.value
+        return advancedSkinAnalyzer.analyze(frames, whiteFile)
     }
 
     private fun getArabicName(type: SkinMetric.Type): String = when (type) {
@@ -334,9 +564,10 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
         SkinMetric.Type.DARK_CIRCLES -> "الهالات الداكنة"
         SkinMetric.Type.BLACKHEADS -> "الرؤوس السوداء"
         SkinMetric.Type.ACNE -> "حب الشباب"
-        SkinMetric.Type.COLLAGEN -> "الكولاجين"
         SkinMetric.Type.SKIN_TONE -> "لون البشرة"
         SkinMetric.Type.SENSITIVITY -> "الحساسية"
+        SkinMetric.Type.ROSACEA -> "الوردية"
+        SkinMetric.Type.MELASMA -> "الكلف"
     }
 
     override suspend fun saveReport(report: SkinAnalysisReport): Result<String> {
@@ -370,7 +601,7 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
 
             Timber.i("Report saved: ${report.id}")
             Result.success(report.id)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Timber.e(e, "Failed to save report")
             Result.failure(e)
         }
@@ -400,7 +631,11 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
 
     override fun getCapturedImages(reportId: String): Map<LightSpectrum, File> {
         val captureDir = File(context.filesDir, "captures/$reportId")
+        Timber.d("getCapturedImages: dir=$captureDir, exists=${captureDir.exists()}")
         if (!captureDir.exists()) return emptyMap()
+
+        val files = captureDir.list()?.joinToString() ?: "empty"
+        Timber.d("getCapturedImages: files=[$files]")
 
         val images = mutableMapOf<LightSpectrum, File>()
         for (spectrum in LightSpectrum.entries) {
@@ -408,6 +643,7 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
             val file = File(captureDir, "frame_${spectrum.name}.jpg")
             if (file.exists()) images[spectrum] = file
         }
+        Timber.d("getCapturedImages: found ${images.size} images")
         return images
     }
 }

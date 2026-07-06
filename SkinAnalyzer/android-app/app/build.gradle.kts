@@ -13,6 +13,7 @@ android {
     val localProperties = project.properties
     val cloudApiKey = localProperties["YIMEI_API_KEY"] as? String ?: "mock_key_for_dev"
     val cloudApiUrl = localProperties["YIMEI_API_URL"] as? String ?: "https://mock.api/v2"
+    val gitHubToken = localProperties["GITHUB_TOKEN"] as? String ?: ""
 
     signingConfigs {
         create("release") {
@@ -27,11 +28,11 @@ android {
 
     defaultConfig {
         applicationId = "com.ebtikar.skinanalyzer"
-        minSdk = 23
+        minSdk = 24
         //noinspection EditedTargetSdkVersion
         targetSdk = 33
-        versionCode = 1
-        versionName = "1.0.0-max"
+        versionCode = 24
+        versionName = "1.2.23"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -41,6 +42,7 @@ android {
 
         buildConfigField("String", "API_BASE_URL", "\"$cloudApiUrl\"")
         buildConfigField("String", "API_KEY", "\"$cloudApiKey\"")
+        buildConfigField("String", "GITHUB_TOKEN", "\"$gitHubToken\"")
     }
 
     buildTypes {
@@ -132,6 +134,9 @@ dependencies {
 
     // Google ML Kit (Face Detection & Landmarks)
     implementation("com.google.mlkit:face-detection:16.1.7")
+
+    // MediaPipe Tasks Vision (468 face landmarks, on-device)
+    implementation("com.google.mediapipe:tasks-vision:0.10.18")
 
     // USB Serial Communication
     implementation("com.github.mik3y:usb-serial-for-android:3.10.0")

@@ -85,7 +85,7 @@
                 android:textColor="@color/text_primary"
                 android:textSize="14sp"
                 android:textStyle="bold"
-                tools:text="189 ر.س" />
+                tools:text="189 ₪" />
 
             <TextView
                 android:id="@+id/tvProductCategory"

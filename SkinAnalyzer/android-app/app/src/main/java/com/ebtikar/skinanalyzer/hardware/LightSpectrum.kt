@@ -10,58 +10,58 @@ enum class LightSpectrum(
     val capturePurpose: String = ""
 ) {
     WHITE(
-        "White RGB Daylight",
-        "ضوء أبيض نهاري",
-        0x01, 40, 5500,
+        "White Light (RGB Daylight)",
+        "الضوء المرئي (RGB)",
+        0x01, 120, 5500,
         "#FFFFFF",
-        "Baseline skin tone & texture"
+        "Surface analysis: pores, wrinkles, skin tone"
     ),
     POL_P(
-        "Cross-Polarized (+)",
-        "مستقطب متقاطع (+)",
-        0x07, 45, 0,
+        "Cross-Polarized Light",
+        "ضوء مستقطب متقاطع",
+        0x07, 150, 0,
         "#E0E0FF",
-        "Subsurface pigmentation & vascular"
+        "Blood vessels, redness, rosacea, deep pigmentation"
     ),
     POL_N(
-        "Parallel-Polarized (-)",
-        "مستقطب موازٍ (-)",
-        0x08, 45, 0,
+        "Parallel-Polarized Light",
+        "ضوء مستقطب موازٍ",
+        0x08, 150, 0,
         "#FFE0E0",
-        "Surface texture & pores"
+        "Fine lines, texture, surface condition"
     ),
     UV365(
-        "UV Spectrum 365nm",
-        "أشعة فوق بنفسجية 365nm",
-        0x02, 60, 365,
+        "UV Light 365nm",
+        "الأشعة فوق البنفسجية 365nm",
+        0x02, 300, 365,
         "#9B59B6",
-        "UV damage & porphyrins"
+        "Porphyrins, sun damage, sebum"
     ),
     WOODS(
         "Wood's Light",
-        "ضوء وودز",
-        0x03, 60, 365,
+        "ضوء وودز السريري",
+        0x03, 300, 365,
         "#8E44AD",
-        "Melanin distribution & fungi"
+        "Hydration levels, deep melasma"
     ),
     BLUE(
         "Blue Light 465nm",
         "ضوء أزرق 465nm",
-        0x04, 45, 465,
+        0x04, 150, 465,
         "#3498DB",
         "Acne bacteria & sebum"
     ),
     RED(
         "Red Light 630nm",
         "ضوء أحمر 630nm",
-        0x05, 45, 630,
+        0x05, 120, 630,
         "#E74C3C",
         "Vascular & collagen"
     ),
     BROWN(
         "Brown Light 590nm",
         "ضوء بني 590nm",
-        0x06, 45, 590,
+        0x06, 120, 590,
         "#D35400",
         "Deep pigmentation & spots"
     ),
@@ -90,6 +90,22 @@ enum class LightSpectrum(
 
         val DIAGNOSTIC_SPECTRA = entries.filter { it != OFF && it != ALL }
 
+        const val DIAGNOSIS_WHITE = "white"
+        const val DIAGNOSIS_UV = "uv"
+        const val DIAGNOSIS_CROSS_POL = "cross_pol"
+        const val DIAGNOSIS_PARALLEL_POL = "parallel_pol"
+        const val DIAGNOSIS_WOODS = "woods"
+        const val DIAGNOSIS_ALL = "all"
+
+        val DIAGNOSIS_MODE_SPECTRA: Map<String, List<LightSpectrum>> = mapOf(
+            DIAGNOSIS_ALL to ALL_SPECTRA,
+            DIAGNOSIS_WHITE to listOf(WHITE),
+            DIAGNOSIS_UV to listOf(UV365, WOODS, WHITE),
+            DIAGNOSIS_CROSS_POL to listOf(POL_P, POL_N, WHITE),
+            DIAGNOSIS_PARALLEL_POL to listOf(POL_P, WHITE),
+            DIAGNOSIS_WOODS to listOf(WOODS, WHITE)
+        )
+
         val ALL_COMMAND: ByteArray by lazy {
             val cmds = byteArrayOf(
                 WHITE.commandByte, UV365.commandByte, WOODS.commandByte,
@@ -111,14 +127,13 @@ enum class LightSpectrum(
             "WRINKLES", "COLLAGEN" -> listOf(RED, POL_N, WHITE)
             "MOISTURE", "TEXTURE" -> listOf(POL_N, WHITE)
             "PORES" -> listOf(POL_N, POL_P)
+            "PORPHYRINS" -> listOf(UV365)
+            "ROSACEA" -> listOf(POL_P)
+            "MELASMA" -> listOf(WOODS)
             else -> listOf(WHITE)
         }
 
-        fun getSpectraForDiagnosisMode(mode: String): List<LightSpectrum> = when (mode) {
-            "uv" -> UV_SPECTRA
-            "rgb" -> RGB_SPECTRA
-            "cross" -> CROSS_SPECTRA
-            else -> ALL_SPECTRA
-        }
+        fun getSpectraForDiagnosisMode(mode: String): List<LightSpectrum> =
+            DIAGNOSIS_MODE_SPECTRA[mode] ?: ALL_SPECTRA
     }
 }

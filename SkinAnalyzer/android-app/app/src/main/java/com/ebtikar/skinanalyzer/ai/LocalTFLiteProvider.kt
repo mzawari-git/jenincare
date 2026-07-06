@@ -22,10 +22,14 @@ class LocalTFLiteProvider @Inject constructor(
     override fun getName() = "Local_TFLite_Engine"
     override fun getPriority() = 10
 
-    override fun isAvailable(): Boolean = true
+    override fun isAvailable(): Boolean = tfliteEngine.isInitialized()
 
     override fun initialize(): Result<Unit> {
-        return tfliteEngine.initialize()
+        val result = tfliteEngine.initialize()
+        if (result.isFailure) {
+            Timber.w("TFLite engine initialization failed: ${result.exceptionOrNull()?.message}")
+        }
+        return result
     }
 
     override suspend fun analyze(images: Map<String, File>): AnalysisResult {

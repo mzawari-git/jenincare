@@ -21,13 +21,13 @@ class FeatureExtractorTest {
     }
 
     @Test
-    fun `SkinMetric ALL_TYPES contains 14 types`() {
-        assertEquals(14, SkinMetric.ALL_TYPES.size)
+    fun `SkinMetric ALL_TYPES contains 17 types`() {
+        assertEquals(17, SkinMetric.ALL_TYPES.size)
     }
 
     @Test
-    fun `SkinMetric TOTAL_METRICS is 14`() {
-        assertEquals(14, SkinMetric.TOTAL_METRICS)
+    fun `SkinMetric TOTAL_METRICS is 17`() {
+        assertEquals(17, SkinMetric.TOTAL_METRICS)
     }
 
     @Test
@@ -46,7 +46,10 @@ class FeatureExtractorTest {
             SkinMetric.Type.ACNE,
             SkinMetric.Type.COLLAGEN,
             SkinMetric.Type.SKIN_TONE,
-            SkinMetric.Type.SENSITIVITY
+            SkinMetric.Type.SENSITIVITY,
+            SkinMetric.Type.PORPHYRINS,
+            SkinMetric.Type.ROSACEA,
+            SkinMetric.Type.MELASMA
         )
         assertEquals(expectedTypes, SkinMetric.Type.entries.toSet())
     }

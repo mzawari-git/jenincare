@@ -36,6 +36,7 @@ class ProductAdapter : ListAdapter<ProductRecommendation, ProductAdapter.Product
 
         private fun getCurrencySymbol(currency: String): String = when (currency) {
             "SAR" -> "ر.س"
+            "ILS" -> "₪"
             "USD" -> "$"
             "EUR" -> "€"
             "AED" -> "د.إ"

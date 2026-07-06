@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
@@ -36,7 +37,7 @@ class HomeViewModel @Inject constructor(
     private val _analysisMode = MutableStateFlow(Constants.ANALYSIS_AUTO)
     val analysisMode: StateFlow<String> = _analysisMode.asStateFlow()
 
-    private val _diagnosisMode = MutableStateFlow(Constants.DIAGNOSIS_CROSS)
+    private val _diagnosisMode = MutableStateFlow(Constants.DIAGNOSIS_ALL)
     val diagnosisMode: StateFlow<String> = _diagnosisMode.asStateFlow()
 
     private val _historyCount = MutableStateFlow(0)
@@ -44,6 +45,9 @@ class HomeViewModel @Inject constructor(
 
     private val _todayCount = MutableStateFlow(0)
     val todayCount: StateFlow<Int> = _todayCount.asStateFlow()
+
+    private val _avgScore = MutableStateFlow<Float?>(null)
+    val avgScore: StateFlow<Float?> = _avgScore.asStateFlow()
 
     val recentReports: StateFlow<List<SkinReportEntity>> = repository.getRecentReports(5)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -69,7 +73,26 @@ class HomeViewModel @Inject constructor(
     fun loadHistory() {
         viewModelScope.launch {
             _historyCount.value = repository.getReportCount()
+            val reports = repository.getRecentReports(10).first()
+            if (reports.isNotEmpty()) {
+                _avgScore.value = reports.map { it.overallScore }.average().toFloat()
+                _todayCount.value = reports.count { isToday(it.timestamp) }
+            } else {
+                _avgScore.value = null
+                _todayCount.value = 0
+            }
         }
+    }
+
+    private fun isToday(timestamp: Long): Boolean {
+        val cal = java.util.Calendar.getInstance()
+        val today = cal.apply {
+            set(java.util.Calendar.HOUR_OF_DAY, 0)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        return timestamp >= today
     }
 
     fun setAnalysisMode(mode: String) {

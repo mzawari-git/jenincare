@@ -171,7 +171,7 @@ class CloudAnalysisService @Inject constructor(
                 nameAr = p.nameAr ?: "",
                 brand = p.brand ?: "",
                 price = p.price ?: 0f,
-                currency = p.currency ?: "SAR",
+                currency = p.currency ?: "ILS",
                 imageUrl = p.imageUrl ?: "",
                 matchScore = 0.85f,
                 reason = p.matchingReason ?: "",
@@ -192,7 +192,7 @@ class CloudAnalysisService @Inject constructor(
             expertTipsAr = detailResponse.data?.expertFreeTips ?: reportResponse.generalTips ?: emptyList(),
             productRecommendations = products,
             skinProfile = SkinProfile(),
-            confidence = detailResponse.data?.radarMetrics?.size?.toFloat()?.div(14f) ?: 0.85f,
+            confidence = detailResponse.data?.radarMetrics?.size?.toFloat()?.div(SkinMetric.TOTAL_METRICS.toFloat()) ?: 0.85f,
             scanId = scanId.toString()
         )
     }
@@ -206,16 +206,15 @@ class CloudAnalysisService @Inject constructor(
                 SkinMetric.Type.SEBUM -> report.metrics?.sebum ?: 0f
                 SkinMetric.Type.PIGMENTATION -> report.metrics?.pigmentation ?: 0f
                 SkinMetric.Type.PORES -> report.metrics?.pores ?: 0f
-                SkinMetric.Type.COLLAGEN -> report.metrics?.elasticity ?: 0f
                 else -> 50f
             }
     }
 
     private fun classifyScore(score: Float): MetricSeverity = when {
-        score >= 85f -> MetricSeverity.EXCELLENT
-        score >= 70f -> MetricSeverity.GOOD
-        score >= 55f -> MetricSeverity.FAIR
-        score >= 35f -> MetricSeverity.POOR
+        score >= 72f -> MetricSeverity.EXCELLENT
+        score >= 55f -> MetricSeverity.GOOD
+        score >= 35f -> MetricSeverity.FAIR
+        score >= 20f -> MetricSeverity.POOR
         else -> MetricSeverity.CRITICAL
     }
 

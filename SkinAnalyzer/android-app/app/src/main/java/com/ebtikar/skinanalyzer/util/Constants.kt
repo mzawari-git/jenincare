@@ -21,9 +21,12 @@ object Constants {
     const val ANALYSIS_CLOUD = "cloud"
     const val ANALYSIS_AUTO = "auto"
 
+    const val DIAGNOSIS_WHITE = "white"
     const val DIAGNOSIS_UV = "uv"
-    const val DIAGNOSIS_RGB = "rgb"
-    const val DIAGNOSIS_CROSS = "cross"
+    const val DIAGNOSIS_CROSS_POL = "cross_pol"
+    const val DIAGNOSIS_PARALLEL_POL = "parallel_pol"
+    const val DIAGNOSIS_WOODS = "woods"
+    const val DIAGNOSIS_ALL = "all"
 
     const val DB_NAME = "skin_analyzer_db"
     const val DB_VERSION = 1
@@ -31,4 +34,8 @@ object Constants {
     const val SPLASH_DELAY_MS = 2500L
 
     const val MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024
+
+    const val SCAN_OVERLAY_PROFESSIONAL = "professional"
+    const val SCAN_OVERLAY_MINIMAL = "minimal"
+    const val SCAN_OVERLAY_CUSTOM = "custom"
 }

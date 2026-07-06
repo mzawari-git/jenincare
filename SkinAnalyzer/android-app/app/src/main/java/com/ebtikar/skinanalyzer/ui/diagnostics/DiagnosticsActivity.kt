@@ -12,7 +12,10 @@ import androidx.core.view.updatePadding
 import com.ebtikar.skinanalyzer.R
 import com.ebtikar.skinanalyzer.camera.USBCameraManager
 import com.ebtikar.skinanalyzer.databinding.ActivityDiagnosticsBinding
+import com.ebtikar.skinanalyzer.hardware.FiseGpioController
+import com.ebtikar.skinanalyzer.hardware.LightSpectrum
 import com.ebtikar.skinanalyzer.hardware.SerialBusManager
+import com.ebtikar.skinanalyzer.hardware.SpectrumController
 import com.ebtikar.skinanalyzer.util.NetworkMonitor
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -21,6 +24,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -33,6 +37,8 @@ class DiagnosticsActivity : AppCompatActivity() {
     @Inject lateinit var serialBusManager: SerialBusManager
     @Inject lateinit var networkMonitor: NetworkMonitor
     @Inject lateinit var cameraManager: USBCameraManager
+    @Inject lateinit var fiseGpioController: FiseGpioController
+    @Inject lateinit var spectrumController: SpectrumController
 
     private val refreshRunnable = object : Runnable {
         override fun run() {
@@ -89,14 +95,102 @@ class DiagnosticsActivity : AppCompatActivity() {
         binding.btnRunAllTests.setOnClickListener {
             runAllTests()
         }
+
+        binding.btnRebindFise.setOnClickListener {
+            binding.btnRebindFise.isEnabled = false
+            binding.btnRebindFise.text = "جارٍ إعادة الربط..."
+            scope.launch(Dispatchers.IO) {
+                appendLog("→ محاولة إعادة ربط FISE driver عبر su...")
+                val unbindOk = execShellSu("echo fise_gpio > /sys/bus/platform/drivers/fise_gpio/unbind")
+                appendLog("  Unbind: ${if (unbindOk) "✓" else "✗ (قد يكون غير مربوط)"}")
+
+                val bindOk = execShellSu("echo fise_gpio > /sys/bus/platform/drivers/fise_gpio/bind")
+                appendLog("  Bind: ${if (bindOk) "✓" else "✗"}")
+
+                delay(500)
+
+                val allExported = execShellSu("echo 34 > /sys/class/gpio/export 2>/dev/null; echo 149 > /sys/class/gpio/export 2>/dev/null; echo 45 > /sys/class/gpio/export 2>/dev/null; echo 54 > /sys/class/gpio/export 2>/dev/null; echo 56 > /sys/class/gpio/export 2>/dev/null")
+                appendLog("  Export GPIOs: ${if (allExported) "✓" else "✗"}")
+
+                val directions = execShellSu("echo out > /sys/class/gpio/gpio34/direction 2>/dev/null; echo out > /sys/class/gpio/gpio149/direction 2>/dev/null; echo out > /sys/class/gpio/gpio45/direction 2>/dev/null; echo out > /sys/class/gpio/gpio54/direction 2>/dev/null; echo out > /sys/class/gpio/gpio56/direction 2>/dev/null")
+                appendLog("  Direction: ${if (directions) "✓" else "✗"}")
+
+                val chmodOk = execShellSu("chmod 666 /sys/class/gpio/gpio34/value /sys/class/gpio/gpio149/value /sys/class/gpio/gpio45/value /sys/class/gpio/gpio54/value /sys/class/gpio/gpio56/value 2>/dev/null")
+                appendLog("  Permissions: ${if (chmodOk) "✓" else "✗"}")
+
+                // Re-check GPIO availability in the controller
+                val nowAvailable = fiseGpioController.recheckAvailability()
+
+                withContext(Dispatchers.Main) {
+                    updateGpioStatus()
+                    binding.btnRebindFise.isEnabled = true
+                    binding.btnRebindFise.text = "إصلاح FISE GPIO (إعادة الربط)"
+                    appendLog("→ اكتملت إعادة الربط. الحالة: ${if (nowAvailable) "✓ متاح" else "✗ لا يزال غير متاح"}")
+                }
+            }
+        }
+
+        binding.btnTestLeds.setOnClickListener {
+            binding.btnTestLeds.isEnabled = false
+            binding.btnTestLeds.text = "جارٍ الاختبار..."
+            scope.launch {
+                appendLog("→ بدء اختبار الأضواء التسلسلي...")
+                val results = spectrumController.quickTest()
+                for ((spectrum, success) in results) {
+                    appendLog("  ${spectrum.displayName}: ${if (success) "✓" else "✗"}")
+                }
+                appendLog("→ اكتمل اختبار الأضواء")
+                binding.btnTestLeds.isEnabled = true
+                binding.btnTestLeds.text = "اختبار الأضواء (تفعيل تسلسلي)"
+            }
+        }
+    }
+
+    private suspend fun execShellSu(cmd: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val proc = Runtime.getRuntime().exec(arrayOf("su", "-c", cmd))
+                if (proc.waitFor() == 0) {
+                    true
+                } else {
+                    try {
+                        val proc2 = Runtime.getRuntime().exec(arrayOf("sh", "-c", cmd))
+                        proc2.waitFor() == 0
+                    } catch (e: Exception) {
+                        false
+                    }
+                }
+            } catch (e: Exception) {
+                try {
+                    val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", cmd))
+                    proc.waitFor() == 0
+                } catch (e2: Exception) {
+                    false
+                }
+            }
+        }
     }
 
     private fun populateDiagnostics() {
         updateUsbStatus()
         updateNetworkStatus()
+        updateGpioStatus()
         updateCameraStatus()
         updateAIStatus()
         updateLiveStats()
+    }
+
+    private fun updateGpioStatus() {
+        val available = fiseGpioController.isAvailable
+        val selinux = fiseGpioController.selinuxEnforcing
+        binding.tvGpioStatus.text = when {
+            available -> "متاح (SELinux=${selinux ?: "?"})"
+            selinux == true -> "غير متاح — SELinux يمنع الكتابة"
+            else -> "غير متاح — FISE يحتوي على GPIO"
+        }
+        binding.dotGpio.setBackgroundResource(
+            if (available) R.drawable.shape_status_dot_green else R.drawable.shape_status_dot_purple
+        )
     }
 
     private fun updateUsbStatus() {
@@ -118,11 +212,9 @@ class DiagnosticsActivity : AppCompatActivity() {
     private fun updateCameraStatus() {
         val cameraId = cameraManager.findBestCamera()
         if (cameraId != null) {
-            binding.tvCameraStatus.text = "جاهزة — ID: $cameraId"
-            binding.dotCamera.setBackgroundResource(R.drawable.shape_status_dot_green)
+            binding.tvAIStatus.text = "TFLite جاهز | الكاميرا: $cameraId"
         } else {
-            binding.tvCameraStatus.text = "غير موجودة"
-            binding.dotCamera.setBackgroundResource(R.drawable.shape_status_dot_purple)
+            binding.tvAIStatus.text = "TFLite جاهز | الكاميرا: غير موجودة"
         }
     }
 
@@ -143,10 +235,10 @@ class DiagnosticsActivity : AppCompatActivity() {
 
         val usbOk = serialBusManager.isConnected
         val networkOk = networkMonitor.isOnline()
-        val cameraOk = cameraManager.findBestCamera() != null
+        val gpioOk = fiseGpioController.isAvailable
         val memoryOk = percent < 80
 
-        val allOk = usbOk && networkOk && cameraOk && memoryOk
+        val allOk = usbOk && networkOk && gpioOk && memoryOk
         binding.tvOverallStatus.text = if (allOk) "ممتاز" else "يحتاج انتباه"
         binding.tvOverallStatus.setTextColor(
             ContextCompat.getColor(
