@@ -122,20 +122,6 @@ class FrameCapturePipeline @Inject constructor(
                 }
             }
 
-            if (!serialBusManager.isConnected) {
-                Timber.i("Serial bus not connected, attempting auto-connect...")
-                _positionMessage.value = "جاري توصيل أضواء USB..."
-                val serialResult = serialBusManager.autoConnect()
-                if (serialResult.isSuccess) {
-                    Timber.i("Serial bus auto-connected successfully")
-                    if (_positionMessage.value?.contains("غير متصلة") == true) {
-                        _positionMessage.value = "تم توصيل أضواء USB ✓"
-                    }
-                } else {
-                    Timber.w("Serial bus auto-connect failed: ${serialResult.exceptionOrNull()?.message}")
-                }
-            }
-
             _captureState.value = CaptureState.WAITING_FOR_FACE
             onStateChanged(CaptureState.WAITING_FOR_FACE)
 
