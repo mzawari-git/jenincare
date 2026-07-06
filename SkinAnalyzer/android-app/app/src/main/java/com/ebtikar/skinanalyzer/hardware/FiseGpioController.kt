@@ -12,18 +12,8 @@ class FiseGpioController @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
 
-    private val gpioMap = mapOf(
-        0 to 34,
-        1 to 149,
-        2 to 45,
-        3 to 54,
-        4 to 56
-    )
-
-    private val gpioFiles = gpioMap.map { (index, gpioNum) ->
-        index to File("/sys/class/gpio/gpio$gpioNum/value")
-    }.toMap()
-
+    private val gpioFiles = (0..4).map { File("/sys/class/fise_gpio$it/level") }
+    private val ledFile = File("/sys/class/fise_led/level")
     private var _available = false
     var selinuxEnforcing: Boolean? = null
         private set
@@ -33,240 +23,26 @@ class FiseGpioController @Inject constructor(
     private var _statusMessage = ""
     val statusMessage: String get() = _statusMessage
 
-    private var _hasRoot: Boolean? = null
-    val hasRoot: Boolean get() = _hasRoot ?: false
-    private var _suPath: String = "su"
-    private var _rootManagerDetected = false
-    val rootManagerDetected: Boolean get() = _rootManagerDetected
-    var detectedRootManagerPackage: String? = null
-        private set
+    val hasRoot: Boolean = false
+    val rootManagerDetected: Boolean = false
+    val detectedRootManagerPackage: String? = null
 
     init {
-        detectRoot()
         checkSelinux()
-        if (!setupGpio()) {
-            Timber.w("Initial GPIO setup failed. Trying FISE driver rebind...")
-            if (rebindFiseDriver()) {
-                Timber.i("FISE driver rebound. Retrying GPIO setup...")
-                setupGpio()
-            }
-            if (!_available) {
-                Timber.w("FISE driver rebind failed or didn't help. Trying boot script install...")
-                if (installBootScript()) {
-                    Timber.i("Boot script installed & run. Retrying GPIO setup...")
-                    setupGpio()
-                }
-            }
-            if (!_available) {
-                Timber.w("Trying one-shot export via sh -c for each pin...")
-                var anyOk = false
-                for ((_, gpioNum) in gpioMap) {
-                    val dir = File("/sys/class/gpio/gpio$gpioNum")
-                    if (!dir.exists()) {
-                        if (shellExec("echo $gpioNum > /sys/class/gpio/export")) {
-                            anyOk = true
-                            kotlinx.coroutines.runBlocking { kotlinx.coroutines.delay(80) }
-                            shellExec("echo out > /sys/class/gpio/gpio$gpioNum/direction")
-                            shellExec("echo 1 > /sys/class/gpio/gpio$gpioNum/value")
-                            shellExec("chmod 666 /sys/class/gpio/gpio$gpioNum/value")
-                        }
-                    } else {
-                        anyOk = true
-                    }
-                }
-                if (anyOk) setupGpio()
-            }
-        }
+        val gpioOk = gpioFiles.all { it.exists() } && verifyWriteAccess()
+        val ledOk = ledFile.exists()
+        _available = gpioOk || ledOk
         if (_available) {
             _statusMessage = "أضواء التشخيص جاهزة ✓"
-            Timber.i("Standard GPIO controller available: 5 channels (gpios=${gpioMap.values}), SELinux=$selinuxEnforcing")
+            Timber.i("FISE GPIO controller available: ${gpioFiles.size} channels, fise_gpio_exists=${gpioFiles.map { it.exists() }}, fise_led=${ledOk}, SELinux=$selinuxEnforcing")
             turnAllOff()
         } else {
-            _statusMessage = if (_rootManagerDetected) {
-                "⚠️ أضواء التشخيص غير متصلة. افتح تطبيق Root وامنح الصلاحية لـ SkinAnalyzer"
-            } else {
-                "⚠️ أضواء التشخيص غير متصلة. قم بتشغيل: setup_gpio.ps1 عبر ADB"
+            _statusMessage = "⚠️ أضواء التشخيص غير متصلة — FISE driver لا يوجد"
+            Timber.w("FISE GPIO controller not available (SELinux=$selinuxEnforcing)")
+            gpioFiles.forEach {
+                Timber.w("  ${it.absolutePath}: exists=${it.exists()}, canWrite=${try { it.canWrite() } catch (_: Exception) { false }}")
             }
-            Timber.e("GPIO NOT available after all attempts (SELinux=$selinuxEnforcing, root=$hasRoot, rootMgr=$_rootManagerDetected, suPath=$_suPath)")
-            gpioFiles.forEach { (idx, file) ->
-                Timber.e("  GPIO $idx (gpio${gpioMap[idx]}): dir=${File("/sys/class/gpio/gpio${gpioMap[idx]}").exists()}, exists=${file.exists()}, canWrite=${file.canWrite()}, readback=${try { file.readText().trim() } catch (_: Exception) { "?" }}")
-            }
-        }
-    }
-
-    private fun setupGpio(): Boolean {
-        exportAll()
-        chmodAllValues()
-        val allExist = gpioFiles.values.all { it.exists() }
-        val writable = allExist && verifyWriteAccess()
-        _available = writable
-        return _available
-    }
-
-    suspend fun recheckAvailability(): Boolean {
-        if (_available) return true
-        Timber.i("Rechecking GPIO availability at runtime (root=$hasRoot, suPath=$_suPath)...")
-        checkSelinux()
-
-        if (setupGpio()) {
-            Timber.i("GPIO re-check: now available!")
-            turnAllOff()
-            return true
-        }
-
-        Timber.i("GPIO re-check: still unavailable. Trying FISE rebind with delay...")
-        if (rebindFiseDriver()) {
-            kotlinx.coroutines.delay(200)
-            if (setupGpio()) {
-                Timber.i("GPIO re-check: NOW available after FISE rebind!")
-                turnAllOff()
-                return true
-            }
-        }
-
-        Timber.i("GPIO re-check: FISE rebind failed. Trying direct export for each pin (root=$hasRoot)...")
-        var anyExported = false
-        for ((_, gpioNum) in gpioMap) {
-            val dir = File("/sys/class/gpio/gpio$gpioNum")
-            if (dir.exists()) {
-                anyExported = true
-                continue
-            }
-            if (directWrite("/sys/class/gpio/export", gpioNum.toString())) {
-                kotlinx.coroutines.delay(50)
-                directWrite("/sys/class/gpio/gpio$gpioNum/direction", "out")
-                directWrite("/sys/class/gpio/gpio$gpioNum/value", "1")
-                anyExported = true
-            } else {
-                Timber.e("GPIO $gpioNum: all export methods failed")
-            }
-        }
-
-        val allExist = gpioFiles.values.all { it.exists() }
-        val writable = allExist && verifyWriteAccess()
-        _available = writable
-        if (_available) {
-            _statusMessage = "أضواء التشخيص جاهزة ✓"
-            Timber.i("GPIO re-check: finally available after direct export!")
-            turnAllOff()
-        } else {
-            _statusMessage = if (_rootManagerDetected) {
-                "⚠️ أضواء التشخيص غير متصلة. افتح تطبيق Root وامنح الصلاحية لـ SkinAnalyzer"
-            } else {
-                "⚠️ أضواء التشخيص غير متصلة. قم بتشغيل: .\\setup_gpio.ps1 في PowerShell"
-            }
-            Timber.w("GPIO re-check: still unavailable. rootMgr=$_rootManagerDetected, SELinux=$selinuxEnforcing")
-            gpioFiles.forEach { (idx, file) ->
-                Timber.w("  GPIO $idx (${gpioMap[idx]}): exists=${file.exists()}, canWrite=${file.canWrite()}, readback=${try { file.readText().trim() } catch (_: Exception) { "?" }}")
-            }
-        }
-        return _available
-    }
-
-    private fun directWrite(path: String, value: String): Boolean {
-        if (suExec("echo $value > $path")) return true
-        if (shellExec("echo $value > $path")) return true
-        return try {
-            File(path).writeText(value)
-            true
-        } catch (e: Exception) {
-            Timber.e(e, "Direct write to $path failed")
-            false
-        }
-    }
-
-    private fun exportAll() {
-        for ((index, gpioNum) in gpioMap) {
-            val dir = File("/sys/class/gpio/gpio$gpioNum")
-            if (!dir.exists()) {
-                val exported = suExec("echo $gpioNum > /sys/class/gpio/export")
-                if (exported) {
-                    Timber.d("Exported GPIO $gpioNum via su")
-                } else {
-                    val shellOk = shellExec("echo $gpioNum > /sys/class/gpio/export")
-                    if (shellOk) {
-                        Timber.d("Exported GPIO $gpioNum via shell")
-                    } else {
-                        Timber.d("Cannot export GPIO $gpioNum (index $index). Assume pre-exported.")
-                    }
-                }
-            }
-            val dirOk = suExec("echo out > /sys/class/gpio/gpio$gpioNum/direction")
-            if (!dirOk) {
-                shellExec("echo out > /sys/class/gpio/gpio$gpioNum/direction")
-            }
-        }
-    }
-
-    private fun chmodAllValues() {
-        for ((_, gpioNum) in gpioMap) {
-            suExec("chmod 666 /sys/class/gpio/gpio$gpioNum/value") ||
-            shellExec("chmod 666 /sys/class/gpio/gpio$gpioNum/value")
-        }
-    }
-
-    private fun rebindFiseDriver(): Boolean {
-        try {
-            Timber.i("Attempting FISE driver unbind/rebind...")
-            val unbindOk = suExec("echo fise_gpio > /sys/bus/platform/drivers/fise_gpio/unbind") ||
-                           shellExec("echo fise_gpio > /sys/bus/platform/drivers/fise_gpio/unbind")
-            if (!unbindOk) {
-                Timber.d("FISE unbind failed or driver not bound — may already be unbound")
-            }
-            val bindOk = suExec("echo fise_gpio > /sys/bus/platform/drivers/fise_gpio/bind") ||
-                         shellExec("echo fise_gpio > /sys/bus/platform/drivers/fise_gpio/bind")
-            if (!bindOk) {
-                Timber.e("FISE bind failed — driver may not exist or already bound")
-                return false
-            }
-            Timber.i("FISE driver rebound successfully")
-            return true
-        } catch (e: Exception) {
-            Timber.e(e, "FISE driver rebind exception")
-            return false
-        }
-    }
-
-    fun installBootScript(): Boolean {
-        try {
-            val scriptName = "99gpio_setup.sh"
-            val scriptPath = "/data/local/tmp/$scriptName"
-
-            val destFile = File(scriptPath)
-            if (destFile.exists() && destFile.canExecute()) {
-                Timber.i("GPIO boot script already installed at $scriptPath")
-                return true
-            }
-
-            val inputStream = context.assets.open("scripts/$scriptName")
-            val bytes = inputStream.readBytes()
-            inputStream.close()
-
-            destFile.writeBytes(bytes)
-            destFile.setExecutable(true)
-
-            Timber.i("GPIO boot script copied to $scriptPath (${bytes.size} bytes)")
-
-            val chmodOk = suExec("chmod 755 $scriptPath") || shellExec("chmod 755 $scriptPath")
-            Timber.i("GPIO boot script chmod result: $chmodOk")
-
-            val runOk = suExec("sh $scriptPath") || shellExec("sh $scriptPath")
-            if (runOk) {
-                Timber.i("GPIO boot script executed successfully via su")
-                return true
-            } else {
-                Timber.w("GPIO boot script execution failed via su, trying shell")
-                val shellRunOk = shellExec("sh $scriptPath")
-                if (shellRunOk) {
-                    Timber.i("GPIO boot script executed via shell")
-                    return true
-                }
-                Timber.w("GPIO boot script execution failed via both methods")
-                return false
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to install GPIO boot script")
-            return false
+            Timber.w("  ${ledFile.absolutePath}: exists=${ledFile.exists()}")
         }
     }
 
@@ -281,253 +57,79 @@ class FiseGpioController @Inject constructor(
     }
 
     private fun verifyWriteAccess(): Boolean {
-        for ((index, file) in gpioFiles) {
-            if (!writeSysfs(file, "1")) {
-                Timber.e("GPIO write test FAILED for index $index (${gpioMap[index]})")
+        for (file in gpioFiles) {
+            try {
+                file.writeText("0")
+                val rb = file.readText().trim()
+                Timber.d("GPIO write test ${file.absolutePath}: wrote=0, readback=$rb")
+            } catch (e: Exception) {
+                Timber.e(e, "GPIO write test FAILED for ${file.absolutePath} (SELinux=$selinuxEnforcing)")
                 return false
             }
-            val rb = try { file.readText().trim() } catch (e: Exception) { "?" }
-            Timber.d("GPIO $index write test: wrote=1, readback=$rb")
         }
-        Timber.i("All GPIO write tests passed")
+        Timber.i("All FISE GPIO write tests passed")
         return true
     }
 
-    private fun writeSysfs(file: File, value: String): Boolean {
-        val path = file.absolutePath
-        if (suExec("echo $value > $path")) return true
-        if (shellExec("echo $value > $path")) return true
-        return try {
-            file.writeText(value)
-            true
-        } catch (e: Exception) {
-            Timber.e(e, "Direct write to $path = $value also failed")
-            false
-        }
-    }
-
-    private fun shellExec(cmd: String): Boolean {
-        return try {
-            val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", cmd))
-            val stdout = proc.inputStream.bufferedReader().readText().trim()
-            val stderr = proc.errorStream.bufferedReader().readText().trim()
-            val exit = proc.waitFor()
-            if (exit != 0) {
-                Timber.d("shellExec failed: cmd=$cmd, exit=$exit, stderr=$stderr")
-            }
-            exit == 0
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    private fun detectRoot() {
-        val suPaths = listOf(
-            "/system/bin/su", "/sbin/su", "/system/xbin/su", "/su/bin/su", "/vendor/bin/su",
-            "/data/adb/magisk/su", "/data/adb/ksu/bin/su", "/data/adb/ap/su",
-            "/system/su", "/system/bin/su-backup", "/system/usr/su"
-        )
-
-        var foundRootManager = false
-
-        for (path in suPaths) {
-            if (java.io.File(path).exists()) {
-                foundRootManager = true
-                val invocations = listOf(
-                    arrayOf(path, "-c", "id"),
-                    arrayOf(path, "0", "id"),
-                    arrayOf(path, "-0", "id"),
-                    arrayOf(path, "root", "id"),
-                )
-                for (cmd in invocations) {
-                    try {
-                        val proc = Runtime.getRuntime().exec(cmd)
-                        val completed = proc.waitFor(3, java.util.concurrent.TimeUnit.SECONDS)
-                        if (!completed) {
-                            proc.destroyForcibly()
-                            Timber.w("su detectRoot timeout at $path — root manager may need permission grant")
-                            continue
-                        }
-                        val output = proc.inputStream.bufferedReader().readText().trim()
-                        val err = proc.errorStream.bufferedReader().readText().trim()
-                        val exit = proc.exitValue()
-                        Timber.i("su check: cmd=${cmd.joinToString(" ")}, exit=$exit, stdout=$output, stderr=$err")
-                        if (exit == 0 && (output.contains("uid=0") || output.contains("root"))) {
-                            _hasRoot = true
-                            _suPath = path
-                            Timber.i("ROOT DETECTED at $path via ${cmd.joinToString(" ")}: $output")
-                            return
-                        }
-                    } catch (e: Exception) {
-                        Timber.d("su check failed for ${cmd.joinToString(" ")}: ${e.message}")
-                    }
-                }
-            }
-        }
-
-        try {
-            val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "which su 2>/dev/null || echo 'not found'"))
-            val completed = proc.waitFor(3, java.util.concurrent.TimeUnit.SECONDS)
-            if (completed) {
-                val whichResult = proc.inputStream.bufferedReader().readText().trim()
-                val exit = proc.exitValue()
-                Timber.i("which su result: exit=$exit, output=$whichResult")
-                if (exit == 0 && whichResult.isNotEmpty() && whichResult != "not found" && java.io.File(whichResult).exists()) {
-                    val proc2 = Runtime.getRuntime().exec(arrayOf(whichResult, "-c", "id"))
-                    val completed2 = proc2.waitFor(3, java.util.concurrent.TimeUnit.SECONDS)
-                    if (completed2) {
-                        val output = proc2.inputStream.bufferedReader().readText().trim()
-                        val exit2 = proc2.exitValue()
-                        Timber.i("which su execution: exit=$exit2, output=$output")
-                        if (exit2 == 0 && (output.contains("uid=0") || output.contains("root"))) {
-                            _hasRoot = true
-                            _suPath = whichResult
-                            Timber.i("ROOT DETECTED via which: $whichResult -> $output")
-                            return
-                        }
-                    } else {
-                        proc2.destroyForcibly()
-                    }
-                }
-            } else {
-                proc.destroyForcibly()
-            }
-        } catch (e: Exception) {
-            Timber.d("which su failed: ${e.message}")
-        }
-
-        try {
-            val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "id"))
-            val completed = proc.waitFor(3, java.util.concurrent.TimeUnit.SECONDS)
-            if (completed) {
-                val output = proc.inputStream.bufferedReader().readText().trim()
-                val exit = proc.exitValue()
-                Timber.i("sh id result: exit=$exit, output=$output")
-                if (exit == 0 && output.contains("uid=0")) {
-                    _hasRoot = true
-                    _suPath = "sh"
-                    Timber.i("ROOT DETECTED via sh id: $output")
-                    return
-                }
-            } else {
-                proc.destroyForcibly()
-            }
-        } catch (e: Exception) {
-            Timber.d("sh id failed: ${e.message}")
-        }
-
-        val fiseDriverBound = try {
-            java.io.File("/sys/bus/platform/drivers/fise_gpio").listFiles()?.isNotEmpty() == true
-        } catch (_: Exception) { false }
-        val gpioExportExists = try { java.io.File("/sys/class/gpio/export").canWrite() } catch (_: Exception) { false }
-        val gpio34Exists = java.io.File("/sys/class/gpio/gpio34").exists()
-
-        _hasRoot = false
-        if (foundRootManager) {
-            _rootManagerDetected = true
-            detectedRootManagerPackage = detectRootManagerPackage()
-            Timber.w("ROOT MANAGER FOUND (pkg=$detectedRootManagerPackage) but NOT GRANTED to this app. Open root manager and grant permission to SkinAnalyzer.")
+    suspend fun recheckAvailability(): Boolean {
+        if (_available) return true
+        Timber.i("Rechecking FISE GPIO availability at runtime...")
+        checkSelinux()
+        val gpioOk = gpioFiles.all { it.exists() } && verifyWriteAccess()
+        val ledOk = ledFile.exists()
+        _available = gpioOk || ledOk
+        if (_available) {
+            _statusMessage = "أضواء التشخيص جاهزة ✓"
+            Timber.i("FISE GPIO re-check: NOW available! gpio_ok=$gpioOk, led_ok=$ledOk")
+            turnAllOff()
         } else {
-            Timber.w("NO ROOT MANAGER found (checked ${suPaths.size} paths). FISE driver bound=$fiseDriverBound, gpioExport writable=$gpioExportExists, gpio34 exists=$gpio34Exists")
-        }
-    }
-
-    private fun detectRootManagerPackage(): String? {
-        val knownPackages = listOf(
-            "com.topjohnwu.magisk",
-            "eu.chainfire.supersu",
-            "com.koushikdutta.superuser",
-            "com.thirdparty.superuser",
-            "com.noshufou.android.su",
-            "com.kingroot.kinguser",
-            "com.kingo.root",
-            "me.phh.superuser",
-            "com.tsng.hidemyapplist",
-            "io.github.vvb2060.magisk"
-        )
-        for (pkg in knownPackages) {
-            try {
-                val pm = context.packageManager
-                pm.getPackageInfo(pkg, 0)
-                Timber.i("Found root manager: $pkg")
-                return pkg
-            } catch (_: Exception) {}
-        }
-        return null
-    }
-
-    private fun suExec(cmd: String): Boolean {
-        return try {
-            val pathsToTry = if (_hasRoot == true) listOf(_suPath) else listOf("/system/bin/su", "/sbin/su", "/system/xbin/su", "/su/bin/su", "/vendor/bin/su", "/data/adb/magisk/su", "/data/adb/ksu/bin/su")
-            for (path in pathsToTry) {
-                try {
-                    val proc = Runtime.getRuntime().exec(arrayOf(path, "-c", cmd))
-                    val completed = proc.waitFor(3, java.util.concurrent.TimeUnit.SECONDS)
-                    if (!completed) {
-                        proc.destroyForcibly()
-                        Timber.w("su timeout at $path (3s) — root manager may need permission grant")
-                        continue
-                    }
-                    val exit = proc.exitValue()
-                    if (exit == 0) {
-                        if (_hasRoot != true) {
-                            _hasRoot = true
-                            _suPath = path
-                            Timber.i("Root discovered at $path during command execution")
-                        }
-                        return true
-                    }
-                } catch (_: Exception) {}
+            _statusMessage = "⚠️ أضواء التشخيص غير متصلة — FISE driver لا يوجد"
+            Timber.w("FISE GPIO re-check: still unavailable. SELinux=$selinuxEnforcing")
+            gpioFiles.forEach {
+                Timber.w("  ${it.absolutePath}: exists=${it.exists()}, canWrite=${try { it.canWrite() } catch (_: Exception) { false }}")
             }
-            false
-        } catch (e: Exception) {
-            Timber.d("suExec failed: ${e.message}")
-            false
         }
-    }
-
-    private fun ensurePinReady(index: Int): Boolean {
-        val gpioNum = gpioMap[index] ?: return false
-        val dir = File("/sys/class/gpio/gpio$gpioNum")
-        if (dir.exists()) return dir.isDirectory
-
-        Timber.d("GPIO $index (gpio-$gpioNum): not exported, trying to export...")
-        if (directWrite("/sys/class/gpio/export", gpioNum.toString())) {
-            try { Thread.sleep(50) } catch (_: InterruptedException) {}
-            directWrite("/sys/class/gpio/gpio$gpioNum/direction", "out")
-            directWrite("/sys/class/gpio/gpio$gpioNum/value", "1")
-            suExec("chmod 666 /sys/class/gpio/gpio$gpioNum/value") ||
-            shellExec("chmod 666 /sys/class/gpio/gpio$gpioNum/value")
-            return dir.exists()
-        }
-        return false
+        return _available
     }
 
     fun setGpio(index: Int, on: Boolean): Boolean {
-        val gpioNum = gpioMap[index] ?: return false
-        val file = gpioFiles[index] ?: return false
+        if (index < 0 || index >= gpioFiles.size) return false
+        val file = gpioFiles[index]
         if (!file.exists()) {
-            val ready = ensurePinReady(index)
-            if (!ready) {
-                Timber.w("GPIO $index (gpio-$gpioNum): cannot export, write will likely fail")
-            }
+            Timber.w("FISE GPIO $index file does not exist: ${file.absolutePath}")
+            return false
         }
-        val value = if (on) "0" else "1"
-        var ok = writeSysfs(file, value)
-        var rb = try { file.readText().trim() } catch (e: Exception) { "?" }
-        if (ok && rb != value) {
-            Timber.w("GPIO $index (gpio-$gpioNum): write ok but readback=$rb != expected=$value — retrying with direct write")
-            try { Thread.sleep(20) } catch (_: InterruptedException) {}
-            try { file.writeText(value); ok = true } catch (e: Exception) { ok = false }
-            rb = try { file.readText().trim() } catch (e: Exception) { "?" }
+        val value = if (on) "1" else "0"
+        return try {
+            file.writeText(value)
+            val readback = try { file.readText().trim() } catch (_: Exception) { "?" }
+            Timber.i("FISE GPIO $index -> ${if (on) "ON" else "OFF"} (readback=$readback)")
+            true
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to write FISE GPIO $index (SELinux=$selinuxEnforcing)")
+            false
         }
-        val verified = ok && rb == value
-        Timber.i("GPIO $index (gpio-$gpioNum) -> ${if (on) "ON" else "OFF"} (ok=$ok, readback=$rb, verified=$verified)")
-        return ok
+    }
+
+    fun setMasterLed(on: Boolean): Boolean {
+        if (!ledFile.exists()) {
+            Timber.w("FISE LED master file does not exist: ${ledFile.absolutePath}")
+            return false
+        }
+        return try {
+            val value = if (on) "1" else "0"
+            ledFile.writeText(value)
+            Timber.i("FISE LED master -> ${if (on) "ON" else "OFF"}")
+            true
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to write FISE LED master")
+            false
+        }
     }
 
     fun turnAllOff() {
-        for (i in gpioFiles.keys.sorted()) {
+        setMasterLed(false)
+        for (i in gpioFiles.indices) {
             setGpio(i, false)
         }
     }
@@ -538,19 +140,22 @@ class FiseGpioController @Inject constructor(
     fun activateSpectrum(spectrum: LightSpectrum): Boolean {
         val gpioIndex = spectrumToGpioIndex(spectrum)
         if (gpioIndex < 0) {
-            Timber.w("No GPIO channel for ${spectrum.name}; caller should fall back")
+            Timber.w("No FISE GPIO channel for ${spectrum.name}")
             return false
         }
         turnAllOff()
-        return setGpio(gpioIndex, true)
+        val gpioOk = setGpio(gpioIndex, true)
+        val ledOk = setMasterLed(true)
+        return gpioOk && ledOk
     }
 
     fun activateAll(): Boolean {
         var allOk = true
-        for (i in gpioFiles.keys.sorted()) {
+        for (i in gpioFiles.indices) {
             if (!setGpio(i, true)) allOk = false
         }
-        return allOk
+        val ledOk = setMasterLed(true)
+        return allOk && ledOk
     }
 
     private fun spectrumToGpioIndex(spectrum: LightSpectrum): Int {

@@ -228,39 +228,17 @@ class HomeActivity : AppCompatActivity() {
     private fun runStartupLedTest() {
         scope.launch(Dispatchers.IO) {
             if (!fiseGpioController.isAvailable) {
-                Timber.w("GPIO not available at startup, trying ALL methods...")
-
-                val fiseUnbind = try { Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo fise_gpio > /sys/bus/platform/drivers/fise_gpio/unbind 2>&1")).waitFor() } catch (_: Exception) { -1 }
-                Timber.i("FISE unbind attempt: exit=$fiseUnbind")
-                delay(200)
-                val fiseBind = try { Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo fise_gpio > /sys/bus/platform/drivers/fise_gpio/bind 2>&1")).waitFor() } catch (_: Exception) { -1 }
-                Timber.i("FISE bind attempt: exit=$fiseBind")
-                delay(300)
-
-                for (gpioNum in listOf(34, 149, 45, 54, 56)) {
-                    val dir = java.io.File("/sys/class/gpio/gpio$gpioNum")
-                    if (!dir.exists()) {
-                        val exit = try { Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo $gpioNum > /sys/class/gpio/export 2>&1")).waitFor() } catch (_: Exception) { -1 }
-                        Timber.i("GPIO export $gpioNum: exit=$exit")
-                        delay(80)
-                        try { Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo out > /sys/class/gpio/gpio$gpioNum/direction")).waitFor() } catch (_: Exception) {}
-                        try { Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo 1 > /sys/class/gpio/gpio$gpioNum/value")).waitFor() } catch (_: Exception) {}
-                        try { Runtime.getRuntime().exec(arrayOf("sh", "-c", "chmod 666 /sys/class/gpio/gpio$gpioNum/value")).waitFor() } catch (_: Exception) {}
-                    }
-                }
-
+                Timber.w("FISE GPIO not available at startup, trying recheck...")
                 val recheck = fiseGpioController.recheckAvailability()
-                Timber.i("Startup GPIO re-init after all methods: available=$recheck")
+                Timber.i("Startup FISE GPIO re-init: available=$recheck")
             }
 
             val gpioAvailable = fiseGpioController.isAvailable
             val serialAvailable = serialBusManager.isConnected
+            Timber.i("Startup LED test: gpio=$gpioAvailable, serial=$serialAvailable")
 
             if (!gpioAvailable && !serialAvailable) {
-                Timber.e("LED hardware NOT available after all startup methods. Auto-reporting to GitHub...")
-                withContext(Dispatchers.Main) {
-                    autoReportToGithub()
-                }
+                Timber.e("No LED hardware detected. LEDs will not fire during scan.")
                 return@launch
             }
 
@@ -291,15 +269,17 @@ class HomeActivity : AppCompatActivity() {
             appendLine("**Device**: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} | Android ${android.os.Build.VERSION.RELEASE}")
             appendLine("**App**: v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
             appendLine()
-            appendLine("### GPIO: available=${gpio.isAvailable}, root=${gpio.hasRoot}, rootMgr=${gpio.rootManagerDetected}, SELinux=${gpio.selinuxEnforcing}")
+            appendLine("### FISE GPIO")
+            appendLine("- Available: `${gpio.isAvailable}` | SELinux: `${gpio.selinuxEnforcing}`")
             appendLine("- Status: ${gpio.statusMessage}")
             for (i in 0..4) {
-                val gpioNum = when(i) { 0->34; 1->149; 2->45; 3->54; 4->56; else->0 }
-                val exists = java.io.File("/sys/class/gpio/gpio$gpioNum").exists()
-                appendLine("  - gpio$gpioNum: exists=$exists")
+                val exists = java.io.File("/sys/class/fise_gpio$i/level").exists()
+                val readback = try { java.io.File("/sys/class/fise_gpio$i/level").readText().trim() } catch (_: Exception) { "?" }
+                appendLine("  - fise_gpio$i: exists=$exists, value=$readback")
             }
+            val ledExists = java.io.File("/sys/class/fise_led/level").exists()
+            appendLine("  - fise_led: exists=$ledExists")
             appendLine("### Serial: ${serialBusManager.isConnected}")
-            appendLine("### USB: ${serialBusManager.listAllUsbDevices().joinToString("; ")}")
             val camMgr = getSystemService(Context.CAMERA_SERVICE) as? android.hardware.camera2.CameraManager
             appendLine("### Camera: ${camMgr?.cameraIdList?.joinToString() ?: "none"}")
         }

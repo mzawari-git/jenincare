@@ -126,25 +126,17 @@ class DiagnosticsActivity : AppCompatActivity() {
             binding.btnRebindFise.isEnabled = false
             binding.btnRebindFise.text = "جارٍ إعادة الربط..."
             scope.launch(Dispatchers.IO) {
-                appendLog("→ محاولة إعادة ربط FISE driver عبر su...")
-                val unbindOk = execShellSu("echo fise_gpio > /sys/bus/platform/drivers/fise_gpio/unbind")
-                appendLog("  Unbind: ${if (unbindOk) "✓" else "✗ (قد يكون غير مربوط)"}")
+                appendLog("→ محاولة إعادة ربط FISE driver...")
 
-                val bindOk = execShellSu("echo fise_gpio > /sys/bus/platform/drivers/fise_gpio/bind")
+                val unbindOk = execShellSu("echo fise_gpio > /sys/bus/platform/drivers/fise_gpio/unbind 2>/dev/null")
+                appendLog("  Unbind: ${if (unbindOk) "✓" else "✗"}")
+                delay(300)
+
+                val bindOk = execShellSu("echo fise_gpio > /sys/bus/platform/drivers/fise_gpio/bind 2>/dev/null")
                 appendLog("  Bind: ${if (bindOk) "✓" else "✗"}")
-
                 delay(500)
 
-                val allExported = execShellSu("echo 34 > /sys/class/gpio/export 2>/dev/null; echo 149 > /sys/class/gpio/export 2>/dev/null; echo 45 > /sys/class/gpio/export 2>/dev/null; echo 54 > /sys/class/gpio/export 2>/dev/null; echo 56 > /sys/class/gpio/export 2>/dev/null")
-                appendLog("  Export GPIOs: ${if (allExported) "✓" else "✗"}")
-
-                val directions = execShellSu("echo out > /sys/class/gpio/gpio34/direction 2>/dev/null; echo out > /sys/class/gpio/gpio149/direction 2>/dev/null; echo out > /sys/class/gpio/gpio45/direction 2>/dev/null; echo out > /sys/class/gpio/gpio54/direction 2>/dev/null; echo out > /sys/class/gpio/gpio56/direction 2>/dev/null")
-                appendLog("  Direction: ${if (directions) "✓" else "✗"}")
-
-                val chmodOk = execShellSu("chmod 666 /sys/class/gpio/gpio34/value /sys/class/gpio/gpio149/value /sys/class/gpio/gpio45/value /sys/class/gpio/gpio54/value /sys/class/gpio/gpio56/value 2>/dev/null")
-                appendLog("  Permissions: ${if (chmodOk) "✓" else "✗"}")
-
-                // Re-check GPIO availability in the controller
+                // Re-check GPIO availability
                 val nowAvailable = fiseGpioController.recheckAvailability()
 
                 withContext(Dispatchers.Main) {
@@ -188,26 +180,18 @@ class DiagnosticsActivity : AppCompatActivity() {
             appendLine("Build: ${com.ebtikar.skinanalyzer.BuildConfig.BUILD_TYPE}")
             appendLine("Time: ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date())}")
             appendLine()
-            appendLine("--- GPIO ---")
+            appendLine("--- FISE GPIO ---")
             appendLine("Available: ${gpio.isAvailable}")
-            appendLine("Root: ${gpio.hasRoot}")
             appendLine("SELinux: ${gpio.selinuxEnforcing}")
             appendLine("Status: ${gpio.statusMessage}")
             for (i in 0..4) {
-                val gpioNum = when(i) { 0->34; 1->149; 2->45; 3->54; 4->56; else->0 }
-                val dir = java.io.File("/sys/class/gpio/gpio$gpioNum")
-                val file = java.io.File("/sys/class/gpio/gpio$gpioNum/value")
-                val exists = dir.exists()
-                val canWrite = try { file.canWrite() } catch (_: Exception) { false }
+                val file = java.io.File("/sys/class/fise_gpio$i/level")
+                val exists = file.exists()
                 val readback = try { file.readText().trim() } catch (_: Exception) { "?" }
-                appendLine("  gpio$gpioNum: dir=$exists, write=$canWrite, value=$readback")
+                appendLine("  fise_gpio$i: exists=$exists, value=$readback")
             }
-            val exportFile = java.io.File("/sys/class/gpio/export")
-            appendLine("  /sys/class/gpio/export: exists=${exportFile.exists()}, canWrite=${try { exportFile.canWrite() } catch (_: Exception) { false }}")
-            val fiseUnbind = java.io.File("/sys/bus/platform/drivers/fise_gpio/unbind")
-            appendLine("  fise_gpio/unbind: exists=${fiseUnbind.exists()}, canWrite=${try { fiseUnbind.canWrite() } catch (_: Exception) { false }}")
-            val fiseDir = java.io.File("/sys/bus/platform/drivers/fise_gpio")
-            appendLine("  fise_gpio dir: exists=${fiseDir.exists()}, files=${try { fiseDir.listFiles()?.map { it.name }?.joinToString() } catch (_: Exception) { "?" }}")
+            val ledFile = java.io.File("/sys/class/fise_led/level")
+            appendLine("  fise_led: exists=${ledFile.exists()}, readback=${try { ledFile.readText().trim() } catch (_: Exception) { "?" }}")
             appendLine()
             appendLine("--- Serial Bus ---")
             appendLine("Connected: ${serialBusManager.isConnected}")
@@ -215,29 +199,6 @@ class DiagnosticsActivity : AppCompatActivity() {
             appendLine("Error: ${serialBusManager.lastError.value}")
             val driver = serialBusManager.findDriver()
             appendLine("Driver found: ${driver?.device?.deviceName ?: "none"}")
-            appendLine()
-            appendLine("--- su paths check ---")
-            val suPaths = listOf("/system/bin/su", "/sbin/su", "/system/xbin/su", "/su/bin/su", "/vendor/bin/su", "/data/adb/magisk/su", "/data/adb/ksu/bin/su")
-            for (p in suPaths) {
-                val f = java.io.File(p)
-                appendLine("  $p: exists=${f.exists()}, canExec=${try { f.canExecute() } catch (_: Exception) { false }}")
-            }
-            try {
-                val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "which su 2>/dev/null || echo not_found"))
-                val whichResult = proc.inputStream.bufferedReader().readText().trim()
-                proc.waitFor()
-                appendLine("  which su: $whichResult")
-            } catch (e: Exception) {
-                appendLine("  which su: error ${e.message}")
-            }
-            try {
-                val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "id"))
-                val idResult = proc.inputStream.bufferedReader().readText().trim()
-                proc.waitFor()
-                appendLine("  id: $idResult")
-            } catch (e: Exception) {
-                appendLine("  id: error ${e.message}")
-            }
             appendLine()
             appendLine("--- Camera ---")
             val camId = cameraManager.findBestCamera()
@@ -301,9 +262,8 @@ class DiagnosticsActivity : AppCompatActivity() {
         val available = fiseGpioController.isAvailable
         val selinux = fiseGpioController.selinuxEnforcing
         binding.tvGpioStatus.text = when {
-            available -> "متاح (SELinux=${selinux ?: "?"})"
-            selinux == true -> "غير متاح — SELinux يمنع الكتابة"
-            else -> "غير متاح — FISE يحتوي على GPIO"
+            available -> "متاح ✓"
+            else -> "غير متاح — FISE driver لا يوجد"
         }
         binding.dotGpio.setBackgroundResource(
             if (available) R.drawable.shape_status_dot_green else R.drawable.shape_status_dot_purple
@@ -458,30 +418,19 @@ class DiagnosticsActivity : AppCompatActivity() {
             appendLine("## Diagnostic Report - SkinAnalyzer v${com.ebtikar.skinanalyzer.BuildConfig.VERSION_NAME}")
             appendLine()
             appendLine("**Device**: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} | Android ${android.os.Build.VERSION.RELEASE}")
-            appendLine("**Time**: ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date())}")
             appendLine()
-            appendLine("### GPIO")
-            appendLine("- Available: `${gpio.isAvailable}` | Root: `${gpio.hasRoot}` | SELinux: `${gpio.selinuxEnforcing}`")
+            appendLine("### FISE GPIO")
+            appendLine("- Available: `${gpio.isAvailable}` | SELinux: `${gpio.selinuxEnforcing}`")
             appendLine("- Status: ${gpio.statusMessage}")
             for (i in 0..4) {
-                val gpioNum = when(i) { 0->34; 1->149; 2->45; 3->54; 4->56; else->0 }
-                val exists = java.io.File("/sys/class/gpio/gpio$gpioNum").exists()
-                val readback = try { java.io.File("/sys/class/gpio/gpio$gpioNum/value").readText().trim() } catch (_: Exception) { "?" }
-                appendLine("  - gpio$gpioNum: exists=$exists, value=$readback")
+                val file = java.io.File("/sys/class/fise_gpio$i/level")
+                val exists = file.exists()
+                val readback = try { file.readText().trim() } catch (_: Exception) { "?" }
+                appendLine("  - fise_gpio$i: exists=$exists, value=$readback")
             }
-            appendLine("### Serial")
-            appendLine("- Connected: `${serialBusManager.isConnected}` | Error: `${serialBusManager.lastError.value}`")
-            appendLine("### Root check")
-            val suPaths = listOf("/system/bin/su", "/sbin/su", "/system/xbin/su", "/vendor/bin/su", "/data/adb/magisk/su", "/data/adb/ksu/bin/su")
-            for (p in suPaths) {
-                if (java.io.File(p).exists()) appendLine("  - $p: EXISTS")
-            }
-            try {
-                val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "which su 2>/dev/null || echo none"))
-                val w = proc.inputStream.bufferedReader().readText().trim()
-                proc.waitFor()
-                appendLine("  - which su: $w")
-            } catch (_: Exception) {}
+            val ledFile = java.io.File("/sys/class/fise_led/level")
+            appendLine("  - fise_led: exists=${ledFile.exists()}, value=${try { ledFile.readText().trim() } catch (_: Exception) { "?" }}")
+            appendLine("### Serial: `${serialBusManager.isConnected}` | Error: `${serialBusManager.lastError.value}`")
             appendLine("### Camera: `${cameraManager.findBestCamera() ?: "none"}` | Network: `${networkMonitor.isOnline()}`")
             appendLine("### Log")
             val log = binding.tvLogOutput.text.toString().takeLast(500)
@@ -510,50 +459,19 @@ class DiagnosticsActivity : AppCompatActivity() {
             }
         }
 
-        withContext(Dispatchers.Main) { appendLog("=== فحص FISE Driver Sysfs ===") }
-        val fiseDir = java.io.File("/sys/bus/platform/drivers/fise_gpio")
-        if (fiseDir.exists()) {
-            withContext(Dispatchers.Main) { appendLog("  fise_gpio dir: EXISTS") }
-            try {
-                val files = fiseDir.listFiles()
-                if (files != null) {
-                    for (f in files) {
-                        val canRead = try { f.canRead() } catch (_: Exception) { false }
-                        val canWrite = try { f.canWrite() } catch (_: Exception) { false }
-                        val content = if (canRead && f.isFile) try { f.readText().trim().take(100) } catch (_: Exception) { "?" } else if (f.isDirectory) "DIR" else "?"
-                        withContext(Dispatchers.Main) { appendLog("    ${f.name}: read=$canRead write=$canWrite content=[$content]") }
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) { appendLog("  Error listing fise: ${e.message}") }
-            }
-        } else {
-            withContext(Dispatchers.Main) { appendLog("  fise_gpio dir: NOT FOUND") }
+        withContext(Dispatchers.Main) { appendLog("=== فحص FISE GPIO Sysfs ===") }
+        for (i in 0..4) {
+            val file = java.io.File("/sys/class/fise_gpio$i/level")
+            val exists = file.exists()
+            val canWrite = try { file.canWrite() } catch (_: Exception) { false }
+            val readback = try { file.readText().trim() } catch (_: Exception) { "?" }
+            withContext(Dispatchers.Main) { appendLog("  fise_gpio$i: exists=$exists write=$canWrite value=$readback") }
         }
-
-        withContext(Dispatchers.Main) { appendLog("=== فحص GPIO sysfs ===") }
-        val gpioDir = java.io.File("/sys/class/gpio")
-        if (gpioDir.exists()) {
-            try {
-                val exportFile = java.io.File("/sys/class/gpio/export")
-                val canWrite = try { exportFile.canWrite() } catch (_: Exception) { false }
-                val exportContent = try { exportFile.readText().trim() } catch (_: Exception) { "?" }
-                withContext(Dispatchers.Main) { appendLog("  /sys/class/gpio/export: write=$canWrite content=[$exportContent]") }
-            } catch (_: Exception) {}
-
-            try {
-                val files = gpioDir.listFiles()
-                val gpioCount = files?.count { it.name.startsWith("gpio") } ?: 0
-                withContext(Dispatchers.Main) { appendLog("  Exported GPIOs: $gpioCount") }
-                if (files != null) {
-                    for (f in files.filter { it.name.startsWith("gpio") }) {
-                        withContext(Dispatchers.Main) { appendLog("    ${f.name}: isDir=${f.isDirectory}") }
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) { appendLog("  Error: ${e.message}") }
-            }
-        }
+        val ledFile = java.io.File("/sys/class/fise_led/level")
+        val ledExists = ledFile.exists()
+        val ledCanWrite = try { ledFile.canWrite() } catch (_: Exception) { false }
+        val ledReadback = try { ledFile.readText().trim() } catch (_: Exception) { "?" }
+        withContext(Dispatchers.Main) { appendLog("  fise_led: exists=$ledExists write=$ledCanWrite value=$ledReadback") }
 
         withContext(Dispatchers.Main) { appendLog("=== فحص Root الشامل ===") }
 
@@ -610,80 +528,42 @@ class DiagnosticsActivity : AppCompatActivity() {
             withContext(Dispatchers.Main) { appendLog("    su piped → EXCEPTION: ${e.message}") }
         }
 
-        withContext(Dispatchers.Main) { appendLog("  فحص 'echo > /sys/class/gpio/export':") }
-        try {
-            val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo 34 > /sys/class/gpio/export 2>&1; echo EXIT=\$?"))
-            val stdout = proc.inputStream.bufferedReader().readText().trim()
-            val exit = proc.waitFor()
-            withContext(Dispatchers.Main) { appendLog("    sh echo export → exit=$exit output=[$stdout]") }
-            val gpio34 = java.io.File("/sys/class/gpio/gpio34").exists()
-            withContext(Dispatchers.Main) { appendLog("    gpio34 exists after: $gpio34") }
-        } catch (e: Exception) {
-            withContext(Dispatchers.Main) { appendLog("    sh echo export → EXCEPTION: ${e.message}") }
-        }
-
         withContext(Dispatchers.Main) {
-            appendLog("=== اكتمل فحص Root ===")
-            appendLog("النتيجة: su موجود لكن لا يمنح صلاحيات root")
-            appendLog("الحل: يحتاج Magisk أو ADB لتشغيل setup_gpio.ps1")
+            appendLog("=== اكتمل الفحص ===")
+            appendLog("FISE GPIO: ${if (fiseGpioController.isAvailable) "✓ متاح" else "✗ غير متاح"}")
+            appendLog("Serial: ${if (serialBusManager.isConnected) "✓ متصل" else "✗ غير متصل"}")
         }
     }
 
     private suspend fun tryDirectGpioExport() {
-        withContext(Dispatchers.Main) { appendLog("=== محاولة تصدير GPIO مباشرة ===") }
-        val gpios = listOf(34, 149, 45, 54, 56)
+        withContext(Dispatchers.Main) { appendLog("=== فحص FISE GPIO files ===") }
+        for (i in 0..4) {
+            val file = java.io.File("/sys/class/fise_gpio$i/level")
+            val exists = file.exists()
+            val canWrite = try { file.canWrite() } catch (_: Exception) { false }
+            val readback = try { file.readText().trim() } catch (_: Exception) { "?" }
+            withContext(Dispatchers.Main) { appendLog("  fise_gpio$i: exists=$exists write=$canWrite value=$readback") }
 
-        for (gpio in gpios) {
-            val exists = java.io.File("/sys/class/gpio/gpio$gpio").exists()
-            if (exists) {
-                withContext(Dispatchers.Main) { appendLog("  gpio$gpio: موجود بالفعل ✓") }
-                continue
-            }
-            withContext(Dispatchers.Main) { appendLog("  gpio$gpio: غير موجود، محاولة التصدير...") }
-
-            val methods = listOf(
-                "echo $gpio > /sys/class/gpio/export" to "sh direct",
-                "su -c 'echo $gpio > /sys/class/gpio/export'" to "su -c",
-                "sh -c 'echo $gpio > /sys/class/gpio/export'" to "sh -c"
-            )
-            var exported = false
-            for ((cmd, label) in methods) {
+            if (exists && canWrite) {
                 try {
-                    val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", cmd))
-                    val err = proc.errorStream.bufferedReader().readText().trim()
-                    val exit = proc.waitFor()
-                    withContext(Dispatchers.Main) { appendLog("    $label → exit=$exit err=[$err]") }
-                    if (exit == 0 && java.io.File("/sys/class/gpio/gpio$gpio").exists()) {
-                        withContext(Dispatchers.Main) { appendLog("    ★ gpio$gpio تم التصدير بنجاح عبر $label") }
-                        exported = true
-                        break
-                    }
+                    file.writeText("1")
+                    val rb = try { file.readText().trim() } catch (_: Exception) { "?" }
+                    withContext(Dispatchers.Main) { appendLog("    write test: wrote=1 readback=$rb ✓") }
+                    file.writeText("0")
                 } catch (e: Exception) {
-                    withContext(Dispatchers.Main) { appendLog("    $label → EXCEPTION: ${e.message}") }
-                }
-            }
-            if (!exported) {
-                withContext(Dispatchers.Main) { appendLog("    gpio$gpio: فشل التصدير بكل الطرق ✗") }
-            }
-        }
-
-        for (gpio in gpios) {
-            val dir = java.io.File("/sys/class/gpio/gpio$gpio")
-            if (dir.exists()) {
-                try {
-                    Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo out > /sys/class/gpio/gpio$gpio/direction")).waitFor()
-                    Runtime.getRuntime().exec(arrayOf("sh", "-c", "chmod 666 /sys/class/gpio/gpio$gpio/value")).waitFor()
-                    Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo 1 > /sys/class/gpio/gpio$gpio/value")).waitFor()
-                    withContext(Dispatchers.Main) { appendLog("  gpio$gpio: direction=out, value=1, chmod=666 ✓") }
-                } catch (e: Exception) {
-                    withContext(Dispatchers.Main) { appendLog("  gpio$gpio: إعداد الاتجاه فشل: ${e.message}") }
+                    withContext(Dispatchers.Main) { appendLog("    write test FAILED: ${e.message}") }
                 }
             }
         }
+
+        val ledFile = java.io.File("/sys/class/fise_led/level")
+        val ledExists = ledFile.exists()
+        val ledCanWrite = try { ledFile.canWrite() } catch (_: Exception) { false }
+        withContext(Dispatchers.Main) { appendLog("  fise_led: exists=$ledExists write=$ledCanWrite") }
 
         val ok = fiseGpioController.recheckAvailability()
         withContext(Dispatchers.Main) {
-            appendLog("→ GPIO status after export: ${if (ok) "✓ متاح" else "✗ لا يزال غير متاح"}")
+            appendLog("→ FISE GPIO status: ${if (ok) "✓ متاح" else "✗ لا يزال غير متاح"}")
             updateGpioStatus()
         }
     }

@@ -160,40 +160,22 @@ class AnalysisActivity : BaseCameraActivity() {
     private fun checkLightingHardware(onReady: () -> Unit) {
         val gpioAvailable = fiseGpioController.isAvailable
         val serialAvailable = serialBusManager.isConnected
-        val rootManagerDetected = fiseGpioController.rootManagerDetected
 
-        Timber.i("Hardware pre-check: gpio=$gpioAvailable, serial=$serialAvailable, rootMgr=$rootManagerDetected")
+        Timber.i("Hardware pre-check: gpio=$gpioAvailable, serial=$serialAvailable")
 
         when {
             // No hardware at all — block the scan
             !gpioAvailable && !serialAvailable -> {
-                val message = if (rootManagerDetected) {
-                    "تم العثور على تطبيق Root على الجهاز لكنه لم يمنح الصلاحية بعد.\n\n" +
-                    "الخطوات:\n" +
-                    "1. افتح تطبيق Root (Magisk أو SuperSU)\n" +
-                    "2. ابحث عنSkinAnalyzer في قائمة الأذونات\n" +
-                    "3. اختر \"منح\" أو \"Allow\"\n" +
-                    "4. أعد تشغيل هذا التطبيق\n\n" +
-                    "هل تريد المتابعة بدون إضاءة؟"
-                } else {
-                    "لم يتم الكشف عن أي ضوء تشخيص متصل.\n\n" +
-                    "يجب تشغيل setup_gpio.ps1 عبر ADB بعد كل إعادة تشغيل.\n\n" +
-                    "هل تريد المتابعة بدون إضاءة؟ (ستكون الصور بالإضاءة الطبيعية فقط)"
-                }
                 android.app.AlertDialog.Builder(this)
                     .setTitle("⚠️ أضواء التشخيص غير متصلة")
-                    .setMessage(message)
+                    .setMessage(
+                        "لم يتم الكشف عن FISE GPIO driver.\n\n" +
+                        "تأكد من أن الجهاز ZMLH02 يعمل بشكل صحيح.\n\n" +
+                        "هل تريد المتابعة بدون إضاءة؟ (ستكون الصور بالإضاءة الطبيعية فقط)"
+                    )
                     .setCancelable(false)
                     .setPositiveButton("متابعة بدون إضاءة") { _, _ -> onReady() }
                     .setNegativeButton("إلغاء الفحص") { _, _ -> finish() }
-                    .apply {
-                        if (rootManagerDetected) {
-                            setNeutralButton("فتح تطبيق Root") { _, _ ->
-                                openRootManager()
-                                finish()
-                            }
-                        }
-                    }
                     .show()
             }
 
@@ -488,22 +470,6 @@ class AnalysisActivity : BaseCameraActivity() {
             android.graphics.Color.parseColor(phase.spectrum.colorHex)
         } catch (_: Exception) { android.graphics.Color.WHITE }
         binding.tvCurrentSpectrum.setTextColor(spectrumColor)
-    }
-
-    private fun openRootManager() {
-        val pkg = fiseGpioController.detectedRootManagerPackage
-        if (pkg != null) {
-            try {
-                val intent = packageManager.getLaunchIntentForPackage(pkg)
-                if (intent != null) {
-                    startActivity(intent)
-                    return
-                }
-            } catch (_: Exception) {}
-        }
-        val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-        intent.data = android.net.Uri.fromParts("package", packageName, null)
-        startActivity(intent)
     }
 
     private fun navigateToReport() {
