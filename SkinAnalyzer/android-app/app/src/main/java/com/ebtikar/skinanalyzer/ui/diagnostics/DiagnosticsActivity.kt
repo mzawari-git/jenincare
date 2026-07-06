@@ -1,6 +1,7 @@
 package com.ebtikar.skinanalyzer.ui.diagnostics
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -148,6 +149,10 @@ class DiagnosticsActivity : AppCompatActivity() {
 
         binding.btnShareLog.setOnClickListener {
             shareDiagnostics()
+        }
+
+        binding.btnReportGithub.setOnClickListener {
+            reportToGithub()
         }
     }
 
@@ -414,6 +419,87 @@ class DiagnosticsActivity : AppCompatActivity() {
             appendLog("  ⚠ الذاكرة مرتفعة: $usedMem MB / $maxMem MB ($percent%)")
         }
         updateLiveStats()
+    }
+
+    private fun reportToGithub() {
+        val gpio = fiseGpioController
+        val report = buildString {
+            appendLine("## تقرير تشخيص تلقائي - SkinAnalyzer v${com.ebtikar.skinanalyzer.BuildConfig.VERSION_NAME}")
+            appendLine()
+            appendLine("### معلومات الجهاز")
+            appendLine("- **الإصدار**: ${com.ebtikar.skinanalyzer.BuildConfig.VERSION_NAME} (${com.ebtikar.skinanalyzer.BuildConfig.VERSION_CODE})")
+            appendLine("- **النوع**: ${com.ebtikar.skinanalyzer.BuildConfig.BUILD_TYPE}")
+            appendLine("- **الوقت**: ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date())}")
+            appendLine("- **الجهاز**: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
+            appendLine("- **Android**: ${android.os.Build.VERSION.RELEASE} (API ${android.os.Build.VERSION.SDK_INT})")
+            appendLine()
+            appendLine("### GPIO")
+            appendLine("- Available: `${gpio.isAvailable}`")
+            appendLine("- Root: `${gpio.hasRoot}`")
+            appendLine("- SELinux: `${gpio.selinuxEnforcing}`")
+            appendLine("- Status: ${gpio.statusMessage}")
+            for (i in 0..4) {
+                val gpioNum = when(i) { 0->34; 1->149; 2->45; 3->54; 4->56; else->0 }
+                val dir = java.io.File("/sys/class/gpio/gpio$gpioNum")
+                val file = java.io.File("/sys/class/gpio/gpio$gpioNum/value")
+                val exists = dir.exists()
+                val canWrite = try { file.canWrite() } catch (_: Exception) { false }
+                val readback = try { file.readText().trim() } catch (_: Exception) { "?" }
+                appendLine("  - gpio$gpioNum: dir=$exists, write=$canWrite, value=$readback")
+            }
+            val exportFile = java.io.File("/sys/class/gpio/export")
+            appendLine("  - /sys/class/gpio/export: exists=${exportFile.exists()}, canWrite=${try { exportFile.canWrite() } catch (_: Exception) { false }}")
+            val fiseUnbind = java.io.File("/sys/bus/platform/drivers/fise_gpio/unbind")
+            appendLine("  - fise_gpio/unbind: exists=${fiseUnbind.exists()}")
+            appendLine()
+            appendLine("### Serial Bus")
+            appendLine("- Connected: `${serialBusManager.isConnected}`")
+            appendLine("- State: `${serialBusManager.connectionState.value}`")
+            appendLine("- Error: `${serialBusManager.lastError.value}`")
+            appendLine()
+            appendLine("### su paths")
+            val suPaths = listOf("/system/bin/su", "/sbin/su", "/system/xbin/su", "/su/bin/su", "/vendor/bin/su", "/data/adb/magisk/su", "/data/adb/ksu/bin/su")
+            for (p in suPaths) {
+                val f = java.io.File(p)
+                appendLine("  - $p: exists=${f.exists()}")
+            }
+            try {
+                val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "which su 2>/dev/null || echo not_found"))
+                val whichResult = proc.inputStream.bufferedReader().readText().trim()
+                proc.waitFor()
+                appendLine("  - which su: `$whichResult`")
+            } catch (e: Exception) {
+                appendLine("  - which su: error ${e.message}")
+            }
+            try {
+                val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "id"))
+                val idResult = proc.inputStream.bufferedReader().readText().trim()
+                proc.waitFor()
+                appendLine("  - id: `$idResult`")
+            } catch (e: Exception) {
+                appendLine("  - id: error ${e.message}")
+            }
+            appendLine()
+            appendLine("### Camera")
+            appendLine("- Camera: `${cameraManager.findBestCamera() ?: "not found"}`")
+            appendLine("- Ready: `${cameraManager.isReady}`")
+            appendLine()
+            appendLine("### Network")
+            appendLine("- Online: `${networkMonitor.isOnline()}`")
+            appendLine()
+            appendLine("### Log Output")
+            appendLine("```")
+            appendLine(binding.tvLogOutput.text.toString())
+            appendLine("```")
+        }
+
+        val title = "Diagnostic Report - ${com.ebtikar.skinanalyzer.BuildConfig.VERSION_NAME} - ${android.os.Build.MODEL}"
+        val encodedTitle = Uri.encode(title)
+        val encodedBody = Uri.encode(report)
+        val url = "https://github.com/mzawari-git/jenincare/issues/new?title=$encodedTitle&body=$encodedBody"
+
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        startActivity(intent)
     }
 
     private fun appendLog(message: String) {
