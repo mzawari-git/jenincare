@@ -33,18 +33,26 @@ class SkinAnalyzerApp : Application() {
 
         providerManager.initializeAll()
 
-        CoroutineScope(Dispatchers.IO).launch {
-            preferencesManager.runDiagnosisModeMigration()
+        CoroutineScope(Dispatchers.IO + kotlinx.coroutines.SupervisorJob()).launch {
+            try {
+                preferencesManager.runDiagnosisModeMigration()
+            } catch (e: Exception) {
+                Timber.e(e, "Diagnosis mode migration failed")
+            }
         }
 
         createUpdateNotificationChannel()
         ScanReminderWorker.createChannel(this)
 
-        CoroutineScope(Dispatchers.IO).launch {
-            val enabled = preferencesManager.scanReminderEnabledFlow.first()
-            if (enabled) {
-                val hours = preferencesManager.scanReminderIntervalHoursFlow.first()
-                ScanReminderWorker.schedule(this@SkinAnalyzerApp, hours)
+        CoroutineScope(Dispatchers.IO + kotlinx.coroutines.SupervisorJob()).launch {
+            try {
+                val enabled = preferencesManager.scanReminderEnabledFlow.first()
+                if (enabled) {
+                    val hours = preferencesManager.scanReminderIntervalHoursFlow.first()
+                    ScanReminderWorker.schedule(this@SkinAnalyzerApp, hours)
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Scan reminder scheduling failed")
             }
         }
 

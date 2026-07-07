@@ -37,8 +37,8 @@ class SerialBusManager @Inject constructor(
     }
 
     @Volatile private var serialPort: UsbSerialPort? = null
-    private var ioManager: SerialInputOutputManager? = null
-    private var onDataReceived: ((ByteArray) -> Unit)? = null
+    @Volatile private var ioManager: SerialInputOutputManager? = null
+    @Volatile private var onDataReceived: ((ByteArray) -> Unit)? = null
     private val commandMutex = Mutex()
     private val lastResponse = MutableStateFlow<ByteArray?>(null)
 

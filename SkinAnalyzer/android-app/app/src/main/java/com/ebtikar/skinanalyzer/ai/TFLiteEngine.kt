@@ -18,11 +18,11 @@ class TFLiteEngine @Inject constructor(
     private val context: Context
 ) {
 
-    private var interpreter: Interpreter? = null
-    private var gpuDelegate: GpuDelegate? = null
-    private var nnApiDelegate: NnApiDelegate? = null
-    private var isInitialized = false
-    private var activeDelegate: String = "none"
+    @Volatile private var interpreter: Interpreter? = null
+    @Volatile private var gpuDelegate: GpuDelegate? = null
+    @Volatile private var nnApiDelegate: NnApiDelegate? = null
+    @Volatile private var isInitialized = false
+    @Volatile private var activeDelegate: String = "none"
 
     data class ModelConfig(
         val modelPath: String = "models/skin_segmentation_quantized.tflite",

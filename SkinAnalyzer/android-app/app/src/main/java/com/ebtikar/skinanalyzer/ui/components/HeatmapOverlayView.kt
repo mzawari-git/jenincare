@@ -62,9 +62,9 @@ class HeatmapOverlayView @JvmOverloads constructor(
         if (points.isEmpty() || imageRect.isEmpty) return
 
         for (point in points) {
-            val cx = imageRect.left + point.x * imageRect.width()
-            val cy = imageRect.top + point.y * imageRect.height()
-            val radius = 30f + point.value * 40f
+            val cx = imageRect.left + point.x.coerceIn(0f, 1f) * imageRect.width()
+            val cy = imageRect.top + point.y.coerceIn(0f, 1f) * imageRect.height()
+            val radius = 30f + point.value.coerceIn(0f, 1f) * 40f
 
             val paint = when {
                 point.value < 0.33f -> goodPaint

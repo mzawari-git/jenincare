@@ -14,7 +14,7 @@ class VoiceGuideManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     private var tts: TextToSpeech? = null
-    private var isReady = false
+    @Volatile private var isReady = false
     private var isEnabled = true
 
     private val onInitListener = TextToSpeech.OnInitListener { status ->
@@ -28,7 +28,9 @@ class VoiceGuideManager @Inject constructor(
             tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                 override fun onStart(utteranceId: String?) {}
                 override fun onDone(utteranceId: String?) {}
-                override fun onError(utteranceId: String?) {}
+                override fun onError(utteranceId: String?) {
+                    Timber.w("TTS utterance failed: $utteranceId")
+                }
             })
             Timber.i("VoiceGuide TTS initialized successfully")
         } else {

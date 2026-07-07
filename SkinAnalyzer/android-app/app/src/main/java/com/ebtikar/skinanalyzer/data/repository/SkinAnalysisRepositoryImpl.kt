@@ -300,18 +300,18 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
     }
 
     private fun validateCrossSpectrum(metrics: MutableMap<SkinMetric.Type, SkinMetric>) {
-        val uvSpots = metrics[SkinMetric.Type.UV_SPOTS]?.score ?: return
-        val pigmentation = metrics[SkinMetric.Type.PIGMENTATION]?.score ?: return
-        val vascular = metrics[SkinMetric.Type.VASCULAR]?.score ?: return
-        val sensitivity = metrics[SkinMetric.Type.SENSITIVITY]?.score ?: return
-        val rosacea = metrics[SkinMetric.Type.ROSACEA]?.score ?: return
-        val acne = metrics[SkinMetric.Type.ACNE]?.score ?: return
-        val blackheads = metrics[SkinMetric.Type.BLACKHEADS]?.score ?: return
-        val sebum = metrics[SkinMetric.Type.SEBUM]?.score ?: return
-        val moisture = metrics[SkinMetric.Type.MOISTURE]?.score ?: return
-        val wrinkles = metrics[SkinMetric.Type.WRINKLES]?.score ?: return
+        val uvSpots = metrics[SkinMetric.Type.UV_SPOTS]?.score
+        val pigmentation = metrics[SkinMetric.Type.PIGMENTATION]?.score
+        val vascular = metrics[SkinMetric.Type.VASCULAR]?.score
+        val sensitivity = metrics[SkinMetric.Type.SENSITIVITY]?.score
+        val rosacea = metrics[SkinMetric.Type.ROSACEA]?.score
+        val acne = metrics[SkinMetric.Type.ACNE]?.score
+        val blackheads = metrics[SkinMetric.Type.BLACKHEADS]?.score
+        val sebum = metrics[SkinMetric.Type.SEBUM]?.score
+        val moisture = metrics[SkinMetric.Type.MOISTURE]?.score
+        val wrinkles = metrics[SkinMetric.Type.WRINKLES]?.score
 
-        if (pigmentation > uvSpots + 15f && uvSpots < 85f) {
+        if (pigmentation != null && uvSpots != null && pigmentation > uvSpots + 15f && uvSpots < 85f) {
             val adjusted = (uvSpots + pigmentation) / 2f
             metrics[SkinMetric.Type.PIGMENTATION]?.let { m ->
                 metrics[SkinMetric.Type.PIGMENTATION] = m.copy(score = adjusted, details = m.details + " | تم تعديله بناءً على تحليل UV")
@@ -321,21 +321,23 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
             }
         }
 
-        val polAvg = (vascular + sensitivity + rosacea) / 3f
-        if (maxOf(vascular, sensitivity, rosacea) - minOf(vascular, sensitivity, rosacea) > 20f) {
-            val adjusted = polAvg
-            metrics[SkinMetric.Type.VASCULAR]?.let { m ->
-                metrics[SkinMetric.Type.VASCULAR] = m.copy(score = adjusted, details = m.details + " | معدّل عبر المؤشرات")
-            }
-            metrics[SkinMetric.Type.SENSITIVITY]?.let { m ->
-                metrics[SkinMetric.Type.SENSITIVITY] = m.copy(score = adjusted, details = m.details + " | معدّل عبر المؤشرات")
-            }
-            metrics[SkinMetric.Type.ROSACEA]?.let { m ->
-                metrics[SkinMetric.Type.ROSACEA] = m.copy(score = adjusted, details = m.details + " | معدّل عبر المؤشرات")
+        if (vascular != null && sensitivity != null && rosacea != null) {
+            val polAvg = (vascular + sensitivity + rosacea) / 3f
+            if (maxOf(vascular, sensitivity, rosacea) - minOf(vascular, sensitivity, rosacea) > 20f) {
+                val adjusted = polAvg
+                metrics[SkinMetric.Type.VASCULAR]?.let { m ->
+                    metrics[SkinMetric.Type.VASCULAR] = m.copy(score = adjusted, details = m.details + " | معدّل عبر المؤشرات")
+                }
+                metrics[SkinMetric.Type.SENSITIVITY]?.let { m ->
+                    metrics[SkinMetric.Type.SENSITIVITY] = m.copy(score = adjusted, details = m.details + " | معدّل عبر المؤشرات")
+                }
+                metrics[SkinMetric.Type.ROSACEA]?.let { m ->
+                    metrics[SkinMetric.Type.ROSACEA] = m.copy(score = adjusted, details = m.details + " | معدّل عبر المؤشرات")
+                }
             }
         }
 
-        if (sebum < 60f && (acne < 80f || blackheads < 80f)) {
+        if (sebum != null && acne != null && blackheads != null && sebum < 60f && (acne < 80f || blackheads < 80f)) {
             if (acne > 70f && sebum > 30f) {
                 metrics[SkinMetric.Type.ACNE]?.let { m ->
                     metrics[SkinMetric.Type.ACNE] = m.copy(score = (acne + (100f - sebum)) / 2f, details = m.details + " | تم تعديله بناءً على الدهون")
@@ -346,7 +348,7 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
             }
         }
 
-        if (moisture < 60f && wrinkles > 60f) {
+        if (moisture != null && wrinkles != null && moisture < 60f && wrinkles > 60f) {
             val adjustedWrinkles = (wrinkles + (100f - moisture)) / 2f
             metrics[SkinMetric.Type.WRINKLES]?.let { m ->
                 metrics[SkinMetric.Type.WRINKLES] = m.copy(score = adjustedWrinkles, details = m.details + " | تم تعديله بناءً على الرطوبة")

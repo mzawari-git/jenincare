@@ -46,7 +46,7 @@ class USBCameraManager @Inject constructor(
     @Volatile private var captureSession: CameraCaptureSession? = null
     @Volatile private var imageReader: ImageReader? = null
     @Volatile private var backgroundHandler: Handler? = null
-    private var backgroundThread: HandlerThread? = null
+    @Volatile private var backgroundThread: HandlerThread? = null
     private var supportedSizes: List<Size> = emptyList()
     @Volatile private var previewSurface: Surface? = null
     private var sensorOrientation: Int = 0

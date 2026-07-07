@@ -44,9 +44,8 @@ class PdfReportGenerator @Inject constructor() {
     }
 
     fun generate(context: Context, report: SkinAnalysisReport, outputDir: File, capturedImages: Map<LightSpectrum, File> = emptyMap()): File? {
+        val pdfDocument = PdfDocument()
         return try {
-            val pdfDocument = PdfDocument()
-
             drawPage1_Header(pdfDocument, report)
             drawPage2_Metrics(pdfDocument, report)
             drawPage3_Recommendations(pdfDocument, report)
@@ -59,12 +58,13 @@ class PdfReportGenerator @Inject constructor() {
             FileOutputStream(file).use { fos ->
                 pdfDocument.writeTo(fos)
             }
-            pdfDocument.close()
             Timber.i("PDF report generated: ${file.absolutePath}")
             file
         } catch (e: Exception) {
             Timber.e(e, "Failed to generate PDF report")
             null
+        } finally {
+            pdfDocument.close()
         }
     }
 
@@ -531,7 +531,7 @@ class PdfReportGenerator @Inject constructor() {
         if (spectra.isEmpty()) {
             val emptyPaint = Paint().apply { color = LIGHT_GRAY; textSize = 12f; isAntiAlias = true }
             canvas.drawText("لا توجد صور ملتقطة", MARGIN, 120f, emptyPaint)
-            drawFooter(canvas, 4, "DERMA AI v${android.os.Build.VERSION.RELEASE}")
+            drawFooter(canvas, 4, "DERMA AI v${android.os.Build.VERSION.RELEASE}", 4)
             pdfDocument.finishPage(page)
             return
         }
@@ -564,7 +564,10 @@ class PdfReportGenerator @Inject constructor() {
             canvas.drawRoundRect(cardRect, 8f, 8f, borderPaint)
 
             try {
-                val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+                val options = BitmapFactory.Options().apply {
+                    inSampleSize = 4
+                }
+                val bitmap = BitmapFactory.decodeFile(file.absolutePath, options)
                 if (bitmap != null) {
                     val padding = 6f
                     val imageRect = RectF(x + padding, y + padding, x + cellWidth - padding, y + cellHeight - padding)
@@ -593,7 +596,7 @@ class PdfReportGenerator @Inject constructor() {
             canvas.drawText(spectrum.name, x + 8f, y + cellHeight + 24f, nameEnPaint)
         }
 
-        drawFooter(canvas, 4, "DERMA AI v${android.os.Build.VERSION.RELEASE}")
+        drawFooter(canvas, 4, "DERMA AI v${android.os.Build.VERSION.RELEASE}", 4)
         pdfDocument.finishPage(page)
     }
 
@@ -672,7 +675,7 @@ class PdfReportGenerator @Inject constructor() {
         return currentY + paint.textSize
     }
 
-    private fun drawFooter(canvas: Canvas, pageNum: Int, appName: String) {
+    private fun drawFooter(canvas: Canvas, pageNum: Int, appName: String, totalPages: Int = 3) {
         val footerY = PAGE_HEIGHT - 30f
         val footerLinePaint = Paint().apply { color = GOLD; strokeWidth = 0.5f; isAntiAlias = true }
         canvas.drawLine(MARGIN, footerY, PAGE_WIDTH - MARGIN, footerY, footerLinePaint)
@@ -685,7 +688,7 @@ class PdfReportGenerator @Inject constructor() {
         val pagePaint = Paint().apply {
             color = LIGHT_GRAY; textSize = 8f; isAntiAlias = true; textAlign = Paint.Align.RIGHT
         }
-        canvas.drawText("Page $pageNum of 3", PAGE_WIDTH - MARGIN, footerY + 12f, pagePaint)
+        canvas.drawText("Page $pageNum of $totalPages", PAGE_WIDTH - MARGIN, footerY + 12f, pagePaint)
     }
 
     private fun getScoreColor(score: Float): Int {

@@ -206,7 +206,11 @@ class ReportViewModel @Inject constructor(
     fun exportCsv(): File? {
         val reportId = currentReportId ?: return null
         return try {
-            val entity = kotlinx.coroutines.runBlocking { repository.getReport(reportId) } ?: return null
+            val entity = kotlinx.coroutines.runBlocking {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    repository.getReport(reportId)
+                }
+            } ?: return null
             val serializer = ListSerializer(SkinMetric.serializer())
             val metrics = json.decodeFromString(serializer, entity.metricsJson)
             val outputDir = File(context.filesDir, "exports")

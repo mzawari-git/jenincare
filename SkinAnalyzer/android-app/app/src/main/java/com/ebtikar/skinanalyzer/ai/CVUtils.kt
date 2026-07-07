@@ -76,10 +76,11 @@ object CVUtils {
     }
 
     fun extractFaceRegion(bitmap: Bitmap, faceRect: Rect): Bitmap? {
+        if (faceRect.width() <= 0 || faceRect.height() <= 0) return null
         val x = (faceRect.left - faceRect.width() * 0.2f).toInt().coerceIn(0, bitmap.width - 1)
         val y = (faceRect.top - faceRect.height() * 0.2f).toInt().coerceIn(0, bitmap.height - 1)
-        val w = (faceRect.width() * 1.4f).toInt().coerceAtMost(bitmap.width - x)
-        val h = (faceRect.height() * 1.4f).toInt().coerceAtMost(bitmap.height - y)
+        val w = (faceRect.width() * 1.4f).toInt().coerceIn(1, bitmap.width - x)
+        val h = (faceRect.height() * 1.4f).toInt().coerceIn(1, bitmap.height - y)
         return Bitmap.createBitmap(bitmap, x, y, w, h)
     }
 

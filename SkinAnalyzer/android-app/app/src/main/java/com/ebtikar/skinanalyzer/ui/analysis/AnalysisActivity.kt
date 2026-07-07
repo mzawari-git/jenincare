@@ -118,7 +118,16 @@ class AnalysisActivity : BaseCameraActivity() {
                 handleSurfaceAvailable(surface, binding.cameraPreview.width, binding.cameraPreview.height)
             } else {
                 Timber.w("isAvailable=true but surfaceTexture is null, setting listener")
-                setupCameraPreview()
+                binding.cameraPreview.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
+                    override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
+                        handleSurfaceAvailable(surface, width, height)
+                    }
+                    override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
+                        binding.cameraPreview.post { cameraManager.rotateTextureView(binding.cameraPreview) }
+                    }
+                    override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean = true
+                    override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {}
+                }
             }
         } else {
             Timber.i("TextureView surface not yet available, setting listener")

@@ -353,7 +353,6 @@ class FrameCapturePipeline @Inject constructor(
                     if (!saved) {
                         Timber.e("Failed to save frame ${spectrum.name} to ${frameFile.absolutePath}")
                     }
-                    _capturedBitmap.value?.let { if (!it.isRecycled) it.recycle() }
                     _capturedBitmap.value = bitmap
                     capturedSuccessfully = true
                     break

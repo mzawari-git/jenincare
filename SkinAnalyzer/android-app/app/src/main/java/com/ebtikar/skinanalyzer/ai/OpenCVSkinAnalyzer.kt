@@ -164,7 +164,7 @@ class OpenCVSkinAnalyzer @Inject constructor(
                 val spots = CVUtils.adaptiveThresholdSpots(analyzeBitmap, 15, 8)
                 val morphGrad = CVUtils.morphologicalGradient(analyzeBitmap, 5)
                 val pigHetero = CVUtils.pigmentationHeterogeneity(analyzeBitmap)
-                val uvSpots = CVUtils.calibratedScore(spots * 0.6f + morphGrad / 100f * 0.4f, 50f, 5f)
+                val uvSpots = CVUtils.calibratedScore(spots * 0.6f + morphGrad / 100f * 0.4f, 0.15f, 0.005f)
                 val pigmentation = CVUtils.calibratedScore(stats.contrast * 0.5f + pigHetero * 0.5f, 30f, 3f)
                 mapOf(
                     SkinMetric.Type.UV_SPOTS to uvSpots,

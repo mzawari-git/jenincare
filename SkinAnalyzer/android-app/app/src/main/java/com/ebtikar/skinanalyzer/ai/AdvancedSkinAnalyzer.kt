@@ -309,7 +309,7 @@ class AdvancedSkinAnalyzer @Inject constructor(
             return mapOf(
                 SkinMetric.Type.VASCULAR to default,
                 SkinMetric.Type.SENSITIVITY to createMetric(SkinMetric.Type.SENSITIVITY, 50f, SkinZone.FULL_FACE, "لا يمكن تحليل الحساسية"),
-                SkinMetric.Type.ROSACEA to createMetric(SkinMetric.Type.ROSACEA, 50f, SkinZone.FULL_FACE, "لا يمكن تحليل السعال الديكي")
+                SkinMetric.Type.ROSACEA to createMetric(SkinMetric.Type.ROSACEA, 50f, SkinZone.FULL_FACE, "لا يمكن تحليل الوردية")
             )
         }
 
@@ -405,7 +405,7 @@ class AdvancedSkinAnalyzer @Inject constructor(
         val faceBitmap = extractFaceFromMesh(bitmap, faceMesh) ?: run {
             return mapOf(
                 SkinMetric.Type.MOISTURE to createMetric(SkinMetric.Type.MOISTURE, 50f, SkinZone.FULL_FACE, "لا يمكن تحليل الرطوبة"),
-                SkinMetric.Type.MELASMA to createMetric(SkinMetric.Type.MELASMA, 50f, SkinZone.FULL_FACE, "لا يمكن تحليل الميلasma")
+                SkinMetric.Type.MELASMA to createMetric(SkinMetric.Type.MELASMA, 50f, SkinZone.FULL_FACE, "لا يمكن تحليل الكلف")
             )
         }
 

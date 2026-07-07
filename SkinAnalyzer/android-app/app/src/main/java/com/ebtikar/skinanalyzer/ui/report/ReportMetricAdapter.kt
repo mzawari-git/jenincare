@@ -48,7 +48,7 @@ class ReportMetricAdapter : ListAdapter<SkinMetric, ReportMetricAdapter.MetricVi
             binding.tvConfidence.text = "${(metric.confidence * 100).toInt()}%"
 
             if (metric.trendDelta != null) {
-                val delta = metric.trendDelta!!
+                val delta = metric.trendDelta ?: return
                 val sign = if (delta >= 0) "+" else ""
                 binding.tvTrend.text = "${sign}${"%.0f".format(delta)}"
                 binding.tvTrend.visibility = View.VISIBLE

@@ -56,12 +56,13 @@ class SplashActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             val onboardingCompleted = preferencesManager.onboardingCompletedFlow.first()
-            Handler(Looper.getMainLooper()).postDelayed({
+            kotlinx.coroutines.delay(Constants.SPLASH_DELAY_MS)
+            if (!isFinishing && !isDestroyed) {
                 val target = if (onboardingCompleted) HomeActivity::class.java else OnboardingActivity::class.java
                 startActivity(Intent(this@SplashActivity, target))
                 finish()
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-            }, Constants.SPLASH_DELAY_MS)
+            }
         }
     }
 

@@ -23,6 +23,7 @@ class ScanReminderWorker(
 
     override suspend fun doWork(): Result {
         Timber.i("Scan reminder fired")
+        createChannel(applicationContext)
         showNotification()
         return Result.success()
     }
