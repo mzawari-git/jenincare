@@ -42,13 +42,13 @@ class USBCameraManager @Inject constructor(
         val TARGET_RESOLUTION = Size(1920, 1080)
     }
 
-    private var cameraDevice: CameraDevice? = null
-    private var captureSession: CameraCaptureSession? = null
-    private var imageReader: ImageReader? = null
-    private var backgroundHandler: Handler? = null
+    @Volatile private var cameraDevice: CameraDevice? = null
+    @Volatile private var captureSession: CameraCaptureSession? = null
+    @Volatile private var imageReader: ImageReader? = null
+    @Volatile private var backgroundHandler: Handler? = null
     private var backgroundThread: HandlerThread? = null
     private var supportedSizes: List<Size> = emptyList()
-    private var previewSurface: Surface? = null
+    @Volatile private var previewSurface: Surface? = null
     private var sensorOrientation: Int = 0
     private var captureOrientationOffset: Int = 0
     private var previewTargetSize: Size = TARGET_RESOLUTION
@@ -118,6 +118,9 @@ class USBCameraManager @Inject constructor(
         } catch (e: SecurityException) {
             Timber.e(e, "Camera permission not granted")
             null
+        } catch (e: CameraAccessException) {
+            Timber.e(e, "Camera access error during discovery")
+            null
         }
     }
 
@@ -131,86 +134,93 @@ class USBCameraManager @Inject constructor(
     }
 
     suspend fun openCamera(cameraId: String, surface: Surface? = null): CameraDevice =
-        withTimeout(5000L) {
-        suspendCancellableCoroutine { continuation ->
-            startBackgroundThread()
-            Timber.d("openCamera: waiting for camera $cameraId (timeout=5s)")
+        try {
+            withTimeout(5000L) {
+                suspendCancellableCoroutine { continuation ->
+                    startBackgroundThread()
+                    Timber.d("openCamera: waiting for camera $cameraId (timeout=5s)")
 
-            if (surface != null) {
-                previewSurface = surface
-            }
+                    if (surface != null) {
+                        previewSurface = surface
+                    }
 
-            updateDisplayRotation()
+                    updateDisplayRotation()
 
-            val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+                    val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
 
-            try {
-                cameraManager.openCamera(cameraId, object : CameraDevice.StateCallback() {
-                    override fun onOpened(camera: CameraDevice) {
-                        cameraDevice = camera
-                        Timber.i("Camera opened: $cameraId, sensorOrientation=$sensorOrientation, displayRotation=$displayRotationDegrees")
-                        val ps = previewSurface
-                        if (ps != null) {
-                            try {
-                                val size = getOptimalSize(TARGET_RESOLUTION)
-                                previewTargetSize = size
-                                imageReader = ImageReader.newInstance(size.width, size.height, ImageFormat.JPEG, 4)
-                                val targets = listOf(ps, imageReader!!.surface)
-                                camera.createCaptureSession(
-                                    targets,
-                                    object : CameraCaptureSession.StateCallback() {
-                                        override fun onConfigured(session: CameraCaptureSession) {
-                                            captureSession = session
-                                                            try {
-                                                val request = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
-                                                    addTarget(ps)
-                                                    configureAutoExposure(this)
-                                                    configureAutoFocusPreview(this)
+                    try {
+                        cameraManager.openCamera(cameraId, object : CameraDevice.StateCallback() {
+                            override fun onOpened(camera: CameraDevice) {
+                                cameraDevice = camera
+                                Timber.i("Camera opened: $cameraId, sensorOrientation=$sensorOrientation, displayRotation=$displayRotationDegrees")
+                                val ps = previewSurface
+                                if (ps != null) {
+                                    try {
+                                        val size = getOptimalSize(TARGET_RESOLUTION)
+                                        previewTargetSize = size
+                                        imageReader = ImageReader.newInstance(size.width, size.height, ImageFormat.JPEG, 4)
+                                        val targets = listOf(ps, imageReader!!.surface)
+                                        camera.createCaptureSession(
+                                            targets,
+                                            object : CameraCaptureSession.StateCallback() {
+                                                override fun onConfigured(session: CameraCaptureSession) {
+                                                    captureSession = session
+                                                                    try {
+                                                        val request = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
+                                                            addTarget(ps)
+                                                            configureAutoExposure(this)
+                                                            configureAutoFocusPreview(this)
+                                                        }
+                                                        session.setRepeatingRequest(request.build(), null, backgroundHandler)
+                                                                    } catch (e: Exception) {
+                                                                        Timber.w(e, "Preview request failed, capture-only mode")
+                                                                    }
+                                                    Timber.i("Preview + capture session ready, size=${size.width}x${size.height}")
                                                 }
-                                                session.setRepeatingRequest(request.build(), null, backgroundHandler)
-                                                            } catch (e: Exception) {
-                                                                Timber.w(e, "Preview request failed, capture-only mode")
-                                                            }
-                                            Timber.i("Preview + capture session ready, size=${size.width}x${size.height}")
-                                        }
-                                        override fun onConfigureFailed(session: CameraCaptureSession) {
-                                            Timber.e("Combined session config failed")
-                                        }
-                                    }, backgroundHandler)
-                            } catch (e: Exception) {
-                                Timber.w(e, "Failed to create combined session")
+                                                override fun onConfigureFailed(session: CameraCaptureSession) {
+                                                    Timber.e("Combined session config failed")
+                                                }
+                                            }, backgroundHandler)
+                                    } catch (e: Exception) {
+                                        Timber.w(e, "Failed to create combined session")
+                                    }
+                                }
+                                textureView?.let { rotateTextureView(it) }
+                                if (continuation.isActive) {
+                                    continuation.resume(camera)
+                                }
                             }
-                        }
-                        textureView?.let { rotateTextureView(it) }
-                        if (continuation.isActive) {
-                            continuation.resume(camera)
-                        }
-                    }
 
-                    override fun onDisconnected(camera: CameraDevice) {
-                        camera.close()
-                        cameraDevice = null
-                        Timber.w("Camera disconnected: $cameraId")
-                        if (continuation.isActive) {
-                            continuation.resumeWithException(IllegalStateException("Camera disconnected"))
-                        }
-                    }
+                            override fun onDisconnected(camera: CameraDevice) {
+                                camera.close()
+                                cameraDevice = null
+                                Timber.w("Camera disconnected: $cameraId")
+                                if (continuation.isActive) {
+                                    continuation.resumeWithException(IllegalStateException("Camera disconnected"))
+                                }
+                            }
 
-                    override fun onError(camera: CameraDevice, error: Int) {
-                        camera.close()
-                        cameraDevice = null
-                        Timber.e("Camera error: $cameraId, error=$error")
+                            override fun onError(camera: CameraDevice, error: Int) {
+                                camera.close()
+                                cameraDevice = null
+                                Timber.e("Camera error: $cameraId, error=$error")
+                                if (continuation.isActive) {
+                                    continuation.resumeWithException(IllegalStateException("Camera error: $error"))
+                                }
+                            }
+                        }, backgroundHandler)
+                    } catch (e: SecurityException) {
                         if (continuation.isActive) {
-                            continuation.resumeWithException(IllegalStateException("Camera error: $error"))
+                            continuation.resumeWithException(e)
                         }
                     }
-                }, backgroundHandler)
-            } catch (e: SecurityException) {
-                if (continuation.isActive) {
-                    continuation.resumeWithException(e)
                 }
             }
-        }
+        } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+            Timber.e(e, "Camera open timed out for $cameraId, cleaning up")
+            cameraDevice?.close()
+            cameraDevice = null
+            throw e
         }
 
     suspend fun captureFrame(spectrum: LightSpectrum? = null): Bitmap? {

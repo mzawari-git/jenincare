@@ -353,6 +353,7 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun downloadAndInstall(updateInfo: UpdateInfo) {
+        if (isFinishing || isDestroyed) return
         val progressDialog = android.app.ProgressDialog(this).apply {
             setTitle("جاري التحميل")
             setMessage("يرجى الانتظار...")
@@ -370,7 +371,9 @@ class HomeActivity : AppCompatActivity() {
             }
 
             withContext(Dispatchers.Main) {
-                progressDialog.dismiss()
+                if (!isFinishing && !isDestroyed) {
+                    progressDialog.dismiss()
+                }
                 if (uri != null) {
                     updateChecker.installApk(uri)
                 } else {

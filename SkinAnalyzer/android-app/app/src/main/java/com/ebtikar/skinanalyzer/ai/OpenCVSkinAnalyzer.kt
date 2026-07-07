@@ -285,12 +285,13 @@ class OpenCVSkinAnalyzer @Inject constructor(
     private fun analyzePores(bitmap: Bitmap): Float {
         return try {
             val tZone = CVUtils.extractRegion(bitmap, 0.2f, 0f, 0.8f, 0.45f)
+            val poreSource = tZone ?: bitmap  // Save reference BEFORE tZone might be recycled
             val lapVar = if (tZone != null) {
                 val v = CVUtils.laplacianVariance(tZone)
                 tZone.recycle()
                 v
             } else 10f
-            val poreDensity = CVUtils.poreDensityEstimate(tZone ?: bitmap)
+            val poreDensity = CVUtils.poreDensityEstimate(poreSource)  // Use saved reference
             val combined = lapVar * 0.5f + poreDensity * 0.5f
             CVUtils.calibratedScore(combined, 35f, 0f)
         } catch (e: Exception) {

@@ -132,8 +132,12 @@ class TFLiteEngine @Inject constructor(
 
     private fun loadModelFile(modelPath: String): MappedByteBuffer {
         val assetFileDescriptor = context.assets.openFd(modelPath)
-        val fileInputStream = FileInputStream(assetFileDescriptor.fileDescriptor)
-        val channel = fileInputStream.channel
-        return channel.map(FileChannel.MapMode.READ_ONLY, assetFileDescriptor.startOffset, assetFileDescriptor.declaredLength)
+        assetFileDescriptor.use { afd ->
+            val fileInputStream = FileInputStream(afd.fileDescriptor)
+            fileInputStream.use { fis ->
+                val channel = fis.channel
+                return channel.map(FileChannel.MapMode.READ_ONLY, afd.startOffset, afd.declaredLength)
+            }
+        }
     }
 }

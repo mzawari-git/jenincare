@@ -1,6 +1,7 @@
 package com.ebtikar.skinanalyzer.util
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -8,6 +9,7 @@ import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
+import com.ebtikar.skinanalyzer.hardware.LightSpectrum
 import com.ebtikar.skinanalyzer.model.MetricSeverity
 import com.ebtikar.skinanalyzer.model.SkinAnalysisReport
 import com.ebtikar.skinanalyzer.model.SkinMetric
@@ -41,13 +43,16 @@ class PdfReportGenerator @Inject constructor() {
         private const val BG_CREAM = 0xFFFAF8F6.toInt()
     }
 
-    fun generate(context: Context, report: SkinAnalysisReport, outputDir: File): File? {
+    fun generate(context: Context, report: SkinAnalysisReport, outputDir: File, capturedImages: Map<LightSpectrum, File> = emptyMap()): File? {
         return try {
             val pdfDocument = PdfDocument()
 
             drawPage1_Header(pdfDocument, report)
             drawPage2_Metrics(pdfDocument, report)
             drawPage3_Recommendations(pdfDocument, report)
+            if (capturedImages.isNotEmpty()) {
+                drawPage4_CapturedImages(pdfDocument, capturedImages)
+            }
 
             if (!outputDir.exists()) outputDir.mkdirs()
             val file = File(outputDir, "DERMA_AI_Report_${report.id.take(8)}.pdf")
@@ -224,7 +229,7 @@ class PdfReportGenerator @Inject constructor() {
         }
 
         // Footer
-        drawFooter(canvas, 1, "DERMA AI v1.2.19")
+        drawFooter(canvas, 1, "DERMA AI v${android.os.Build.VERSION.RELEASE}")
 
         pdfDocument.finishPage(page)
     }
@@ -376,7 +381,7 @@ class PdfReportGenerator @Inject constructor() {
         canvas.drawText("إجمالي المؤشرات: ${report.metrics.size}", MARGIN + 20f, summaryY + 65f, totalPaint)
 
         // Footer
-        drawFooter(canvas, 2, "DERMA AI v1.2.19")
+        drawFooter(canvas, 2, "DERMA AI v${android.os.Build.VERSION.RELEASE}")
 
         pdfDocument.finishPage(page)
     }
@@ -493,8 +498,102 @@ class PdfReportGenerator @Inject constructor() {
         canvas.drawText("هذا التقرير تم إنشاؤه بواسطة الذكاء الاصطناعي ولا يغني عن استشارة الطبيب المختص.", MARGIN, y, disclaimerPaint)
 
         // Footer
-        drawFooter(canvas, 3, "DERMA AI v1.2.19")
+        drawFooter(canvas, 3, "DERMA AI v${android.os.Build.VERSION.RELEASE}")
 
+        pdfDocument.finishPage(page)
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // PAGE 4 — Captured Spectral Images
+    // ═══════════════════════════════════════════════════════
+    private fun drawPage4_CapturedImages(pdfDocument: PdfDocument, capturedImages: Map<LightSpectrum, File>) {
+        val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, 4).create()
+        val page = pdfDocument.startPage(pageInfo)
+        val canvas = page.canvas
+
+        canvas.drawColor(BG_CREAM)
+
+        val titlePaint = Paint().apply {
+            color = DARK; textSize = 18f; isAntiAlias = true
+            typeface = Typeface.create("sans-serif", Typeface.BOLD)
+        }
+        canvas.drawText("الصور الملتقطة", MARGIN, 45f, titlePaint)
+
+        val subtitlePaint = Paint().apply {
+            color = LIGHT_GRAY; textSize = 9f; isAntiAlias = true; letterSpacing = 0.1f
+        }
+        canvas.drawText("CAPTURED SPECTRAL IMAGES", MARGIN, 60f, subtitlePaint)
+
+        val linePaint = Paint().apply { color = GOLD; strokeWidth = 2f; isAntiAlias = true }
+        canvas.drawLine(MARGIN, 68f, MARGIN + 35f, 68f, linePaint)
+
+        val spectra = LightSpectrum.CAPTURE_SEQUENCE.filter { capturedImages.containsKey(it) }
+        if (spectra.isEmpty()) {
+            val emptyPaint = Paint().apply { color = LIGHT_GRAY; textSize = 12f; isAntiAlias = true }
+            canvas.drawText("لا توجد صور ملتقطة", MARGIN, 120f, emptyPaint)
+            drawFooter(canvas, 4, "DERMA AI v${android.os.Build.VERSION.RELEASE}")
+            pdfDocument.finishPage(page)
+            return
+        }
+
+        val cellWidth = (PAGE_WIDTH - MARGIN * 2 - 12f) / 2
+        val cellHeight = 220f
+        val labelHeight = 25f
+        val spacing = 8f
+        var x = MARGIN
+        var y = 85f
+
+        for ((index, spectrum) in spectra.withIndex()) {
+            val file = capturedImages[spectrum] ?: continue
+            val col = index % 2
+            val row = index / 2
+
+            if (col == 0 && index > 0) {
+                y += cellHeight + labelHeight + spacing
+            }
+            x = MARGIN + col * (cellWidth + spacing)
+
+            val cardPaint = Paint().apply { color = WHITE; isAntiAlias = true }
+            val cardRect = RectF(x, y, x + cellWidth, y + cellHeight)
+            canvas.drawRoundRect(cardRect, 8f, 8f, cardPaint)
+
+            val borderPaint = Paint().apply {
+                color = 0x1A000000.toInt(); isAntiAlias = true
+                style = Paint.Style.STROKE; strokeWidth = 0.5f
+            }
+            canvas.drawRoundRect(cardRect, 8f, 8f, borderPaint)
+
+            try {
+                val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+                if (bitmap != null) {
+                    val padding = 6f
+                    val imageRect = RectF(x + padding, y + padding, x + cellWidth - padding, y + cellHeight - padding)
+                    canvas.drawBitmap(bitmap, null, imageRect, null)
+                    bitmap.recycle()
+                }
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to decode image for ${spectrum.name} in PDF")
+                val errorPaint = Paint().apply { color = LIGHT_GRAY; textSize = 10f; isAntiAlias = true }
+                canvas.drawText("صورة غير متاحة", x + cellWidth / 2 - 40f, y + cellHeight / 2, errorPaint)
+            }
+
+            val spectrumColor = try { Color.parseColor(spectrum.colorHex) } catch (_: Exception) { DARK }
+            val indicatorPaint = Paint().apply { color = spectrumColor; isAntiAlias = true }
+            canvas.drawCircle(x + cellWidth - 12f, y + 12f, 5f, indicatorPaint)
+
+            val nameLabelPaint = Paint().apply {
+                color = DARK; textSize = 10f; isAntiAlias = true
+                typeface = Typeface.create("sans-serif", Typeface.BOLD)
+            }
+            canvas.drawText(spectrum.displayNameAr, x + 8f, y + cellHeight + 14f, nameLabelPaint)
+
+            val nameEnPaint = Paint().apply {
+                color = LIGHT_GRAY; textSize = 7f; isAntiAlias = true; letterSpacing = 0.05f
+            }
+            canvas.drawText(spectrum.name, x + 8f, y + cellHeight + 24f, nameEnPaint)
+        }
+
+        drawFooter(canvas, 4, "DERMA AI v${android.os.Build.VERSION.RELEASE}")
         pdfDocument.finishPage(page)
     }
 

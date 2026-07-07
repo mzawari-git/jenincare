@@ -159,16 +159,15 @@ class FrameCapturePipeline @Inject constructor(
                             delay(100)
                             continue
                         }
-                        val evalBitmap = if (rawBitmap.width > 960 || rawBitmap.height > 960) {
-                            val scale = 960f / maxOf(rawBitmap.width, rawBitmap.height)
+                        val evalBitmap = if (rawBitmap.width > 480 || rawBitmap.height > 480) {
+                            val scale = 480f / maxOf(rawBitmap.width, rawBitmap.height)
                             Bitmap.createScaledBitmap(rawBitmap,
                                 (rawBitmap.width * scale).toInt().coerceAtLeast(1),
                                 (rawBitmap.height * scale).toInt().coerceAtLeast(1), true)
                         } else rawBitmap
 
-                        val normalizedBitmap = CVUtils.normalizeBrightness(evalBitmap)
-                        val result = CVUtils.evaluateFacePosition(normalizedBitmap, faceThreshold)
-                        if (normalizedBitmap !== evalBitmap) normalizedBitmap.recycle()
+                        CVUtils.normalizeBrightness(evalBitmap)
+                        val result = CVUtils.evaluateFacePosition(evalBitmap, faceThreshold)
                         if (evalBitmap !== rawBitmap) evalBitmap.recycle()
                         _positionScore.value = result.score
                         lastScore = result.score
@@ -310,7 +309,7 @@ class FrameCapturePipeline @Inject constructor(
 
         for ((stepIndex, spectrum) in spectra.withIndex()) {
             val step = stepIndex + 1
-            val phase = CapturePhase(stepIndex, spectrum, 50L)
+            val phase = CapturePhase(stepIndex, spectrum, spectrum.settlingWindowMs)
 
             _currentPhase.value = phase.copy(status = CapturePhase.Status.ACTIVATING)
             onProgress(phase.copy(status = CapturePhase.Status.ACTIVATING), step, totalSteps)
@@ -323,7 +322,7 @@ class FrameCapturePipeline @Inject constructor(
                 Timber.i("LED OK: ${spectrum.name}")
             }
 
-            kotlinx.coroutines.delay(50)
+            kotlinx.coroutines.delay(spectrum.settlingWindowMs)
 
             _currentPhase.value = phase.copy(status = CapturePhase.Status.CAPTURING)
             onProgress(phase.copy(status = CapturePhase.Status.CAPTURING), step, totalSteps)

@@ -5,7 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [SkinReportEntity::class], version = 2, exportSchema = false)
+@Database(entities = [SkinReportEntity::class], version = 3, exportSchema = false)
 abstract class SkinReportDatabase : RoomDatabase() {
     abstract fun skinReportDao(): SkinReportDao
 
@@ -18,6 +18,12 @@ abstract class SkinReportDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE skin_reports ADD COLUMN skinProfileJson TEXT NOT NULL DEFAULT '{}'")
                 db.execSQL("ALTER TABLE skin_reports ADD COLUMN confidence REAL NOT NULL DEFAULT 0.85")
                 db.execSQL("ALTER TABLE skin_reports ADD COLUMN scanId TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE skin_reports ADD COLUMN heatmapPointsJson TEXT NOT NULL DEFAULT '[]'")
             }
         }
     }

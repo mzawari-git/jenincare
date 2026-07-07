@@ -83,30 +83,32 @@ class UpdateChecker @Inject constructor(
             val request = requestBuilder.build()
 
             val response = client.newCall(request).execute()
-            if (!response.isSuccessful) {
-                Timber.w("GitHub API returned ${response.code}")
-                return@withContext null
+            response.use { resp ->
+                if (!resp.isSuccessful) {
+                    Timber.w("GitHub API returned ${resp.code}")
+                    return@withContext null
+                }
+
+                val body = resp.body?.string() ?: return@withContext null
+                val release = json.decodeFromString<GitHubRelease>(body)
+
+                if (channel == "stable" && release.prerelease) {
+                    Timber.i("Skipping prerelease for stable channel")
+                    return@withContext null
+                }
+
+                val apkAsset = release.assets.firstOrNull { it.name.endsWith(".apk") }
+                    ?: return@withContext null
+
+                UpdateInfo(
+                    latestVersion = release.tag_name.removePrefix("v"),
+                    downloadUrl = apkAsset.browser_download_url,
+                    releaseNotes = release.body,
+                    assetName = apkAsset.name,
+                    isPrerelease = release.prerelease,
+                    assetId = apkAsset.id
+                )
             }
-
-            val body = response.body?.string() ?: return@withContext null
-            val release = json.decodeFromString<GitHubRelease>(body)
-
-            if (channel == "stable" && release.prerelease) {
-                Timber.i("Skipping prerelease for stable channel")
-                return@withContext null
-            }
-
-            val apkAsset = release.assets.firstOrNull { it.name.endsWith(".apk") }
-                ?: return@withContext null
-
-            UpdateInfo(
-                latestVersion = release.tag_name.removePrefix("v"),
-                downloadUrl = apkAsset.browser_download_url,
-                releaseNotes = release.body,
-                assetName = apkAsset.name,
-                isPrerelease = release.prerelease,
-                assetId = apkAsset.id
-            )
         } catch (e: Exception) {
             Timber.w(e, "Update check failed")
             null

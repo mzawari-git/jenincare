@@ -1,6 +1,5 @@
 package com.ebtikar.skinanalyzer.ai
 
-import android.graphics.BitmapFactory
 import com.ebtikar.skinanalyzer.core.provider.AnalysisProvider
 import com.ebtikar.skinanalyzer.core.provider.AnalysisResult
 import com.ebtikar.skinanalyzer.hardware.LightSpectrum
@@ -39,17 +38,21 @@ class LocalTFLiteProvider @Inject constructor(
 
             try {
                 for ((spectrumName, file) in images) {
-                    val bitmap = BitmapFactory.decodeFile(file.absolutePath) ?: continue
-                    val features = featureExtractor.extractFeatures(bitmap, spectrumName)
+                    val bitmap = CVUtils.decodeSampled(file, 512) ?: continue
+                    try {
+                        val features = featureExtractor.extractFeatures(bitmap, spectrumName)
 
-                    for ((type, score) in features) {
-                        val severity = classifyScore(score)
-                        metrics[type] = SkinMetric(
-                            type = type,
-                            score = score,
-                            severity = severity,
-                            details = "Analyzed via $spectrumName spectrum"
-                        )
+                        for ((type, score) in features) {
+                            val severity = classifyScore(score)
+                            metrics[type] = SkinMetric(
+                                type = type,
+                                score = score,
+                                severity = severity,
+                                details = "Analyzed via $spectrumName spectrum"
+                            )
+                        }
+                    } finally {
+                        bitmap.recycle()
                     }
                 }
 

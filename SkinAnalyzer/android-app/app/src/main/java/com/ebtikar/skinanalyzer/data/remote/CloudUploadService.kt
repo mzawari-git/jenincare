@@ -1,6 +1,7 @@
 package com.ebtikar.skinanalyzer.data.remote
 
 import com.ebtikar.skinanalyzer.hardware.LightSpectrum
+import com.ebtikar.skinanalyzer.model.HeatmapPoint
 import com.ebtikar.skinanalyzer.model.MetricSeverity
 import com.ebtikar.skinanalyzer.model.SkinAnalysisReport
 import com.ebtikar.skinanalyzer.model.SkinMetric
@@ -74,20 +75,22 @@ class CloudUploadService @Inject constructor(
                 Timber.i("Uploading ${frames.size} spectral images to API...")
                 val response = client.newCall(request).execute()
 
-                if (!response.isSuccessful) {
-                    val errorBody = response.body?.string() ?: "Unknown error"
-                    Timber.e("API upload failed: ${response.code} $errorBody")
-                    return@withContext Result.failure(IllegalStateException("API error ${response.code}: $errorBody"))
+                response.use { resp ->
+                    if (!resp.isSuccessful) {
+                        val errorBody = resp.body?.string() ?: "Unknown error"
+                        Timber.e("API upload failed: ${resp.code} $errorBody")
+                        return@withContext Result.failure(IllegalStateException("API error ${resp.code}: $errorBody"))
+                    }
+
+                    val responseBody = resp.body?.string() ?: ""
+                    Timber.i("API response received: ${responseBody.take(200)}...")
+
+                    val apiResponse = json.decodeFromString<ApiAnalysisResponse>(responseBody)
+                    val report = apiResponse.toSkinAnalysisReport()
+
+                    Timber.i("API analysis complete: ${report.metricCount} metrics, score: ${report.overallScore}")
+                    Result.success(report)
                 }
-
-                val responseBody = response.body?.string() ?: ""
-                Timber.i("API response received: ${responseBody.take(200)}...")
-
-                val apiResponse = json.decodeFromString<ApiAnalysisResponse>(responseBody)
-                val report = apiResponse.toSkinAnalysisReport()
-
-                Timber.i("API analysis complete: ${report.metricCount} metrics, score: ${report.overallScore}")
-                Result.success(report)
             } catch (e: Exception) {
                 Timber.e(e, "API upload/analysis failed")
                 Result.failure(e)
@@ -107,7 +110,8 @@ data class ApiAnalysisResponse(
     val skin_type_ar: String = "",
     val confidence: Float = 0.85f,
     val scan_id: String = "",
-    val execution_time_ms: Long = 0
+    val execution_time_ms: Long = 0,
+    val heatmap_coordinates: List<HeatmapPoint> = emptyList()
 ) {
     fun toSkinAnalysisReport(): SkinAnalysisReport {
         val skinMetrics = metrics.map { apiMetric ->
@@ -144,7 +148,8 @@ data class ApiAnalysisResponse(
             expertTipsAr = tips_ar,
             productRecommendations = products.map { it.toProductRecommendation() },
             confidence = confidence,
-            scanId = scan_id
+            scanId = scan_id,
+            heatmapPoints = heatmap_coordinates
         )
     }
 }

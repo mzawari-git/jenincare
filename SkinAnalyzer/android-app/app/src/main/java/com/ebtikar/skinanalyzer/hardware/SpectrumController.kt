@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import timber.log.Timber
+import java.util.concurrent.CopyOnWriteArrayList
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -14,8 +15,8 @@ class SpectrumController @Inject constructor(
     private val fiseGpio: FiseGpioController
 ) {
 
-    private var currentSpectrum: LightSpectrum = LightSpectrum.OFF
-    private val stateListeners = mutableListOf<(LightSpectrum) -> Unit>()
+    @Volatile private var currentSpectrum: LightSpectrum = LightSpectrum.OFF
+    private val stateListeners = CopyOnWriteArrayList<(LightSpectrum) -> Unit>()
 
     private val _currentSpectrumFlow = MutableStateFlow(LightSpectrum.OFF)
     val currentSpectrumFlow: StateFlow<LightSpectrum> = _currentSpectrumFlow.asStateFlow()

@@ -71,6 +71,7 @@ class HistoryActivity : AppCompatActivity() {
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val position = viewHolder.bindingAdapterPosition
+                if (position == RecyclerView.NO_POSITION) return
                 val report = adapter.currentList[position]
                 viewModel.deleteReport(report.id)
             }

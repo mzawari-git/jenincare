@@ -37,13 +37,16 @@ import com.ebtikar.skinanalyzer.hardware.LightSpectrum
 import com.ebtikar.skinanalyzer.ui.report.ReportActivity
 import com.ebtikar.skinanalyzer.util.Constants
 import com.ebtikar.skinanalyzer.util.PreferencesManager
+import com.ebtikar.skinanalyzer.util.VoiceGuideManager
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -57,15 +60,21 @@ class AnalysisActivity : BaseCameraActivity() {
     @Inject lateinit var preferencesManager: PreferencesManager
     @Inject lateinit var fiseGpioController: FiseGpioController
     @Inject lateinit var serialBusManager: SerialBusManager
+    @Inject lateinit var voiceGuide: VoiceGuideManager
 
     private var isScanning = false
     private var analysisInitialized = false
+    private var analysisSurface: Surface? = null  // Track surface for proper cleanup
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val diagnosisMode = intent.getStringExtra("diagnosis_mode") ?: Constants.DIAGNOSIS_ALL
         viewModel.setDiagnosisMode(diagnosisMode)
+        voiceGuide.initialize()
+        lifecycleScope.launch {
+            voiceGuide.setEnabled(preferencesManager.voiceGuideFlow.first())
+        }
 
         lifecycleScope.launch {
             val savedRotation = preferencesManager.cameraRotationFlow.first()
@@ -104,7 +113,13 @@ class AnalysisActivity : BaseCameraActivity() {
     private fun setupCameraPreview() {
         if (binding.cameraPreview.isAvailable) {
             Timber.i("TextureView surface already available, handling immediately")
-            handleSurfaceAvailable(binding.cameraPreview.surfaceTexture!!, binding.cameraPreview.width, binding.cameraPreview.height)
+            val surface = binding.cameraPreview.surfaceTexture
+            if (surface != null) {
+                handleSurfaceAvailable(surface, binding.cameraPreview.width, binding.cameraPreview.height)
+            } else {
+                Timber.w("isAvailable=true but surfaceTexture is null, setting listener")
+                setupCameraPreview()
+            }
         } else {
             Timber.i("TextureView surface not yet available, setting listener")
             binding.cameraPreview.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
@@ -131,7 +146,6 @@ class AnalysisActivity : BaseCameraActivity() {
         cameraManager.setTextureView(binding.cameraPreview)
         Timber.i("TextureView available: ${width}x${height}, portrait=${height > width}")
         capturePipeline.reset()
-        val previewSurface = Surface(surface)
         lifecycleScope.launch {
             releaseCameraX()
             delay(1500)
@@ -141,7 +155,9 @@ class AnalysisActivity : BaseCameraActivity() {
                 isScanning = false
                 return@launch
             }
+            analysisSurface?.release()
             val validSurface = Surface(currentSurface)
+            analysisSurface = validSurface
             analysisInitialized = true
             runOnUiThread {
                 checkLightingHardware {
@@ -271,6 +287,7 @@ class AnalysisActivity : BaseCameraActivity() {
                             analysisInitialized = false
                             binding.progressScan.progress = 100
                             binding.tvScanInstruction.text = getString(R.string.analysis_complete)
+                            voiceGuide.speakAnalysisComplete()
                             binding.btnViewReport.visibility = android.view.View.VISIBLE
                             binding.medicalLens.visibility = android.view.View.GONE
                             binding.digitalMesh.visibility = android.view.View.GONE
@@ -426,29 +443,31 @@ class AnalysisActivity : BaseCameraActivity() {
         val size = (48 * density).toInt()
         val margin = (4 * density).toInt()
 
-        for ((spectrum, file) in frames) {
-            val card = layoutInflater.inflate(R.layout.item_spectrum_thumbnail, null) as ViewGroup
-            val imageView = card.findViewById<ImageView>(R.id.ivSpectrumThumb)
-            val label = card.findViewById<TextView>(R.id.tvSpectrumLabel)
+        lifecycleScope.launch {
+            val decodedFrames = withContext(Dispatchers.IO) {
+                frames.map { (spectrum, file) ->
+                    spectrum to try { loadBitmapWithRotation(file) } catch (_: Exception) { null }
+                }
+            }
+            for ((spectrum, bitmap) in decodedFrames) {
+                val card = layoutInflater.inflate(R.layout.item_spectrum_thumbnail, null) as ViewGroup
+                val imageView = card.findViewById<ImageView>(R.id.ivSpectrumThumb)
+                val label = card.findViewById<TextView>(R.id.tvSpectrumLabel)
 
-            label.text = spectrum.displayNameAr
-            label.setTextColor(android.graphics.Color.WHITE)
-            label.setBackgroundColor(android.graphics.Color.parseColor(spectrum.colorHex))
+                label.text = spectrum.displayNameAr
+                label.setTextColor(android.graphics.Color.WHITE)
+                label.setBackgroundColor(android.graphics.Color.parseColor(spectrum.colorHex))
 
-            try {
-                val bm = loadBitmapWithRotation(file)
-                if (bm != null) {
-                    imageView.setImageBitmap(bm)
+                if (bitmap != null) {
+                    imageView.setImageBitmap(bitmap)
                 } else {
                     imageView.setBackgroundColor(android.graphics.Color.DKGRAY)
                 }
-            } catch (e: Exception) {
-                imageView.setBackgroundColor(android.graphics.Color.DKGRAY)
-            }
 
-            val lp = LinearLayout.LayoutParams(size, size)
-            lp.marginEnd = margin
-            binding.containerAnalysisThumbnails.addView(card, lp)
+                val lp = LinearLayout.LayoutParams(size, size)
+                lp.marginEnd = margin
+                binding.containerAnalysisThumbnails.addView(card, lp)
+            }
         }
     }
 
@@ -525,17 +544,22 @@ class AnalysisActivity : BaseCameraActivity() {
     override fun onCapturePhaseStarted(phase: CapturePhase) {
         runOnUiThread {
             updatePhaseUI(phase)
+            voiceGuide.speakSpectrumActivation(phase.spectrum.displayNameAr)
         }
     }
 
     override fun onCapturePhaseComplete(phase: CapturePhase) {
         runOnUiThread {
             updatePhaseUI(phase.copy(status = CapturePhase.Status.COMPLETE))
+            voiceGuide.speakCaptureComplete(phase.spectrum.displayNameAr)
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        voiceGuide.shutdown()
+        analysisSurface?.release()
+        analysisSurface = null
         viewModel.abortAnalysis()
         binding.cameraPreview.surfaceTextureListener = null
         Timber.i("AnalysisActivity destroyed, resources cleaned up")

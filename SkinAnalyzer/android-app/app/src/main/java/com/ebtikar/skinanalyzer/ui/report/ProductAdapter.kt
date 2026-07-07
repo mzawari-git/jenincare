@@ -1,5 +1,7 @@
 package com.ebtikar.skinanalyzer.ui.report
 
+import android.content.Intent
+import android.net.Uri
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
@@ -32,6 +34,14 @@ class ProductAdapter : ListAdapter<ProductRecommendation, ProductAdapter.Product
             binding.tvProductMatch.text = "${(product.matchScore * 100).toInt()}%"
             binding.tvProductPrice.text = "${product.price.toInt()} ${getCurrencySymbol(product.currency)}"
             binding.tvProductCategory.text = getCategoryAr(product.category)
+
+            binding.root.setOnClickListener {
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(product.displayUrl))
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    binding.root.context.startActivity(intent)
+                } catch (_: Exception) { }
+            }
         }
 
         private fun getCurrencySymbol(currency: String): String = when (currency) {

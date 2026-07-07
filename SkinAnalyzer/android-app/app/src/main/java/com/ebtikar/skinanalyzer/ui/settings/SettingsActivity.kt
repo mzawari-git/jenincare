@@ -242,6 +242,7 @@ class SettingsActivity : AppCompatActivity() {
                 if (updateInfo != null && updateChecker.isNewerVersion(updateInfo.latestVersion)) {
                     binding.btnCheckAppUpdate.text = "جارٍ التحديث..."
                     binding.btnCheckAppUpdate.isEnabled = false
+                    if (isFinishing || isDestroyed) return@launch
                     val progressDialog = android.app.ProgressDialog(this@SettingsActivity).apply {
                         setTitle("جاري تحميل الإصدار v${updateInfo.latestVersion}")
                         setMessage("يرجى الانتظار...")
@@ -354,6 +355,10 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
+        binding.switchScanReminder.setOnCheckedChangeListener { _, isChecked ->
+            binding.layoutReminderInterval.visibility = if (isChecked) android.view.View.VISIBLE else android.view.View.GONE
+        }
+
         binding.btnSaveScanDisplay.setOnClickListener {
             lifecycleScope.launch {
                 val style = when (binding.rgScanOverlayStyle.checkedRadioButtonId) {
@@ -369,6 +374,18 @@ class SettingsActivity : AppCompatActivity() {
                 preferencesManager.setShowSpectralGraph(binding.switchShowSpectralGraph.isChecked)
                 preferencesManager.setShowMedicalIndicators(binding.switchShowMedicalIndicators.isChecked)
                 preferencesManager.setShowScanDataPanel(binding.switchShowScanDataPanel.isChecked)
+                preferencesManager.setVoiceGuideEnabled(binding.switchVoiceGuide.isChecked)
+
+                val reminderEnabled = binding.switchScanReminder.isChecked
+                preferencesManager.setScanReminderEnabled(reminderEnabled)
+                val intervalHours = binding.sliderReminderInterval.value.toInt()
+                preferencesManager.setScanReminderIntervalHours(intervalHours)
+                if (reminderEnabled) {
+                    com.ebtikar.skinanalyzer.util.ScanReminderWorker.schedule(this@SettingsActivity, intervalHours)
+                } else {
+                    com.ebtikar.skinanalyzer.util.ScanReminderWorker.cancel(this@SettingsActivity)
+                }
+
                 com.google.android.material.snackbar.Snackbar.make(
                     binding.root,
                     "تم حفظ إعدادات شاشة الفحص",
@@ -626,6 +643,25 @@ class SettingsActivity : AppCompatActivity() {
                 launch {
                     preferencesManager.showScanDataPanelFlow.collect { shown ->
                         binding.switchShowScanDataPanel.isChecked = shown
+                    }
+                }
+
+                launch {
+                    preferencesManager.voiceGuideFlow.collect { enabled ->
+                        binding.switchVoiceGuide.isChecked = enabled
+                    }
+                }
+
+                launch {
+                    preferencesManager.scanReminderEnabledFlow.collect { enabled ->
+                        binding.switchScanReminder.isChecked = enabled
+                        binding.layoutReminderInterval.visibility = if (enabled) android.view.View.VISIBLE else android.view.View.GONE
+                    }
+                }
+
+                launch {
+                    preferencesManager.scanReminderIntervalHoursFlow.collect { hours ->
+                        binding.sliderReminderInterval.value = hours.toFloat()
                     }
                 }
 

@@ -79,8 +79,12 @@ data class ProductRecommendation(
     val imageUrl: String = "",
     val matchScore: Float = 0f,
     val reason: String = "",
-    val reasonAr: String = ""
-)
+    val reasonAr: String = "",
+    val shopUrl: String = ""
+) {
+    val displayUrl: String
+        get() = shopUrl.ifEmpty { "https://jenincare.shop/products/$id" }
+}
 
 @Serializable
 data class SkinProfile(

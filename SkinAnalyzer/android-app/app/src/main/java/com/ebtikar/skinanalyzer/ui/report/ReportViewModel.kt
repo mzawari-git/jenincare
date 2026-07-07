@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.ebtikar.skinanalyzer.data.local.SkinReportEntity
 import com.ebtikar.skinanalyzer.data.repository.SkinAnalysisRepository
 import com.ebtikar.skinanalyzer.hardware.LightSpectrum
+import com.ebtikar.skinanalyzer.model.HeatmapPoint
 import com.ebtikar.skinanalyzer.model.MetricSeverity
 import com.ebtikar.skinanalyzer.model.ProductRecommendation
 import com.ebtikar.skinanalyzer.model.SkinAnalysisReport
@@ -78,6 +79,9 @@ class ReportViewModel @Inject constructor(
 
     private val _topConcerns = MutableStateFlow<List<SkinMetric>>(emptyList())
     val topConcerns: StateFlow<List<SkinMetric>> = _topConcerns.asStateFlow()
+
+    private val _heatmapPoints = MutableStateFlow<List<HeatmapPoint>>(emptyList())
+    val heatmapPoints: StateFlow<List<HeatmapPoint>> = _heatmapPoints.asStateFlow()
 
     private val _excellentMetrics = MutableStateFlow<List<SkinMetric>>(emptyList())
     val excellentMetrics: StateFlow<List<SkinMetric>> = _excellentMetrics.asStateFlow()
@@ -155,6 +159,13 @@ class ReportViewModel @Inject constructor(
         } catch (e: Exception) {
             Timber.e(e, "Failed to parse skin profile JSON")
         }
+
+        try {
+            val heatmapSerializer = ListSerializer(HeatmapPoint.serializer())
+            _heatmapPoints.value = json.decodeFromString(heatmapSerializer, entity.heatmapPointsJson)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to parse heatmap JSON")
+        }
     }
 
     fun shareReport() {
@@ -163,7 +174,7 @@ class ReportViewModel @Inject constructor(
             val entity = repository.getReport(reportId) ?: return@launch
             val report = entity.toReport()
             val outputDir = File(context.cacheDir, "pdf_reports")
-            val pdfFile = pdfReportGenerator.generate(context, report, outputDir)
+            val pdfFile = pdfReportGenerator.generate(context, report, outputDir, _capturedImages.value)
             if (pdfFile != null) {
                 val uri = androidx.core.content.FileProvider.getUriForFile(
                     context, "${context.packageName}.fileprovider", pdfFile
@@ -171,7 +182,7 @@ class ReportViewModel @Inject constructor(
                 val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                     type = "application/pdf"
                     putExtra(android.content.Intent.EXTRA_STREAM, uri)
-                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
                 context.startActivity(android.content.Intent.createChooser(shareIntent, "مشاركة التقرير"))
                 Timber.i("PDF shared: ${pdfFile.absolutePath}")
@@ -185,10 +196,54 @@ class ReportViewModel @Inject constructor(
             val entity = repository.getReport(reportId) ?: return@launch
             val report = entity.toReport()
             val outputDir = File(context.filesDir, "pdf_reports")
-            val pdfFile = pdfReportGenerator.generate(context, report, outputDir)
+            val pdfFile = pdfReportGenerator.generate(context, report, outputDir, _capturedImages.value)
             if (pdfFile != null) {
                 Timber.i("PDF saved: ${pdfFile.absolutePath}")
             }
+        }
+    }
+
+    fun exportCsv(): File? {
+        val reportId = currentReportId ?: return null
+        return try {
+            val entity = kotlinx.coroutines.runBlocking { repository.getReport(reportId) } ?: return null
+            val serializer = ListSerializer(SkinMetric.serializer())
+            val metrics = json.decodeFromString(serializer, entity.metricsJson)
+            val outputDir = File(context.filesDir, "exports")
+            outputDir.mkdirs()
+            val csvFile = File(outputDir, "report_${reportId.take(8)}.csv")
+            csvFile.bufferedWriter().use { writer ->
+                writer.write("Metric,Score,Severity,Details\n")
+                for (m in metrics) {
+                    writer.write("\"${getArabicName(m.type)}\",${m.score},${m.severity},\"${m.details}\"\n")
+                }
+                writer.write("\nOverall Score,${entity.overallScore}\n")
+                writer.write("Provider,${entity.providerName}\n")
+                writer.write("Execution Time (ms),${entity.executionTimeMs}\n")
+            }
+            Timber.i("CSV exported: ${csvFile.absolutePath}")
+            csvFile
+        } catch (e: Exception) {
+            Timber.e(e, "CSV export failed")
+            null
+        }
+    }
+
+    fun exportJson(): File? {
+        val reportId = currentReportId ?: return null
+        return try {
+            val entity = kotlinx.coroutines.runBlocking { repository.getReport(reportId) } ?: return null
+            val outputDir = File(context.filesDir, "exports")
+            outputDir.mkdirs()
+            val jsonFile = File(outputDir, "report_${reportId.take(8)}.json")
+            val report = entity.toReport()
+            val exportJson = Json { prettyPrint = true; ignoreUnknownKeys = true }
+            jsonFile.writeText(exportJson.encodeToString(SkinAnalysisReport.serializer(), report))
+            Timber.i("JSON exported: ${jsonFile.absolutePath}")
+            jsonFile
+        } catch (e: Exception) {
+            Timber.e(e, "JSON export failed")
+            null
         }
     }
 
@@ -244,7 +299,13 @@ class ReportViewModel @Inject constructor(
             productRecommendations = productsList,
             skinProfile = profile,
             confidence = confidence,
-            scanId = scanId
+            scanId = scanId,
+            heatmapPoints = try {
+                val heatmapSerializer = ListSerializer(HeatmapPoint.serializer())
+                json.decodeFromString(heatmapSerializer, heatmapPointsJson)
+            } catch (e: Exception) {
+                emptyList()
+            }
         )
     }
 

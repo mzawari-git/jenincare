@@ -36,7 +36,7 @@ class SerialBusManager @Inject constructor(
         private const val MAX_RETRIES = 3
     }
 
-    private var serialPort: UsbSerialPort? = null
+    @Volatile private var serialPort: UsbSerialPort? = null
     private var ioManager: SerialInputOutputManager? = null
     private var onDataReceived: ((ByteArray) -> Unit)? = null
     private val commandMutex = Mutex()
@@ -142,6 +142,10 @@ class SerialBusManager @Inject constructor(
         return try {
             _connectionState.value = ConnectionState.CONNECTING
             val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
+            if (!usbManager.hasPermission(driver.device)) {
+                _connectionState.value = ConnectionState.ERROR
+                return Result.failure(IllegalStateException("USB permission not granted"))
+            }
             val connection = usbManager.openDevice(driver.device)
                 ?: run {
                     _connectionState.value = ConnectionState.ERROR

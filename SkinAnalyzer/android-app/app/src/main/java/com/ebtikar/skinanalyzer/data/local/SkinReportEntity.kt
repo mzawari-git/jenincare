@@ -20,5 +20,6 @@ data class SkinReportEntity(
     val productsJson: String = "[]",
     val skinProfileJson: String = "{}",
     val confidence: Float = 0.85f,
-    val scanId: String = ""
+    val scanId: String = "",
+    val heatmapPointsJson: String = "[]"
 )

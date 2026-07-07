@@ -232,8 +232,10 @@ object CVUtils {
         val pixels = IntArray(w * h)
         bitmap.getPixels(pixels, 0, w, 0, 0, w, h)
 
-        val aVals = FloatArray(w * h)
-        val bVals = FloatArray(w * h)
+        val sampledW = w / 4
+        val sampledH = h / 4
+        val aVals = FloatArray(sampledW * sampledH)
+        val bVals = FloatArray(sampledW * sampledH)
         var count = 0
 
         for (y in 0 until h step 4) {
@@ -311,6 +313,26 @@ object CVUtils {
 
     fun findLargestSkinRegion(bitmap: Bitmap, padding: Float = 0.1f): android.graphics.Rect? {
         if (bitmap.isRecycled) { Timber.w("findLargestSkinRegion: bitmap recycled"); return null }
+        val origW = bitmap.width
+        val origH = bitmap.height
+        val maxDim = maxOf(origW, origH)
+        if (maxDim <= 320) return findLargestSkinRegionAtResolution(bitmap, padding)
+
+        val scale = 320f / maxDim
+        val small = Bitmap.createScaledBitmap(bitmap, (origW * scale).toInt().coerceAtLeast(1), (origH * scale).toInt().coerceAtLeast(1), true)
+        val result = findLargestSkinRegionAtResolution(small, padding / scale)
+        small.recycle()
+        return result?.let {
+            android.graphics.Rect(
+                (it.left / scale).toInt().coerceIn(0, origW),
+                (it.top / scale).toInt().coerceIn(0, origH),
+                (it.right / scale).toInt().coerceIn(0, origW),
+                (it.bottom / scale).toInt().coerceIn(0, origH)
+            )
+        }
+    }
+
+    private fun findLargestSkinRegionAtResolution(bitmap: Bitmap, padding: Float): android.graphics.Rect? {
         val w = bitmap.width
         val h = bitmap.height
         val pixels = IntArray(w * h)
@@ -327,10 +349,13 @@ object CVUtils {
 
         val totalSkinPixels = skinMask.sum()
 
-        val visited = BooleanArray(w * h)
+        val visited = java.util.BitSet(w * h)
         var largestArea = 0
         var largestRect: android.graphics.Rect? = null
-        val minArea = (w * h * 0.01f).toInt() // Lowered to 1% for distant/small faces
+        val minArea = (w * h * 0.01f).toInt()
+        val stackCapacity = minOf(w * h / 4, 50000)
+        val stack = IntArray(stackCapacity)
+        var stackTop = 0
 
         val dx = intArrayOf(-1, 1, 0, 0)
         val dy = intArrayOf(0, 0, -1, 1)
@@ -340,14 +365,15 @@ object CVUtils {
                 val idx = y * w + x
                 if (skinMask[idx] != 1 || visited[idx]) continue
 
-                val stack = mutableListOf(idx)
-                visited[idx] = true
+                stackTop = 0
+                stack[stackTop++] = idx
+                visited.set(idx)
                 var minX = x; var maxX = x
                 var minY = y; var maxY = y
                 var area = 0
 
-                while (stack.isNotEmpty()) {
-                    val ci = stack.removeAt(stack.lastIndex)
+                while (stackTop > 0) {
+                    val ci = stack[--stackTop]
                     val cx = ci % w
                     val cy = ci / w
                     area++
@@ -362,8 +388,8 @@ object CVUtils {
                         if (nx in 0 until w && ny in 0 until h) {
                             val ni = ny * w + nx
                             if (skinMask[ni] == 1 && !visited[ni]) {
-                                visited[ni] = true
-                                stack.add(ni)
+                                visited.set(ni)
+                                if (stackTop < stackCapacity) stack[stackTop++] = ni
                             }
                         }
                     }
@@ -399,7 +425,7 @@ object CVUtils {
             BitmapFactory.decodeFile(file.absolutePath, opts)
             val (w, h) = opts.outWidth to opts.outHeight
             var sample = 1
-            while (w / sample > maxSize && h / sample > maxSize) sample *= 2
+            while (w / sample > maxSize || h / sample > maxSize) sample *= 2  // Fixed: was && which missed non-square images
             val bitmap = BitmapFactory.Options().apply { inSampleSize = sample }.let {
                 BitmapFactory.decodeFile(file.absolutePath, it)
             } ?: return null
@@ -631,16 +657,15 @@ object CVUtils {
         if (mean < 1.0) return bitmap
 
         val scale = targetMean / mean
-        val out = IntArray(w * h) { i ->
+        for (i in pixels.indices) {
             val p = pixels[i]
             val r = ((p shr 16 and 0xFF) * scale).toInt().coerceIn(0, 255)
             val g = ((p shr 8 and 0xFF) * scale).toInt().coerceIn(0, 255)
             val b = ((p and 0xFF) * scale).toInt().coerceIn(0, 255)
-            0xFF shl 24 or (r shl 16) or (g shl 8) or b
+            pixels[i] = 0xFF shl 24 or (r shl 16) or (g shl 8) or b
         }
-        val result = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        result.setPixels(out, 0, w, 0, 0, w, h)
-        return result
+        bitmap.setPixels(pixels, 0, w, 0, 0, w, h)
+        return bitmap
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -766,7 +791,7 @@ object CVUtils {
         val pixels = IntArray(w * h)
         bitmap.getPixels(pixels, 0, w, 0, 0, w, h)
         val bins = 32
-        val histogram = IntArray(bins * 3)
+        val histogram = IntArray(bins * bins * 3)  // Fixed: was bins*3 causing ArrayIndexOutOfBoundsException
         for (p in pixels) {
             val r = p shr 16 and 0xFF
             val g = p shr 8 and 0xFF

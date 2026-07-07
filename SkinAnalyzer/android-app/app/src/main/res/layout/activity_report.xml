@@ -80,6 +80,17 @@
             app:icon="@drawable/ic_save"
             app:iconTint="@color/primary"
             app:cornerRadius="12dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnExport"
+            style="@style/Button.Ghost"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="4dp"
+            app:icon="@drawable/ic_share"
+            app:iconTint="@color/text_secondary"
+            app:cornerRadius="12dp"
+            app:tooltipText="تصدير البيانات" />
     </LinearLayout>
 
     <View
@@ -453,6 +464,26 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     android:orientation="vertical" />
+
+                <!-- Heatmap Overlay -->
+                <TextView
+                    android:id="@+id/tvHeatmapTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:letterSpacing="0.08"
+                    android:text="خريطة التحليل الحرارية"
+                    android:textColor="@color/text_muted"
+                    android:textSize="11sp"
+                    android:textAllCaps="true"
+                    android:visibility="gone" />
+
+                <FrameLayout
+                    android:id="@+id/containerHeatmap"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone" />
 
                 <View
                     android:layout_width="match_parent"

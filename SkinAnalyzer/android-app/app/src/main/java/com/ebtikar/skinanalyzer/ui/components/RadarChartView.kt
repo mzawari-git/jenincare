@@ -76,6 +76,7 @@ class RadarChartView @JvmOverloads constructor(
     private var comparisonData: List<Float>? = null
     private var animatedValues: List<Float> = emptyList()
     private var animationProgress = 1f
+    private var animator: ValueAnimator? = null
 
     private val gridLevels = 5
 
@@ -85,9 +86,11 @@ class RadarChartView @JvmOverloads constructor(
         animateData()
     }
 
-    fun setComparisonData(before: List<Float>, after: List<Float>) {
+    fun setComparisonData(before: List<Float>, after: List<Float>, labels: List<String> = this.labels) {
         this.comparisonData = before
-        setData(after, labels)
+        this.labels = labels
+        this.data = after
+        animateData()
     }
 
     private fun animateData() {
@@ -95,7 +98,8 @@ class RadarChartView @JvmOverloads constructor(
         val targetValues = data.toList()
         val startValues = if (animatedValues.isNotEmpty()) animatedValues.toList() else List(data.size) { 0f }
 
-        ValueAnimator.ofFloat(0f, 1f).apply {
+        animator?.cancel()
+        animator = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = 600
             interpolator = DecelerateInterpolator()
             addUpdateListener { animator ->
@@ -108,6 +112,12 @@ class RadarChartView @JvmOverloads constructor(
             }
             start()
         }
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        animator?.cancel()
+        animator = null
     }
 
     override fun onDraw(canvas: Canvas) {

@@ -14,14 +14,23 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.lifecycle.lifecycleScope
 import com.ebtikar.skinanalyzer.databinding.ActivitySplashBinding
 import com.ebtikar.skinanalyzer.ui.home.HomeActivity
+import com.ebtikar.skinanalyzer.ui.onboarding.OnboardingActivity
 import com.ebtikar.skinanalyzer.util.Constants
+import com.ebtikar.skinanalyzer.util.PreferencesManager
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @SuppressLint("CustomSplashScreen")
+@AndroidEntryPoint
 class SplashActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySplashBinding
+    @Inject lateinit var preferencesManager: PreferencesManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -45,11 +54,15 @@ class SplashActivity : AppCompatActivity() {
 
         startEntranceAnimation()
 
-        Handler(Looper.getMainLooper()).postDelayed({
-            startActivity(Intent(this, HomeActivity::class.java))
-            finish()
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-        }, Constants.SPLASH_DELAY_MS)
+        lifecycleScope.launch {
+            val onboardingCompleted = preferencesManager.onboardingCompletedFlow.first()
+            Handler(Looper.getMainLooper()).postDelayed({
+                val target = if (onboardingCompleted) HomeActivity::class.java else OnboardingActivity::class.java
+                startActivity(Intent(this@SplashActivity, target))
+                finish()
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+            }, Constants.SPLASH_DELAY_MS)
+        }
     }
 
     private fun startEntranceAnimation() {

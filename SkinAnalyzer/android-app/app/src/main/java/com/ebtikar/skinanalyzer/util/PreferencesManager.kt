@@ -47,6 +47,10 @@ class PreferencesManager @Inject constructor(
         private val KEY_SHOW_SPECTRAL_GRAPH = booleanPreferencesKey("show_spectral_graph")
         private val KEY_SHOW_MEDICAL_INDICATORS = booleanPreferencesKey("show_medical_indicators")
         private val KEY_SHOW_SCAN_DATA_PANEL = booleanPreferencesKey("show_scan_data_panel")
+        private val KEY_VOICE_GUIDE_ENABLED = booleanPreferencesKey("voice_guide_enabled")
+        private val KEY_ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
+        private val KEY_SCAN_REMINDER_ENABLED = booleanPreferencesKey("scan_reminder_enabled")
+        private val KEY_SCAN_REMINDER_INTERVAL_HOURS = intPreferencesKey("scan_reminder_interval_hours")
     }
 
     val languageFlow: Flow<String> = context.dataStore.data.map { prefs ->
@@ -135,6 +139,10 @@ class PreferencesManager @Inject constructor(
 
     val showScanDataPanelFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[KEY_SHOW_SCAN_DATA_PANEL] ?: true
+    }
+
+    val voiceGuideFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[KEY_VOICE_GUIDE_ENABLED] ?: true
     }
 
     suspend fun setLanguage(language: String) {
@@ -239,6 +247,10 @@ class PreferencesManager @Inject constructor(
         context.dataStore.edit { prefs -> prefs[KEY_SHOW_SCAN_DATA_PANEL] = shown }
     }
 
+    suspend fun setVoiceGuideEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs -> prefs[KEY_VOICE_GUIDE_ENABLED] = enabled }
+    }
+
     suspend fun applyScanOverlayStyle(style: String) {
         context.dataStore.edit { prefs ->
             prefs[KEY_SCAN_OVERLAY_STYLE] = style
@@ -271,6 +283,36 @@ class PreferencesManager @Inject constructor(
                 prefs[KEY_DIAGNOSIS_MODE] = Constants.DIAGNOSIS_ALL
                 prefs[KEY_DIAGNOSIS_MODE_MIGRATED] = true
             }
+        }
+    }
+
+    val onboardingCompletedFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[KEY_ONBOARDING_COMPLETED] ?: false
+    }
+
+    suspend fun setOnboardingCompleted() {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_ONBOARDING_COMPLETED] = true
+        }
+    }
+
+    val scanReminderEnabledFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[KEY_SCAN_REMINDER_ENABLED] ?: false
+    }
+
+    val scanReminderIntervalHoursFlow: Flow<Int> = context.dataStore.data.map { prefs ->
+        prefs[KEY_SCAN_REMINDER_INTERVAL_HOURS] ?: 24
+    }
+
+    suspend fun setScanReminderEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_SCAN_REMINDER_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setScanReminderIntervalHours(hours: Int) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_SCAN_REMINDER_INTERVAL_HOURS] = hours
         }
     }
 }

@@ -141,6 +141,9 @@ dependencies {
     // USB Serial Communication
     implementation("com.github.mik3y:usb-serial-for-android:3.10.0")
 
+    // WorkManager (scan reminders)
+    implementation("androidx.work:work-runtime-ktx:2.10.0")
+
     // Image Loading
     implementation("io.coil-kt:coil:2.7.0")
 

@@ -4,6 +4,14 @@ import kotlinx.serialization.Serializable
 import java.util.UUID
 
 @Serializable
+data class HeatmapPoint(
+    val x: Float = 0f,
+    val y: Float = 0f,
+    val value: Float = 0f,
+    val label: String? = null
+)
+
+@Serializable
 data class SkinAnalysisReport(
     val id: String = UUID.randomUUID().toString(),
     val timestamp: Long = System.currentTimeMillis(),
@@ -21,7 +29,8 @@ data class SkinAnalysisReport(
     val productRecommendations: List<ProductRecommendation> = emptyList(),
     val skinProfile: SkinProfile = SkinProfile(),
     val confidence: Float = 0.85f,
-    val scanId: String = ""
+    val scanId: String = "",
+    val heatmapPoints: List<HeatmapPoint> = emptyList()
 ) {
     val metricCount: Int get() = metrics.size
 

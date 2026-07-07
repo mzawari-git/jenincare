@@ -23,7 +23,7 @@ object DatabaseModule {
             context,
             SkinReportDatabase::class.java,
             Constants.DB_NAME
-        ).fallbackToDestructiveMigration().build()
+        ).addMigrations(SkinReportDatabase.MIGRATION_1_2, SkinReportDatabase.MIGRATION_2_3).build()
     }
 
     @Provides

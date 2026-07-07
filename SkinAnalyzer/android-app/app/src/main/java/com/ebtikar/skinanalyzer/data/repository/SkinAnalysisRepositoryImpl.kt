@@ -70,7 +70,7 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
             _analysisState.value = AnalysisState.Initializing
 
             CoroutineScope(Dispatchers.IO).launch {
-                knowledgeRepository.refreshFromRemote()
+                try { knowledgeRepository.refreshFromRemote() } catch (_: Exception) { }
             }
 
             val spectra = LightSpectrum.getSpectraForDiagnosisMode(diagnosisMode)
@@ -254,9 +254,43 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                 Timber.i("Engine used: CV_Analysis_Engine — metrics=${metricsList.size}, overallScore=${report.overallScore}")
                 Result.success(report)
             } else {
-                Timber.w("OpenCV analysis returned only ${pixelMetrics.size} metrics — insufficient for analysis")
-                _analysisState.value = AnalysisState.Error("لم يتمكن التحليل من استخراج بيانات كافية. تأكد من وجود الوجه بشكل واضح أمام الكاميرا وأعد المحاولة.")
-                return Result.failure(Exception("Insufficient metrics: only ${pixelMetrics.size} types extracted"))
+                Timber.w("OpenCV returned only ${pixelMetrics.size} metrics — falling back to Basic Pixel analysis")
+                _analysisState.value = AnalysisState.Analyzing("Basic_Pixel_Engine")
+                val basicMetrics = try {
+                    performBasicPixelAnalysis(analysisFrames)
+                } catch (e: Throwable) {
+                    Timber.e(e, "Basic Pixel analysis failed")
+                    emptyMap()
+                }
+                Timber.i("Basic Pixel analysis returned ${basicMetrics.size} metric types")
+                if (basicMetrics.isNotEmpty()) {
+                    val merged = pixelMetrics.toMutableMap()
+                    basicMetrics.forEach { (type, metric) ->
+                        if (merged[type] == null || merged[type]!!.score == 0f) {
+                            merged[type] = metric
+                        }
+                    }
+                    validateCrossSpectrum(merged)
+                    val metricsList = SkinMetric.ALL_TYPES.mapNotNull { type -> merged[type] }
+                    val metricsMap = metricsList.associateBy { it.type }
+                    val expertTips = mockEngine.generateExpertTips(metricsMap)
+                    val products = mockEngine.generateProductRecommendations(metricsMap)
+                    val skinProfile = mockEngine.generateSkinProfile(metricsMap)
+                    val report = SkinAnalysisReport(
+                        providerName = "Basic_Pixel_Engine",
+                        overallScore = metricsList.map { it.score }.average().toFloat(),
+                        metrics = metricsList, executionTimeMs = 800,
+                        aiAnalysisTextAr = generateAIAnalysisText(metricsList, skinProfile),
+                        expertTipsAr = expertTips, productRecommendations = products,
+                        skinProfile = skinProfile, confidence = 0.75f
+                    )
+                    Timber.i("Engine used: Basic_Pixel_Engine — metrics=${metricsList.size}, overallScore=${report.overallScore}")
+                    Result.success(report)
+                } else {
+                    Timber.w("All analysis engines failed to produce sufficient metrics")
+                    _analysisState.value = AnalysisState.Error("لم يتمكن التحليل من استخراج بيانات كافية. تأكد من وجود الوجه بشكل واضح أمام الكاميرا وأعد المحاولة.")
+                    return Result.failure(Exception("Insufficient metrics: OpenCV=${pixelMetrics.size}, BasicPixel=${basicMetrics.size}"))
+                }
             }
         } catch (e: Throwable) {
             Timber.e(e, "analyzeImages failed")
@@ -279,28 +313,44 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
 
         if (pigmentation > uvSpots + 15f && uvSpots < 85f) {
             val adjusted = (uvSpots + pigmentation) / 2f
-            metrics[SkinMetric.Type.PIGMENTATION] = metrics[SkinMetric.Type.PIGMENTATION]!!.copy(score = adjusted, details = metrics[SkinMetric.Type.PIGMENTATION]!!.details + " | تم تعديله بناءً على تحليل UV")
-            metrics[SkinMetric.Type.UV_SPOTS] = metrics[SkinMetric.Type.UV_SPOTS]!!.copy(score = adjusted, details = metrics[SkinMetric.Type.UV_SPOTS]!!.details + " | تم تعديله بناءً على تحليل التصبغ")
+            metrics[SkinMetric.Type.PIGMENTATION]?.let { m ->
+                metrics[SkinMetric.Type.PIGMENTATION] = m.copy(score = adjusted, details = m.details + " | تم تعديله بناءً على تحليل UV")
+            }
+            metrics[SkinMetric.Type.UV_SPOTS]?.let { m ->
+                metrics[SkinMetric.Type.UV_SPOTS] = m.copy(score = adjusted, details = m.details + " | تم تعديله بناءً على تحليل التصبغ")
+            }
         }
 
         val polAvg = (vascular + sensitivity + rosacea) / 3f
         if (maxOf(vascular, sensitivity, rosacea) - minOf(vascular, sensitivity, rosacea) > 20f) {
             val adjusted = polAvg
-            metrics[SkinMetric.Type.VASCULAR] = metrics[SkinMetric.Type.VASCULAR]!!.copy(score = adjusted, details = metrics[SkinMetric.Type.VASCULAR]!!.details + " | معدّل عبر المؤشرات")
-            metrics[SkinMetric.Type.SENSITIVITY] = metrics[SkinMetric.Type.SENSITIVITY]!!.copy(score = adjusted, details = metrics[SkinMetric.Type.SENSITIVITY]!!.details + " | معدّل عبر المؤشرات")
-            metrics[SkinMetric.Type.ROSACEA] = metrics[SkinMetric.Type.ROSACEA]!!.copy(score = adjusted, details = metrics[SkinMetric.Type.ROSACEA]!!.details + " | معدّل عبر المؤشرات")
+            metrics[SkinMetric.Type.VASCULAR]?.let { m ->
+                metrics[SkinMetric.Type.VASCULAR] = m.copy(score = adjusted, details = m.details + " | معدّل عبر المؤشرات")
+            }
+            metrics[SkinMetric.Type.SENSITIVITY]?.let { m ->
+                metrics[SkinMetric.Type.SENSITIVITY] = m.copy(score = adjusted, details = m.details + " | معدّل عبر المؤشرات")
+            }
+            metrics[SkinMetric.Type.ROSACEA]?.let { m ->
+                metrics[SkinMetric.Type.ROSACEA] = m.copy(score = adjusted, details = m.details + " | معدّل عبر المؤشرات")
+            }
         }
 
         if (sebum < 60f && (acne < 80f || blackheads < 80f)) {
             if (acne > 70f && sebum > 30f) {
-                metrics[SkinMetric.Type.ACNE] = metrics[SkinMetric.Type.ACNE]!!.copy(score = (acne + (100f - sebum)) / 2f, details = metrics[SkinMetric.Type.ACNE]!!.details + " | تم تعديله بناءً على الدهون")
-                metrics[SkinMetric.Type.SEBUM] = metrics[SkinMetric.Type.SEBUM]!!.copy(score = (sebum + (100f - acne)) / 2f, details = metrics[SkinMetric.Type.SEBUM]!!.details + " | تم تعديله بناءً على حب الشباب")
+                metrics[SkinMetric.Type.ACNE]?.let { m ->
+                    metrics[SkinMetric.Type.ACNE] = m.copy(score = (acne + (100f - sebum)) / 2f, details = m.details + " | تم تعديله بناءً على الدهون")
+                }
+                metrics[SkinMetric.Type.SEBUM]?.let { m ->
+                    metrics[SkinMetric.Type.SEBUM] = m.copy(score = (sebum + (100f - acne)) / 2f, details = m.details + " | تم تعديله بناءً على حب الشباب")
+                }
             }
         }
 
         if (moisture < 60f && wrinkles > 60f) {
             val adjustedWrinkles = (wrinkles + (100f - moisture)) / 2f
-            metrics[SkinMetric.Type.WRINKLES] = metrics[SkinMetric.Type.WRINKLES]!!.copy(score = adjustedWrinkles, details = metrics[SkinMetric.Type.WRINKLES]!!.details + " | تم تعديله بناءً على الرطوبة")
+            metrics[SkinMetric.Type.WRINKLES]?.let { m ->
+                metrics[SkinMetric.Type.WRINKLES] = m.copy(score = adjustedWrinkles, details = m.details + " | تم تعديله بناءً على الرطوبة")
+            }
         }
     }
 
@@ -576,6 +626,7 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
             val tipsJson = json.encodeToString(report.expertTipsAr)
             val productsJson = json.encodeToString(report.productRecommendations)
             val profileJson = json.encodeToString(report.skinProfile)
+            val heatmapJson = json.encodeToString(report.heatmapPoints)
 
             val entity = SkinReportEntity(
                 id = report.id,
@@ -591,7 +642,8 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                 productsJson = productsJson,
                 skinProfileJson = profileJson,
                 confidence = report.confidence,
-                scanId = report.scanId
+                scanId = report.scanId,
+                heatmapPointsJson = heatmapJson
             )
 
             reportDao.insertReport(entity)

@@ -6,9 +6,11 @@ import android.app.NotificationManager
 import android.os.Build
 import com.ebtikar.skinanalyzer.core.provider.AnalysisProviderManager
 import com.ebtikar.skinanalyzer.util.PreferencesManager
+import com.ebtikar.skinanalyzer.util.ScanReminderWorker
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -36,6 +38,15 @@ class SkinAnalyzerApp : Application() {
         }
 
         createUpdateNotificationChannel()
+        ScanReminderWorker.createChannel(this)
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val enabled = preferencesManager.scanReminderEnabledFlow.first()
+            if (enabled) {
+                val hours = preferencesManager.scanReminderIntervalHoursFlow.first()
+                ScanReminderWorker.schedule(this@SkinAnalyzerApp, hours)
+            }
+        }
 
         Timber.i("SkinAnalyzer App initialized - ${com.ebtikar.skinanalyzer.util.Constants.DEVICE_NAME}")
         Timber.i("Device: ${com.ebtikar.skinanalyzer.util.Constants.DEVICE_BRAND} ${com.ebtikar.skinanalyzer.util.Constants.DEVICE_MODEL}")

@@ -59,9 +59,9 @@ class FiseGpioController @Inject constructor(
     private fun verifyWriteAccess(): Boolean {
         for (file in gpioFiles) {
             try {
-                file.writeText("0")
+                file.writeText("1")  // Write OFF (active LOW: 1=OFF) to avoid turning LEDs on during init
                 val rb = file.readText().trim()
-                Timber.d("GPIO write test ${file.absolutePath}: wrote=0, readback=$rb")
+                Timber.d("GPIO write test ${file.absolutePath}: wrote=1(OFF), readback=$rb")
             } catch (e: Exception) {
                 Timber.e(e, "GPIO write test FAILED for ${file.absolutePath} (SELinux=$selinuxEnforcing)")
                 return false
@@ -99,11 +99,11 @@ class FiseGpioController @Inject constructor(
             Timber.w("FISE GPIO $index file does not exist: ${file.absolutePath}")
             return false
         }
-        val value = if (on) "1" else "0"
+        val value = if (on) "0" else "1"  // Active LOW: 0=ON, 1=OFF
         return try {
             file.writeText(value)
             val readback = try { file.readText().trim() } catch (_: Exception) { "?" }
-            Timber.i("FISE GPIO $index -> ${if (on) "ON" else "OFF"} (readback=$readback)")
+            Timber.i("FISE GPIO $index -> ${if (on) "ON" else "OFF"} (wrote=$value, readback=$readback)")
             true
         } catch (e: Exception) {
             Timber.e(e, "Failed to write FISE GPIO $index (SELinux=$selinuxEnforcing)")
@@ -117,9 +117,9 @@ class FiseGpioController @Inject constructor(
             return false
         }
         return try {
-            val value = if (on) "1" else "0"
+            val value = if (on) "0" else "1"  // Active LOW: 0=ON, 1=OFF
             ledFile.writeText(value)
-            Timber.i("FISE LED master -> ${if (on) "ON" else "OFF"}")
+            Timber.i("FISE LED master -> ${if (on) "ON" else "OFF"} (wrote=$value)")
             true
         } catch (e: Exception) {
             Timber.e(e, "Failed to write FISE LED master")
