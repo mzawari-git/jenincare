@@ -27,12 +27,12 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.ebtikar.skinanalyzer"
+        applicationId = "com.ebtikar.skinanalyzer.pro"
         minSdk = 24
         //noinspection EditedTargetSdkVersion
         targetSdk = 33
-versionCode = 42
-            versionName = "1.2.41"
+        versionCode = 43
+        versionName = "1.2.42"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

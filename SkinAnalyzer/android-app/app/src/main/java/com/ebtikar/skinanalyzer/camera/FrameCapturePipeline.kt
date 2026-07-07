@@ -10,6 +10,7 @@ import com.ebtikar.skinanalyzer.hardware.SpectrumController
 import com.ebtikar.skinanalyzer.util.ImageUtils
 import com.ebtikar.skinanalyzer.util.PreferencesManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,10 +39,7 @@ class FrameCapturePipeline @Inject constructor(
     val capturedFrames: StateFlow<Map<LightSpectrum, File>> = _capturedFrames.asStateFlow()
 
     private val _currentPhase = MutableStateFlow<CapturePhase?>(null)
-    val currentPhase: MutableStateFlow<CapturePhase?> = _currentPhase
-
-    private val _capturedBitmap = MutableStateFlow<Bitmap?>(null)
-    val capturedBitmap: StateFlow<Bitmap?> = _capturedBitmap.asStateFlow()
+    val currentPhase: StateFlow<CapturePhase?> = _currentPhase.asStateFlow()
 
     private val _capturedFrameSequence = MutableStateFlow<List<Pair<LightSpectrum, File>>>(emptyList())
     val capturedFrameSequence: StateFlow<List<Pair<LightSpectrum, File>>> = _capturedFrameSequence.asStateFlow()
@@ -159,60 +157,63 @@ class FrameCapturePipeline @Inject constructor(
                             delay(100)
                             continue
                         }
-                        val evalBitmap = if (rawBitmap.width > 480 || rawBitmap.height > 480) {
-                            val scale = 480f / maxOf(rawBitmap.width, rawBitmap.height)
-                            Bitmap.createScaledBitmap(rawBitmap,
-                                (rawBitmap.width * scale).toInt().coerceAtLeast(1),
-                                (rawBitmap.height * scale).toInt().coerceAtLeast(1), true)
-                        } else rawBitmap
+                        try {
+                            val evalBitmap = if (rawBitmap.width > 480 || rawBitmap.height > 480) {
+                                val scale = 480f / maxOf(rawBitmap.width, rawBitmap.height)
+                                Bitmap.createScaledBitmap(rawBitmap,
+                                    (rawBitmap.width * scale).toInt().coerceAtLeast(1),
+                                    (rawBitmap.height * scale).toInt().coerceAtLeast(1), true)
+                            } else rawBitmap
 
-                        CVUtils.normalizeBrightness(evalBitmap)
-                        val result = CVUtils.evaluateFacePosition(evalBitmap, faceThreshold)
-                        if (evalBitmap !== rawBitmap) evalBitmap.recycle()
-                        _positionScore.value = result.score
-                        lastScore = result.score
-                        _skinCenterX.value = result.skinRegionCenterX
-                        _skinCenterY.value = result.skinRegionCenterY
-                        _positionMessage.value = when (result.messageKey) {
-                            "face_not_visible" -> "لم يتم الكشف عن الوجه — تأكد من وجودك أمام الكاميرا"
-                            "face_too_low" -> "ارفع رأسك لأعلى — يجب ظهور الجبهة"
-                            "face_too_far" -> "اقترب من الكاميرا أكثر"
-                            "face_too_close" -> "ابتعد قليلاً عن الكاميرا"
-                            "face_off_center" -> "تمركز في منتصف الإطار"
-                            "adjust_position" -> "اضبط وضعيتك — ارفع رأسك قليلاً"
-                            else -> "تم الكشف عن الوجه — جاري القراءة..."
-                        }
-                        rawBitmap.recycle()
-
-                        if (result.isValid) {
-                            consecutiveValidCount++
-                            if (consecutiveValidCount >= requiredConsecutive) {
-                                positionValid = true
-                                _positionMessage.value = "تم التحقق من وضع الوجه ✓ — جاري قراءة ملامح الوجه..."
-                                Timber.i("Face position validated: score=${result.score}, coverage=${result.coverage}, topRatio=${result.topRatio}, consecutive=$consecutiveValidCount")
-                            } else {
-                                _positionMessage.value = "جاري قراءة الوجه... ($consecutiveValidCount/$requiredConsecutive)"
-                                Timber.d("Face valid but need $requiredConsecutive consecutive: $consecutiveValidCount/$requiredConsecutive (score=${result.score})")
-                                delay(200)
+                            CVUtils.normalizeBrightness(evalBitmap)
+                            val result = CVUtils.evaluateFacePosition(evalBitmap, faceThreshold)
+                            if (evalBitmap !== rawBitmap) evalBitmap.recycle()
+                            _positionScore.value = result.score
+                            lastScore = result.score
+                            _skinCenterX.value = result.skinRegionCenterX
+                            _skinCenterY.value = result.skinRegionCenterY
+                            _positionMessage.value = when (result.messageKey) {
+                                "face_not_visible" -> "لم يتم الكشف عن الوجه — تأكد من وجودك أمام الكاميرا"
+                                "face_too_low" -> "ارفع رأسك لأعلى — يجب ظهور الجبهة"
+                                "face_too_far" -> "اقترب من الكاميرا أكثر"
+                                "face_too_close" -> "ابتعد قليلاً عن الكاميرا"
+                                "face_off_center" -> "تمركز في منتصف الإطار"
+                                "adjust_position" -> "اضبط وضعيتك — ارفع رأسك قليلاً"
+                                else -> "تم الكشف عن الوجه — جاري القراءة..."
                             }
-                        } else {
-                            consecutiveValidCount = 0
-                            positionAttempts++
-                            Timber.d("Face position: score=${result.score}, ${result.messageKey} (attempt $positionAttempts/$maxPositionAttempts)")
 
-                            if (positionAttempts % 5 == 0 && positionAttempts < maxPositionAttempts) {
-                                Timber.w("HSV failed $positionAttempts attempts — trying ML Kit intermediate fallback")
-                                _positionMessage.value = "جاري التحقق بواسطة الذكاء الاصطناعي..."
-                                delay(100)
-                                val mlFace = tryMlKitFallback()
-                                if (mlFace) {
+                            if (result.isValid) {
+                                consecutiveValidCount++
+                                if (consecutiveValidCount >= requiredConsecutive) {
                                     positionValid = true
-                                    _positionMessage.value = "تم التحقق بواسطة الذكاء الاصطناعي ✓ — جاري قراءة ملامح الوجه..."
-                                    Timber.i("Face validated via ML Kit intermediate fallback (attempt $positionAttempts)")
+                                    _positionMessage.value = "تم التحقق من وضع الوجه ✓ — جاري قراءة ملامح الوجه..."
+                                    Timber.i("Face position validated: score=${result.score}, coverage=${result.coverage}, topRatio=${result.topRatio}, consecutive=$consecutiveValidCount")
+                                } else {
+                                    _positionMessage.value = "جاري قراءة الوجه... ($consecutiveValidCount/$requiredConsecutive)"
+                                    Timber.d("Face valid but need $requiredConsecutive consecutive: $consecutiveValidCount/$requiredConsecutive (score=${result.score})")
+                                    delay(200)
                                 }
                             } else {
-                                delay(120)
+                                consecutiveValidCount = 0
+                                positionAttempts++
+                                Timber.d("Face position: score=${result.score}, ${result.messageKey} (attempt $positionAttempts/$maxPositionAttempts)")
+
+                                if (positionAttempts % 5 == 0 && positionAttempts < maxPositionAttempts) {
+                                    Timber.w("HSV failed $positionAttempts attempts — trying ML Kit intermediate fallback")
+                                    _positionMessage.value = "جاري التحقق بواسطة الذكاء الاصطناعي..."
+                                    delay(100)
+                                    val mlFace = tryMlKitFallback()
+                                    if (mlFace) {
+                                        positionValid = true
+                                        _positionMessage.value = "تم التحقق بواسطة الذكاء الاصطناعي ✓ — جاري قراءة ملامح الوجه..."
+                                        Timber.i("Face validated via ML Kit intermediate fallback (attempt $positionAttempts)")
+                                    }
+                                } else {
+                                    delay(120)
+                                }
                             }
+                        } finally {
+                            if (!rawBitmap.isRecycled) rawBitmap.recycle()
                         }
                     } catch (e: Exception) {
                         Timber.w(e, "Position validation attempt failed, retrying...")
@@ -288,11 +289,13 @@ class FrameCapturePipeline @Inject constructor(
             Timber.e(e, "Capture sequence failed")
             Result.failure(e)
         } finally {
-            if (fiseGpioController.isAvailable) {
-                fiseGpioController.turnAllOff()
+            withContext(NonCancellable) {
+                if (fiseGpioController.isAvailable) {
+                    fiseGpioController.turnAllOff()
+                }
+                spectrumController.activate(LightSpectrum.OFF)
+                cameraManager.closeCameraSuspend()
             }
-            spectrumController.activate(LightSpectrum.OFF)
-            cameraManager.closeCameraSuspend()
         }
     }
 
@@ -381,25 +384,6 @@ class FrameCapturePipeline @Inject constructor(
 
         _faceGuideVisible.value = false
     }
-    private fun createPlaceholderBitmap(file: File, spectrum: LightSpectrum) {
-        val bitmap = Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888)
-        try {
-            val canvas = android.graphics.Canvas(bitmap)
-            canvas.drawColor(android.graphics.Color.DKGRAY)
-            val paint = android.graphics.Paint().apply {
-                color = android.graphics.Color.WHITE
-                textSize = 48f
-                textAlign = android.graphics.Paint.Align.CENTER
-            }
-            canvas.drawText(spectrum.displayName, 960f, 540f, paint)
-            val saved = ImageUtils.saveBitmap(bitmap, file)
-            if (!saved) {
-                Timber.e("Failed to save placeholder bitmap for ${spectrum.name} to ${file.absolutePath}")
-            }
-        } finally {
-            bitmap.recycle()
-        }
-    }
 
     private suspend fun tryMlKitFallback(): Boolean {
         return try {
@@ -426,8 +410,6 @@ class FrameCapturePipeline @Inject constructor(
         _capturedFrames.value = emptyMap()
         _capturedFrameSequence.value = emptyList()
         _currentPhase.value = null
-        _capturedBitmap.value?.let { if (!it.isRecycled) it.recycle() }
-        _capturedBitmap.value = null
         _positionScore.value = 0
         _positionMessage.value = ""
         _skinCenterX.value = 0.5f

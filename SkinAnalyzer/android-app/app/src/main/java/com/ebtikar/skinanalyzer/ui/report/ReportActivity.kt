@@ -45,6 +45,8 @@ class ReportActivity : AppCompatActivity() {
     private lateinit var metricsAdapter: ReportMetricAdapter
     private lateinit var productAdapter: ProductAdapter
 
+    private var decodedImageBitmaps: MutableList<Bitmap> = mutableListOf()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -289,6 +291,10 @@ class ReportActivity : AppCompatActivity() {
 
     private fun populateCapturedImages(images: Map<LightSpectrum, File>) {
         binding.containerCapturedImages.removeAllViews()
+        for (bmp in decodedImageBitmaps) {
+            if (!bmp.isRecycled) bmp.recycle()
+        }
+        decodedImageBitmaps.clear()
         if (images.isEmpty()) {
             binding.containerCapturedImages.visibility = android.view.View.GONE
             return
@@ -304,6 +310,7 @@ class ReportActivity : AppCompatActivity() {
                     try { loadBitmapWithRotation(file) } catch (_: Exception) { null }
                 }
             }
+            decodedImageBitmaps.addAll(decodedImages.values.filterNotNull())
 
             val rowSize = 2
             spectra.chunked(rowSize).forEach { rowSpectra ->
@@ -445,14 +452,16 @@ class ReportActivity : AppCompatActivity() {
                 if (rotated !== bitmap) bitmap.recycle()
                 return rotated
             }
-            if (bitmap.width > bitmap.height) {
-                val matrix = Matrix().apply { postRotate(90f) }
-                val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-                if (rotated !== bitmap) bitmap.recycle()
-                return rotated
-            }
         } catch (_: Exception) { }
         return bitmap
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        for (bmp in decodedImageBitmaps) {
+            if (!bmp.isRecycled) bmp.recycle()
+        }
+        decodedImageBitmaps.clear()
     }
 
     private fun Int.dpToPx(): Int =

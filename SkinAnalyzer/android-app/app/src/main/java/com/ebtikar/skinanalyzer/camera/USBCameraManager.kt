@@ -47,6 +47,7 @@ class USBCameraManager @Inject constructor(
     @Volatile private var imageReader: ImageReader? = null
     @Volatile private var backgroundHandler: Handler? = null
     @Volatile private var backgroundThread: HandlerThread? = null
+    @Volatile private var isClosing = false
     private var supportedSizes: List<Size> = emptyList()
     @Volatile private var previewSurface: Surface? = null
     private var sensorOrientation: Int = 0
@@ -159,28 +160,33 @@ class USBCameraManager @Inject constructor(
                                         val size = getOptimalSize(TARGET_RESOLUTION)
                                         previewTargetSize = size
                                         imageReader = ImageReader.newInstance(size.width, size.height, ImageFormat.JPEG, 4)
-                                        val targets = listOf(ps, imageReader!!.surface)
-                                        camera.createCaptureSession(
-                                            targets,
-                                            object : CameraCaptureSession.StateCallback() {
-                                                override fun onConfigured(session: CameraCaptureSession) {
-                                                    captureSession = session
-                                                                    try {
-                                                        val request = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
-                                                            addTarget(ps)
-                                                            configureAutoExposure(this)
-                                                            configureAutoFocusPreview(this)
+                                        val readerSurface = imageReader?.surface
+                                        if (readerSurface != null) {
+                                            val targets = listOf(ps, readerSurface)
+                                            camera.createCaptureSession(
+                                                targets,
+                                                object : CameraCaptureSession.StateCallback() {
+                                                    override fun onConfigured(session: CameraCaptureSession) {
+                                                        captureSession = session
+                                                        try {
+                                                            val request = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
+                                                                addTarget(ps)
+                                                                configureAutoExposure(this)
+                                                                configureAutoFocusPreview(this)
+                                                            }
+                                                            session.setRepeatingRequest(request.build(), null, backgroundHandler)
+                                                        } catch (e: Exception) {
+                                                            Timber.w(e, "Preview request failed, capture-only mode")
                                                         }
-                                                        session.setRepeatingRequest(request.build(), null, backgroundHandler)
-                                                                    } catch (e: Exception) {
-                                                                        Timber.w(e, "Preview request failed, capture-only mode")
-                                                                    }
-                                                    Timber.i("Preview + capture session ready, size=${size.width}x${size.height}")
-                                                }
-                                                override fun onConfigureFailed(session: CameraCaptureSession) {
-                                                    Timber.e("Combined session config failed")
-                                                }
-                                            }, backgroundHandler)
+                                                        Timber.i("Preview + capture session ready, size=${size.width}x${size.height}")
+                                                    }
+                                                    override fun onConfigureFailed(session: CameraCaptureSession) {
+                                                        Timber.e("Combined session config failed")
+                                                    }
+                                                }, backgroundHandler)
+                                        } else {
+                                            Timber.e("imageReader surface is null")
+                                        }
                                     } catch (e: Exception) {
                                         Timber.w(e, "Failed to create combined session")
                                     }
@@ -218,9 +224,14 @@ class USBCameraManager @Inject constructor(
             }
         } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
             Timber.e(e, "Camera open timed out for $cameraId, cleaning up")
+            imageReader?.close()
+            imageReader = null
+            captureSession?.close()
+            captureSession = null
             cameraDevice?.close()
             cameraDevice = null
-            throw e
+            stopBackgroundThread()
+            throw IllegalStateException("Camera open timeout", e)
         }
 
     suspend fun captureFrame(spectrum: LightSpectrum? = null): Bitmap? {
@@ -350,30 +361,29 @@ class USBCameraManager @Inject constructor(
         }
     }
 
+    @Synchronized
     fun closeCamera() {
-        captureSession?.close()
-        captureSession = null
-        cameraDevice?.close()
-        cameraDevice = null
-        imageReader?.close()
-        imageReader = null
-        previewSurface = null
-        stopBackgroundThread()
-        Timber.i("Camera released")
+        if (isClosing) return
+        isClosing = true
+        try {
+            captureSession?.close()
+            captureSession = null
+            cameraDevice?.close()
+            cameraDevice = null
+            imageReader?.close()
+            imageReader = null
+            previewSurface = null
+            stopBackgroundThread()
+            Timber.i("Camera released")
+        } finally {
+            isClosing = false
+        }
     }
 
     suspend fun closeCameraSuspend() {
-        captureSession?.close()
-        captureSession = null
-        cameraDevice?.close()
-        cameraDevice = null
-        imageReader?.close()
-        imageReader = null
-        previewSurface = null
         withContext(Dispatchers.IO) {
-            stopBackgroundThread()
+            closeCamera()
         }
-        Timber.i("Camera released (suspend)")
     }
 
     private fun updateDisplayRotation() {

@@ -25,13 +25,11 @@ import com.ebtikar.skinanalyzer.model.SkinAnalysisReport
 import com.ebtikar.skinanalyzer.model.SkinMetric
 import com.ebtikar.skinanalyzer.model.SkinProfile
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -69,9 +67,11 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
         return try {
             _analysisState.value = AnalysisState.Initializing
 
-            CoroutineScope(Dispatchers.IO).launch {
-                try { knowledgeRepository.refreshFromRemote() } catch (_: Exception) { }
-            }
+            try {
+                withContext(Dispatchers.IO) {
+                    knowledgeRepository.refreshFromRemote()
+                }
+            } catch (_: Exception) { }
 
             val spectra = LightSpectrum.getSpectraForDiagnosisMode(diagnosisMode)
             val total = spectra.size
@@ -128,14 +128,17 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                 val checkFile = analysisFrames[spectrum] ?: continue
                 if (!checkFile.exists()) continue
                 val checkBitmap = CVUtils.decodeSampled(checkFile, 640) ?: continue
-                val faces = faceLandmarkDetector.detectFaces(checkBitmap)
-                checkBitmap.recycle()
-                if (faces.isNotEmpty()) {
-                    Timber.i("Face confirmed in $spectrum frame: ${faces.size} face(s)")
-                    faceDetected = true
-                    break
+                try {
+                    val faces = faceLandmarkDetector.detectFaces(checkBitmap)
+                    if (faces.isNotEmpty()) {
+                        Timber.i("Face confirmed in $spectrum frame: ${faces.size} face(s)")
+                        faceDetected = true
+                        break
+                    }
+                    Timber.d("No face in $spectrum frame, trying next spectrum")
+                } finally {
+                    if (!checkBitmap.isRecycled) checkBitmap.recycle()
                 }
-                Timber.d("No face in $spectrum frame, trying next spectrum")
             }
             if (!faceDetected) {
                 Timber.w("Post-capture face check: no face in RGB/polarized frames — proceeding anyway (face was validated during capture)")

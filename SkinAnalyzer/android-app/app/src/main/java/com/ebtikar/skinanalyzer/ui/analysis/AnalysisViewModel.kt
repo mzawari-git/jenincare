@@ -96,6 +96,9 @@ class AnalysisViewModel @Inject constructor(
     private val _recommendations = MutableStateFlow<List<String>>(emptyList())
     val recommendations: StateFlow<List<String>> = _recommendations.asStateFlow()
 
+    private val _showRetry = MutableStateFlow(false)
+    val showRetry: StateFlow<Boolean> = _showRetry.asStateFlow()
+
     private var reportId = UUID.randomUUID().toString()
     @Volatile private var isAborted = false
     private var analysisJob: kotlinx.coroutines.Job? = null
@@ -197,6 +200,7 @@ class AnalysisViewModel @Inject constructor(
         isAborted = false
         _error.value = null
         _isComplete.value = false
+        _showRetry.value = false
         _progress.value = 0
         _currentPhase.value = null
         _currentStep.value = 0
@@ -220,6 +224,8 @@ class AnalysisViewModel @Inject constructor(
         _recentScans.value = emptyList()
         _recommendations.value = emptyList()
 
+        cleanupOldCaptures()
+
         analysisJob = viewModelScope.launch {
             _statusMessage.value = "Initializing analysis..."
 
@@ -242,28 +248,29 @@ class AnalysisViewModel @Inject constructor(
         }
     }
 
-    private fun runAnalysis(frames: Map<LightSpectrum, File>, mode: String = Constants.ANALYSIS_AUTO) {
-        viewModelScope.launch {
-            val analysisResult = repository.analyzeImages(frames, mode)
+    private suspend fun runAnalysis(frames: Map<LightSpectrum, File>, mode: String = Constants.ANALYSIS_AUTO) {
+        val analysisResult = repository.analyzeImages(frames, mode)
 
-            if (analysisResult.isSuccess) {
-                val report = analysisResult.getOrThrow()
-                val fixedReport = report.copy(id = reportId)
-                val saveResult = repository.saveReport(fixedReport)
+        if (analysisResult.isSuccess) {
+            val report = analysisResult.getOrThrow()
+            val fixedReport = report.copy(id = reportId)
+            val saveResult = repository.saveReport(fixedReport)
 
-                if (saveResult.isSuccess) {
-                    applyReportToUI(fixedReport)
-                    loadHistoryFromDb()
+            if (saveResult.isSuccess) {
+                applyReportToUI(fixedReport)
+                loadHistoryFromDb()
 
-                    _progress.value = 100
-                    _isComplete.value = true
-                    Timber.i("Analysis and save complete: ${report.metricCount} metrics, score=${report.overallScore}")
-                } else {
-                    _error.value = "Failed to save report"
-                }
+                _progress.value = 100
+                _isComplete.value = true
+                _showRetry.value = false
+                Timber.i("Analysis and save complete: ${report.metricCount} metrics, score=${report.overallScore}")
             } else {
-                _error.value = "Analysis failed: ${analysisResult.exceptionOrNull()?.message}"
+                _error.value = "Failed to save report"
+                _showRetry.value = true
             }
+        } else {
+            _error.value = "Analysis failed: ${analysisResult.exceptionOrNull()?.message}"
+            _showRetry.value = true
         }
     }
 
@@ -271,5 +278,37 @@ class AnalysisViewModel @Inject constructor(
         isAborted = true
         analysisJob?.cancel()
         analysisJob = null
+    }
+
+    fun retryAnalysis(previewSurface: android.view.Surface? = null) {
+        if (capturedFrames.isNotEmpty()) {
+            _showRetry.value = false
+            _error.value = null
+            _isComplete.value = false
+            _progress.value = 50
+            analysisJob = viewModelScope.launch {
+                val mode = preferencesManager.analysisModeFlow.first()
+                runAnalysis(capturedFrames, mode)
+            }
+        } else {
+            initializeAnalysis(previewSurface)
+        }
+    }
+
+    private fun cleanupOldCaptures() {
+        try {
+            val capturesDir = File(context.filesDir, "captures")
+            if (!capturesDir.exists()) return
+            val dirs = capturesDir.listFiles()?.filter { it.isDirectory }?.sortedBy { it.lastModified() } ?: return
+            val maxDirs = 10
+            if (dirs.size > maxDirs) {
+                dirs.take(dirs.size - maxDirs).forEach { dir ->
+                    dir.deleteRecursively()
+                    Timber.d("Cleaned up old capture dir: ${dir.name}")
+                }
+            }
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to clean up old captures")
+        }
     }
 }

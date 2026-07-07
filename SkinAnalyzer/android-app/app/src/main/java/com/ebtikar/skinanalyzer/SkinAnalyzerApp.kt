@@ -4,6 +4,7 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
+import androidx.work.Configuration
 import com.ebtikar.skinanalyzer.core.provider.AnalysisProviderManager
 import com.ebtikar.skinanalyzer.util.PreferencesManager
 import com.ebtikar.skinanalyzer.util.ScanReminderWorker
@@ -16,7 +17,7 @@ import timber.log.Timber
 import javax.inject.Inject
 
 @HiltAndroidApp
-class SkinAnalyzerApp : Application() {
+class SkinAnalyzerApp : Application(), Configuration.Provider {
 
     @Inject
     lateinit var providerManager: AnalysisProviderManager
@@ -24,8 +25,18 @@ class SkinAnalyzerApp : Application() {
     @Inject
     lateinit var preferencesManager: PreferencesManager
 
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setMinimumLoggingLevel(if (BuildConfig.DEBUG) android.util.Log.DEBUG else android.util.Log.ERROR)
+            .build()
+
     override fun onCreate() {
         super.onCreate()
+
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            Timber.e(throwable, "Uncaught exception in thread ${thread.name}")
+            android.util.Log.e("SkinAnalyzer", "FATAL: ${throwable.message}", throwable)
+        }
 
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())

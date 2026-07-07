@@ -205,7 +205,13 @@ class SettingsActivity : AppCompatActivity() {
                 }
             }
             override fun onStartTrackingTouch(sb: SeekBar?) {}
-            override fun onStopTrackingTouch(sb: SeekBar?) {}
+            override fun onStopTrackingTouch(sb: SeekBar?) {
+                sb?.let { seekBar ->
+                    lifecycleScope.launch {
+                        preferencesManager.setCameraZoomProgress(seekBar.progress)
+                    }
+                }
+            }
         })
 
         // --- Auto Update Toggle ---
@@ -329,6 +335,7 @@ class SettingsActivity : AppCompatActivity() {
         // --- Face Validation Threshold ---
         lifecycleScope.launch {
             val threshold = preferencesManager.faceValidationThresholdFlow.first()
+            binding.seekFaceThreshold.max = 85
             binding.seekFaceThreshold.progress = threshold
             binding.tvFaceThreshold.text = "$threshold"
         }
@@ -730,11 +737,8 @@ class SettingsActivity : AppCompatActivity() {
         java.util.Locale.setDefault(locale)
         val config = android.content.res.Configuration(resources.configuration)
         config.setLocale(locale)
+        @Suppress("DEPRECATION")
         resources.updateConfiguration(config, resources.displayMetrics)
-        com.google.android.material.snackbar.Snackbar.make(
-            binding.root,
-            if (lang == Constants.LANG_ARABIC) "تم تغيير اللغة — أعد تشغيل التطبيق للتطبيق الكامل" else "Language changed — restart app for full effect",
-            com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
-        ).show()
+        recreate()
     }
 }

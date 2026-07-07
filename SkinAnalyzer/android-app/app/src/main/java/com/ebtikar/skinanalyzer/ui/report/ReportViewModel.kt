@@ -93,25 +93,32 @@ class ReportViewModel @Inject constructor(
 
     private var currentReportId: String? = null
 
+    private val _isReportMissing = MutableStateFlow(false)
+    val isReportMissing: StateFlow<Boolean> = _isReportMissing.asStateFlow()
+
     fun loadReport(reportId: String) {
         currentReportId = reportId
         viewModelScope.launch {
             val entity = repository.getReport(reportId)
 
             if (entity != null) {
+                _isReportMissing.value = false
                 populateFromEntity(entity)
                 _capturedImages.value = repository.getCapturedImages(reportId)
             } else {
+                _isReportMissing.value = true
                 val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
                 _reportDate.value = dateFormat.format(Date())
-                _providerName.value = "Local_TFLite_Engine"
-                _analysisTime.value = 1200L
+                _providerName.value = ""
+                _analysisTime.value = 0L
 
-                val sampleMetrics = generateSampleMetrics()
-                _metrics.value = sampleMetrics
-                _overallScore.value = sampleMetrics.map { it.score }.average().toFloat()
-                _aiAnalysisText.value = "هذا تقرير تجريبي — يرجى إجراء تحليل حقيقي للحصول على نتائج دقيقة"
-                _expertTips.value = listOf("حافظي على روتين يومي ثابت", "اشربي كمية كافية من الماء", "استخدمي واقي شمس يومياً")
+                val zeroMetrics = SkinMetric.ALL_TYPES.map { type ->
+                    SkinMetric(type = type, score = 0f, severity = MetricSeverity.CRITICAL, details = "")
+                }
+                _metrics.value = zeroMetrics
+                _overallScore.value = 0f
+                _aiAnalysisText.value = "التقرير غير موجود — يرجى إجراء تحليل جديد"
+                _expertTips.value = emptyList()
             }
         }
     }

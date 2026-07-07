@@ -182,8 +182,9 @@ object ImageUtils {
             else -> {}
         }
 
-        source.setPixels(pixels, 0, w, 0, 0, w, h)
-        return source
+        val result = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        result.setPixels(pixels, 0, w, 0, 0, w, h)
+        return result
     }
 
     private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
