@@ -73,7 +73,9 @@ class SerialBusManager @Inject constructor(
             Timber.w("No USB serial device found for auto-connect")
             return Result.failure(IllegalStateException("No USB serial device found"))
         }
-        return connect(driver).also { result ->
+        return commandMutex.withLock {
+            connect(driver)
+        }.also { result ->
             if (result.isSuccess) {
                 Timber.i("Serial bus auto-connected successfully to ${driver.device.deviceName}")
             } else {
@@ -228,23 +230,26 @@ class SerialBusManager @Inject constructor(
                 port.write(payload, 1000)
                 Timber.d("TX [Attempt $attempt]: ${spectrum.name} -> ${payload.joinToString(" ") { "0x%02X".format(it) }}")
 
-                delay(50)
-
+                val ackReceived = waitForAck(startTime)
                 val elapsed = System.currentTimeMillis() - startTime
                 val stats = _commandStats.value
                 _commandStats.value = stats.copy(
                     totalSent = stats.totalSent + 1,
+                    totalAcks = if (ackReceived) stats.totalAcks + 1 else stats.totalAcks,
                     lastCommandTimeMs = elapsed
                 )
 
-                return Result.success(Unit)
+                if (ackReceived) {
+                    return Result.success(Unit)
+                }
+                Timber.w("No ACK for ${spectrum.name} (attempt $attempt/$MAX_RETRIES)")
             } catch (e: Exception) {
                 lastException = e
                 _lastError.value = e.message
                 Timber.e(e, "Command failed for ${spectrum.name} (attempt $attempt/$MAX_RETRIES)")
-                if (attempt < MAX_RETRIES) {
-                    delay(100L * attempt)
-                }
+            }
+            if (attempt < MAX_RETRIES) {
+                delay(100L * attempt)
             }
         }
 
@@ -288,16 +293,18 @@ class SerialBusManager @Inject constructor(
     }
 
     suspend fun ping(): Boolean {
-        return try {
-            val port = serialPort ?: return false
-            val pingBytes = byteArrayOf(HEADER_BYTE, 0xFF.toByte(), FOOTER_BYTE)
-            port.write(pingBytes, 500)
-            delay(200)
-            val response = lastResponse.value
-            lastResponse.value = null
-            response != null && response.isNotEmpty()
-        } catch (e: Exception) {
-            false
+        return commandMutex.withLock {
+            try {
+                val port = serialPort ?: return@withLock false
+                val pingBytes = byteArrayOf(HEADER_BYTE, 0xFF.toByte(), FOOTER_BYTE)
+                port.write(pingBytes, 500)
+                delay(200)
+                val response = lastResponse.value
+                lastResponse.value = null
+                response != null && response.isNotEmpty()
+            } catch (e: Exception) {
+                false
+            }
         }
     }
 

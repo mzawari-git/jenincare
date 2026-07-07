@@ -289,7 +289,7 @@ class USBCameraManager @Inject constructor(
                         set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO)
                         set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
                         set(CaptureRequest.JPEG_QUALITY, 100.toByte())
-                        configureAutoExposure(this)
+                        configureAutoExposure(this, spectrum)
                     }
                     session.capture(captureBuilder.build(), object : CameraCaptureSession.CaptureCallback() {
                         override fun onCaptureCompleted(
@@ -316,7 +316,6 @@ class USBCameraManager @Inject constructor(
         try {
             val request = device.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
                 addTarget(ps)
-                imageReader?.surface?.let { addTarget(it) }
                 configureAutoExposure(this)
                 configureAutoFocusPreview(this)
             }
@@ -388,8 +387,17 @@ class USBCameraManager @Inject constructor(
         }
     }
 
-    private fun configureAutoExposure(builder: CaptureRequest.Builder) {
-        builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+    private fun configureAutoExposure(builder: CaptureRequest.Builder, spectrum: LightSpectrum? = null) {
+        val isUvOrWoods = spectrum == LightSpectrum.UV365 || spectrum == LightSpectrum.WOODS
+        if (isUvOrWoods) {
+            builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+            builder.set(CaptureRequest.CONTROL_AE_LOCK, true)
+            builder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_DAYLIGHT)
+        } else {
+            builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+            builder.set(CaptureRequest.CONTROL_AE_LOCK, false)
+            builder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_AUTO)
+        }
     }
 
     private fun configureAutoFocusPreview(builder: CaptureRequest.Builder) {

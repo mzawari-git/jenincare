@@ -1,6 +1,7 @@
 package com.ebtikar.skinanalyzer.util
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
@@ -45,12 +46,13 @@ class PdfReportGenerator @Inject constructor() {
 
     fun generate(context: Context, report: SkinAnalysisReport, outputDir: File, capturedImages: Map<LightSpectrum, File> = emptyMap()): File? {
         val pdfDocument = PdfDocument()
+        val bitmapsToRecycle = mutableListOf<Bitmap>()
         return try {
             drawPage1_Header(pdfDocument, report)
             drawPage2_Metrics(pdfDocument, report)
             drawPage3_Recommendations(pdfDocument, report)
             if (capturedImages.isNotEmpty()) {
-                drawPage4_CapturedImages(pdfDocument, capturedImages)
+                drawPage4_CapturedImages(pdfDocument, capturedImages, bitmapsToRecycle)
             }
 
             if (!outputDir.exists()) outputDir.mkdirs()
@@ -64,7 +66,10 @@ class PdfReportGenerator @Inject constructor() {
             Timber.e(e, "Failed to generate PDF report")
             null
         } finally {
-            pdfDocument.close()
+            try { pdfDocument.close() } catch (_: Exception) {}
+            for (b in bitmapsToRecycle) {
+                try { if (!b.isRecycled) b.recycle() } catch (_: Exception) {}
+            }
         }
     }
 
@@ -506,7 +511,7 @@ class PdfReportGenerator @Inject constructor() {
     // ═══════════════════════════════════════════════════════
     // PAGE 4 — Captured Spectral Images
     // ═══════════════════════════════════════════════════════
-    private fun drawPage4_CapturedImages(pdfDocument: PdfDocument, capturedImages: Map<LightSpectrum, File>) {
+    private fun drawPage4_CapturedImages(pdfDocument: PdfDocument, capturedImages: Map<LightSpectrum, File>, bitmapsToRecycle: MutableList<Bitmap> = mutableListOf()) {
         val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, 4).create()
         val page = pdfDocument.startPage(pageInfo)
         val canvas = page.canvas
@@ -572,7 +577,7 @@ class PdfReportGenerator @Inject constructor() {
                     val padding = 6f
                     val imageRect = RectF(x + padding, y + padding, x + cellWidth - padding, y + cellHeight - padding)
                     canvas.drawBitmap(bitmap, null, imageRect, null)
-                    bitmap.recycle()
+                    bitmapsToRecycle.add(bitmap)
                 }
             } catch (e: Exception) {
                 Timber.w(e, "Failed to decode image for ${spectrum.name} in PDF")

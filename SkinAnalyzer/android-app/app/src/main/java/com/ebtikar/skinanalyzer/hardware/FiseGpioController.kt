@@ -14,7 +14,7 @@ class FiseGpioController @Inject constructor(
 
     private val gpioFiles = (0..4).map { File("/sys/class/fise_gpio$it/level") }
     private val ledFile = File("/sys/class/fise_led/level")
-    private var _available = false
+    @Volatile private var _available = false
     var selinuxEnforcing: Boolean? = null
         private set
 

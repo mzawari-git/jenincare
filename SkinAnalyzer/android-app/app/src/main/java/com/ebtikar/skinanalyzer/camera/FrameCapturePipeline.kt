@@ -350,10 +350,10 @@ class FrameCapturePipeline @Inject constructor(
                     val filtered = ImageUtils.applySpectralFilter(bitmap, spectrum.name)
                     val saved = ImageUtils.saveBitmap(filtered, frameFile)
                     if (filtered !== bitmap) filtered.recycle()
+                    bitmap.recycle()
                     if (!saved) {
                         Timber.e("Failed to save frame ${spectrum.name} to ${frameFile.absolutePath}")
                     }
-                    _capturedBitmap.value = bitmap
                     capturedSuccessfully = true
                     break
                 } else {

@@ -15,10 +15,12 @@ import com.ebtikar.skinanalyzer.model.SkinProfile
 import com.ebtikar.skinanalyzer.util.PdfReportGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
@@ -203,14 +205,10 @@ class ReportViewModel @Inject constructor(
         }
     }
 
-    fun exportCsv(): File? {
-        val reportId = currentReportId ?: return null
-        return try {
-            val entity = kotlinx.coroutines.runBlocking {
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    repository.getReport(reportId)
-                }
-            } ?: return null
+    suspend fun exportCsv(): File? = withContext(Dispatchers.IO) {
+        val reportId = currentReportId ?: return@withContext null
+        try {
+            val entity = repository.getReport(reportId) ?: return@withContext null
             val serializer = ListSerializer(SkinMetric.serializer())
             val metrics = json.decodeFromString(serializer, entity.metricsJson)
             val outputDir = File(context.filesDir, "exports")
@@ -233,10 +231,10 @@ class ReportViewModel @Inject constructor(
         }
     }
 
-    fun exportJson(): File? {
-        val reportId = currentReportId ?: return null
-        return try {
-            val entity = kotlinx.coroutines.runBlocking { repository.getReport(reportId) } ?: return null
+    suspend fun exportJson(): File? = withContext(Dispatchers.IO) {
+        val reportId = currentReportId ?: return@withContext null
+        try {
+            val entity = repository.getReport(reportId) ?: return@withContext null
             val outputDir = File(context.filesDir, "exports")
             outputDir.mkdirs()
             val jsonFile = File(outputDir, "report_${reportId.take(8)}.json")

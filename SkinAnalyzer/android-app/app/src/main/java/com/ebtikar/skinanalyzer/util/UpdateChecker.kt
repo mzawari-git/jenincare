@@ -350,7 +350,10 @@ class UpdateChecker @Inject constructor(
                     )
                 }
                 .filter { it.latestVersion != current } // exclude current version
-                .sortedWith(compareByDescending { it.latestVersion }) // newest first
+                .sortedWith(compareByDescending<UpdateInfo> { info ->
+                    val parts = info.latestVersion.removePrefix("v").split(".").map { it.toIntOrNull() ?: 0 }
+                    parts.getOrElse(0) { 0 } * 10000 + parts.getOrElse(1) { 0 } * 100 + parts.getOrElse(2) { 0 }
+                }) // newest first
         } catch (e: Exception) {
             Timber.w(e, "fetchAllReleases failed")
             emptyList()

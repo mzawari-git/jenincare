@@ -100,15 +100,17 @@ class ReportActivity : AppCompatActivity() {
         android.app.AlertDialog.Builder(this)
             .setTitle("اختر صيغة التصدير")
             .setItems(options) { _, which ->
-                val file = when (which) {
-                    0 -> viewModel.exportCsv()
-                    1 -> viewModel.exportJson()
-                    else -> null
-                }
-                if (file != null) {
-                    shareFile(file)
-                } else {
-                    android.widget.Toast.makeText(this, "فشل التصدير", android.widget.Toast.LENGTH_SHORT).show()
+                lifecycleScope.launch {
+                    val file = when (which) {
+                        0 -> viewModel.exportCsv()
+                        1 -> viewModel.exportJson()
+                        else -> null
+                    }
+                    if (file != null) {
+                        shareFile(file)
+                    } else {
+                        android.widget.Toast.makeText(this@ReportActivity, "فشل التصدير", android.widget.Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
             .show()

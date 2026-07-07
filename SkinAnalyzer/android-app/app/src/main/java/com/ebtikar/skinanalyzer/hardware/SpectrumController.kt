@@ -4,6 +4,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
 import java.util.concurrent.CopyOnWriteArrayList
 import javax.inject.Inject
@@ -17,6 +19,7 @@ class SpectrumController @Inject constructor(
 
     @Volatile private var currentSpectrum: LightSpectrum = LightSpectrum.OFF
     private val stateListeners = CopyOnWriteArrayList<(LightSpectrum) -> Unit>()
+    private val activateMutex = Mutex()
 
     private val _currentSpectrumFlow = MutableStateFlow(LightSpectrum.OFF)
     val currentSpectrumFlow: StateFlow<LightSpectrum> = _currentSpectrumFlow.asStateFlow()
@@ -58,24 +61,24 @@ class SpectrumController @Inject constructor(
         return anyReady
     }
 
-    suspend fun activate(spectrum: LightSpectrum): Result<Unit> {
+    suspend fun activate(spectrum: LightSpectrum): Result<Unit> = activateMutex.withLock {
         if (spectrum == LightSpectrum.OFF) {
             fiseGpio.turnAllOff()
             if (serialBus.isConnected) serialBus.sendCommand(LightSpectrum.OFF)
             currentSpectrum = spectrum
             _currentSpectrumFlow.value = spectrum
             notifyListeners(spectrum)
-            return Result.success(Unit)
+            return@withLock Result.success(Unit)
         }
         if (spectrum == LightSpectrum.ALL) {
             val gpioOk = fiseGpio.activateAll()
             if (!gpioOk && serialBus.isConnected) {
-                return serialBus.sendAllLightsCommand()
+                return@withLock serialBus.sendAllLightsCommand()
             }
             currentSpectrum = spectrum
             _currentSpectrumFlow.value = spectrum
             notifyListeners(spectrum)
-            return Result.success(Unit)
+            return@withLock Result.success(Unit)
         }
 
         if (fiseGpio.supportsSpectrum(spectrum)) {
@@ -85,7 +88,7 @@ class SpectrumController @Inject constructor(
                 currentSpectrum = spectrum
                 _currentSpectrumFlow.value = spectrum
                 notifyListeners(spectrum)
-                return Result.success(Unit)
+                return@withLock Result.success(Unit)
             }
             Timber.e("FISE GPIO activation FAILED for ${spectrum.name}")
         }
@@ -98,13 +101,13 @@ class SpectrumController @Inject constructor(
                 _currentSpectrumFlow.value = spectrum
                 notifyListeners(spectrum)
                 Timber.d("Spectrum activated via serial: ${spectrum.name}")
-                return Result.success(Unit)
+                return@withLock Result.success(Unit)
             }
             Timber.w("Serial activation failed for ${spectrum.name}: ${result.exceptionOrNull()?.message}")
         }
 
         Timber.e("No working GPIO or serial for ${spectrum.name}. LED will NOT turn on.")
-        return Result.failure(IllegalStateException("No LED hardware for ${spectrum.name}: GPIO=${fiseGpio.isAvailable}, serial=${serialBus.isConnected}"))
+        return@withLock Result.failure(IllegalStateException("No LED hardware for ${spectrum.name}: GPIO=${fiseGpio.isAvailable}, serial=${serialBus.isConnected}"))
     }
 
     suspend fun executeCaptureSequence(
@@ -193,6 +196,14 @@ class SpectrumController @Inject constructor(
     }
 
     fun shutdown() {
+        try {
+            fiseGpio.turnAllOff()
+        } catch (_: Exception) {}
+        try {
+            if (serialBus.isConnected) {
+                kotlinx.coroutines.runBlocking { serialBus.sendCommand(LightSpectrum.OFF) }
+            }
+        } catch (_: Exception) {}
         currentSpectrum = LightSpectrum.OFF
         _currentSpectrumFlow.value = LightSpectrum.OFF
         stateListeners.clear()
