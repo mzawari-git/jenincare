@@ -22,6 +22,12 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
+data class LedTestResult(
+    val spectrum: LightSpectrum,
+    val ok: Boolean,
+    val method: String
+)
+
 @Singleton
 class FrameCapturePipeline @Inject constructor(
     private val spectrumController: SpectrumController,
@@ -65,6 +71,12 @@ class FrameCapturePipeline @Inject constructor(
     private val _faceGuideVisible = MutableStateFlow(false)
     val faceGuideVisible: StateFlow<Boolean> = _faceGuideVisible.asStateFlow()
 
+    private val _ledTestStatus = MutableStateFlow("")
+    val ledTestStatus: StateFlow<String> = _ledTestStatus.asStateFlow()
+
+    private val _ledTestResults = MutableStateFlow<List<LedTestResult>>(emptyList())
+    val ledTestResults: StateFlow<List<LedTestResult>> = _ledTestResults.asStateFlow()
+
     enum class CaptureState {
         IDLE,
         INITIALIZING,
@@ -105,6 +117,18 @@ class FrameCapturePipeline @Inject constructor(
 
             if (!cameraReady) {
                 return Result.failure(IllegalStateException("Camera not ready"))
+            }
+
+            _ledTestStatus.value = "فحص أضواء التشخيص..."
+            val ledResults = runLedPreTest(spectra)
+            val failedLeds = ledResults.filter { !it.ok }
+            if (failedLeds.isNotEmpty()) {
+                val failedNames = failedLeds.map { it.spectrum.displayNameAr }.joinToString(", ")
+                Timber.w("Some LEDs failed pre-test: $failedNames — scan may have reduced quality")
+                _positionMessage.value = "⚠️ أضواء [$failedNames] لا تعمل — قد تتأثر جودة الفحص"
+            } else {
+                Timber.i("All LEDs passed pre-test")
+                _positionMessage.value = "تم فحص جميع الأضواء ✓"
             }
 
             if (!fiseGpioController.isAvailable) {
@@ -417,5 +441,47 @@ class FrameCapturePipeline @Inject constructor(
         _countdownValue.value = 0
         _captureFlash.value = false
         _faceGuideVisible.value = false
+        _ledTestStatus.value = ""
+        _ledTestResults.value = emptyList()
+    }
+
+    private suspend fun runLedPreTest(spectra: List<LightSpectrum>): List<LedTestResult> {
+        _ledTestStatus.value = "فحص أضواء التشخيص..."
+        _ledTestResults.value = emptyList()
+        val results = mutableListOf<LedTestResult>()
+
+        for ((index, spectrum) in spectra.withIndex()) {
+            _ledTestStatus.value = "فحص ${spectrum.displayNameAr} (${index + 1}/${spectra.size})"
+
+            val activateResult = try {
+                spectrumController.activate(spectrum)
+            } catch (e: Exception) {
+                Timber.w(e, "LED test exception for ${spectrum.name}")
+                Result.failure(e)
+            }
+
+            val ok = activateResult.isSuccess
+            val method = when {
+                !ok -> "NONE"
+                fiseGpioController.isAvailable -> "GPIO"
+                serialBusManager.isConnected -> "Serial"
+                else -> "Unknown"
+            }
+
+            delay(150)
+            spectrumController.activate(LightSpectrum.OFF)
+            delay(50)
+
+            results.add(LedTestResult(spectrum, ok, method))
+            Timber.i("LED pre-test ${spectrum.name}: ok=$ok, method=$method")
+        }
+
+        val allPassed = results.all { it.ok }
+        _ledTestStatus.value = if (allPassed) "جميع الأضواء تعمل ✓" else {
+            val failed = results.filter { !it.ok }.map { it.spectrum.displayNameAr }
+            "⚠️ أضواء لا تعمل: ${failed.joinToString(", ")}"
+        }
+        _ledTestResults.value = results
+        return results
     }
 }

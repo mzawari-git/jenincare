@@ -40,7 +40,18 @@ class AdvancedSkinAnalyzer @Inject constructor(
         val region: SkinRegion,
         val pixels: List<PointF>,
         val bounds: RectF?,
-        val bitmap: Bitmap?
+        val bitmap: Bitmap?,
+        val centerX: Float = bounds?.centerX() ?: 0f,
+        val centerY: Float = bounds?.centerY() ?: 0f,
+        val area: Float = (bounds?.width() ?: 0f) * (bounds?.height() ?: 0f)
+    )
+
+    data class CrossSpectrumResult(
+        val type: SkinMetric.Type,
+        val primaryScore: Float,
+        val crossSpectrumBonus: Float,
+        val confidence: Float,
+        val details: String
     )
 
     suspend fun analyze(
@@ -48,6 +59,7 @@ class AdvancedSkinAnalyzer @Inject constructor(
         whiteFile: File?
     ): Map<SkinMetric.Type, SkinMetric> = withContext(Dispatchers.Default) {
         val metrics = mutableMapOf<SkinMetric.Type, SkinMetric>()
+        val spectrumScores = mutableMapOf<LightSpectrum, MutableMap<SkinMetric.Type, Float>>()
 
         val whiteBitmap = whiteFile?.let {
             if (it.exists()) CVUtils.decodeSampled(it) else null
@@ -86,9 +98,12 @@ class AdvancedSkinAnalyzer @Inject constructor(
                 val spectrumMetrics = analyzeSpectrumAdvanced(
                     spectrum, bitmap, faceMesh, regions, whiteBitmap
                 )
+                val spectrumScoresMap = mutableMapOf<SkinMetric.Type, Float>()
                 for ((type, metric) in spectrumMetrics) {
                     metrics[type] = metric
+                    spectrumScoresMap[type] = metric.score
                 }
+                spectrumScores[spectrum] = spectrumScoresMap
             } catch (e: Exception) {
                 Timber.e(e, "Advanced analysis failed for ${spectrum.name}")
             }
@@ -101,10 +116,12 @@ class AdvancedSkinAnalyzer @Inject constructor(
             return@withContext emptyMap()
         }
 
+        val fusedMetrics = crossSpectrumFusion(metrics, spectrumScores)
+
         regions.values.forEach { it.bitmap?.recycle() }
         whiteBitmap?.recycle()
 
-        metrics
+        fusedMetrics
     }
 
     private fun extractRegions(
@@ -122,10 +139,43 @@ class AdvancedSkinAnalyzer @Inject constructor(
                 extractRegionBitmap(whiteBitmap, bounds)
             } else null
 
-            regions[region] = RegionAnalysis(region, pixels, bounds, regionBitmap)
+            val centerX = bounds?.centerX() ?: 0f
+            val centerY = bounds?.centerY() ?: 0f
+            val area = (bounds?.width() ?: 0f) * (bounds?.height() ?: 0f)
+
+            regions[region] = RegionAnalysis(region, pixels, bounds, regionBitmap, centerX, centerY, area)
         }
 
         return regions
+    }
+
+    private fun crossSpectrumFusion(
+        allMetrics: Map<SkinMetric.Type, SkinMetric>,
+        spectrumData: Map<LightSpectrum, Map<SkinMetric.Type, Float>>
+    ): Map<SkinMetric.Type, SkinMetric> {
+        val fused = mutableMapOf<SkinMetric.Type, SkinMetric>()
+        for ((type, baseMetric) in allMetrics) {
+            val spectrumValues = spectrumData.mapNotNull { (spectrum, data) ->
+                data[type]?.let { spectrum to it }
+            }
+            if (spectrumValues.size >= 2) {
+                val scores = spectrumValues.map { it.second }
+                val mean = scores.average().toFloat()
+                val variance = scores.map { (it - mean) * (it - mean) }.average().toFloat()
+                val stdDev = kotlin.math.sqrt(variance)
+                val confidenceBoost = (stdDev / 30f).coerceIn(0f, 0.15f)
+                val fusedScore = (baseMetric.score * 0.6f + mean * 0.4f).coerceIn(5f, 95f)
+                val newConfidence = (baseMetric.confidence + confidenceBoost).coerceAtMost(0.95f)
+                fused[type] = baseMetric.copy(
+                    score = fusedScore,
+                    confidence = newConfidence,
+                    details = "${baseMetric.details} [fusion: ${spectrumValues.size} spectra]"
+                )
+            } else {
+                fused[type] = baseMetric
+            }
+        }
+        return fused
     }
 
     private fun safeCrop(bitmap: Bitmap, x: Int, y: Int, w: Int, h: Int): Bitmap? {
@@ -201,29 +251,30 @@ class AdvancedSkinAnalyzer @Inject constructor(
         val cheekRight = regions[SkinRegion.RIGHT_CHEEK]?.bitmap
         val tZone = regions[SkinRegion.NOSE]?.bitmap
         val forehead = regions[SkinRegion.FOREHEAD]?.bitmap
+        val chin = regions[SkinRegion.CHIN]?.bitmap
 
-        val textureScore = analyzeTextureAdvanced(cheekLeft, cheekRight)
+        val textureScore = analyzeTextureAdvanced(cheekLeft, cheekRight, forehead)
         metrics[SkinMetric.Type.TEXTURE] = createMetric(
             SkinMetric.Type.TEXTURE, textureScore, SkinZone.FULL_FACE,
-            "تحليل النسيج المتعدد المقياس (Gabor + LBP + Morphology)"
+            "تحليل النسيج المتعدد المقياس (Gabor + LBP + Morphology + Cross-Zone)"
         )
 
-        val poreScore = analyzePoresAdvanced(tZone, faceMesh)
+        val poreScore = analyzePoresAdvanced(tZone, faceMesh, chin)
         metrics[SkinMetric.Type.PORES] = createMetric(
             SkinMetric.Type.PORES, poreScore, SkinZone.T_ZONE,
-            "تحليل كثافة المسام (Morphological + Frequency Domain)"
+            "تحليل كثافة المسام (Morphological + Frequency Domain + Cross-Zone)"
         )
 
-        val toneScore = analyzeSkinToneAdvanced(bitmap, faceMesh)
+        val toneScore = analyzeSkinToneAdvanced(bitmap, faceMesh, regions)
         metrics[SkinMetric.Type.SKIN_TONE] = createMetric(
             SkinMetric.Type.SKIN_TONE, toneScore, SkinZone.FULL_FACE,
-            "تحليل لون البشرة (LAB Color Variance + Histogram)"
+            "تحليل لون البشرة (LAB Color Variance + Histogram + Uniformity)"
         )
 
         return metrics
     }
 
-    private fun analyzeTextureAdvanced(cheekLeft: Bitmap?, cheekRight: Bitmap?): Float {
+    private fun analyzeTextureAdvanced(cheekLeft: Bitmap?, cheekRight: Bitmap?, forehead: Bitmap?): Float {
         val lbp1 = if (cheekLeft != null) CVUtils.localBinaryPattern(cheekLeft, 2) else 0f
         val lbp2 = if (cheekRight != null) CVUtils.localBinaryPattern(cheekRight, 2) else 0f
         val gabor1 = if (cheekLeft != null) CVUtils.gaborTextureEnergy(cheekLeft) else 0f
@@ -233,20 +284,27 @@ class AdvancedSkinAnalyzer @Inject constructor(
         val avgLbp = (lbp1 + lbp2) / 2f
         val avgGabor = (gabor1 + gabor2) / 2f
         val avgMorph = (morph1 + morph2) / 2f
-        val combined = avgLbp * 0.3f + avgGabor * 0.4f + avgMorph * 0.3f
+
+        val foreheadTexture = if (forehead != null) CVUtils.localBinaryPattern(forehead, 2) else avgLbp
+        val zoneConsistency = 1f - kotlin.math.abs(avgLbp - foreheadTexture) / (avgLbp + foreheadTexture + 0.01f)
+
+        val combined = avgLbp * 0.25f + avgGabor * 0.35f + avgMorph * 0.25f + zoneConsistency * 0.15f
         return CVUtils.calibratedScore(combined, 50f, 2f)
     }
 
-    private fun analyzePoresAdvanced(tZone: Bitmap?, faceMesh: FaceMeshDetector.FaceMeshResult): Float {
+    private fun analyzePoresAdvanced(tZone: Bitmap?, faceMesh: FaceMeshDetector.FaceMeshResult, chin: Bitmap?): Float {
         if (tZone == null) return 50f
         val poreDensity = CVUtils.poreDensityEstimate(tZone)
         val morphGrad = CVUtils.morphologicalGradient(tZone, 3)
         val specular = CVUtils.specularHighlightRatio(tZone)
-        val combined = poreDensity * 0.5f + morphGrad / 100f * 0.3f + (1f - specular) * 0.2f
+        val chinPores = if (chin != null) CVUtils.poreDensityEstimate(chin) else poreDensity * 0.7f
+        val zoneRatio = if (chinPores > 0.01f) poreDensity / chinPores else 1f
+        val tZoneEmphasis = (zoneRatio / (zoneRatio + 1f)).coerceIn(0.3f, 0.8f)
+        val combined = poreDensity * 0.45f + morphGrad / 100f * 0.25f + (1f - specular) * 0.15f + tZoneEmphasis * 0.15f
         return CVUtils.calibratedScore(combined, 0.8f, 0.05f)
     }
 
-    private fun analyzeSkinToneAdvanced(bitmap: Bitmap, faceMesh: FaceMeshDetector.FaceMeshResult): Float {
+    private fun analyzeSkinToneAdvanced(bitmap: Bitmap, faceMesh: FaceMeshDetector.FaceMeshResult, regions: Map<SkinRegion, RegionAnalysis>): Float {
         val faceBounds = faceMesh.faceRect
         val faceBitmap = CVUtils.extractFaceRegion(bitmap, android.graphics.Rect(
             faceBounds.left.toInt(), faceBounds.top.toInt(),
@@ -256,8 +314,15 @@ class AdvancedSkinAnalyzer @Inject constructor(
             val labVar = CVUtils.colorVarianceAnalysis(faceBitmap)
             val histEntropy = CVUtils.colorHistogramAnalysis(faceBitmap)
             val labUniformity = CVUtils.labColorUniformity(faceBitmap)
+            val cheekL = regions[SkinRegion.LEFT_CHEEK]?.bitmap
+            val cheekR = regions[SkinRegion.RIGHT_CHEEK]?.bitmap
+            val cheekUniformity = if (cheekL != null && cheekR != null) {
+                val u1 = CVUtils.labColorUniformity(cheekL)
+                val u2 = CVUtils.labColorUniformity(cheekR)
+                (u1 + u2) / 2f
+            } else labUniformity
             faceBitmap.recycle()
-            (labVar.first + labVar.second) / 2f + histEntropy / 10f + labUniformity
+            (labVar.first + labVar.second) / 2f + histEntropy / 10f + cheekUniformity
         } else 10f
         return CVUtils.calibratedScore(uniformity, 25f, 2f)
     }

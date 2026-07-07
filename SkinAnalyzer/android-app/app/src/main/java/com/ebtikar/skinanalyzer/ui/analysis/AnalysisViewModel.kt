@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.ebtikar.skinanalyzer.camera.CapturePhase
 import com.ebtikar.skinanalyzer.data.repository.SkinAnalysisRepository
 import com.ebtikar.skinanalyzer.hardware.LightSpectrum
+import com.ebtikar.skinanalyzer.hardware.SpectrumController
 import com.ebtikar.skinanalyzer.model.AnalysisState
 import com.ebtikar.skinanalyzer.model.SkinAnalysisReport
 import com.ebtikar.skinanalyzer.model.SkinMetric
@@ -13,6 +14,7 @@ import com.ebtikar.skinanalyzer.util.Constants
 import com.ebtikar.skinanalyzer.util.PreferencesManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,6 +22,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
 import java.text.SimpleDateFormat
@@ -32,7 +35,8 @@ import javax.inject.Inject
 class AnalysisViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val repository: SkinAnalysisRepository,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val spectrumController: SpectrumController
 ) : ViewModel() {
 
     private val _currentPhase = MutableStateFlow<CapturePhase?>(null)
@@ -98,6 +102,12 @@ class AnalysisViewModel @Inject constructor(
 
     private val _showRetry = MutableStateFlow(false)
     val showRetry: StateFlow<Boolean> = _showRetry.asStateFlow()
+
+    private val _ledTestProgress = MutableStateFlow("")
+    val ledTestProgress: StateFlow<String> = _ledTestProgress.asStateFlow()
+
+    private val _ledTestResults = MutableStateFlow<Map<LightSpectrum, Boolean>>(emptyMap())
+    val ledTestResults: StateFlow<Map<LightSpectrum, Boolean>> = _ledTestResults.asStateFlow()
 
     private var reportId = UUID.randomUUID().toString()
     @Volatile private var isAborted = false
@@ -192,6 +202,30 @@ class AnalysisViewModel @Inject constructor(
 
     fun setDiagnosisMode(mode: String) {
         diagnosisMode = mode
+    }
+
+    fun runLedPreTest(spectra: List<LightSpectrum> = LightSpectrum.ALL_SPECTRA) {
+        viewModelScope.launch {
+            _ledTestProgress.value = "جاري فحص أضواء التشخيص..."
+            _ledTestResults.value = emptyMap()
+            val results = mutableMapOf<LightSpectrum, Boolean>()
+            for ((index, spectrum) in spectra.withIndex()) {
+                _ledTestProgress.value = "فحص ${spectrum.displayNameAr} (${index + 1}/${spectra.size})"
+                val result = withContext(Dispatchers.IO) {
+                    spectrumController.activate(spectrum)
+                }
+                val ok = result.isSuccess
+                results[spectrum] = ok
+                kotlinx.coroutines.delay(150)
+                withContext(Dispatchers.IO) { spectrumController.activate(LightSpectrum.OFF) }
+                kotlinx.coroutines.delay(50)
+                Timber.i("LED pre-test ${spectrum.name}: ok=$ok")
+            }
+            _ledTestResults.value = results
+            val allOk = results.values.all { it }
+            _ledTestProgress.value = if (allOk) "جميع الأضواء تعمل ✓" else "⚠️ بعض الأضواء لا تعمل"
+            Timber.i("LED pre-test complete: allOk=$allOk, results=$results")
+        }
     }
 
     fun initializeAnalysis(previewSurface: android.view.Surface? = null) {

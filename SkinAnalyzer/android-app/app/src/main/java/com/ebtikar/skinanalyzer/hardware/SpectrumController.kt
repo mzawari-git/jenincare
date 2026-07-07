@@ -183,6 +183,47 @@ class SpectrumController @Inject constructor(
         return results
     }
 
+    data class LedTestResult(
+        val spectrum: LightSpectrum,
+        val gpioOk: Boolean,
+        val serialOk: Boolean,
+        val anyOk: Boolean
+    )
+
+    suspend fun testAllLedsForScan(
+        spectra: List<LightSpectrum>,
+        onLedTest: suspend (LightSpectrum, Int, Int) -> Unit = { _, _, _ -> }
+    ): List<LedTestResult> {
+        val results = mutableListOf<LedTestResult>()
+        val total = spectra.size
+
+        for ((index, spectrum) in spectra.withIndex()) {
+            onLedTest(spectrum, index + 1, total)
+
+            val gpioOk = if (fiseGpio.supportsSpectrum(spectrum)) {
+                val result = fiseGpio.activateSpectrum(spectrum)
+                delay(150)
+                fiseGpio.turnAllOff()
+                delay(50)
+                result
+            } else false
+
+            val serialOk = if (serialBus.isConnected && !gpioOk) {
+                val result = serialBus.sendCommand(spectrum)
+                delay(150)
+                serialBus.sendCommand(LightSpectrum.OFF)
+                delay(50)
+                result.isSuccess
+            } else false
+
+            results.add(LedTestResult(spectrum, gpioOk, serialOk, gpioOk || serialOk))
+            Timber.i("LED test ${spectrum.name}: gpio=$gpioOk, serial=$serialOk")
+        }
+
+        activate(LightSpectrum.OFF)
+        return results
+    }
+
     fun addStateListener(listener: (LightSpectrum) -> Unit) {
         stateListeners.add(listener)
     }
@@ -201,7 +242,11 @@ class SpectrumController @Inject constructor(
         } catch (_: Exception) {}
         try {
             if (serialBus.isConnected) {
-                kotlinx.coroutines.runBlocking { serialBus.sendCommand(LightSpectrum.OFF) }
+                kotlinx.coroutines.runBlocking {
+                    kotlinx.coroutines.withTimeoutOrNull(3000L) {
+                        serialBus.sendCommand(LightSpectrum.OFF)
+                    }
+                }
             }
         } catch (_: Exception) {}
         currentSpectrum = LightSpectrum.OFF

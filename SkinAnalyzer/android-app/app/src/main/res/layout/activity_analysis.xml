@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FF0000"
+    android:gravity="center"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="UI IS WORKING"
+        android:textColor="#FFFFFF"
+        android:textSize="40sp" />
+
+    <Button
+        android:id="@+id/btnCapture"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TEST BUTTON" />
+
+    <!-- عناصر وهمية لمطابقة الكود -->
+    <View android:id="@+id/viewFinder" android:layout_width="1dp" android:layout_height="1dp" />
+    <View android:id="@+id/btnClose" android:layout_width="1dp" android:layout_height="1dp" />
+    <View android:id="@+id/faceMeshOverlay" android:layout_width="1dp" android:layout_height="1dp" />
+    <View android:id="@+id/progressHydration" android:layout_width="1dp" android:layout_height="1dp" />
+    <View android:id="@+id/progressTexture" android:layout_width="1dp" android:layout_height="1dp" />
+    <View android:id="@+id/tvHydrationValue" android:layout_width="1dp" android:layout_height="1dp" />
+    <View android:id="@+id/tvTextureValue" android:layout_width="1dp" android:layout_height="1dp" />
+    <View android:id="@+id/tvGuidanceMain" android:layout_width="1dp" android:layout_height="1dp" />
+    <TextView
+        android:id="@+id/tvLedTestStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text=""
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
+</LinearLayout>
