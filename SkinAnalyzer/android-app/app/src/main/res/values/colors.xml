@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SKIN ANALYZER — Premium Beauty Brand Color System       -->
+    <!-- Light luxury aesthetic: cream, gold, rose, soft black  -->
+    <!-- ════════════════════════════════════════════════════════ -->
+
+    <!-- Brand Core -->
+    <color name="primary">#FFD4AF37</color>
+    <color name="primary_dark">#FFB8962E</color>
+    <color name="primary_light">#1AD4AF37</color>
+    <color name="primary_glow">#33D4AF37</color>
+    <color name="primary_muted">#FFE8D5A3</color>
+
+    <!-- Secondary / Accents -->
+    <color name="accent_cyan">#FF52B788</color>
+    <color name="accent_coral">#FFE07070</color>
+    <color name="accent_rose">#FFE9D5C7</color>
+    <color name="accent_rose_light">#1AE9D5C7</color>
+    <color name="accent_rose_deep">#FFD4A0A0</color>
+    <color name="accent_gold">#FFD4AF37</color>
+    <color name="accent_gold_light">#1AD4AF37</color>
+    <color name="accent_peach">#FFF5E6D3</color>
+    <color name="accent_purple">#FFBB86FC</color>
+    <color name="accent_emerald">#FF2D6A4F</color>
+    <color name="accent_teal">#FF52B788</color>
+
+    <!-- Background Layers (Light Luxury) -->
+    <color name="background_primary">#FFFAF8F6</color>
+    <color name="background_secondary">#FFF5F0EB</color>
+    <color name="background_tertiary">#FFEDE7DE</color>
+    <color name="background_card">#FFFFFFFF</color>
+    <color name="background_dark">#FF111111</color>
+
+    <!-- Surface / Card -->
+    <color name="surface_card">#FFFFFFFF</color>
+    <color name="surface_card_2">#FFFAF8F6</color>
+    <color name="surface_elevated">#FFFFFFFF</color>
+    <color name="surface_glass">#B3FFFFFF</color>
+    <color name="surface_glass_border">#1A000000</color>
+    <color name="surface_card_dark">#FF1A1A2E</color>
+
+    <!-- Text -->
+    <color name="text_primary">#FF1A1A1A</color>
+    <color name="text_secondary">#FF6B6B6B</color>
+    <color name="text_muted">#FFA0A0A0</color>
+    <color name="text_accent">#FFD4AF37</color>
+    <color name="text_gold">#FFD4AF37</color>
+    <color name="text_primary_dark">#FFFFFFFF</color>
+    <color name="text_secondary_dark">#FFB0B0B0</color>
+    <color name="text_on_dark">#FFFFFFFF</color>
+    <color name="text_on_light">#FF1A1A1A</color>
+
+    <!-- Status Indicators -->
+    <color name="status_online">#FF52B788</color>
+    <color name="status_offline">#FFE07070</color>
+    <color name="status_ready">#FFD4AF37</color>
+    <color name="status_warning">#FFE8A838</color>
+    <color name="status_processing">#FFD4AF37</color>
+
+    <!-- Severity / Score Colors -->
+    <color name="severity_excellent">#FF52B788</color>
+    <color name="severity_good">#FF74C69D</color>
+    <color name="severity_fair">#FFE8A838</color>
+    <color name="severity_poor">#FFE07070</color>
+    <color name="severity_critical">#FFD95353</color>
+
+    <color name="severity_excellent_bg">#1A52B788</color>
+    <color name="severity_good_bg">#1A74C69D</color>
+    <color name="severity_fair_bg">#1AE8A838</color>
+    <color name="severity_poor_bg">#1AE07070</color>
+    <color name="severity_critical_bg">#1AD95353</color>
+
+    <!-- Skin Metric Colors -->
+    <color name="metric_hydration">#FF52B788</color>
+    <color name="metric_pores">#FFD4AF37</color>
+    <color name="metric_wrinkles">#FFE8A838</color>
+    <color name="metric_spots">#FFE07070</color>
+    <color name="metric_elasticity">#FF52B788</color>
+    <color name="metric_uv">#FFD4A0A0</color>
+    <color name="metric_oil">#FFD4AF37</color>
+    <color name="metric_sensitivity">#FFE9D5C7</color>
+    <color name="metric_texture">#FFB8962E</color>
+    <color name="metric_vascular">#FFE07070</color>
+    <color name="metric_porphyrins">#FFD4A0A0</color>
+    <color name="metric_rosacea">#FFE07070</color>
+    <color name="metric_melasma">#FFD95353</color>
+
+    <!-- Utility -->
+    <color name="white">#FFFFFFFF</color>
+    <color name="white_70">#B3FFFFFF</color>
+    <color name="white_90">#E6FFFFFF</color>
+    <color name="white_50">#80FFFFFF</color>
+    <color name="white_20">#33FFFFFF</color>
+    <color name="white_10">#1AFFFFFF</color>
+    <color name="black">#FF000000</color>
+    <color name="black_50">#80000000</color>
+    <color name="black_10">#1A000000</color>
+    <color name="transparent">#00000000</color>
+
+    <!-- Dividers / Borders -->
+    <color name="divider">#1A000000</color>
+    <color name="divider_dark">#0DFFFFFF</color>
+    <color name="border_card">#1A000000</color>
+    <color name="border_glow">#33D4AF37</color>
+
+    <!-- Gradients -->
+    <color name="gradient_brand_start">#FFD4AF37</color>
+    <color name="gradient_brand_end">#FFE9D5C7</color>
+    <color name="gradient_gold_start">#FFD4AF37</color>
+    <color name="gradient_gold_end">#FFF5E6D3</color>
+    <color name="gradient_bg_start">#FFFAF8F6</color>
+    <color name="gradient_bg_end">#FFF5F0EB</color>
+    <color name="splash_start">#FFD4AF37</color>
+    <color name="splash_end">#FFE9D5C7</color>
+
+    <!-- Overlay -->
+    <color name="overlay_gradient">#80000000</color>
+    <color name="overlay_top">#E6FAF8F6</color>
+    <color name="overlay_bottom">#E6FAF8F6</color>
+    <color name="overlay_card">#80FFFFFF</color>
+    <color name="scrim">#66000000</color>
+
+    <!-- Error / Success / Warning -->
+    <color name="error">#FFD95353</color>
+    <color name="success">#FF52B788</color>
+    <color name="warning">#FFE8A838</color>
+    <color name="info">#FFD4AF37</color>
+
+    <!-- Navigation -->
+    <color name="nav_background">#FFFFFFFF</color>
+    <color name="nav_active">#FFD4AF37</color>
+    <color name="nav_inactive">#FFA0A0A0</color>
+
+    <!-- Hero -->
+    <color name="hero_gradient_start">#FFD4AF37</color>
+    <color name="hero_gradient_mid">#FFE9D5C7</color>
+    <color name="hero_gradient_end">#FFF5F0EB</color>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- DARK VARIANT (for camera/scan screens only)            -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <color name="primary_dark_theme">#FF00D4FF</color>
+    <color name="background_dark_primary">#FF05051A</color>
+    <color name="background_dark_secondary">#FF0A0A2E</color>
+    <color name="surface_dark_card">#FF0D1B3E</color>
+    <color name="text_dark_primary">#FFFFFFFF</color>
+    <color name="text_dark_secondary">#FF94A3B8</color>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SCAN UI - Futuristic Medical AI + Glassmorphism       -->
+    <!-- Apple + Tesla + Medical AI + Glassmorphism + HUD      -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <color name="scan_bg">#FF05051A</color>
+
+    <!-- Glass Panel Colors -->
+    <color name="glass_bg">#40FFFFFF</color>
+    <color name="glass_border">#33FFFFFF</color>
+    <color name="glass_shadow">#1A000000</color>
+    <color name="glass_inner_shadow">#26FFFFFF</color>
+    <color name="glass_glow">#1AD4AF37</color>
+    <color name="sidebar_bg">#F2FFFFFF</color>
+    <color name="sidebar_active_glow">#4DD4AF37</color>
+
+    <!-- Primary Accents -->
+    <color name="scan_gold">#FFD4AF37</color>
+    <color name="scan_gold_faint">#33D4AF37</color>
+    <color name="scan_gold_glow">#4DD4AF37</color>
+    <color name="scan_cyan">#FF00D4FF</color>
+    <color name="scan_cyan_faint">#1A00D4FF</color>
+    <color name="scan_cyan_mid">#4D00D4FF</color>
+    <color name="scan_emerald">#FF52B788</color>
+    <color name="scan_emerald_faint">#1A52B788</color>
+    <color name="scan_purple">#FF7C3AED</color>
+    <color name="scan_purple_faint">#337C3AED</color>
+
+    <!-- Warm / Medical -->
+    <color name="scan_warm_white">#FFF8F6F0</color>
+    <color name="scan_soft_gold">#FFE8D5A3</color>
+    <color name="scan_fog_gray">#FFC4C4C4</color>
+    <color name="scan_silver">#FFE8E8E8</color>
+
+    <!-- Status -->
+    <color name="scan_status_green">#FF52B788</color>
+    <color name="scan_status_orange">#FFFFB347</color>
+    <color name="scan_status_red">#FFD95353</color>
+    <color name="scan_status_pink">#FFFF6B6B</color>
+
+    <!-- Text -->
+    <color name="scan_text">#FFFFFFFF</color>
+    <color name="scan_text_primary">#FFFFFFFF</color>
+    <color name="scan_text_dim">#CCFFFFFF</color>
+    <color name="scan_text_muted">#88FFFFFF</color>
+    <color name="scan_text_gold">#FFD4AF37</color>
+    <color name="scan_text_cyan">#FF00D4FF</color>
+
+    <!-- Indicator Colors -->
+    <color name="scan_indicator_hydration">#FF00D4FF</color>
+    <color name="scan_indicator_elasticity">#FF52B788</color>
+    <color name="scan_indicator_pores">#FF7C3AED</color>
+    <color name="scan_indicator_sebum">#FFD4AF37</color>
+    <color name="scan_indicator_wrinkles">#FFFFB347</color>
+    <color name="scan_indicator_texture">#FF52B788</color>
+    <color name="scan_indicator_pigmentation">#FFD95353</color>
+    <color name="scan_indicator_redness">#FFFF6B6B</color>
+    <color name="scan_indicator_acne">#FFFF6B6B</color>
+    <color name="scan_indicator_sensitivity">#FFFFB347</color>
+    <color name="scan_indicator_collagen">#FFD4AF37</color>
+    <color name="scan_indicator_terrain">#FFA0A0FF</color>
+
+    <!-- Accuracy -->
+    <color name="scan_accuracy_green">#FF52B788</color>
+    <color name="scan_accuracy_amber">#FFFFB347</color>
+    <color name="scan_accuracy_red">#FFD95353</color>
+
+    <!-- Radar -->
+    <color name="scan_radar_bg">#1A00D4FF</color>
+    <color name="scan_radar_data">#FF00D4FF</color>
+    <color name="scan_radar_comparison">#FF7C3AED</color>
+
+    <!-- Mesh / Neural -->
+    <color name="mesh_line">#4DD4AF37</color>
+    <color name="mesh_node">#FFD4AF37</color>
+    <color name="mesh_node_glow">#33D4AF37</color>
+    <color name="mesh_cyan_line">#3300D4FF</color>
+
+    <!-- Lens / Scanner -->
+    <color name="lens_ring_outer">#FFD4AF37</color>
+    <color name="lens_ring_inner">#FF00D4FF</color>
+    <color name="lens_glass">#33FFFFFF</color>
+    <color name="lens_core">#FF52B788</color>
+    <color name="lens_sweep">#4DD4AF37</color>
+
+    <!-- Spectrum -->
+    <color name="spectrum_red">#FFD95353</color>
+    <color name="spectrum_green">#FF52B788</color>
+    <color name="spectrum_blue">#FF00D4FF</color>
+
+    <!-- Connection Lines -->
+    <color name="connector_line">#26D4AF37</color>
+    <color name="connector_node">#66D4AF37</color>
+</resources>
