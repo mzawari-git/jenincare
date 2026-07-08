@@ -156,55 +156,37 @@ class FiseGpioController @Inject constructor(
     private fun tryRawGpioSetup(): Boolean {
         Timber.i("Trying raw GPIO setup for pins: ${rawGpioPins.joinToString()}")
         var allOk = true
-        for (pin in rawGpioPins) {
-            try {
-                val dirFile = File("/sys/class/gpio/gpio$pin/direction")
-                if (dirFile.exists()) {
-                    dirFile.writeText("out")
-                    Thread.sleep(50)
-                    val dirReadback = dirFile.readText().trim()
-                    if (dirReadback != "out") {
-                        Timber.w("GPIO pin $pin direction write failed: wrote=out, readback=$dirReadback")
-                        allOk = false
-                        continue
-                    }
-                } else {
-                    val exportFile = File("/sys/class/gpio/export")
-                    if (exportFile.exists()) {
-                        exportFile.writeText("$pin")
-                        Thread.sleep(100)
-                    }
-                    if (dirFile.exists()) {
-                        dirFile.writeText("out")
-                        Thread.sleep(50)
-                    } else {
-                        Timber.w("GPIO pin $pin direction file still missing after export")
-                        allOk = false
-                        continue
-                    }
-                }
-                val valueFile = File("/sys/class/gpio/gpio$pin/value")
-                valueFile.writeText("1")
-                Thread.sleep(50)
-            } catch (e: Exception) {
-                Timber.w("Raw GPIO setup failed for pin $pin: ${e.message}")
-                allOk = false
-            }
+
+        val exportCmd = rawGpioPins.joinToString("; ") { "echo $it > /sys/class/gpio/export 2>/dev/null" }
+        val setDirCmd = rawGpioPins.joinToString("; ") { "echo out > /sys/class/gpio/gpio$it/direction" }
+        val setOffCmd = rawGpioPins.joinToString("; ") { "echo 1 > /sys/class/gpio/gpio$it/value" }
+        val chmodCmd = rawGpioPins.joinToString("; ") { "chmod 666 /sys/class/gpio/gpio$it/value /sys/class/gpio/gpio$it/direction" }
+
+        try {
+            val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", "$exportCmd; sleep 1; $setDirCmd; sleep 1; $setOffCmd; $chmodCmd"))
+            val exit = process.waitFor()
+            val stderr = process.errorStream.bufferedReader().readText()
+            Timber.i("Raw GPIO shell setup exit=$exit stderr=$stderr")
+        } catch (e: Exception) {
+            Timber.w("Raw GPIO shell setup failed: ${e.message}")
+            return false
         }
-        Thread.sleep(100)
+
+        Thread.sleep(200)
+
         for ((i, file) in rawGpioFiles.withIndex()) {
             try {
                 if (!file.exists()) {
                     allOk = false
                     continue
                 }
-                file.writeText("0")
+                val onOk = shellWrite(file.absolutePath, "0")
                 Thread.sleep(50)
-                val readOn = try { file.readText().trim() } catch (_: Exception) { "?" }
-                file.writeText("1")
+                val readOn = shellRead(file.absolutePath)
+                val offOk = shellWrite(file.absolutePath, "1")
                 Thread.sleep(50)
-                val readOff = try { file.readText().trim() } catch (_: Exception) { "?" }
-                Timber.d("Raw GPIO write-verify pin ${rawGpioPins[i]}: ON→$readOn, OFF→$readOff")
+                val readOff = shellRead(file.absolutePath)
+                Timber.d("Raw GPIO write-verify pin ${rawGpioPins[i]}: ON→$readOn (ok=$onOk), OFF→$readOff (ok=$offOk)")
                 if (readOn != "0" || readOff != "1") {
                     Timber.w("Raw GPIO pin ${rawGpioPins[i]} write-verify FAILED (on=$readOn, off=$readOff)")
                     allOk = false
@@ -219,23 +201,38 @@ class FiseGpioController @Inject constructor(
 
     private fun testFiseWriteEffect(): Boolean {
         val testFile = gpioFiles[0]
-        if (!testFile.exists()) return false
         val rawTestFile = rawGpioFiles[0]
-        return try {
+        if (!testFile.exists()) return false
+        val fiseOk = try {
             testFile.writeText("0")
             Thread.sleep(100)
-            val fiseRead1 = testFile.readText().trim()
-            val rawRead1 = if (rawTestFile.exists()) try { rawTestFile.readText().trim() } catch (_: Exception) { "?" } else "?"
+            val r1 = testFile.readText().trim()
             testFile.writeText("1")
             Thread.sleep(100)
-            val fiseRead2 = testFile.readText().trim()
-            val rawRead2 = if (rawTestFile.exists()) try { rawTestFile.readText().trim() } catch (_: Exception) { "?" } else "?"
-            Timber.i("FISE write-verify: fise(0→$fiseRead1, 1→$fiseRead2) raw($rawRead1, $rawRead2) driverBound=${isFiseDriverBound()}")
-            val fiseOk = fiseRead1 == "0" && fiseRead2 == "1"
-            val rawFollows = rawRead1 == "0" && rawRead2 == "1"
-            if (fiseOk && !rawFollows) {
-                Timber.w("FISE stores values but raw GPIO NOT controlled — driver is orphaned/unbound")
-            }
+            val r2 = testFile.readText().trim()
+            Timber.i("FISE self-test: 0→$r1, 1→$r2")
+            r1 == "0" && r2 == "1"
+        } catch (e: Exception) {
+            Timber.w("FISE self-test FAILED: ${e.message}")
+            false
+        }
+        val rawOk = if (rawTestFile.exists()) {
+            val w1 = shellWrite(rawTestFile.absolutePath, "0")
+            Thread.sleep(50)
+            val r1 = shellRead(rawTestFile.absolutePath)
+            val w2 = shellWrite(rawTestFile.absolutePath, "1")
+            Thread.sleep(50)
+            val r2 = shellRead(rawTestFile.absolutePath)
+            Timber.i("Raw GPIO shell test: write0=$w1 read=$r1, write1=$w2 read=$r2")
+            r1 == "0" && r2 == "1"
+        } else false
+
+        Timber.i("testFiseWriteEffect: fise=$fiseOk raw=$rawOk driverBound=${isFiseDriverBound()}")
+        if (fiseOk && !rawOk) {
+            Timber.w("FISE stores values but raw GPIO NOT controlled — driver is orphaned/unbound")
+        }
+        return fiseOk && rawOk
+    }
             fiseOk && rawFollows
         } catch (e: Exception) {
             Timber.w("FISE write-verify FAILED: ${e.message}")
@@ -312,20 +309,43 @@ class FiseGpioController @Inject constructor(
         return false
     }
 
+    private fun shellWrite(path: String, value: String): Boolean {
+        return try {
+            val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo $value > $path"))
+            val exit = process.waitFor()
+            exit == 0
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private fun shellRead(path: String): String {
+        return try {
+            val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", "cat $path"))
+            val result = process.inputStream.bufferedReader().readText().trim()
+            process.waitFor()
+            result
+        } catch (_: Exception) { "?" }
+    }
+
     fun setGpio(index: Int, on: Boolean): Boolean {
         if (index < 0 || index >= gpioFiles.size) return false
         val value = if (on) "0" else "1"  // Active LOW: 0=ON, 1=OFF
 
         if (index < rawGpioFiles.size && rawGpioFiles[index].exists()) {
-            val file = rawGpioFiles[index]
+            val path = rawGpioFiles[index].absolutePath
             try {
-                file.writeText(value)
-                val readback = try { file.readText().trim() } catch (_: Exception) { "?" }
-                if (readback == value) {
-                    Timber.i("Raw GPIO pin ${rawGpioPins[index]} -> ${if (on) "ON" else "OFF"} (wrote=$value, readback=$readback) OK")
-                    return true
+                val ok = shellWrite(path, value)
+                if (ok) {
+                    val readback = shellRead(path)
+                    if (readback == value) {
+                        Timber.i("Raw GPIO pin ${rawGpioPins[index]} -> ${if (on) "ON" else "OFF"} (wrote=$value, readback=$readback) OK")
+                        return true
+                    }
+                    Timber.w("Raw GPIO pin ${rawGpioPins[index]} wrote=$value but readback=$readback, trying FISE")
+                } else {
+                    Timber.w("Raw GPIO pin ${rawGpioPins[index]} shell write failed, trying FISE")
                 }
-                Timber.w("Raw GPIO pin ${rawGpioPins[index]} wrote=$value but readback=$readback, trying FISE")
             } catch (e: Exception) {
                 Timber.w("Raw GPIO pin ${rawGpioPins[index]} write failed: ${e.message}, trying FISE")
             }
