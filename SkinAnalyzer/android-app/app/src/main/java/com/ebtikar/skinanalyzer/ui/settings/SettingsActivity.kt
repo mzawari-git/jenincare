@@ -38,6 +38,7 @@ import javax.inject.Inject
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySettingsBinding
+    private var isLoadingSettings = false
 
     @Inject
     lateinit var preferencesManager: PreferencesManager
@@ -83,6 +84,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.btnBack.setOnClickListener { finish() }
 
         binding.rgAnalysisMode.setOnCheckedChangeListener { _, checkedId ->
+            if (isLoadingSettings) return@setOnCheckedChangeListener
             val mode = when (checkedId) {
                 com.ebtikar.skinanalyzer.R.id.rb_local -> Constants.ANALYSIS_LOCAL
                 com.ebtikar.skinanalyzer.R.id.rb_cloud -> Constants.ANALYSIS_CLOUD
@@ -94,6 +96,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         binding.rgLanguage.setOnCheckedChangeListener { _, checkedId ->
+            if (isLoadingSettings) return@setOnCheckedChangeListener
             val lang = when (checkedId) {
                 com.ebtikar.skinanalyzer.R.id.rb_arabic -> Constants.LANG_ARABIC
                 else -> Constants.LANG_ENGLISH
@@ -105,6 +108,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         binding.rgProviderSelection.setOnCheckedChangeListener { _, checkedId ->
+            if (isLoadingSettings) return@setOnCheckedChangeListener
             val provider = when (checkedId) {
                 com.ebtikar.skinanalyzer.R.id.rb_provider_cloud -> "cloud"
                 else -> "local"
@@ -220,6 +224,7 @@ class SettingsActivity : AppCompatActivity() {
             binding.switchAutoUpdate.isChecked = enabled
         }
         binding.switchAutoUpdate.setOnCheckedChangeListener { _, isChecked ->
+            if (isLoadingSettings) return@setOnCheckedChangeListener
             lifecycleScope.launch {
                 preferencesManager.setAutoUpdateEnabled(isChecked)
             }
@@ -227,6 +232,7 @@ class SettingsActivity : AppCompatActivity() {
 
         // --- Update Channel ---
         binding.rgUpdateChannel.setOnCheckedChangeListener { _, checkedId ->
+            if (isLoadingSettings) return@setOnCheckedChangeListener
             val channel = when (checkedId) {
                 com.ebtikar.skinanalyzer.R.id.rb_beta -> "beta"
                 else -> "stable"
@@ -327,6 +333,7 @@ class SettingsActivity : AppCompatActivity() {
             binding.switchFaceValidation.isChecked = enabled
         }
         binding.switchFaceValidation.setOnCheckedChangeListener { _, isChecked ->
+            if (isLoadingSettings) return@setOnCheckedChangeListener
             lifecycleScope.launch {
                 preferencesManager.setFaceValidationEnabled(isChecked)
             }
@@ -352,6 +359,7 @@ class SettingsActivity : AppCompatActivity() {
 
         // --- Scan Display Settings ---
         binding.rgScanOverlayStyle.setOnCheckedChangeListener { _, checkedId ->
+            if (isLoadingSettings) return@setOnCheckedChangeListener
             val style = when (checkedId) {
                 com.ebtikar.skinanalyzer.R.id.rbOverlayProfessional -> Constants.SCAN_OVERLAY_PROFESSIONAL
                 com.ebtikar.skinanalyzer.R.id.rbOverlayMinimal -> Constants.SCAN_OVERLAY_MINIMAL
@@ -363,6 +371,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         binding.switchScanReminder.setOnCheckedChangeListener { _, isChecked ->
+            if (isLoadingSettings) return@setOnCheckedChangeListener
             binding.layoutReminderInterval.visibility = if (isChecked) android.view.View.VISIBLE else android.view.View.GONE
         }
 
@@ -547,6 +556,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun loadCurrentSettings() {
+        isLoadingSettings = true
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
@@ -687,6 +697,7 @@ class SettingsActivity : AppCompatActivity() {
                     }
                 }
             }
+            isLoadingSettings = false
         }
 
         binding.tvDeviceInfo.text = "${Constants.DEVICE_BRAND} ${Constants.DEVICE_MODEL}\n${Constants.DEVICE_EDITION}"

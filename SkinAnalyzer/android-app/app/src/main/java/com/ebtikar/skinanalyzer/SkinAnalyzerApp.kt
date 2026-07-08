@@ -8,6 +8,7 @@ import androidx.work.Configuration
 import com.ebtikar.skinanalyzer.core.provider.AnalysisProviderManager
 import com.ebtikar.skinanalyzer.util.PreferencesManager
 import com.ebtikar.skinanalyzer.util.ScanReminderWorker
+import com.ebtikar.skinanalyzer.util.UpdateChecker
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +25,9 @@ class SkinAnalyzerApp : Application(), Configuration.Provider {
 
     @Inject
     lateinit var preferencesManager: PreferencesManager
+
+    @Inject
+    lateinit var updateChecker: UpdateChecker
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -64,6 +68,30 @@ class SkinAnalyzerApp : Application(), Configuration.Provider {
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Scan reminder scheduling failed")
+            }
+        }
+
+        CoroutineScope(Dispatchers.IO + kotlinx.coroutines.SupervisorJob()).launch {
+            try {
+                val autoUpdateEnabled = preferencesManager.autoUpdateEnabledFlow.first()
+                if (autoUpdateEnabled) {
+                    val channel = preferencesManager.updateChannelFlow.first()
+                    Timber.i("Auto-update check: enabled=$autoUpdateEnabled, channel=$channel")
+                    val updateInfo = updateChecker.checkForUpdate(channel)
+                    if (updateInfo != null && updateChecker.isNewerVersion(updateInfo.latestVersion)) {
+                        Timber.i("Auto-update found: v${updateInfo.latestVersion} (current: ${updateChecker.getCurrentVersion()})")
+                        val uri = updateChecker.downloadApkWithNotification(updateInfo)
+                        if (uri != null) {
+                            updateChecker.showInstallNotification(updateInfo, uri)
+                            Timber.i("Auto-update downloaded, install notification shown")
+                        }
+                    } else {
+                        Timber.i("Auto-update: app is up to date (v${updateChecker.getCurrentVersion()})")
+                    }
+                    preferencesManager.setLastUpdateCheck(System.currentTimeMillis())
+                }
+            } catch (e: Exception) {
+                Timber.w(e, "Auto-update check failed")
             }
         }
 
