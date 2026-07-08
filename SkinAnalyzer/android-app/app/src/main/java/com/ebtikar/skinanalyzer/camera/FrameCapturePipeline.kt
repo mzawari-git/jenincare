@@ -374,7 +374,14 @@ class FrameCapturePipeline @Inject constructor(
                     val rawFile = File(outputDir, "frame_${spectrum.name}_raw.jpg")
                     ImageUtils.saveBitmap(bitmap, rawFile)
 
-                    val filtered = ImageUtils.applySpectralFilter(bitmap, spectrum.name)
+                    var filtered = ImageUtils.applySpectralFilter(bitmap, spectrum.name)
+                    if (ImageUtils.isDarkSpectrum(spectrum.name)) {
+                        val clahe = ImageUtils.applyClaheEnhancement(filtered, 3.0f)
+                        val brightened = ImageUtils.ensureMinBrightness(clahe, 45)
+                        if (clahe !== filtered) clahe.recycle()
+                        if (filtered !== bitmap) filtered.recycle()
+                        filtered = brightened
+                    }
                     val saved = ImageUtils.saveBitmap(filtered, frameFile)
                     if (filtered !== bitmap) filtered.recycle()
                     bitmap.recycle()
