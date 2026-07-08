@@ -233,12 +233,6 @@ class FiseGpioController @Inject constructor(
         }
         return fiseOk && rawOk
     }
-            fiseOk && rawFollows
-        } catch (e: Exception) {
-            Timber.w("FISE write-verify FAILED: ${e.message}")
-            false
-        }
-    }
 
     private fun checkSelinux() {
         selinuxEnforcing = try {
