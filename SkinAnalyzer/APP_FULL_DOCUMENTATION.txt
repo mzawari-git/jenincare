@@ -1,0 +1,1337 @@
+================================================================================
+                    JENIN CARE SKIN ANALYZER - COMPLETE DOCUMENTATION
+================================================================================
+                         Package: com.ebtikar.skinanalyzer.pro
+                         Version: 1.2.49 (Code 49)
+                         Device:  ZMLH02 (RK3399 Board)
+                         Brand:   Bitmoji / Max Edition
+                         Language: Arabic (primary) + English
+                         Repo:    github.com/mzawari-git/jenincare
+================================================================================
+
+TABLE OF CONTENTS
+-----------------
+1.  PROJECT OVERVIEW
+2.  SYSTEM ARCHITECTURE
+3.  HARDWARE SPECIFICATIONS
+4.  GPIO & LED CONTROL
+5.  CAMERA SYSTEM
+6.  8-SPECTRUM CAPTURE SYSTEM
+7.  FACE DETECTION PIPELINE
+8.  AI ANALYSIS ENGINE
+9.  ANALYSIS CASCADE (FALLBACK CHAIN)
+10. SKIN METRICS (14 TYPES)
+11. SKIN REGIONS (FACE ZONES)
+12. LOCAL CV (COMPUTER VISION) LIBRARY
+13. CLOUD API (YIMEI / BACKEND)
+14. KNOWLEDGE BASE SYSTEM
+15. ROOM DATABASE
+16. UI SCREENS & ACTIVITIES
+17. PDF REPORT GENERATION
+18. SETTINGS & PREFERENCES
+19. VOICE GUIDE (TTS)
+20. AUTO-UPDATE SYSTEM
+21. NETWORK MONITOR
+22. BOOT RECEIVER & GPIO SETUP
+23. DEPENDENCIES & BUILD CONFIG
+24. FILE STRUCTURE
+25. TESTING
+26. DEPLOYMENT & BUILD COMMANDS
+27. KNOWN ISSUES & FIXES
+28. REGRESSION TESTING CHECKLIST
+29. VERSION HISTORY
+30. FUTURE ROADMAP
+
+================================================================================
+1. PROJECT OVERVIEW
+================================================================================
+
+JeninCare Skin Analyzer is a professional-grade dermatological screening app
+designed for the ZMLH02 hardware device. It captures facial skin images under
+8 different light spectra (UV, polarized, Wood's, etc.) using a custom LED ring
+and USB camera, then analyzes 14 skin health metrics using a multi-layer AI
+pipeline (Cloud API → TFLite → MediaPipe → OpenCV → pixel analysis).
+
+The system is a complete kiosk solution: Android app + Laravel backend + Vue.js
+admin panel, running on an embedded RK3399 ARM board with custom GPIO-controlled
+LED hardware.
+
+KEY CAPABILITIES:
+- 8-spectrum multispectral facial imaging
+- 14 skin health metrics analysis
+- Real-time face mesh overlay during capture
+- Professional PDF report generation (Arabic + English)
+- Product recommendations linked to jenincare.shop
+- Auto-update via GitHub releases
+- Voice guidance in Arabic (TTS)
+- Historical scan comparison
+- Heatmap overlay on captured images
+- Offline-capable (local analysis fallback)
+
+================================================================================
+2. SYSTEM ARCHITECTURE
+================================================================================
+
+HARDWARE LAYER (ZMLH02 / RK3399)
+  |
+  |-- FISE GPIO Controller (5 pins: 34, 149, 45, 54, 56)
+  |     Controls: WHITE, UV365, WOODS, POL_P, POL_N LEDs
+  |
+  |-- Serial Bus Manager (USB-Serial)
+  |     Controls: BLUE, RED, BROWN LEDs
+  |     Protocol: Header 0xAA, Length, Cmd, Checksum, Footer 0x55
+  |
+  |-- USB Camera (OV13850, I2C Bus #3)
+  |     Manager: USBCameraManager (Camera2 API)
+  |     Resolution: 4224x3136 sensor, downscaled for captures
+  |
+  +-- CameraX (HomeActivity only, for preview)
+        Released before Camera2 takes over in AnalysisActivity
+
+ANDROID APP LAYER (Kotlin, Hilt DI)
+  |
+  |-- UI Layer (15 sub-packages)
+  |     HomeActivity, AnalysisActivity, ReportActivity,
+  |     SettingsActivity, HistoryActivity, CalibrationActivity,
+  |     DiagnosticsActivity, ComparisonActivity, DemoActivity,
+  |     OnboardingActivity, WebAnalysisActivity, SplashActivity
+  |
+  |-- Camera Layer
+  |     USBCameraManager, FrameCapturePipeline, BaseCameraActivity
+  |
+  |-- Hardware Layer
+  |     SpectrumController, FiseGpioController, SerialBusManager
+  |
+  |-- AI Layer
+  |     AdvancedSkinAnalyzer (MediaPipe), OpenCVSkinAnalyzer,
+  |     LocalTFLiteProvider, CloudAnalysisProvider, CVUtils,
+  |     FeatureExtractor, FaceLandmarkDetector, FaceMeshDetector
+  |
+  |-- Data Layer
+  |     SkinAnalysisRepositoryImpl, Room DB, Retrofit API,
+  |     Knowledge Base, Preferences (DataStore)
+  |
+  +-- Utilities
+        PdfReportGenerator, ImageUtils, VoiceGuideManager,
+        NetworkMonitor, UpdateChecker, Constants
+
+PROVIDER/BACKEND LAYER
+  |
+  |-- Laravel Backend (PHP)
+  |     Auth, Scans, Products, White-label, PIN system
+  |
+  +-- Vue.js Admin Panel
+        Dashboard, Scan Monitor, User Management, AI Providers,
+        Product Manager, Prompt Manager, White Label, Settings
+
+================================================================================
+3. HARDWARE SPECIFICATIONS
+================================================================================
+
+BOARD:
+  - SoC:           Rockchip RK3399 (Dual A72 + Quad A53)
+  - RAM:           2GB/4GB LPDDR3
+  - Storage:       16GB/32GB eMMC
+  - OS:            Android (custom build)
+  - Model ID:      ZMLH02
+  - Kernel:        Linux 4.x (CONFIG_STRICT_DEVMEM enabled)
+
+CAMERA:
+  - Sensor:        OV13850
+  - Interface:     USB (UVC class)
+  - I2C Bus:       #3
+  - HAL Name:      "Marvin"
+  - Max Resolution: 4224x3136
+  - FPS:           10 (streaming)
+  - Driver:        Standard UVC, sometimes emits exposure warnings
+
+LED RING (8 spectra):
+  - WHITE:         RGB Daylight (5500nm) - Surface analysis
+  - UV365:         UV 365nm - Porphyrins, sun damage
+  - WOODS:         Wood's Lamp (365nm) - Hydration, melasma
+  - POL_P:         Cross-Polarized - Blood vessels, rosacea
+  - POL_N:         Parallel-Polarized - Texture, fine lines
+  - BLUE:          Blue 465nm - Acne bacteria, sebum
+  - RED:           Red 630nm - Vascular, collagen
+  - BROWN:         Brown 590nm - Deep pigmentation
+
+GPIO PINS (Active LOW: 0=ON, 1=OFF):
+  - GPIO34  -> WHITE LED
+  - GPIO149 -> UV365 LED
+  - GPIO45  -> WOODS LED
+  - GPIO54  -> POL_P LED
+  - GPIO56  -> POL_N LED
+  - GPIO155 -> UNUSED (removed from gpioMap)
+
+SERIAL BUS (USB-Serial for remaining LEDs):
+  - BLUE LED  -> Command 0x04
+  - RED LED   -> Command 0x05
+  - BROWN LED -> Command 0x06
+
+PROTOCOL: Header=0xAA, Length, Command, Checksum, Footer=0x55
+  ACK byte: 0x06 (polled after command)
+
+================================================================================
+4. GPIO & LED CONTROL
+================================================================================
+
+FiseGpioController (446 lines):
+  - Controls 5 GPIO pins via sysfs files
+  - Dual-path access:
+    1. FISE driver files: /sys/class/fise_gpioN/level (primary)
+    2. Raw GPIO fallback: /sys/class/gpio/gpioN/value
+  - Master LED control: /sys/class/fise_led/level
+  - Handles FISE driver unbind/bind for fresh boot
+  - SELinux check and shell-based GPIO export
+
+CRITICAL: GPIO exports are LOST after every reboot.
+  The app cannot re-export GPIOs as untrusted_app.
+  MUST run setup_gpio.ps1 after every power cycle.
+
+SETUP_GPIO.PS1 (run in PowerShell):
+  1. Unbind FISE driver:
+     adb shell 'echo fise_gpio > /sys/bus/platform/drivers/fise_gpio/unbind'
+  2. Rebind FISE driver:
+     adb shell 'echo fise_gpio > /sys/bus/platform/drivers/fise_gpio/bind'
+  3. Export GPIOs:
+     adb shell 'for pin in 34 149 45 54 56; do
+       echo $pin > /sys/class/gpio/export
+       echo out > /sys/class/gpio/gpio$pin/direction
+       echo 1 > /sys/class/gpio/gpio$pin/value
+       chmod 666 /sys/class/gpio/gpio$pin/value
+     done'
+
+SpectrumController (256 lines):
+  - Mutex-protected activate() with fallback chain:
+    FISE GPIO -> Serial bus
+  - executeCaptureSequence: iterates through 8 spectra
+  - quickTest: tests all LEDs
+  - Tracks current spectrum and sequence progress via StateFlows
+
+SerialBusManager (344 lines):
+  - USB serial for BLUE/RED/BROWN LEDs
+  - Auto-connect: scans all USB devices
+  - Tries CDC/CH34x/CP21xx/FTDI/Prolific drivers
+  - Retry logic: 3 attempts per command
+  - Raw command passthrough supported
+
+================================================================================
+5. CAMERA SYSTEM
+================================================================================
+
+USBCameraManager (464 lines):
+  - Camera2 API-based USB camera management
+  - Camera discovery: findBestCamera() scans camera IDs
+  - Open with 5-second timeout
+  - Preview + capture session setup
+  - JPEG frame capture with:
+    - User-configurable rotation (0-359 degrees)
+    - Software zoom via center-crop + scale
+    - Torch mode control
+  - Display rotation calculation (natural -> display -> sensor)
+  - TextureView matrix transforms for aspect-ratio fill
+
+CAMERA CONFLICT:
+  - CameraX holds camera in HomeActivity
+  - Camera2 open() silently hangs if CameraX is active
+  - FIX: AnalysisActivity.onSurfaceTextureAvailable() calls
+    ProcessCameraProvider.getInstance(this).await().unbindAll()
+    + 1500ms delay before initializeAnalysis()
+
+CAPTURE SETTINGS PER SPECTRUM:
+  - UV365/WOODS: CONTROL_MODE_AUTO + AWB_MODE_DAYLIGHT + AE_LOCK=true
+    (UV is mostly invisible so AUTO mode lets exposure adjust)
+  - Other spectra: CONTROL_MODE_AUTO + AWB_MODE_AUTO
+    (no AWB lock - lets camera adjust per LED color)
+
+FrameCapturePipeline (502 lines):
+  - States: IDLE -> INITIALIZING -> WAITING_FOR_FACE ->
+    CAPTURING -> COMPLETE/ERROR
+  - Face position validation: HSV skin detection + ML Kit fallback
+  - LED pre-test before capture
+  - Per-spectrum capture with retries
+  - Spectral filtering per spectrum type
+  - Dark spectrum enhancement (CLAHE-like)
+  - Countdown overlay and capture flash
+  - Position scoring system
+  - Flow-based state updates
+
+================================================================================
+6. 8-SPECTRUM CAPTURE SYSTEM
+================================================================================
+
+CAPTURE SEQUENCE: WHITE -> POL_P -> POL_N -> UV365 -> WOODS -> BLUE -> RED -> BROWN
+
+Each spectrum has:
+  - commandByte:        Serial command to activate LED
+  - settlingWindowMs:   2500ms (time for LED to stabilize)
+  - wavelengthNm:       Peak wavelength
+  - colorHex:           Display color for UI
+  - capturePurpose:     What this spectrum detects
+
+SPECTRUM DETAILS:
+
+1. WHITE (0x01, 5500nm)
+   Purpose: Surface analysis - pores, wrinkles, skin tone
+   Used for: SKIN_TONE, PORES, TEXTURE, WRINKLES
+
+2. POL_P (0x07, Cross-Polarized)
+   Purpose: Blood vessels, redness, rosacea, deep pigmentation
+   Used for: VASCULAR, SENSITIVITY, ROSACEA
+
+3. POL_N (0x08, Parallel-Polarized)
+   Purpose: Fine lines, texture, surface condition
+   Used for: SEBUM, BLACKHEADS, TEXTURE, WRINKLES
+
+4. UV365 (0x02, 365nm)
+   Purpose: Porphyrins, sun damage, sebum
+   Used for: UV_SPOTS, PIGMENTATION
+
+5. WOODS (0x03, 365nm Wood's Lamp)
+   Purpose: Hydration levels, deep melasma
+   Used for: ACNE, MOISTURE, MELASMA
+
+6. BLUE (0x04, 465nm)
+   Purpose: Acne bacteria & sebum
+   Used for: SEBUM, ACNE
+
+7. RED (0x05, 630nm)
+   Purpose: Vascular & collagen
+   Used for: WRINKLES (3D depth via POL_N)
+
+8. BROWN (0x06, 590nm)
+   Purpose: Deep pigmentation & spots
+   Used for: PIGMENTATION, DARK_CIRCLES
+
+DIAGNOSIS MODES:
+  - "all":        All 8 spectra (default)
+  - "white":      WHITE only
+  - "uv":         UV365 + WOODS + WHITE
+  - "cross_pol":  POL_P + POL_N + WHITE
+  - "parallel_pol": POL_P + WHITE
+  - "woods":      WOODS + WHITE
+
+================================================================================
+7. FACE DETECTION PIPELINE
+================================================================================
+
+FaceLandmarkDetector (114 lines):
+  - ML Kit Face Detection (ACCURATE mode)
+  - minFaceSize: 0.05 (very sensitive)
+  - All landmarks + contours + classification
+  - Tracking enabled
+  - Face quality evaluation: pitch, yaw, roll, eye openness
+  - Face bounds extraction
+  - Face alignment/cropping
+
+FACE DETECTION FLOW:
+  1. HSV skin detection in camera frame
+     - Detects skin-colored pixels in HSV space
+     - Calculates coverage percentage
+  2. ML Kit fallback (every 5 attempts)
+     - If HSV detection fails, use ML Kit
+  3. Final ML Kit fallback
+     - Last resort face detection
+  4. "جاري قراءة ملامح الوجه" (Reading face features)
+     - 2.5 second face reading period
+  5. 8-spectrum capture begins
+
+FACE POSITION VALIDATION (in FrameCapturePipeline):
+  - Skin coverage >= 10%
+  - Position score >= 50
+  - Bypass logic: if coverage>=10% AND score>=50, allow capture
+  - Position scoring: top-center weighting, face size bonus
+
+FaceMeshDetector:
+  - MediaPipe Face Mesh (468 landmarks)
+  - Used by AdvancedSkinAnalyzer
+  - Provides 3D face geometry
+  - Region extraction for per-zone analysis
+
+================================================================================
+8. AI ANALYSIS ENGINE
+================================================================================
+
+ANALYSIS PROVIDERS (priority-based):
+  1. Cloud_Analysis_Engine (priority: 50)
+     - Yimei/Laravel backend API
+     - Requires network
+     - Multipart image upload
+     - Returns scan_id for polling
+  2. Local_TFLite_Engine (priority: 10)
+     - TensorFlow Lite model: models/yyface-detect.tflite
+     - 512x512 input, 3 segmentation classes
+     - GPU/NNAPI/CPU delegates
+     - Feature extraction per spectrum
+
+ANALYSIS PROVIDER MANAGER:
+  - Registers providers at startup
+  - resolveActiveProvider(): picks highest-priority available
+  - Fallback chain: Cloud -> TFLite -> Advanced -> OpenCV -> Basic
+
+AdvancedSkinAnalyzer (773 lines):
+  - MediaPipe face-mesh based
+  - Extracts 5 face regions from 468 landmarks:
+    Forehead, Cheeks, Nose, Chin, Periorbital
+  - Per-spectrum analysis:
+    WHITE  -> texture, pores, tone uniformity
+    UV     -> spots, pigmentation heterogeneity
+    POL_P  -> vascular, sensitivity, rosacea
+    POL_N  -> wrinkles (with 3D depth from z-coordinates)
+    WOODS  -> moisture, melasma
+    BLUE   -> sebum, acne, blackheads
+    BROWN  -> dark circles
+  - Cross-spectrum fusion: combines multi-spectrum scores
+  - Confidence boosting for multi-spectrum agreement
+
+OpenCVSkinAnalyzer (310 lines):
+  - ML Kit face detection + CVUtils pixel analysis
+  - Brightness enhancement fallback
+  - HSV skin region fallback
+  - Region-specific analysis:
+    - Cheek texture
+    - T-zone pores
+    - Forehead wrinkles
+
+================================================================================
+9. ANALYSIS CASCADE (FALLBACK CHAIN)
+================================================================================
+
+SkinAnalysisRepositoryImpl.analyzeImages() follows this cascade:
+
+1. CLOUD API (if online + cloud mode):
+   - Upload primary image to backend
+   - Get scan_id, poll for results
+   - Returns metrics from server
+
+2. LOCAL TFLITE (if model loaded):
+   - Run inference on each spectrum image
+   - FeatureExtractor parses 3-class segmentation output
+   - Channel stats: mean, coverage, variance
+   - Maps to 14 metric types per spectrum
+
+3. ADVANCED (MediaPipe Face Mesh):
+   - 468 landmarks -> 5 face regions
+   - Per-region, per-spectrum analysis
+   - Cross-spectrum fusion
+   - Most accurate local method
+
+4. OPENCV (CVUtils):
+   - ML Kit face detection
+   - Pure-Kotlin CV algorithms
+   - Per-spectrum metric extraction
+   - Region-specific analysis
+
+5. BASIC PIXEL ANALYSIS:
+   - Simple color statistics
+   - Brightness, contrast, histogram
+   - Minimal accuracy
+
+6. ZERO FALLBACK:
+   - If all above fail
+   - Metrics all 0, no mock data
+
+CROSS-SPECTRUM VALIDATION:
+  - Pigmentation/UV correlation adjustment
+  - Vascular/Sensitivity/Rosacea averaging
+  - Sebum/Acne correlation
+  - Moisture/Wrinkles correlation
+  - Confidence adjustment based on multi-spectrum agreement
+
+================================================================================
+10. SKIN METRICS (14 TYPES)
+================================================================================
+
+Metric Type          | Arabic Name                          | Spectra Used
+---------------------|--------------------------------------|------------------
+MOISTURE             | الرطوبة المائية                      | WOODS, POL_N
+PORES                | حجم المسام                           | WHITE, POL_N, POL_P
+REDNESS              | الاحمرار                             | POL_P, RED
+TEXTURE              | نسيج البشرة                          | WHITE, POL_N
+ACNE                 | حب الشباب                            | BLUE, WOODS, WHITE
+SENSITIVITY          | حساسية البشرة                        | POL_P, WHITE
+PIGMENTATION         | التصبغات                             | UV365, WOODS, BROWN
+UV_SPOTS             | بقع الأشعة فوق البنفسجية             | UV365, WOODS
+VASCULAR             | الأوعية الدموية                      | RED, POL_P
+ROSACEA              | حب الشباب الوردي                     | POL_P
+WRINKLES             | التجاعيد والتجاعيد الدقيقة           | RED, POL_N, WHITE
+SEBUM                | إفرازات الزيوت                       | BLUE, WHITE, POL_N
+DARK_CIRCLES         | الهالات السوداء                      | BROWN, RED
+MELASMA              | الكدمة / الميلasma                   | WOODS
+
+METRIC SEVERITY LEVELS:
+  - EXCELLENT: Score >= 90 (Arabic: ممتاز)
+  - GOOD:     Score >= 75 (Arabic: جيد)
+  - FAIR:     Score >= 60 (Arabic: مقبول)
+  - POOR:     Score >= 40 (Arabic: ضعيف)
+  - CRITICAL: Score < 40  (Arabic: حرج)
+
+METRIC ZONES:
+  - T_ZONE:    Forehead + Nose + Chin
+  - U_ZONE:    Cheeks + Jawline
+  - O_ZONE:    Outer face
+  - EYE_AREA:  Periorbital region
+  - FULL_FACE: Entire face
+
+PRODUCT RECOMMENDATIONS:
+  - Linked to jenincare.shop
+  - Match score based on metric deficiencies
+  - Categories: Moisture, Acne, Anti-aging, Brightening, etc.
+  - Price in ILS (Israeli New Shekel)
+
+================================================================================
+11. SKIN REGIONS (FACE ZONES)
+================================================================================
+
+SkinRegion enum defines 9 face regions with MediaPipe landmark indices:
+
+1. FOREHEAD (الجبهة)
+   - Landmark indices: 107, 66, 105, 63, 70, 336, 296, 334, 293, 300...
+   - Analysis: wrinkles, texture, pores
+
+2. NOSE (الأنف)
+   - Landmark indices: 1, 2, 98, 327, 168, 6, 197, 195, 5, 4...
+   - Analysis: pores, sebum, blackheads
+
+3. LEFT_CHEEK (الخد الأيسر)
+   - Landmark indices: 36, 100, 101, 102, 48, 116, 117...
+   - Analysis: texture, redness, acne
+
+4. RIGHT_CHEEK (الخد الأيمن)
+   - Landmark indices: 266, 330, 331, 332, 280, 347, 348...
+   - Analysis: texture, redness, acne
+
+5. CHIN (الذقن)
+   - Landmark indices: 152, 148, 176, 149, 150, 136, 172...
+   - Analysis: texture, acne
+
+6. PERIORBITAL_LEFT (منطقة العين اليسرى)
+   - Landmark indices: 33, 7, 163, 144, 145, 153, 154, 155...
+   - Analysis: dark circles, wrinkles, moisture
+
+7. PERIORBITAL_RIGHT (منطقة العين اليمنى)
+   - Landmark indices: 362, 382, 381, 380, 374, 373, 390...
+   - Analysis: dark circles, wrinkles, moisture
+
+8. PERIORAL (منطقة الفم)
+   - Landmark indices: 61, 146, 91, 181, 84, 17, 314, 405...
+   - Analysis: wrinkles, texture
+
+9. FULL_FACE (الوجه كامل)
+   - Union of all above indices
+   - Analysis: overall assessment
+
+Region methods:
+  - extractRegionPixels(): Get landmark points for region
+  - getRegionBounds(): Bounding rectangle
+  - containsPoint(): Point-in-polygon test
+
+================================================================================
+12. LOCAL CV (COMPUTER VISION) LIBRARY
+================================================================================
+
+CVUtils.kt (966 lines) - Pure Kotlin computer vision:
+
+BASIC OPERATIONS:
+  - pixelStats(): mean, std, min, max of pixel values
+  - decodeSampled(): Efficient bitmap loading with sampling
+  - decodeWithExif(): EXIF-aware bitmap loading
+  - saveBitmap(): Save to JPEG file
+
+TEXTURE ANALYSIS:
+  - laplacianVariance(): Focus/sharpness measure (Laplacian kernel)
+  - gaborFilterResponse(): Frequency+orientation texture analysis
+  - localBinaryPattern(): LBP texture descriptor
+  - morphologicalGradient(): Edge magnitude
+  - multiScaleTexture(): Multi-resolution texture analysis
+
+COLOR ANALYSIS:
+  - hsvRednessIndex(): Red channel intensity in HSV
+  - hsvSebumIndex(): Yellow/orange sebum detection
+  - labColorUniformity(): Color consistency in LAB space
+  - specularHighlights(): Shine/oil detection
+  - skinMask(): Skin-colored pixel extraction
+  - colorHistogram(): Color distribution
+  - edgeDirectionHistogram(): Edge orientation distribution
+
+DETECTION:
+  - adaptiveThresholdSpots(): Spot/lesion detection
+  - edgeDetection(): Canny edge detection
+  - wrinkleDepth(): Wrinkle severity estimation
+  - poreDensity(): Pore count estimation
+  - pigmentationHeterogeneity(): Color variation
+  - vascularComplexity(): Blood vessel patterns
+  - sebumDistribution(): Oil distribution
+  - skinBarrierEstimate(): Skin barrier function
+  - inflammatoryMarkers(): Inflammation detection
+
+FACE POSITION:
+  - evaluateFacePosition(): Coverage, top, center scoring
+  - Position scoring: top-center weighting
+
+SCORING:
+  - calibratedScore(): Maps raw values to 0-100 scores
+  - brightnessNormalization(): Normalize for lighting
+
+================================================================================
+13. CLOUD API (YIMEI / BACKEND)
+================================================================================
+
+CloudApiService (Retrofit interface):
+
+AUTH ENDPOINTS:
+  POST /v1/auth/login        - Login with email/password
+  POST /v1/auth/register     - Register new user
+  POST /v1/auth/logout       - Logout
+
+PROFILE:
+  GET  /v1/profile           - Get user profile
+  PUT  /v1/profile           - Update profile
+
+DEVICE:
+  POST /v1/device/register   - Register device ID
+
+APP CONFIG:
+  GET  /v1/app-config        - White-label config (colors, logo, name)
+  GET  /v1/app-update        - Check for app updates
+
+SCANS:
+  POST /v1/scans             - Upload scan image (multipart)
+  GET  /v1/scans             - List scans (paginated)
+  GET  /v1/scans/history     - Scan history
+  GET  /v1/scans/:id         - Scan detail
+  GET  /v1/scans/:id/status  - Poll scan status
+  GET  /v1/scans/:id/report  - Full scan report
+  GET  /v1/scans/:id/timeline - Scan timeline events
+  POST /v1/scans/:id/unlock  - Unlock scan with PIN code
+
+PRODUCTS:
+  GET  /v1/products/recommended/:scanId - Recommended products
+
+DATA MODELS:
+  - LoginRequest/RegisterRequest: Auth credentials
+  - ScanUploadResponse: { id, status }
+  - ScanDetailData: Full report with metrics, heatmap, products
+  - HeatmapPoint: { x, y, value, label }
+  - ProductItem: { id, name, brand, price, matchingReason }
+  - PinData: { pin_code, is_used, expires_at }
+  - AppConfigData: White-label config (login_enabled, colors, etc.)
+
+================================================================================
+14. KNOWLEDGE BASE SYSTEM
+================================================================================
+
+SkinKnowledgeRepository:
+  - Loads knowledge from: cache -> assets -> empty
+  - Remote refresh from configurable URL
+  - Version-based update (only updates if remote > local)
+  - Cache file: /data/data/.../knowledge/skin_knowledge.json
+
+SkinKnowledgeBase structure:
+  - version: Int
+  - lastUpdated: String
+  - url: String (remote refresh URL)
+  - metrics: Map<String, MetricKnowledge>
+    - displayNameAr, descriptionAr
+    - causesAr, tipsAr, ingredientsAr
+    - relatedConditions, zone
+  - skinTypes: Map<String, SkinTypeInfo>
+    - nameAr, characteristicsAr
+    - routineAr (morning/evening/weekly steps)
+    - avoidAr
+  - fitzpatrick: Map<String, FitzpatrickInfo>
+  - skinConditions: Map<String, SkinConditionInfo>
+    - types, severityDescriptionAr, treatmentsAr
+    - whenToSeeDoctorAr
+  - ingredients: Map<String, IngredientInfo>
+    - benefitsAr, bestForMetrics, usageAr, warningsAr
+  - routines: Map<String, RoutineInfo>
+    - stepsAr (order, nameAr, descriptionAr)
+  - products: List<ProductInfo>
+    - id, name, brand, price, matchScore, reasonAr
+  - generalTips: List<String>
+
+Used by SkinAnalysisRepositoryImpl to generate:
+  - AI analysis text in Arabic
+  - Cause descriptions per metric
+  - Treatment tips
+  - Ingredient recommendations
+  - Product recommendations
+
+================================================================================
+15. ROOM DATABASE
+================================================================================
+
+Database: SkinReportDatabase (v3)
+Entity: SkinReportEntity
+DAO: SkinReportDao
+
+COLUMNS:
+  - id: Long (primary key, auto-generate)
+  - timestamp: Long
+  - providerName: String
+  - overallScore: Float
+  - executionTimeMs: Long
+  - metricsJson: String (serialized List<SkinMetric>)
+  - deviceModel: String
+  - notes: String
+  - aiAnalysisText: String
+  - expertTipsJson: String (serialized List<String>)
+  - productsJson: String (serialized List<ProductRecommendation>)
+  - skinProfileJson: String (serialized SkinProfile)
+  - confidence: Float
+  - scanId: String
+  - heatmapPointsJson: String (serialized List<HeatmapPoint>)
+
+MIGRATIONS:
+  v1 -> v2: Added aiAnalysisText, expertTipsJson, productsJson,
+            skinProfileJson, confidence, scanId
+  v2 -> v3: Added heatmapPointsJson
+
+DAO OPERATIONS:
+  - insertReport(): REPLACE on conflict
+  - getReportById(id): Single report
+  - getAllReports(): Flow<List<SkinReportEntity>>
+  - getRecentReports(limit): Latest N reports
+  - deleteReport(id): Remove single report
+  - getReportCount(): Int count
+
+================================================================================
+16. UI SCREENS & ACTIVITIES
+================================================================================
+
+All activities are landscape-only (screenOrientation="landscape").
+
+1. SPLASH ACTIVITY
+   - Animated glow orbs (cyan/purple)
+   - Logo card with ic_skin_analyzer
+   - Title: "DERMA AI"
+   - Feature chips: 14 indicators, AI, 5 modes
+   - Progress indicator
+   - Device info footer
+
+2. HOME ACTIVITY
+   - Hero section: "JENIN CARE" gold title
+   - Glassmorphism hero card
+   - "ابدأ الفحص" (Start Scan) button - 220x52dp
+   - Stats: total scans, average score, today's count
+   - Recent analyses list (last 5)
+   - Diagnosis mode cards (6 modes)
+   - Navigation: Scan, History, Settings
+
+3. ONBOARDING ACTIVITY
+   - ViewPager2 carousel
+   - Skip/Next buttons
+   - Tab indicator dots
+
+4. ANALYSIS ACTIVITY (Main scanning screen)
+   - Camera preview (TextureView)
+   - Overlay layers:
+     * FaceGuideOverlay: Face positioning guide
+     * DigitalMeshOverlay: Face mesh visualization
+     * MedicalLensView: Medical lens effect
+     * ScanGridView: Grid overlay
+     * ScanRingView: Animated rings
+     * SpectralGraphView: Real-time spectral data
+     * ScanDataPanelView: Data panel
+     * DetectionPointsView: Detection markers
+     * TrackingAccuracyView: Accuracy indicator
+     * HealthIndicatorView: Health status
+     * MedicalIndicatorView: Medical indicators
+   - Bottom panel:
+     * Scan instructions (Arabic)
+     * Step counter (1/8)
+     * Progress bar
+     * Spectrum thumbnails
+     * Mini radar chart
+     * Cancel/View Report buttons
+
+5. REPORT ACTIVITY
+   - Left panel (300dp):
+     * Score gauge (circular)
+     * Metric count badge
+     * Analysis time
+     * AI summary text
+     * Skin type badge
+     * Top concerns chips
+   - Right panel:
+     * Captured spectral images
+     * Heatmap overlay
+     * Detailed metrics RecyclerView
+     * Radar chart
+     * Expert tips
+     * Product recommendations
+   - Actions: PDF share, CSV export, JSON export
+
+6. SETTINGS ACTIVITY
+   - Device Status card (network/camera/AI dots)
+   - API Provider (local/cloud/auto radio + URL/key)
+   - Analysis Engine mode
+   - Language selector
+   - Camera Settings:
+     * Rotation offset (0-359)
+     * Zoom ratio
+     * Face validation toggle
+     * Validation threshold slider
+   - Scan Display:
+     * Overlay style (professional/minimal/custom)
+     * Toggle: mesh, lens, grid, rings, graph, indicators
+     * Voice guide toggle
+     * Scan reminder settings
+   - Tools: Calibration, Diagnostics, Demo
+   - Device Info
+   - App Update section (check/download/install/rollback)
+
+7. HISTORY ACTIVITY
+   - Left sidebar (280dp):
+     * Total/average stats
+     * Date filter chips (today/week/month/all)
+     * Min score slider
+     * Clear filter button
+   - Right:
+     * Search bar
+     * Result count
+     * RecyclerView with history items
+
+8. CALIBRATION ACTIVITY
+   - Left: status, current step, progress, start button
+   - Right: calibration steps RecyclerView, log
+
+9. DIAGNOSTICS ACTIVITY
+   - Left: overall status, memory bar, refresh/test buttons
+   - Right:
+     * Component status cards (USB, Network, GPIO, AI)
+     * Root test
+     * FISE GPIO rebind
+     * LED test buttons (all 8 spectra)
+     * LED off button
+     * Test log output
+
+10. COMPARISON ACTIVITY
+    - Two score cards (before/after)
+    - Delta card
+    - Radar comparison chart
+    - Metric deltas container
+    - Empty state message
+
+11. DEMO ACTIVITY
+    - WebView-based demo for ZMLH02
+
+12. WEB ANALYSIS ACTIVITY
+    - CameraX PreviewView
+    - Hidden WebView
+    - Capture button
+    - Instruction text
+
+================================================================================
+17. PDF REPORT GENERATION
+================================================================================
+
+PdfReportGenerator.kt (766 lines):
+
+Uses Android PdfDocument API to generate 3-4 page professional reports.
+
+PAGE 1: HEADER & SUMMARY
+  - Gold/cream color scheme
+  - Company logo and name
+  - Patient/device info
+  - Overall score circle (color-coded)
+  - Skin type badge
+  - AI analysis summary text
+  - Top concerns chips
+
+PAGE 2: DETAILED METRICS
+  - Metrics table with:
+    * Metric icon and name (Arabic + English)
+    * Score value + progress bar
+    * Severity label (EXCELLENT/GOOD/FAIR/POOR/CRITICAL)
+    * Confidence percentage
+    * Trend arrow (if available)
+
+PAGE 3: RECOMMENDATIONS
+  - Expert tips (Arabic text)
+  - Product recommendations:
+    * Product name and brand
+    * Match percentage
+    * Reason for recommendation
+    * Price (ILS)
+  - Medical disclaimer
+
+PAGE 4 (OPTIONAL): CAPTURED IMAGES
+  - Grid of 8 spectral images
+  - Spectrum labels
+  - Heatmap overlay (if available)
+
+COLOR SCHEME:
+  - Primary: Gold (#FFD4AF37)
+  - Secondary: Cream (#FFFAF8F6)
+  - Accent: Rose (#E9D5C7)
+  - Text: Dark (#1A1A1A)
+  - Background: White (#FFFFFF)
+
+OUTPUT:
+  - Format: PDF
+  - Resolution: 300 DPI
+  - Sharing: Android share intent
+  - Saving: External storage via FileProvider
+
+================================================================================
+18. SETTINGS & PREFERENCES
+================================================================================
+
+PreferencesManager.kt (318 lines):
+  - DataStore-based persistence
+  - Stores all user preferences
+
+PREFERENCE KEYS:
+  - LANGUAGE: "arabic" / "english"
+  - ANALYSIS_MODE: "local" / "cloud" / "auto"
+  - BRIGHTNESS: Float (0.0-1.0)
+  - DIAGNOSIS_MODE: "all" / "white" / "uv" / etc.
+  - API_URL: Backend server URL
+  - API_KEY: Authentication key
+  - PROVIDER_SELECTION: "local" / "cloud" / "auto"
+  - CAMERA_ROTATION_OFFSET: Int (0-359)
+  - CAMERA_ZOOM_RATIO: Float
+  - FACE_VALIDATION_ENABLED: Boolean
+  - FACE_VALIDATION_THRESHOLD: Int (0-100)
+  - AUTO_UPDATE_ENABLED: Boolean
+  - AUTO_UPDATE_CHANNEL: "stable" / "beta"
+  - SCAN_OVERLAY_STYLE: "professional" / "minimal" / "custom"
+  - OVERLAY_MESH_ENABLED: Boolean
+  - OVERLAY_LENS_ENABLED: Boolean
+  - OVERLAY_GRID_ENABLED: Boolean
+  - OVERLAY_RINGS_ENABLED: Boolean
+  - OVERLAY_GRAPH_ENABLED: Boolean
+  - OVERLAY_INDICATORS_ENABLED: Boolean
+  - VOICE_GUIDE_ENABLED: Boolean
+  - ONBOARDING_COMPLETED: Boolean
+  - SCAN_REMINDER_ENABLED: Boolean
+  - SCAN_REMINDER_INTERVAL_HOURS: Int
+
+DIAGNOSIS MODE MIGRATION:
+  - Migrates old diagnosis mode values to new format
+  - Runs on app startup
+
+================================================================================
+19. VOICE GUIDE (TTS)
+================================================================================
+
+VoiceGuideManager.kt (92 lines):
+  - Android TextToSpeech engine
+  - Arabic locale (Locale("ar"))
+  - Fallback to default locale if Arabic unavailable
+
+VOICE MESSAGES:
+  - "جاري تفعيل [spectrum]" - "Activating [spectrum]"
+  - "ثبّت الإضاءة — جاري التقاط الصورة" - "Hold still — capturing"
+  - "تم — [spectrum]" - "Done — [spectrum]"
+  - "تم التحقق من وضع الوجه" - "Face position verified"
+  - "اكتمل التحليل — جاري عرض النتائج" - "Analysis complete — showing results"
+
+FEATURES:
+  - Enable/disable toggle
+  - QUEUE_ADD mode (doesn't interrupt current speech)
+  - UtteranceProgressListener for error handling
+  - Shutdown on activity destroy
+
+================================================================================
+20. AUTO-UPDATE SYSTEM
+================================================================================
+
+UpdateChecker.kt (362 lines):
+  - GitHub Releases API integration
+  - Repository: mzawari-git/jenincare
+
+CHECK FLOW:
+  1. GET /repos/mzawari-git/jenincare/releases/latest
+  2. Parse tag_name, assets (APK file)
+  3. Compare versions (semver: major.minor.patch)
+  4. If newer: show notification
+
+DOWNLOAD:
+  - Download APK from GitHub asset URL
+  - Progress notification (percentage)
+  - Save to cache/update/ directory
+  - FileProvider URI for install
+
+INSTALL:
+  - Intent.ACTION_VIEW with APK MIME type
+  - FLAG_GRANT_READ_URI_PERMISSION
+
+ROLLBACK:
+  - GET /repos/mzawari-git/jenincare/releases?per_page=20
+  - List all releases with APK assets
+  - Exclude current version
+  - Sort newest-first
+  - Download and install any previous version
+
+NOTIFICATION CHANNELS:
+  - UPDATE_CHANNEL_ID: Download progress + install ready
+  - Uses NotificationCompat with progress bars
+
+GITHUB_TOKEN:
+  - Read from BuildConfig.GITHUB_TOKEN
+  - Optional: used for private repos
+  - Skipped if "mock_token"
+
+================================================================================
+21. NETWORK MONITOR
+================================================================================
+
+NetworkMonitor.kt (57 lines):
+  - ConnectivityManager-based
+  - NetworkRequest with NET_CAPABILITY_INTERNET + VALIDATED
+  - NetworkCallback:
+    * onAvailable: isOnline = true
+    * onLost: isOnline = false
+    * onCapabilitiesChanged: check VALIDATED capability
+  - StateFlow<Boolean> for reactive UI updates
+  - isOnline(): Synchronous check
+
+Used by:
+  - CloudAnalysisProvider: isAvailable() check
+  - HomeViewModel: Network status display
+  - SettingsActivity: Status indicator
+
+================================================================================
+22. BOOT RECEIVER & GPIO SETUP
+================================================================================
+
+BootReceiver.kt (40 lines):
+  - BroadcastReceiver for ACTION_BOOT_COMPLETED
+  - Hilt-injected (AndroidEntryPoint)
+  - Injects FiseGpioController
+  - On boot:
+    1. Check if GPIO is available
+    2. If not: run setupGpioViaShell()
+    3. Log result
+
+AndroidManifest.xml permissions:
+  - RECEIVE_BOOT_COMPLETED
+  - BOOT_COMPLETED intent filter
+
+CRITICAL NOTE:
+  - App runs as untrusted_app
+  - Cannot export GPIOs directly
+  - BootReceiver uses shell commands which also fail as untrusted_app
+  - MUST run setup_gpio.ps1 manually after every power cycle
+
+================================================================================
+23. DEPENDENCIES & BUILD CONFIG
+================================================================================
+
+build.gradle.kts (app-level):
+  - compileSdk: 35
+  - minSdk: 24
+  - targetSdk: 33
+  - versionCode: 49
+  - versionName: 1.2.49
+
+DEPENDENCIES:
+  UI:
+    - Material Design 3 (material3)
+    - AndroidX Core KTX
+    - AndroidX AppCompat
+    - ConstraintLayout
+    - ViewPager2
+    - RecyclerView
+    - CardView
+    - SwipeRefreshLayout
+    - Navigation UI
+
+  CAMERA:
+    - CameraX 1.4.1 (core, camera2, lifecycle, view)
+
+  ML/AI:
+    - TensorFlow Lite 2.16.1 (gpu, support)
+    - ML Kit Face Detection 16.1.7
+    - MediaPipe Tasks Vision 0.10.18
+
+  HARDWARE:
+    - usb-serial-for-android 3.10.0
+
+  DATABASE:
+    - Room 2.6.1 (runtime, ktx, compiler via KSP)
+
+  NETWORK:
+    - Retrofit 2.11.0
+    - OkHttp 4.12.0
+    - kotlinx-serialization-json
+
+  DI:
+    - Hilt Android 2.53.1
+    - Hilt Navigation Compose
+    - Hilt Work (for Worker injection)
+
+  DATA:
+    - DataStore Preferences
+    - WorkManager
+
+  IMAGE:
+    - Coil 2.6.0 (Compose)
+
+  LOGGING:
+    - Timber 5.0.1
+
+  OTHER:
+    - Guava (ListenableFuture for CameraX await)
+    - Kotlinx Coroutines
+
+BUILD FEATURES:
+    - ViewBinding enabled
+    - BuildConfig enabled
+    - Compose NOT used (XML layouts)
+
+SIGNING:
+    - Debug keystore for both debug and release
+    - proguard-rules.pro for R8 minification (release)
+
+================================================================================
+24. FILE STRUCTURE
+================================================================================
+
+SkinAnalyzer/
+├── android-app/
+│   ├── app/
+│   │   ├── src/main/
+│   │   │   ├── AndroidManifest.xml
+│   │   │   ├── java/com/ebtikar/skinanalyzer/
+│   │   │   │   ├── SkinAnalyzerApp.kt          (Application class)
+│   │   │   │   ├── BootReceiver.kt             (GPIO on boot)
+│   │   │   │   ├── ai/                          (10 files)
+│   │   │   │   │   ├── AdvancedSkinAnalyzer.kt  (MediaPipe analysis)
+│   │   │   │   │   ├── CloudYimeiProvider.kt    (Cloud API)
+│   │   │   │   │   ├── CVUtils.kt               (966-line CV library)
+│   │   │   │   │   ├── FaceLandmarkDetector.kt  (ML Kit face)
+│   │   │   │   │   ├── FaceMeshDetector.kt      (MediaPipe mesh)
+│   │   │   │   │   ├── FeatureExtractor.kt      (TFLite features)
+│   │   │   │   │   ├── LocalTFLiteProvider.kt   (TFLite provider)
+│   │   │   │   │   ├── OpenCVSkinAnalyzer.kt    (OpenCV fallback)
+│   │   │   │   │   ├── SkinRegion.kt            (Face zones)
+│   │   │   │   │   └── TFLiteEngine.kt          (TFLite wrapper)
+│   │   │   │   ├── camera/                      (5 files)
+│   │   │   │   │   ├── BaseCameraActivity.kt
+│   │   │   │   │   ├── CameraSettings.kt
+│   │   │   │   │   ├── CapturePhase.kt
+│   │   │   │   │   ├── FrameCapturePipeline.kt  (502 lines)
+│   │   │   │   │   └── USBCameraManager.kt      (464 lines)
+│   │   │   │   ├── core/
+│   │   │   │   │   ├── di/                      (3 DI modules)
+│   │   │   │   │   └── provider/                (3 provider files)
+│   │   │   │   ├── data/
+│   │   │   │   │   ├── knowledge/               (2 files)
+│   │   │   │   │   ├── local/                   (4 files: Room DB)
+│   │   │   │   │   ├── remote/                  (4 files: API)
+│   │   │   │   │   └── repository/              (2 files)
+│   │   │   │   ├── hardware/                    (4 files)
+│   │   │   │   │   ├── FiseGpioController.kt    (446 lines)
+│   │   │   │   │   ├── LightSpectrum.kt         (139 lines)
+│   │   │   │   │   ├── SerialBusManager.kt      (344 lines)
+│   │   │   │   │   └── SpectrumController.kt    (256 lines)
+│   │   │   │   ├── model/                       (3 files)
+│   │   │   │   ├── ui/                          (15 sub-packages, 39 files)
+│   │   │   │   └── util/                        (8 files)
+│   │   │   └── res/
+│   │   │       ├── layout/                      (21 XML files)
+│   │   │       ├── drawable/                    (75 XML files)
+│   │   │       ├── values/                      (colors, strings, themes, dimens)
+│   │   │       ├── values-ar/                   (Arabic strings)
+│   │   │       ├── values-night/                (dark theme)
+│   │   │       └── xml/                         (3 config files)
+│   │   └── src/test/                            (5 test files)
+│   ├── build.gradle.kts
+│   ├── settings.gradle.kts
+│   └── gradle/
+│       ├── libs.versions.toml
+│       └── wrapper/gradle-wrapper.properties
+├── backend/                                     (Laravel PHP)
+│   ├── app/
+│   │   ├── Http/Controllers/Api/
+│   │   ├── Models/
+│   │   └── Services/
+│   ├── config/
+│   ├── database/migrations/
+│   └── routes/
+├── admin-panel/                                 (Vue.js)
+│   └── src/
+│       ├── views/
+│       ├── components/
+│       └── stores/
+├── setup_gpio.ps1                              (GPIO setup script)
+├── setup_system_app.ps1                        (System app install)
+├── docs/
+│   ├── API.md
+│   ├── ARCHITECTURE.md
+│   └── DEPLOYMENT.md
+└── README.md
+
+================================================================================
+25. TESTING
+================================================================================
+
+Unit Tests (5 files):
+  1. FeatureExtractorTest.kt
+     - Tests TFLite feature extraction
+     - Channel stats computation
+     - Health score mapping
+
+  2. FrameCapturePipelineTest.kt
+     - Tests capture state machine
+     - Face detection flow
+     - Spectrum sequence
+
+  3. AnalysisProviderManagerTest.kt
+     - Tests provider registration
+     - Priority resolution
+     - Fallback chain
+
+  4. SkinAnalysisRepositoryTest.kt
+     - Tests analysis cascade
+     - Cross-spectrum validation
+     - Report generation
+
+  5. SpectrumControllerTest.kt
+     - Tests LED activation
+     - GPIO/Serial fallback
+     - Sequence execution
+
+TESTING APPROACH:
+  - JUnit 4
+  - MockK for mocking
+  - Coroutine test dispatcher
+  - No instrumented tests (device-dependent)
+
+================================================================================
+26. DEPLOYMENT & BUILD COMMANDS
+================================================================================
+
+BUILD (in separate PowerShell window):
+  cd android-app
+  .\gradlew --stop
+  .\gradlew assembleDebug --no-daemon
+
+INSTALL (via ADB):
+  adb -s 192.168.1.9:5555 push app\build\outputs\apk\debug\app-debug.apk /data/local/tmp/
+  adb -s 192.168.1.9:5555 shell pm install -r /data/local/tmp/app-debug.apk
+
+SYSTEM APP INSTALL:
+  .\setup_system_app.ps1
+
+RELEASE BUILD:
+  .\release_v1.2.32.ps1
+
+LOGCAT FILTERING:
+  adb logcat -s "FrameCapturePipeline:*" "CVUtils:*" "USBCameraManager:*" "FaceLandmarkDetector:*" "AnalysisViewModel:*"
+
+GPIO SETUP (after every boot):
+  .\setup_gpio.ps1
+
+GitHub Actions CI/CD:
+  - android-build.yml: Build and test
+  - code-quality.yml: Lint and static analysis
+  - laravel-deploy.yml: Backend deployment
+
+================================================================================
+27. KNOWN ISSUES & FIXES
+================================================================================
+
+1. CAMERA CONFLICT
+   Problem: CameraX holds camera; Camera2 open() hangs
+   Fix: unbindAll() + 1500ms delay before Camera2 init
+
+2. GPIO EXPORT FAILURE
+   Problem: FISE driver claims pins via pinctrl on boot
+   Fix: Unbind/rebind FISE driver, then export GPIOs
+
+3. GPIO BOOT LOSS
+   Problem: GPIO exports lost after every reboot
+   Fix: Must run setup_gpio.ps1 after each power cycle
+
+4. KOTLIN DAEMON FAILURE
+   Problem: Daemon fails to connect on first build
+   Fix: .\gradlew --stop then rebuild
+
+5. FACE DETECTION FALSE NEGATIVES
+   Problem: Tight HSV ranges miss valid faces
+   Fix: Widened HSV ranges, lowered minFaceSize to 0.05
+
+6. FACE DETECTION THRESHOLD
+   Problem: High threshold blocks legitimate captures
+   Fix: Capped at 85, bypass: coverage>=10% + score>=50
+
+7. ANALYSIS INITIALIZATION FLAG
+   Problem: Face detection re-runs after viewing results
+   Fix: analysisInitialized flag, fresh Surface re-fetch
+
+8. KERNEL DEVMEM RESTRICTION
+   Problem: CONFIG_STRICT_DEVMEM blocks /dev/mem GPIO access
+   Fix: Use sysfs GPIO interface instead
+
+9. CAMERA EXPOSURE WARNINGS
+   Problem: Marvin HAL emits exposure warnings
+   Fix: Harmless, camera still works
+
+10. UNCAUGHT EXCEPTION HANDLER
+    Problem: App crashes silently
+    Fix: SkinAnalyzerApp sets uncaught exception handler
+
+================================================================================
+28. REGRESSION TESTING CHECKLIST
+================================================================================
+
+BEFORE EVERY COMMIT/RELEASE, ALL must pass on device:
+
+ 1. App launches without crash
+ 2. Home screen: hero text, scan button, stats, diagnosis cards visible
+ 3. Tap "ابدأ الفحص" → AnalysisActivity opens
+ 4. Camera preview: full face visible (not cropped)
+ 5. Face detection: message changes to "جاري قراءة ملامح الوجه"
+ 6. 8-spectrum capture: all 8 LEDs fire (check logcat)
+ 7. Analysis completes: score > 0, metrics > 0 (not all zeros)
+ 8. Report screen: score gauge, radar chart, metrics table visible
+ 9. PDF share: generates and opens in viewer
+10. History screen: past reports listed
+11. Settings screen: opens, toggles save preferences
+12. Back navigation: no crash on any screen
+
+If ANY test fails → DO NOT RELEASE. Fix first.
+
+================================================================================
+29. VERSION HISTORY
+================================================================================
+
+v1.2.16 - Initial stable release with full analysis pipeline
+v1.2.17 - Fixed face detection after viewing results
+v1.2.18 - Fixed face detection false negatives (widened HSV, lowered minFaceSize)
+v1.2.19 - Fixed face detection threshold (capped at 85, bypass logic)
+v1.2.20 - Home UI redesign (glassmorphism hero, diagnosis cards) + professional PDF
+v1.2.21 - Hero text, bigger scan button, face reading flow
+v1.2.22 - v1.2.32 - Progressive improvements (hardware, analysis, UI)
+v1.2.32 - Latest release (release_v1.2.32.ps1)
+v1.2.49 - Current development version (versionCode 49)
+
+================================================================================
+30. FUTURE ROADMAP
+================================================================================
+
+PLANNED FEATURES:
+  - Voice guidance (Arabic) for scan steps [IN PROGRESS]
+  - Face heatmap overlay on report
+  - Product recommendations linked to jenincare.shop
+  - Skin progress timeline comparison
+  - Multi-language support (English UI)
+  - Cloud sync across devices
+  - AI model retraining pipeline
+  - Dermatologist review portal
+  - Insurance integration
+  - Wearable device integration
+
+================================================================================
+                          END OF DOCUMENTATION
+================================================================================
+Generated: 2026-07-08
+Source: SkinAnalyzer Android App v1.2.49
+Device: ZMLH02 (RK3399)
+Package: com.ebtikar.skinanalyzer.pro
+================================================================================

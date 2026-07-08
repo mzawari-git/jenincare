@@ -1,5 +1,7 @@
 package com.ebtikar.skinanalyzer.ui.report
 
+import android.content.Intent
+import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -98,33 +100,144 @@ class ReportActivity : AppCompatActivity() {
     }
 
     private fun showExportDialog() {
-        val options = arrayOf("تصدير CSV", "تصدير JSON")
+        val options = arrayOf(
+            "حفظ PDF على الجهاز",
+            "مشاركة PDF عبر Bluetooth",
+            "مشاركة PDF عبر التطبيقات",
+            "تصدير CSV",
+            "تصدير JSON"
+        )
         android.app.AlertDialog.Builder(this)
-            .setTitle("اختر صيغة التصدير")
+            .setTitle("اختر طريقة التصدير")
             .setItems(options) { _, which ->
                 lifecycleScope.launch {
-                    val file = when (which) {
-                        0 -> viewModel.exportCsv()
-                        1 -> viewModel.exportJson()
-                        else -> null
-                    }
-                    if (file != null) {
-                        shareFile(file)
-                    } else {
-                        android.widget.Toast.makeText(this@ReportActivity, "فشل التصدير", android.widget.Toast.LENGTH_SHORT).show()
+                    when (which) {
+                        0 -> {
+                            val file = viewModel.savePdf()
+                            if (file != null) {
+                                android.widget.Toast.makeText(
+                                    this@ReportActivity,
+                                    "تم حفظ التقرير: ${file.name}",
+                                    android.widget.Toast.LENGTH_LONG
+                                ).show()
+                            } else {
+                                android.widget.Toast.makeText(this@ReportActivity, "فشل الحفظ", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        1 -> {
+                            val file = viewModel.getPdfFile()
+                            if (file != null) {
+                                shareViaBluetooth(file)
+                            } else {
+                                android.widget.Toast.makeText(this@ReportActivity, "فشل إنشاء التقرير", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        2 -> {
+                            val file = viewModel.getPdfFile()
+                            if (file != null) {
+                                sharePdf(file)
+                            } else {
+                                android.widget.Toast.makeText(this@ReportActivity, "فشل إنشاء التقرير", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        3 -> {
+                            val file = viewModel.exportCsv()
+                            if (file != null) {
+                                shareFile(file, "text/csv")
+                            } else {
+                                android.widget.Toast.makeText(this@ReportActivity, "فشل التصدير", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        4 -> {
+                            val file = viewModel.exportJson()
+                            if (file != null) {
+                                shareFile(file, "application/json")
+                            } else {
+                                android.widget.Toast.makeText(this@ReportActivity, "فشل التصدير", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     }
                 }
             }
             .show()
     }
 
-    private fun shareFile(file: java.io.File) {
+    private fun sharePdf(file: java.io.File) {
         try {
             val uri = androidx.core.content.FileProvider.getUriForFile(
                 this, "${packageName}.fileprovider", file
             )
             val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                type = if (file.name.endsWith(".csv")) "text/csv" else "application/json"
+                type = "application/pdf"
+                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                putExtra(android.content.Intent.EXTRA_SUBJECT, "تقرير تحليل البشرة - DERMA AI")
+                putExtra(android.content.Intent.EXTRA_TEXT, "تقرير تحليل البشرة by DERMA AI - Advanced Skin Analysis System")
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(android.content.Intent.createChooser(intent, "مشاركة تقرير PDF"))
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to share PDF")
+            android.widget.Toast.makeText(this, "خطأ في المشاركة", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun shareViaBluetooth(file: java.io.File) {
+        try {
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                this, "${packageName}.fileprovider", file
+            )
+            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = "application/pdf"
+                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                putExtra(android.content.Intent.EXTRA_SUBJECT, "DERMA AI Skin Report")
+                packageManager.getLaunchIntentForPackage("com.android.bluetooth")?.let {
+                    setPackage("com.android.bluetooth")
+                }
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+
+            val bluetoothApps = mutableListOf<ResolveInfo>()
+            val allHandlers = packageManager.queryIntentActivities(intent, 0)
+            for (handler in allHandlers) {
+                val pkg = handler.activityInfo.packageName.lowercase()
+                if (pkg.contains("bluetooth") || pkg.contains("opp") || pkg.contains("share")) {
+                    bluetoothApps.add(handler)
+                }
+            }
+
+            if (bluetoothApps.isNotEmpty()) {
+                val chooserIntent = android.content.Intent.createChooser(intent, "إرسال عبر Bluetooth")
+                if (bluetoothApps.size == 1) {
+                    chooserIntent.putExtra(
+                        android.content.Intent.EXTRA_INITIAL_INTENTS,
+                        arrayOf(android.content.Intent(intent).apply {
+                            setPackage(bluetoothApps.first().activityInfo.packageName)
+                        })
+                    )
+                }
+                startActivity(chooserIntent)
+            } else {
+                val fallbackIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "application/pdf"
+                    putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                startActivity(android.content.Intent.createChooser(fallbackIntent, "مشاركة عبر Bluetooth"))
+            }
+            Timber.i("Bluetooth share initiated for: ${file.name}")
+        } catch (e: Exception) {
+            Timber.e(e, "Bluetooth share failed")
+            android.widget.Toast.makeText(this, "Bluetooth غير متوفر", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun shareFile(file: java.io.File, mimeType: String) {
+        try {
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                this, "${packageName}.fileprovider", file
+            )
+            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = mimeType
                 putExtra(android.content.Intent.EXTRA_STREAM, uri)
                 addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
             }

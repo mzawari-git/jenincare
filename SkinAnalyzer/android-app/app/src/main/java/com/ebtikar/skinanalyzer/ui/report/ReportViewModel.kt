@@ -212,6 +212,34 @@ class ReportViewModel @Inject constructor(
         }
     }
 
+    suspend fun savePdf(): File? = withContext(Dispatchers.IO) {
+        val reportId = currentReportId ?: return@withContext null
+        try {
+            val entity = repository.getReport(reportId) ?: return@withContext null
+            val report = entity.toReport()
+            val outputDir = File(context.getExternalFilesDir(null), "pdf_reports")
+            outputDir.mkdirs()
+            pdfReportGenerator.generate(context, report, outputDir, _capturedImages.value)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to save PDF")
+            null
+        }
+    }
+
+    suspend fun getPdfFile(): File? = withContext(Dispatchers.IO) {
+        val reportId = currentReportId ?: return@withContext null
+        try {
+            val entity = repository.getReport(reportId) ?: return@withContext null
+            val report = entity.toReport()
+            val outputDir = File(context.cacheDir, "pdf_reports")
+            outputDir.mkdirs()
+            pdfReportGenerator.generate(context, report, outputDir, _capturedImages.value)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to generate PDF for sharing")
+            null
+        }
+    }
+
     suspend fun exportCsv(): File? = withContext(Dispatchers.IO) {
         val reportId = currentReportId ?: return@withContext null
         try {
