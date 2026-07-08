@@ -1,41 +1,286 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FF0000"
-    android:gravity="center"
-    android:orientation="vertical">
+    android:background="#FF000000">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="UI IS WORKING"
-        android:textColor="#FFFFFF"
-        android:textSize="40sp" />
+    <!-- Camera Preview -->
+    <TextureView
+        android:id="@+id/cameraPreview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
-    <Button
-        android:id="@+id/btnCapture"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="TEST BUTTON" />
-
-    <!-- عناصر وهمية لمطابقة الكود -->
-    <View android:id="@+id/viewFinder" android:layout_width="1dp" android:layout_height="1dp" />
-    <View android:id="@+id/btnClose" android:layout_width="1dp" android:layout_height="1dp" />
-    <View android:id="@+id/faceMeshOverlay" android:layout_width="1dp" android:layout_height="1dp" />
-    <View android:id="@+id/progressHydration" android:layout_width="1dp" android:layout_height="1dp" />
-    <View android:id="@+id/progressTexture" android:layout_width="1dp" android:layout_height="1dp" />
-    <View android:id="@+id/tvHydrationValue" android:layout_width="1dp" android:layout_height="1dp" />
-    <View android:id="@+id/tvTextureValue" android:layout_width="1dp" android:layout_height="1dp" />
-    <View android:id="@+id/tvGuidanceMain" android:layout_width="1dp" android:layout_height="1dp" />
-    <TextView
-        android:id="@+id/tvLedTestStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text=""
-        android:textColor="#FFFFFF"
-        android:textSize="14sp"
+    <!-- Scan Grid Overlay -->
+    <com.ebtikar.skinanalyzer.ui.scan.ScanGridView
+        android:id="@+id/scanGrid"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:visibility="gone" />
 
-</LinearLayout>
+    <!-- Scan Rings Overlay -->
+    <com.ebtikar.skinanalyzer.ui.scan.ScanRingView
+        android:id="@+id/scanRings"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <!-- Digital Mesh Overlay -->
+    <com.ebtikar.skinanalyzer.ui.scan.DigitalMeshOverlay
+        android:id="@+id/digitalMesh"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <!-- Medical Lens Overlay -->
+    <com.ebtikar.skinanalyzer.ui.scan.MedicalLensView
+        android:id="@+id/medicalLens"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <!-- Face Guide Overlay -->
+    <com.ebtikar.skinanalyzer.ui.scan.FaceGuideOverlay
+        android:id="@+id/faceGuideOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <!-- Capture Flash Overlay -->
+    <View
+        android:id="@+id/captureFlashOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#FFFFFF"
+        android:visibility="gone" />
+
+    <!-- Countdown Overlay -->
+    <FrameLayout
+        android:id="@+id/countdownOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:background="#80000000">
+
+        <TextView
+            android:id="@+id/tvCountdown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textColor="#FFFFFF"
+            android:textSize="96sp"
+            android:textStyle="bold" />
+    </FrameLayout>
+
+    <!-- Top Panel: Spectral Graph -->
+    <com.ebtikar.skinanalyzer.ui.scan.SpectralGraphView
+        android:id="@+id/topCard"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:layout_gravity="top"
+        android:layout_marginTop="40dp"
+        android:visibility="gone" />
+
+    <!-- Left Panel: Medical Indicators -->
+    <com.ebtikar.skinanalyzer.ui.scan.MedicalIndicatorView
+        android:id="@+id/leftPanel"
+        android:layout_width="60dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="start|center_vertical"
+        android:layout_marginStart="8dp"
+        android:visibility="gone" />
+
+    <!-- Right Panel: Scan Data -->
+    <com.ebtikar.skinanalyzer.ui.scan.ScanDataPanelView
+        android:id="@+id/rightPanel"
+        android:layout_width="120dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|center_vertical"
+        android:layout_marginEnd="8dp"
+        android:visibility="gone" />
+
+    <!-- Bottom Controls -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Scan Data Panel (inline) -->
+        <com.ebtikar.skinanalyzer.ui.scan.ScanDataPanelView
+            android:id="@+id/scanDataPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Medical Indicator (inline) -->
+        <com.ebtikar.skinanalyzer.ui.scan.MedicalIndicatorView
+            android:id="@+id/medicalIndicator"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp" />
+
+        <!-- LED Test Status -->
+        <TextView
+            android:id="@+id/tvLedTestStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#FFD700"
+            android:textSize="12sp"
+            android:visibility="gone" />
+
+        <!-- Scan Instruction -->
+        <TextView
+            android:id="@+id/tvScanInstruction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ضع وجهك أمام الكاميرا"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:layout_marginBottom="4dp" />
+
+        <!-- Scan Status -->
+        <TextView
+            android:id="@+id/tvScanStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#B0FFFFFF"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:layout_marginBottom="4dp" />
+
+        <!-- Step Counter -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="horizontal"
+            android:layout_marginBottom="4dp">
+
+            <TextView
+                android:id="@+id/tvScanStep"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvScanTotal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#B0FFFFFF"
+                android:textSize="16sp" />
+        </LinearLayout>
+
+        <!-- Current Spectrum -->
+        <TextView
+            android:id="@+id/tvCurrentSpectrum"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Progress Bar -->
+        <ProgressBar
+            android:id="@+id/progressScan"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:max="100"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Thumbnails -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardThumbnails"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone"
+            app:cardBackgroundColor="#40000000"
+            app:cardCornerRadius="8dp">
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="4dp">
+
+                <LinearLayout
+                    android:id="@+id/containerAnalysisThumbnails"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal" />
+            </HorizontalScrollView>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Recommendation -->
+        <TextView
+            android:id="@+id/tvRecommendation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#B0FFFFFF"
+            android:textSize="11sp"
+            android:gravity="center"
+            android:layout_marginBottom="4dp" />
+
+        <!-- AI Recommendations (expanded) -->
+        <TextView
+            android:id="@+id/tvAiRecommendations"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#90FFFFFF"
+            android:textSize="11sp"
+            android:maxLines="3"
+            android:ellipsize="end"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Action Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/btnCancelScan"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="إلغاء"
+                android:textColor="#FFFFFF"
+                android:background="#60FFFFFF"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/btnViewReport"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="عرض التقرير"
+                android:textColor="#FFFFFF"
+                android:background="#FF6B35"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- Radar Chart -->
+        <com.ebtikar.skinanalyzer.ui.components.RadarChartView
+            android:id="@+id/radarChart"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
+
+        <!-- Analysis History -->
+        <com.ebtikar.skinanalyzer.ui.scan.AnalysisHistoryView
+            android:id="@+id/analysisHistory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
+    </LinearLayout>
+</FrameLayout>
