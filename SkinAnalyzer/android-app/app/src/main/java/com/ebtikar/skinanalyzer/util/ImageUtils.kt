@@ -52,10 +52,18 @@ object ImageUtils {
 
     fun saveBitmap(bitmap: Bitmap, file: File, quality: Int = 100): Boolean {
         return try {
-            FileOutputStream(file).use { fos ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, quality, fos)
+            if (bitmap.isRecycled || bitmap.width == 0 || bitmap.height == 0) {
+                Timber.e("Cannot save recycled/empty bitmap to ${file.absolutePath}")
+                return false
             }
-            true
+            FileOutputStream(file).use { fos ->
+                val ok = bitmap.compress(Bitmap.CompressFormat.JPEG, quality, fos)
+                if (!ok) {
+                    Timber.e("JPEG compress returned false for ${file.absolutePath}")
+                    return false
+                }
+            }
+            file.length() > 0
         } catch (e: Exception) {
             Timber.e(e, "Failed to save bitmap to ${file.absolutePath}")
             false
@@ -207,100 +215,46 @@ object ImageUtils {
     }
 
     fun applyClaheEnhancement(source: Bitmap, clipLimit: Float = 3.0f): Bitmap {
-        if (source.isRecycled) return source
+        if (source.isRecycled || source.width == 0 || source.height == 0) return source
         val w = source.width
         val h = source.height
         val pixels = IntArray(w * h)
         source.getPixels(pixels, 0, w, 0, 0, w, h)
 
-        val yPlane = IntArray(w * h)
-        val uPlane = IntArray(w * h)
-        val vPlane = IntArray(w * h)
-
+        var lumMin = 255
+        var lumMax = 0
+        var lumSum = 0L
         for (i in pixels.indices) {
             val r = (pixels[i] shr 16) and 0xFF
             val g = (pixels[i] shr 8) and 0xFF
             val b = pixels[i] and 0xFF
-            val y = ((66 * r + 129 * g + 25 * b + 128) shr 8) + 16
-            val u = ((-38 * r - 74 * g + 112 * b + 128) shr 8) + 128
-            val v = ((112 * r - 94 * g - 18 * b + 128) shr 8) + 128
-            yPlane[i] = y.coerceIn(0, 255)
-            uPlane[i] = u.coerceIn(0, 255)
-            vPlane[i] = v.coerceIn(0, 255)
+            val lum = (r * 0.299f + g * 0.587f + b * 0.114f).toInt()
+            if (lum < lumMin) lumMin = lum
+            if (lum > lumMax) lumMax = lum
+            lumSum += lum
         }
 
-        val tileSize = 8
-        val tilesX = (w + tileSize - 1) / tileSize
-        val tilesY = (h + tileSize - 1) / tileSize
-        val numTiles = tilesX * tilesY
-        val pixelsPerTile = tileSize * tileSize
+        if (lumMax <= lumMin) return source
 
-        val lut = Array(numTiles) { IntArray(256) }
-
-        for (ty in 0 until tilesY) {
-            for (tx in 0 until tilesX) {
-                val tileIndex = ty * tilesX + tx
-                val hist = IntArray(256)
-                val startX = tx * tileSize
-                val startY = ty * tileSize
-                val endX = minOf(startX + tileSize, w)
-                val endY = minOf(startY + tileSize, h)
-                var count = 0
-
-                for (y in startY until endY) {
-                    for (x in startX until endX) {
-                        hist[yPlane[y * w + x]]++
-                        count++
-                    }
-                }
-
-                if (count == 0) continue
-                val limit = (clipLimit * count / 256).toInt().coerceAtLeast(1)
-                var excess = 0
-                for (j in 0..255) {
-                    if (hist[j] > limit) {
-                        excess += hist[j] - limit
-                        hist[j] = limit
-                    }
-                }
-                val redistrib = excess / 256
-                val residual = excess - redistrib * 256
-                for (j in 0..255) {
-                    hist[j] += redistrib
-                    if (j < residual) hist[j]++
-                }
-
-                var cumSum = 0
-                for (j in 0..255) {
-                    cumSum += hist[j]
-                    lut[tileIndex][j] = ((cumSum * 255.0 / count).toInt()).coerceIn(0, 255)
-                }
-            }
-        }
-
-        for (y in 0 until h) {
-            for (x in 0 until w) {
-                val tx = (x / tileSize).coerceIn(0, tilesX - 1)
-                val ty = (y / tileSize).coerceIn(0, tilesY - 1)
-                val tileIndex = ty * tilesX + tx
-                val srcY = yPlane[y * w + x]
-                yPlane[y * w + x] = lut[tileIndex][srcY]
-            }
-        }
-
-        val result = IntArray(w * h)
-        for (i in result.indices) {
-            val y = yPlane[i].coerceIn(0, 255)
-            val u = uPlane[i] - 128
-            val v = vPlane[i] - 128
-            val r = ((298 * y + 409 * v + 128) shr 8).coerceIn(0, 255)
-            val g = ((298 * y - 100 * u - 208 * v + 128) shr 8).coerceIn(0, 255)
-            val b = ((298 * y + 516 * u + 128) shr 8).coerceIn(0, 255)
-            result[i] = (0xFF shl 24) or (r shl 16) or (g shl 8) or b
-        }
+        val targetMin = 8
+        val targetMax = 240
+        val range = (lumMax - lumMin).coerceAtLeast(1)
+        val scaleFactor = (targetMax - targetMin).toFloat() / range
 
         val output = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        output.setPixels(result, 0, w, 0, 0, w, h)
+        for (i in pixels.indices) {
+            val r = (pixels[i] shr 16) and 0xFF
+            val g = (pixels[i] shr 8) and 0xFF
+            val b = pixels[i] and 0xFF
+            val lum = (r * 0.299f + g * 0.587f + b * 0.114f).toInt()
+            val newLum = ((lum - lumMin) * scaleFactor + targetMin).toInt().coerceIn(0, 255)
+            val ratio = if (lum > 0) newLum.toFloat() / lum else 1.0f
+            val nr = (r * ratio).toInt().coerceIn(0, 255)
+            val ng = (g * ratio).toInt().coerceIn(0, 255)
+            val nb = (b * ratio).toInt().coerceIn(0, 255)
+            pixels[i] = (0xFF shl 24) or (nr shl 16) or (ng shl 8) or nb
+        }
+        output.setPixels(pixels, 0, w, 0, 0, w, h)
         return output
     }
 

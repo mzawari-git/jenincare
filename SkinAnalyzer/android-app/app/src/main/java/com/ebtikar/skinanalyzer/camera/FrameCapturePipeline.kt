@@ -376,14 +376,22 @@ class FrameCapturePipeline @Inject constructor(
 
                     var filtered = ImageUtils.applySpectralFilter(bitmap, spectrum.name)
                     if (ImageUtils.isDarkSpectrum(spectrum.name)) {
-                        val clahe = ImageUtils.applyClaheEnhancement(filtered, 3.0f)
-                        val brightened = ImageUtils.ensureMinBrightness(clahe, 45)
-                        if (clahe !== filtered) clahe.recycle()
-                        if (filtered !== bitmap) filtered.recycle()
-                        filtered = brightened
+                        try {
+                            val enhanced = ImageUtils.applyClaheEnhancement(filtered, 2.0f)
+                            val brightened = ImageUtils.ensureMinBrightness(enhanced, 50)
+                            if (enhanced !== brightened) enhanced.recycle()
+                            filtered.recycle()
+                            filtered = brightened
+                        } catch (e: Exception) {
+                            Timber.w(e, "Enhancement failed for ${spectrum.name}, using spectral filter only")
+                        }
                     }
-                    val saved = ImageUtils.saveBitmap(filtered, frameFile)
+                    var saved = ImageUtils.saveBitmap(filtered, frameFile)
                     if (filtered !== bitmap) filtered.recycle()
+                    if (!saved || frameFile.length() == 0L) {
+                        Timber.w("Filtered frame ${spectrum.name} failed (saved=$saved, size=${frameFile.length()}), saving raw frame")
+                        saved = ImageUtils.saveBitmap(bitmap, frameFile)
+                    }
                     bitmap.recycle()
                     if (!saved) {
                         Timber.e("Failed to save frame ${spectrum.name} to ${frameFile.absolutePath}")
