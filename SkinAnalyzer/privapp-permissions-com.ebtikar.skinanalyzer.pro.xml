@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<permissions>
+    <privapp-permissions package="com.ebtikar.skinanalyzer.pro">
+        <permission name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+    </privapp-permissions>
+</permissions>

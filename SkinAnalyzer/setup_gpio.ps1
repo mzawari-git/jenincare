@@ -63,6 +63,18 @@ if ($hasAllFise) {
     Write-Host "[OK] All 5 FISE GPIO + LED master files present" -ForegroundColor Green
 } else {
     Write-Host "[WARNING] Some FISE files missing — raw GPIO fallback may be used" -ForegroundColor Yellow
+    # Diagnostic: list what /sys/class/fise* and /sys/class/gpio* actually contain
+    Write-Host ""
+    Write-Host "--- Diagnostic: /sys/class/fise* ---" -ForegroundColor DarkGray
+    adb -s $DeviceIp shell 'ls -la /sys/class/fise_* 2>/dev/null' 2>&1 | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
+    Write-Host "--- Diagnostic: /sys/class/gpio/ ---" -ForegroundColor DarkGray
+    adb -s $DeviceIp shell 'ls /sys/class/gpio/ 2>/dev/null' 2>&1 | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
+    Write-Host "--- Diagnostic: GPIO pin files ---" -ForegroundColor DarkGray
+    foreach ($pin in @(34, 149, 45, 54, 56)) {
+        $exists = adb -s $DeviceIp shell "test -f /sys/class/gpio/gpio$pin/value && echo yes || echo no" 2>&1
+        $dirExists = adb -s $DeviceIp shell "test -d /sys/class/gpio/gpio$pin && echo yes || echo no" 2>&1
+        Write-Host "  GPIO$pin: dir=$dirExists, value=$exists" -ForegroundColor DarkGray
+    }
 }
 
 # Step 6: Test ALL 8 LEDs (5 GPIO + 3 Serial)
@@ -100,20 +112,32 @@ foreach ($led in $ledTests) {
         $fiseFile = "/sys/class/fise_gpio$fiseIdx/level"
         $exists = adb -s $DeviceIp shell "test -f $fiseFile && echo yes || echo no" 2>&1
         if ($exists -match "yes") {
-            adb -s $DeviceIp shell "echo 0 > $fiseFile" 2>&1 | Out-Null  # ON (active LOW)
+            $writeResult = adb -s $DeviceIp shell "echo 0 > $fiseFile 2>&1; echo exit=$?" 2>&1
             Start-Sleep -Milliseconds 500
-            adb -s $DeviceIp shell "echo 1 > $fiseFile" 2>&1 | Out-Null  # OFF
-            $ok = $true
+            adb -s $DeviceIp shell "echo 1 > $fiseFile" 2>&1 | Out-Null
+            if ($writeResult -match "exit=0") {
+                $ok = $true
+            } else {
+                Write-Host " [FAIL write: $writeResult]" -ForegroundColor Red -NoNewline
+            }
         } elseif ($rawPin) {
             # Fallback to raw GPIO
             $rawFile = "/sys/class/gpio/gpio$rawPin/value"
             $rawExists = adb -s $DeviceIp shell "test -f $rawFile && echo yes || echo no" 2>&1
             if ($rawExists -match "yes") {
-                adb -s $DeviceIp shell "echo 0 > $rawFile" 2>&1 | Out-Null
+                $writeResult = adb -s $DeviceIp shell "echo 0 > $rawFile 2>&1; echo exit=$?" 2>&1
                 Start-Sleep -Milliseconds 500
                 adb -s $DeviceIp shell "echo 1 > $rawFile" 2>&1 | Out-Null
-                $ok = $true
+                if ($writeResult -match "exit=0") {
+                    $ok = $true
+                } else {
+                    Write-Host " [FAIL write: $writeResult]" -ForegroundColor Red -NoNewline
+                }
+            } else {
+                Write-Host " [no file: $rawFile]" -ForegroundColor Red -NoNewline
             }
+        } else {
+            Write-Host " [no FISE file: $fiseFile]" -ForegroundColor Red -NoNewline
         }
     } else {
         # Serial-only: log that serial is required

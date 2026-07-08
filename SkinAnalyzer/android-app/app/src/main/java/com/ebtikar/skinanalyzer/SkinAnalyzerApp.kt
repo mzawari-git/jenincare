@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.os.Build
 import androidx.work.Configuration
 import com.ebtikar.skinanalyzer.core.provider.AnalysisProviderManager
+import com.ebtikar.skinanalyzer.hardware.FiseGpioController
 import com.ebtikar.skinanalyzer.util.PreferencesManager
 import com.ebtikar.skinanalyzer.util.ScanReminderWorker
 import com.ebtikar.skinanalyzer.util.UpdateChecker
@@ -28,6 +29,9 @@ class SkinAnalyzerApp : Application(), Configuration.Provider {
 
     @Inject
     lateinit var updateChecker: UpdateChecker
+
+    @Inject
+    lateinit var fiseGpioController: FiseGpioController
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -68,6 +72,17 @@ class SkinAnalyzerApp : Application(), Configuration.Provider {
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Scan reminder scheduling failed")
+            }
+        }
+
+        CoroutineScope(Dispatchers.IO + kotlinx.coroutines.SupervisorJob()).launch {
+            try {
+                if (!fiseGpioController.isAvailable) {
+                    Timber.i("GPIO not available, attempting shell setup...")
+                    fiseGpioController.setupGpioViaShell()
+                }
+            } catch (e: Exception) {
+                Timber.w(e, "GPIO shell setup failed on startup")
             }
         }
 
