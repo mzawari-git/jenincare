@@ -143,7 +143,7 @@ class SpectrumController @Inject constructor(
             delay(spectrum.settlingWindowMs)
             onPhaseStart(spectrum)
 
-            delay(50)
+            delay(300)
             onPhaseComplete(spectrum, Result.success(Unit))
             results.add(spectrum)
 

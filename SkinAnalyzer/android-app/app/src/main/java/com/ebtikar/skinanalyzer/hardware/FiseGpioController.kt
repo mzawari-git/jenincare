@@ -36,15 +36,20 @@ class FiseGpioController @Inject constructor(
 
     init {
         checkSelinux()
-        val gpioOk = gpioFiles.all { it.exists() } && verifyWriteAccess()
-        val ledOk = ledFile.exists()
-        if (gpioOk || ledOk) {
+        val fiseFilesExist = gpioFiles.all { it.exists() } && ledFile.exists()
+        val fiseWriteOk = if (fiseFilesExist) verifyWriteAccess() else false
+        val fiseActuallyWorks = if (fiseWriteOk) testFiseWriteEffect() else false
+
+        if (fiseActuallyWorks) {
             _available = true
             _useRawGpio = false
             _statusMessage = "أضواء التشخيص جاهزة ✓ (FISE driver)"
-            Timber.i("FISE GPIO controller available: ${gpioFiles.size} channels, fise_gpio_exists=${gpioFiles.map { it.exists() }}, fise_led=$ledOk, SELinux=$selinuxEnforcing")
+            Timber.i("FISE GPIO controller VERIFIED: files exist, writable, AND writes take effect")
             turnAllOff()
         } else {
+            if (fiseFilesExist) {
+                Timber.w("FISE files exist but writes do NOT control LEDs — trying raw GPIO fallback")
+            }
             val rawOk = tryRawGpioSetup()
             if (rawOk) {
                 _available = true
@@ -54,15 +59,14 @@ class FiseGpioController @Inject constructor(
             } else {
                 _available = false
                 _useRawGpio = false
-                _statusMessage = "⚠️ أضواء التشخيص غير متصلة — FISE driver لا يوجد"
-                Timber.w("FISE GPIO controller not available (SELinux=$selinuxEnforcing)")
+                _statusMessage = "⚠️ أضواء التشخيص غير متصلة"
+                Timber.w("GPIO not available (FISE broken=$fiseFilesExist, raw failed)")
                 gpioFiles.forEach {
-                    Timber.w("  ${it.absolutePath}: exists=${it.exists()}, canWrite=${try { it.canWrite() } catch (_: Exception) { false }}")
+                    Timber.w("  ${it.absolutePath}: exists=${it.exists()}")
                 }
-                rawGpioFiles.forEachIndexed { i, f ->
-                    Timber.w("  ${f.absolutePath}: exists=${f.exists()}, canWrite=${try { f.canWrite() } catch (_: Exception) { false }}")
+                rawGpioFiles.forEach { f ->
+                    Timber.w("  ${f.absolutePath}: exists=${f.exists()}")
                 }
-                Timber.w("  ${ledFile.absolutePath}: exists=${ledFile.exists()}")
             }
         }
     }
@@ -185,6 +189,24 @@ class FiseGpioController @Inject constructor(
         return allOk && rawGpioFiles.all { it.exists() }
     }
 
+    private fun testFiseWriteEffect(): Boolean {
+        val testFile = gpioFiles[0]
+        if (!testFile.exists()) return false
+        return try {
+            testFile.writeText("0")
+            Thread.sleep(100)
+            val readback1 = testFile.readText().trim()
+            testFile.writeText("1")
+            Thread.sleep(100)
+            val readback2 = testFile.readText().trim()
+            Timber.i("FISE write-verify: write=0 read=$readback1, write=1 read=$readback2")
+            readback1 == "0" && readback2 == "1"
+        } catch (e: Exception) {
+            Timber.w("FISE write-verify FAILED: ${e.message}")
+            false
+        }
+    }
+
     private fun checkSelinux() {
         selinuxEnforcing = try {
             val enforceFile = File("/sys/fs/selinux/enforce")
@@ -253,70 +275,63 @@ class FiseGpioController @Inject constructor(
     fun setGpio(index: Int, on: Boolean): Boolean {
         if (index < 0 || index >= gpioFiles.size) return false
         val value = if (on) "0" else "1"  // Active LOW: 0=ON, 1=OFF
-        if (_useRawGpio) {
-            if (index >= rawGpioFiles.size) return false
+
+        if (index < rawGpioFiles.size && rawGpioFiles[index].exists()) {
             val file = rawGpioFiles[index]
-            if (!file.exists()) {
-                Timber.w("Raw GPIO pin ${rawGpioPins[index]} file does not exist: ${file.absolutePath}")
-                return false
-            }
-            return try {
+            try {
                 file.writeText(value)
                 val readback = try { file.readText().trim() } catch (_: Exception) { "?" }
-                Timber.i("Raw GPIO pin ${rawGpioPins[index]} -> ${if (on) "ON" else "OFF"} (wrote=$value, readback=$readback)")
-                true
+                if (readback == value) {
+                    Timber.i("Raw GPIO pin ${rawGpioPins[index]} -> ${if (on) "ON" else "OFF"} (wrote=$value, readback=$readback) OK")
+                    return true
+                }
+                Timber.w("Raw GPIO pin ${rawGpioPins[index]} wrote=$value but readback=$readback, trying FISE")
             } catch (e: Exception) {
-                Timber.e(e, "Failed to write raw GPIO pin ${rawGpioPins[index]}")
-                false
+                Timber.w("Raw GPIO pin ${rawGpioPins[index]} write failed: ${e.message}, trying FISE")
             }
-        } else {
-            val file = gpioFiles[index]
-            if (!file.exists()) {
-                Timber.w("FISE GPIO $index file does not exist: ${file.absolutePath}")
-                return false
-            }
-            return try {
-                file.writeText(value)
-                val readback = try { file.readText().trim() } catch (_: Exception) { "?" }
-                Timber.i("FISE GPIO $index -> ${if (on) "ON" else "OFF"} (wrote=$value, readback=$readback)")
-                true
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to write FISE GPIO $index (SELinux=$selinuxEnforcing)")
-                false
-            }
+        }
+
+        val file = gpioFiles[index]
+        if (!file.exists()) {
+            Timber.w("FISE GPIO $index file does not exist: ${file.absolutePath}")
+            return false
+        }
+        return try {
+            file.writeText(value)
+            val readback = try { file.readText().trim() } catch (_: Exception) { "?" }
+            Timber.i("FISE GPIO $index -> ${if (on) "ON" else "OFF"} (wrote=$value, readback=$readback)")
+            true
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to write FISE GPIO $index (SELinux=$selinuxEnforcing)")
+            false
         }
     }
 
     fun setMasterLed(on: Boolean): Boolean {
         val value = if (on) "0" else "1"
-        if (_useRawGpio) {
-            val rawLedFile = File("/sys/class/fise_led/level")
+        val rawLedFile = File("/sys/class/fise_led/level")
+        if (rawLedFile.exists()) {
             return try {
-                if (rawLedFile.exists()) {
-                    rawLedFile.writeText(value)
-                    Timber.i("Raw LED master -> ${if (on) "ON" else "OFF"} (wrote=$value)")
-                    true
-                } else {
-                    Timber.w("Raw LED master file does not exist: ${rawLedFile.absolutePath}")
-                    false
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to write raw LED master")
-                false
-            }
-        } else {
-            if (!ledFile.exists()) {
-                Timber.w("FISE LED master file does not exist: ${ledFile.absolutePath}")
-                return false
-            }
-            return try {
-                ledFile.writeText(value)
-                Timber.i("FISE LED master -> ${if (on) "ON" else "OFF"} (wrote=$value)")
+                rawLedFile.writeText(value)
+                val readback = try { rawLedFile.readText().trim() } catch (_: Exception) { "?" }
+                Timber.i("LED master -> ${if (on) "ON" else "OFF"} (wrote=$value, readback=$readback)")
                 true
             } catch (e: Exception) {
-                Timber.e(e, "Failed to write FISE LED master")
+                Timber.e(e, "Failed to write LED master")
                 false
             }
+        }
+        if (!ledFile.exists()) {
+            Timber.w("FISE LED master file does not exist: ${ledFile.absolutePath}")
+            return false
+        }
+        return try {
+            ledFile.writeText(value)
+            Timber.i("FISE LED master -> ${if (on) "ON" else "OFF"} (wrote=$value)")
+            true
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to write FISE LED master")
+            false
         }
     }
 
