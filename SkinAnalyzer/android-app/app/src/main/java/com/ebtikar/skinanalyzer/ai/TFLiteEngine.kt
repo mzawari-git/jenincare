@@ -25,7 +25,7 @@ class TFLiteEngine @Inject constructor(
     @Volatile private var activeDelegate: String = "none"
 
     data class ModelConfig(
-        val modelPath: String = "models/skin_segmentation_quantized.tflite",
+        val modelPath: String = "models/yyface-detect.tflite",
         val useGpuDelegate: Boolean = true,
         val useNnApiDelegate: Boolean = true,
         val fallbackToCpu: Boolean = true,
@@ -49,8 +49,8 @@ class TFLiteEngine @Inject constructor(
                     options.addDelegate(gpuDelegate)
                     activeDelegate = "GPU"
                     Timber.i("GPU delegate enabled for TFLite")
-                } catch (e: Exception) {
-                    Timber.w(e, "GPU delegate unavailable")
+                } catch (e: Throwable) {
+                    Timber.w("GPU delegate unavailable: ${e.message}")
                     gpuDelegate = null
                 }
             }
@@ -61,8 +61,8 @@ class TFLiteEngine @Inject constructor(
                     options.addDelegate(nnApiDelegate)
                     activeDelegate = "NNAPI"
                     Timber.i("NNAPI delegate enabled for TFLite")
-                } catch (e: Exception) {
-                    Timber.w(e, "NNAPI delegate unavailable")
+                } catch (e: Throwable) {
+                    Timber.w("NNAPI delegate unavailable: ${e.message}")
                     nnApiDelegate = null
                 }
             }
@@ -93,12 +93,18 @@ class TFLiteEngine @Inject constructor(
     fun isInitialized(): Boolean = isInitialized
 
     fun runInference(inputBuffer: ByteBuffer, outputBuffer: ByteBuffer) {
-        val interp = interpreter ?: throw IllegalStateException("TFLite engine not initialized")
+        val interp = interpreter ?: run {
+            Timber.e("TFLite runInference called but engine not initialized")
+            return
+        }
         interp.run(inputBuffer, outputBuffer)
     }
 
     fun runInferenceMultiple(inputs: Array<Any>, outputs: Map<Int, Any>) {
-        val interp = interpreter ?: throw IllegalStateException("TFLite engine not initialized")
+        val interp = interpreter ?: run {
+            Timber.e("TFLite runInferenceMultiple called but engine not initialized")
+            return
+        }
         interp.runForMultipleInputsOutputs(inputs, outputs)
     }
 
