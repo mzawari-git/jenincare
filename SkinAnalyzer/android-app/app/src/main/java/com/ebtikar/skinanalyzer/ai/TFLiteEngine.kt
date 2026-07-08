@@ -1,9 +1,8 @@
 package com.ebtikar.skinanalyzer.ai
 
 import android.content.Context
+import org.tensorflow.lite.Delegate
 import org.tensorflow.lite.Interpreter
-import org.tensorflow.lite.gpu.GpuDelegate
-import org.tensorflow.lite.nnapi.NnApiDelegate
 import timber.log.Timber
 import java.io.FileInputStream
 import java.nio.ByteBuffer
@@ -19,8 +18,6 @@ class TFLiteEngine @Inject constructor(
 ) {
 
     @Volatile private var interpreter: Interpreter? = null
-    @Volatile private var gpuDelegate: GpuDelegate? = null
-    @Volatile private var nnApiDelegate: NnApiDelegate? = null
     @Volatile private var isInitialized = false
     @Volatile private var activeDelegate: String = "none"
 
@@ -43,35 +40,35 @@ class TFLiteEngine @Inject constructor(
                 setNumThreads(config.numThreads)
             }
 
+            var delegateLoaded = false
+
             if (config.useGpuDelegate) {
                 try {
-                    gpuDelegate = GpuDelegate()
-                    options.addDelegate(gpuDelegate)
+                    val gpuDelegateClass = Class.forName("org.tensorflow.lite.gpu.GpuDelegate")
+                    val gpuDelegate = gpuDelegateClass.getDeclaredConstructor().newInstance()
+                    options.addDelegate(gpuDelegate as Delegate)
                     activeDelegate = "GPU"
+                    delegateLoaded = true
                     Timber.i("GPU delegate enabled for TFLite")
                 } catch (e: Throwable) {
                     Timber.w("GPU delegate unavailable: ${e.message}")
-                    gpuDelegate = null
                 }
             }
 
-            if (gpuDelegate == null && config.useNnApiDelegate) {
+            if (!delegateLoaded && config.useNnApiDelegate) {
                 try {
-                    nnApiDelegate = NnApiDelegate()
-                    options.addDelegate(nnApiDelegate)
+                    val nnApiDelegateClass = Class.forName("org.tensorflow.lite.nnapi.NnApiDelegate")
+                    val nnApiDelegate = nnApiDelegateClass.getDeclaredConstructor().newInstance()
+                    options.addDelegate(nnApiDelegate as Delegate)
                     activeDelegate = "NNAPI"
+                    delegateLoaded = true
                     Timber.i("NNAPI delegate enabled for TFLite")
                 } catch (e: Throwable) {
                     Timber.w("NNAPI delegate unavailable: ${e.message}")
-                    nnApiDelegate = null
                 }
             }
 
-            if (gpuDelegate == null && nnApiDelegate == null && !config.fallbackToCpu) {
-                return Result.failure(IllegalStateException("No hardware accelerator available"))
-            }
-
-            if (gpuDelegate == null && nnApiDelegate == null) {
+            if (!delegateLoaded) {
                 activeDelegate = "CPU"
                 Timber.i("Falling back to CPU for TFLite")
             }
@@ -82,9 +79,9 @@ class TFLiteEngine @Inject constructor(
             Timber.i("TFLite engine initialized: ${config.modelPath} (delegate: $activeDelegate)")
             Timber.i("Input shape: [1, ${config.inputHeight}, ${config.inputWidth}, ${config.inputChannels}]")
             Result.success(Unit)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Timber.e(e, "Failed to initialize TFLite engine")
-            Result.failure(e)
+            Result.failure(Exception(e.message, e))
         }
     }
 
@@ -125,10 +122,6 @@ class TFLiteEngine @Inject constructor(
     }
 
     fun shutdown() {
-        gpuDelegate?.close()
-        gpuDelegate = null
-        nnApiDelegate?.close()
-        nnApiDelegate = null
         interpreter?.close()
         interpreter = null
         isInitialized = false
