@@ -79,13 +79,19 @@
 adb logcat -s "FrameCapturePipeline:*" "CVUtils:*" "USBCameraManager:*" "FaceLandmarkDetector:*" "AnalysisViewModel:*"
 ```
 
-**Build & install commands:**
+**Build & deploy (auto-detect device):**
 ```powershell
+# Option 1: Use deploy.ps1 (auto-detects device IP)
+.\deploy.ps1
+
+# Option 2: Manual build + deploy
 cd android-app
 .\gradlew --stop
 .\gradlew assembleDebug --no-daemon
-adb -s 192.168.1.9:5555 push app\build\outputs\apk\debug\app-debug.apk /data/local/tmp/
-adb -s 192.168.1.9:5555 shell pm install -r /data/local/tmp/app-debug.apk
+# Auto-detect device and push:
+$device = (adb devices 2>&1 | Select-String "\d+\.\d+\.\d+\.\d+:\d+").Matches[0].Value
+adb -s $device push app\build\outputs\apk\debug\app-debug.apk /data/local/tmp/
+adb -s $device shell pm install -r /data/local/tmp/app-debug.apk
 ```
 
 ## Session Progress (2026-07-05)

@@ -1,17 +1,40 @@
 param(
-    [string]$DeviceIp = "192.168.1.9:5555"
+    [string]$DeviceIp = ""
 )
 
 Write-Host "SkinAnalyzer - GPIO + LED Setup Script" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Ensure ADB connection
-$r = adb connect $DeviceIp 2>&1
-if ($r -notmatch "connected") {
-    Write-Host "[FAIL] Cannot connect to $DeviceIp" -ForegroundColor Red
-    Write-Host "Make sure device is on and ADB over TCP/IP is enabled." -ForegroundColor Yellow
-    exit 1
+function Find-Device {
+    Write-Host "Scanning network for ADB devices..." -ForegroundColor Yellow
+    $devices = adb devices 2>&1 | Select-String -Pattern "\d+\.\d+\.\d+\.\d+:\d+" | ForEach-Object { ($_ -split "\s+")[0] }
+    if ($devices) {
+        Write-Host "[OK] Found: $($devices[0])" -ForegroundColor Green
+        return $devices[0]
+    }
+    $localIP = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike "127.*" -and $_.IPAddress -notlike "169.254.*" -and $_.IPAddress -notlike "100.*" } | Select-Object -First 1).IPAddress
+    if (-not $localIP) { Write-Host "[FAIL] Cannot determine local IP" -ForegroundColor Red; return $null }
+    $subnet = $localIP.Substring(0, $localIP.LastIndexOf('.'))
+    Write-Host "Scanning $subnet.x:5555..." -ForegroundColor DarkGray
+    $commonIPs = @("192.168.1.100:5555", "192.168.1.50:5555", "192.168.0.100:5555", "192.168.0.50:5555")
+    foreach ($ip in $commonIPs) {
+        $r = adb connect $ip 2>&1
+        if ($r -match "connected") { Write-Host "[OK] Found: $ip" -ForegroundColor Green; return $ip }
+    }
+    Write-Host "[FAIL] No device found" -ForegroundColor Red; return $null
+}
+
+if (-not $DeviceIp) {
+    $DeviceIp = Find-Device
+    if (-not $DeviceIp) { exit 1 }
+} else {
+    $r = adb connect $DeviceIp 2>&1
+    if ($r -notmatch "connected") {
+        Write-Host "Cannot connect to $DeviceIp, auto-detecting..." -ForegroundColor Yellow
+        $DeviceIp = Find-Device
+        if (-not $DeviceIp) { exit 1 }
+    }
 }
 Write-Host "[OK] Connected to $DeviceIp" -ForegroundColor Green
 Write-Host ""

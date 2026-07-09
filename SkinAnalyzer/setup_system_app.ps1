@@ -1,5 +1,5 @@
 param(
-    [string]$DeviceIp = "192.168.1.9:5555",
+    [string]$DeviceIp = "",
     [string]$ApkPath = "android-app\app\build\outputs\apk\debug\app-debug.apk"
 )
 
@@ -11,19 +11,42 @@ Write-Host "After this, the app can set up GPIO/LEDs automatically on boot." -Fo
 Write-Host "This only needs to be done ONCE." -ForegroundColor Yellow
 Write-Host ""
 
-# Ensure ADB connection
-Write-Host "Step 1/9: Connecting to device..." -ForegroundColor Yellow
-$r = adb connect $DeviceIp 2>&1
-if ($r -notmatch "connected") {
-    Write-Host "[FAIL] Cannot connect to $DeviceIp" -ForegroundColor Red
-    Write-Host "Make sure device is on and USB cable is connected." -ForegroundColor Yellow
-    exit 1
+function Find-Device {
+    Write-Host "Scanning network for ADB devices..." -ForegroundColor Yellow
+    $devices = adb devices 2>&1 | Select-String -Pattern "\d+\.\d+\.\d+\.\d+:\d+" | ForEach-Object { ($_ -split "\s+")[0] }
+    if ($devices) {
+        Write-Host "[OK] Found: $($devices[0])" -ForegroundColor Green
+        return $devices[0]
+    }
+    $localIP = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike "127.*" -and $_.IPAddress -notlike "169.254.*" -and $_.IPAddress -notlike "100.*" } | Select-Object -First 1).IPAddress
+    if (-not $localIP) { Write-Host "[FAIL] Cannot determine local IP" -ForegroundColor Red; return $null }
+    $subnet = $localIP.Substring(0, $localIP.LastIndexOf('.'))
+    Write-Host "Scanning $subnet.x:5555..." -ForegroundColor DarkGray
+    $commonIPs = @("192.168.1.100:5555", "192.168.1.50:5555", "192.168.0.100:5555", "192.168.0.50:5555")
+    foreach ($ip in $commonIPs) {
+        $r = adb connect $ip 2>&1
+        if ($r -match "connected") { Write-Host "[OK] Found: $ip" -ForegroundColor Green; return $ip }
+    }
+    Write-Host "[FAIL] No device found" -ForegroundColor Red; return $null
 }
+
+if (-not $DeviceIp) {
+    $DeviceIp = Find-Device
+    if (-not $DeviceIp) { exit 1 }
+} else {
+    $r = adb connect $DeviceIp 2>&1
+    if ($r -notmatch "connected") {
+        Write-Host "Cannot connect to $DeviceIp, auto-detecting..." -ForegroundColor Yellow
+        $DeviceIp = Find-Device
+        if (-not $DeviceIp) { exit 1 }
+    }
+}
+
 Write-Host "[OK] Connected to $DeviceIp" -ForegroundColor Green
 Write-Host ""
 
 # Verify APK exists
-Write-Host "Step 2/9: Verifying APK..." -ForegroundColor Yellow
+Write-Host "Step 1/8: Verifying APK..." -ForegroundColor Yellow
 $apkFull = Join-Path $PSScriptRoot $ApkPath
 if (-not (Test-Path $apkFull)) {
     Write-Host "[FAIL] APK not found at: $apkFull" -ForegroundColor Red
@@ -35,7 +58,7 @@ Write-Host "[OK] APK found ($([math]::Round($apkSize, 1)) MB)" -ForegroundColor 
 Write-Host ""
 
 # Get root access
-Write-Host "Step 3/9: Getting root access..." -ForegroundColor Yellow
+Write-Host "Step 2/8: Getting root access..." -ForegroundColor Yellow
 $rootResult = adb -s $DeviceIp root 2>&1
 if ($rootResult -match "adbd is already running as root") {
     Write-Host "[OK] Already running as root" -ForegroundColor Green
@@ -51,7 +74,7 @@ if ($rootResult -match "adbd is already running as root") {
 Write-Host ""
 
 # Remount /system as read-write
-Write-Host "Step 4/9: Remounting /system as read-write..." -ForegroundColor Yellow
+Write-Host "Step 3/8: Remounting /system as read-write..." -ForegroundColor Yellow
 $remountResult = adb -s $DeviceIp remount 2>&1
 if ($remountResult -match "remount succeeded" -or $remountResult -match "already remounted") {
     Write-Host "[OK] /system remounted as read-write" -ForegroundColor Green
@@ -64,14 +87,14 @@ if ($remountResult -match "remount succeeded" -or $remountResult -match "already
 Write-Host ""
 
 # Create directories
-Write-Host "Step 5/9: Creating directory structure..." -ForegroundColor Yellow
+Write-Host "Step 4/8: Creating directory structure..." -ForegroundColor Yellow
 adb -s $DeviceIp shell "mkdir -p /system/priv-app/SkinAnalyzer" 2>&1 | Out-Null
 adb -s $DeviceIp shell "mkdir -p /system/etc/permissions" 2>&1 | Out-Null
 Write-Host "[OK] Directories created" -ForegroundColor Green
 Write-Host ""
 
 # Push APK
-Write-Host "Step 6/9: Pushing APK to /system/priv-app/..." -ForegroundColor Yellow
+Write-Host "Step 5/8: Pushing APK to /system/priv-app/..." -ForegroundColor Yellow
 $pushResult = adb -s $DeviceIp push $apkFull /system/priv-app/SkinAnalyzer/SkinAnalyzer.apk 2>&1
 if ($pushResult -match "pushed") {
     Write-Host "[OK] APK pushed successfully" -ForegroundColor Green
@@ -82,7 +105,7 @@ if ($pushResult -match "pushed") {
 Write-Host ""
 
 # Push permissions XML
-Write-Host "Step 7/9: Pushing permissions whitelist..." -ForegroundColor Yellow
+Write-Host "Step 6/8: Pushing permissions whitelist..." -ForegroundColor Yellow
 $permXml = Join-Path $PSScriptRoot "privapp-permissions-com.ebtikar.skinanalyzer.pro.xml"
 if (-not (Test-Path $permXml)) {
     Write-Host "[FAIL] Permissions XML not found at: $permXml" -ForegroundColor Red
@@ -98,7 +121,7 @@ if ($pushPermResult -match "pushed") {
 Write-Host ""
 
 # Set permissions
-Write-Host "Step 8/9: Setting file permissions..." -ForegroundColor Yellow
+Write-Host "Step 7/8: Setting file permissions..." -ForegroundColor Yellow
 adb -s $DeviceIp shell "chmod 644 /system/priv-app/SkinAnalyzer/SkinAnalyzer.apk" 2>&1 | Out-Null
 adb -s $DeviceIp shell "chmod 644 /system/etc/permissions/privapp-permissions-com.ebtikar.skinanalyzer.pro.xml" 2>&1 | Out-Null
 adb -s $DeviceIp shell "chown root:root /system/priv-app/SkinAnalyzer/SkinAnalyzer.apk" 2>&1 | Out-Null
@@ -107,7 +130,7 @@ Write-Host "[OK] Permissions set" -ForegroundColor Green
 Write-Host ""
 
 # Uninstall user version if exists (prevents conflict)
-Write-Host "Step 9/9: Cleaning up existing installation..." -ForegroundColor Yellow
+Write-Host "Step 8/8: Cleaning up existing installation..." -ForegroundColor Yellow
 $pmPath = adb -s $DeviceIp shell "pm path com.ebtikar.skinanalyzer.pro" 2>&1
 if ($pmPath -match "/data/app/") {
     Write-Host "Found user-installed version, removing..." -ForegroundColor Yellow
