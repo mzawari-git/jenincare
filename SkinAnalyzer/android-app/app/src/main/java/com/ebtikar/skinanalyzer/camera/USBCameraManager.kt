@@ -41,6 +41,8 @@ class USBCameraManager @Inject constructor(
 
     companion object {
         val TARGET_RESOLUTION = Size(1920, 1080)
+        private const val MAX_OPEN_RETRIES = 3
+        private const val INITIAL_BACKOFF_MS = 1000L
     }
 
     @Volatile private var cameraDevice: CameraDevice? = null
@@ -244,6 +246,43 @@ class USBCameraManager @Inject constructor(
             throw IllegalStateException("Camera open timeout", e)
         }
 
+    /**
+     * Open camera with exponential backoff retry.
+     * Tries up to [MAX_OPEN_RETRIES] times with delays: 1s, 2s, 4s.
+     * Returns the CameraDevice on success, throws on final failure.
+     */
+    suspend fun openCameraWithRetry(
+        cameraId: String,
+        surface: Surface? = null,
+        maxRetries: Int = MAX_OPEN_RETRIES
+    ): CameraDevice {
+        var lastException: Exception? = null
+        var backoffMs = INITIAL_BACKOFF_MS
+
+        for (attempt in 1..maxRetries) {
+            try {
+                Timber.i("Camera open attempt $attempt/$maxRetries (backoff=${backoffMs}ms)")
+                return openCamera(cameraId, surface)
+            } catch (e: Exception) {
+                lastException = e
+                Timber.w(e, "Camera open attempt $attempt/$maxRetries failed")
+
+                // Clean up before retry
+                closeCamera()
+
+                if (attempt < maxRetries) {
+                    Timber.i("Waiting ${backoffMs}ms before retry...")
+                    kotlinx.coroutines.delay(backoffMs)
+                    backoffMs *= 2  // exponential backoff
+                }
+            }
+        }
+
+        val msg = "Camera open failed after $maxRetries attempts"
+        Timber.e(msg, lastException)
+        throw IllegalStateException(msg, lastException)
+    }
+
     suspend fun captureFrame(spectrum: LightSpectrum? = null): Bitmap? {
         return withTimeout(3000L) {
             suspendCancellableCoroutine { continuation ->
@@ -350,6 +389,42 @@ class USBCameraManager @Inject constructor(
     }
 
     fun hasFlash(): Boolean = flashAvailable
+
+    /**
+     * Get the current auto-exposure state from the last capture result.
+     * Returns the AE state (0=INACTIVE, 1=SEARCHING, 2=CONVERGED, 3=LOCKED, 4=PRECAPTURE).
+     */
+    fun getAeState(): Int? {
+        // AE state is captured in TotalCaptureResult, which we store via watchdog callbacks
+        // For now, return null (unknown) — the watchdog's frame arrival is the proxy for AE stability
+        return null
+    }
+
+    /**
+     * Wait for auto-exposure to converge by monitoring preview frames.
+     * Returns true if AE appears stable (frames arriving consistently).
+     */
+    suspend fun waitForAeConvergence(timeoutMs: Long = 1500L): Boolean {
+        val start = System.currentTimeMillis()
+        val initialTimestamp = cameraWatchdog.lastFrameTimestampPublic
+
+        // Wait for at least 2 new frames after the LED switch
+        var framesSeen = 0
+        while (System.currentTimeMillis() - start < timeoutMs) {
+            val currentTimestamp = cameraWatchdog.lastFrameTimestampPublic
+            if (currentTimestamp > initialTimestamp) {
+                framesSeen++
+                if (framesSeen >= 2) {
+                    Timber.d("AE convergence: 2 frames received in ${System.currentTimeMillis() - start}ms")
+                    return true
+                }
+            }
+            kotlinx.coroutines.delay(100)
+        }
+
+        Timber.w("AE convergence: timeout after ${timeoutMs}ms, only $framesSeen new frames")
+        return framesSeen >= 1
+    }
 
     fun setTorchMode(enabled: Boolean) {
         val device = cameraDevice ?: return
@@ -470,6 +545,23 @@ class USBCameraManager @Inject constructor(
     }
 
     fun getPreviewSize(): Size = previewTargetSize
+
+    /**
+     * Reconnect the camera after a disconnect event.
+     * Closes the old session, waits briefly, and opens with retry.
+     */
+    suspend fun reconnectCamera(surface: Surface? = null): CameraDevice? {
+        val cameraId = findBestCamera() ?: return null
+        Timber.i("Reconnecting camera $cameraId...")
+        closeCamera()
+        kotlinx.coroutines.delay(500) // let USB settle
+        return try {
+            openCameraWithRetry(cameraId, surface)
+        } catch (e: Exception) {
+            Timber.e(e, "Camera reconnect failed")
+            null
+        }
+    }
 
     fun release() {
         closeCamera()

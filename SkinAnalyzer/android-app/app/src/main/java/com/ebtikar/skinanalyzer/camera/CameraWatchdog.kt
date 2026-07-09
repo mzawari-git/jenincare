@@ -50,6 +50,9 @@ class CameraWatchdog @Inject constructor(
 
     private val handler = Handler(Looper.getMainLooper())
     private val lastFrameTimestamp = AtomicLong(0L)
+
+    /** Public read access for AE convergence checks */
+    val lastFrameTimestampPublic: Long get() = lastFrameTimestamp.get()
     private val consecutiveTimeouts = AtomicLong(0)
     private val listeners = CopyOnWriteArrayList<WatchdogListener>()
 

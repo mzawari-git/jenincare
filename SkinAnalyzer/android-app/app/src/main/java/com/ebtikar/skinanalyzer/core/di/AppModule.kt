@@ -12,6 +12,7 @@ import com.ebtikar.skinanalyzer.hardware.SpectrumController
 import com.ebtikar.skinanalyzer.camera.FrameCapturePipeline
 import com.ebtikar.skinanalyzer.camera.USBCameraManager
 import com.ebtikar.skinanalyzer.camera.CameraWatchdog
+import com.ebtikar.skinanalyzer.camera.FrameValidator
 import com.ebtikar.skinanalyzer.ai.TFLiteEngine
 import com.ebtikar.skinanalyzer.ai.FaceLandmarkDetector
 import com.ebtikar.skinanalyzer.ai.FeatureExtractor
@@ -56,6 +57,12 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideFrameValidator(): FrameValidator {
+        return FrameValidator()
+    }
+
+    @Provides
+    @Singleton
     fun provideUSBCameraManager(@ApplicationContext context: Context, cameraWatchdog: CameraWatchdog): USBCameraManager {
         return USBCameraManager(context, cameraWatchdog)
     }
@@ -68,9 +75,10 @@ object AppModule {
         serialBusManager: SerialBusManager,
         faceDetector: FaceLandmarkDetector,
         fiseGpioController: FiseGpioController,
-        preferencesManager: PreferencesManager
+        preferencesManager: PreferencesManager,
+        frameValidator: FrameValidator
     ): FrameCapturePipeline {
-        return FrameCapturePipeline(spectrumController, cameraManager, serialBusManager, faceDetector, fiseGpioController, preferencesManager)
+        return FrameCapturePipeline(spectrumController, cameraManager, serialBusManager, faceDetector, fiseGpioController, preferencesManager, frameValidator)
     }
 
     @Provides

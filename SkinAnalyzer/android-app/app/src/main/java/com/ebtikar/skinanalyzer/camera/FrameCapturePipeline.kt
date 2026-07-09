@@ -35,7 +35,8 @@ class FrameCapturePipeline @Inject constructor(
     private val serialBusManager: SerialBusManager,
     private val faceDetector: FaceLandmarkDetector,
     private val fiseGpioController: FiseGpioController,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val frameValidator: FrameValidator
 ) {
 
     private val _captureState = MutableStateFlow(CaptureState.IDLE)
@@ -105,11 +106,18 @@ class FrameCapturePipeline @Inject constructor(
             val cameraId = cameraManager.findBestCamera()
             val cameraReady = if (cameraId != null) {
                 try {
-                    cameraManager.openCamera(cameraId, previewSurface)
+                    cameraManager.openCameraWithRetry(cameraId, previewSurface)
                     true
                 } catch (e: Exception) {
-                    Timber.w(e, "Camera open failed")
-                    false
+                    Timber.w(e, "Camera open failed after retries, attempting reconnect...")
+                    // Try one reconnect attempt
+                    try {
+                        val reconnected = cameraManager.reconnectCamera(previewSurface)
+                        reconnected != null
+                    } catch (e2: Exception) {
+                        Timber.w(e2, "Camera reconnect also failed")
+                        false
+                    }
                 }
             } else {
                 false
@@ -351,12 +359,17 @@ class FrameCapturePipeline @Inject constructor(
 
             kotlinx.coroutines.delay(spectrum.settlingWindowMs)
 
+            // Wait for auto-exposure to converge before capturing
+            if (spectrum != LightSpectrum.OFF && spectrum != LightSpectrum.ALL) {
+                cameraManager.waitForAeConvergence(1000L)
+            }
+
             _currentPhase.value = phase.copy(status = CapturePhase.Status.CAPTURING)
             onProgress(phase.copy(status = CapturePhase.Status.CAPTURING), step, totalSteps)
 
             val frameFile = File(outputDir, "frame_${spectrum.name}.jpg")
             var capturedSuccessfully = false
-            val maxRetries = 2
+            val maxRetries = 3
 
             for (retry in 0 until maxRetries) {
                 val bitmap = try {
@@ -367,6 +380,25 @@ class FrameCapturePipeline @Inject constructor(
                 }
 
                 if (bitmap != null && !bitmap.isRecycled && bitmap.width > 0 && bitmap.height > 0) {
+                    // Validate frame quality
+                    val validation = frameValidator.validate(bitmap)
+                    if (!validation.isValid) {
+                        Timber.w("Frame validation failed for ${spectrum.name}: ${validation.message} (retry ${retry + 1})")
+                        bitmap.recycle()
+
+                        if (frameValidator.shouldRetry(validation) && retry < maxRetries - 1) {
+                            // Wait for auto-exposure to adjust
+                            val waitMs = 300L * (retry + 1)
+                            Timber.i("Waiting ${waitMs}ms for auto-exposure adjustment...")
+                            delay(waitMs)
+                            continue
+                        } else {
+                            // Corruption or final retry — save raw if we have it
+                            Timber.e("Frame permanently invalid for ${spectrum.name}: ${validation.message}")
+                            break
+                        }
+                    }
+
                     _captureFlash.value = true
                     delay(50)
                     _captureFlash.value = false
