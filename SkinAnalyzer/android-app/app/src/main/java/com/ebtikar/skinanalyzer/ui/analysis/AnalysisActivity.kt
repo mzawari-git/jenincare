@@ -230,8 +230,15 @@ class AnalysisActivity : BaseCameraActivity() {
     private fun setupUI() {
         capturePipeline.reset()
         binding.btnCancelScan.setOnClickListener {
-            viewModel.abortAnalysis()
-            finish()
+            android.app.AlertDialog.Builder(this)
+                .setTitle("إلغاء الفحص")
+                .setMessage("هل أنت متأكد من إلغاء الفحص الحالي؟ لن يتم حفظ النتائج.")
+                .setPositiveButton("نعم، إلغاء") { _, _ ->
+                    viewModel.abortAnalysis()
+                    finish()
+                }
+                .setNegativeButton("استمرار", null)
+                .show()
         }
         binding.btnViewReport.setOnClickListener {
             navigateToReport()
@@ -323,6 +330,36 @@ class AnalysisActivity : BaseCameraActivity() {
                 launch {
                     viewModel.currentSpectrumName.collect { name ->
                         binding.tvCurrentSpectrum.text = name
+                    }
+                }
+
+                launch {
+                    viewModel.ledTestStatus.collect { status ->
+                        if (status.isNotEmpty()) {
+                            binding.tvLedStatus.text = status
+                            binding.tvLedStatus.visibility = android.view.View.VISIBLE
+                        } else {
+                            binding.tvLedStatus.visibility = android.view.View.GONE
+                        }
+                    }
+                }
+
+                launch {
+                    viewModel.ledHardwareStatus.collect { hwStatus ->
+                        if (hwStatus.isNotEmpty()) {
+                            val gpioCount = hwStatus.values.count { it == "GPIO" }
+                            val serialCount = hwStatus.values.count { it == "Serial" }
+                            val unavailableCount = hwStatus.values.count { it == "Unavailable" }
+                            val detail = buildString {
+                                if (gpioCount > 0) append("GPIO:$gpioCount")
+                                if (serialCount > 0) { if (isNotEmpty()) append(" | "); append("Serial:$serialCount") }
+                                if (unavailableCount > 0) { if (isNotEmpty()) append(" | "); append("⚠:$unavailableCount") }
+                            }
+                            if (detail.isNotEmpty()) {
+                                binding.tvLedStatus.text = detail
+                                binding.tvLedStatus.visibility = android.view.View.VISIBLE
+                            }
+                        }
                     }
                 }
 

@@ -193,7 +193,18 @@
             android:layout_width="match_parent"
             android:layout_height="8dp"
             android:max="100"
-            android:layout_marginBottom="8dp" />
+            android:layout_marginBottom="4dp" />
+
+        <!-- LED Status -->
+        <TextView
+            android:id="@+id/tvLedStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textColor="#80FFFFFF"
+            android:textSize="10sp"
+            android:layout_marginBottom="4dp"
+            android:visibility="gone" />
 
         <!-- Thumbnails -->
         <androidx.cardview.widget.CardView

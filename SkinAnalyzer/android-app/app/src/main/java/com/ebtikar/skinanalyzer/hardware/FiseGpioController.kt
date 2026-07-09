@@ -305,21 +305,22 @@ class FiseGpioController @Inject constructor(
 
     private fun shellWrite(path: String, value: String): Boolean {
         return try {
-            val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo $value > $path"))
-            val exit = process.waitFor()
-            exit == 0
+            val file = File(path)
+            file.writeText(value)
+            true
         } catch (e: Exception) {
+            Timber.w("Direct write failed for $path: ${e.message}")
             false
         }
     }
 
     private fun shellRead(path: String): String {
         return try {
-            val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", "cat $path"))
-            val result = process.inputStream.bufferedReader().readText().trim()
-            process.waitFor()
-            result
-        } catch (_: Exception) { "?" }
+            File(path).readText().trim()
+        } catch (e: Exception) {
+            Timber.w("Direct read failed for $path: ${e.message}")
+            "?"
+        }
     }
 
     fun setGpio(index: Int, on: Boolean): Boolean {
