@@ -703,8 +703,10 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
 
     override suspend fun deleteReport(id: String) {
         reportDao.deleteReport(id)
-        val captureDir = File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DCIM), "Jenincare/$id")
-        if (captureDir.exists()) captureDir.deleteRecursively()
+        val dcimDir = File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DCIM), "Jenincare/$id")
+        val internalDir = File(context.filesDir, "captures/$id")
+        if (dcimDir.exists()) dcimDir.deleteRecursively()
+        if (internalDir.exists()) internalDir.deleteRecursively()
     }
 
     override suspend fun getReportCount(): Int {
@@ -712,7 +714,10 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
     }
 
     override fun getCapturedImages(reportId: String): Map<LightSpectrum, File> {
-        val captureDir = File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DCIM), "Jenincare/$reportId")
+        // Try DCIM first, then internal storage fallback
+        val dcimDir = File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DCIM), "Jenincare/$reportId")
+        val internalDir = File(context.filesDir, "captures/$reportId")
+        val captureDir = if (dcimDir.exists()) dcimDir else internalDir
         Timber.d("getCapturedImages: dir=$captureDir, exists=${captureDir.exists()}")
         if (!captureDir.exists()) return emptyMap()
 

@@ -66,9 +66,10 @@ class AdvancedSkinAnalyzer @Inject constructor(
         }
 
         if (whiteBitmap == null || whiteBitmap.width < 10 || whiteBitmap.height < 10) {
-            Timber.w("White bitmap too small or null — cannot perform analysis")
+            Timber.w("White bitmap too small or null — falling back to simple analysis")
             whiteBitmap?.recycle()
-            return@withContext emptyMap()
+            val fallbackResult = fallbackSimpleAnalysis(frames, null)
+            return@withContext fallbackResult
         }
 
         val faceMesh = try { whiteBitmap?.let { faceMeshDetector.detect(it) } } catch (e: Exception) {
@@ -76,9 +77,10 @@ class AdvancedSkinAnalyzer @Inject constructor(
             null
         }
         if (faceMesh == null) {
-            Timber.w("No face mesh detected — cannot perform advanced analysis")
+            Timber.w("No face mesh detected — falling back to simple analysis")
+            val fallbackResult = fallbackSimpleAnalysis(frames, whiteBitmap)
             whiteBitmap?.recycle()
-            return@withContext emptyMap()
+            return@withContext fallbackResult
         }
 
         Timber.i("Face mesh: ${faceMesh.landmarks.size} landmarks, confidence=${faceMesh.confidence}")
@@ -111,9 +113,11 @@ class AdvancedSkinAnalyzer @Inject constructor(
         }
 
         if (metrics.isEmpty()) {
+            Timber.w("Advanced analysis produced no metrics, falling back to simple analysis")
+            val fallbackResult = fallbackSimpleAnalysis(frames, whiteBitmap)
             regions.values.forEach { it.bitmap?.recycle() }
             whiteBitmap?.recycle()
-            return@withContext emptyMap()
+            return@withContext fallbackResult
         }
 
         val fusedMetrics = crossSpectrumFusion(metrics, spectrumScores)

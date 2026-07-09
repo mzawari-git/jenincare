@@ -8,6 +8,10 @@ import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.media.ExifInterface
 import android.graphics.SurfaceTexture
+import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.Settings
 import com.ebtikar.skinanalyzer.ai.CVUtils
 import java.io.File
 import android.os.Bundle
@@ -96,8 +100,14 @@ class AnalysisActivity : BaseCameraActivity() {
             Timber.i("Camera permission not granted, requesting...")
             binding.tvScanInstruction.text = "مطلوب إذن الكاميرا للمسح"
             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
+            Timber.i("MANAGE_EXTERNAL_STORAGE not granted, requesting...")
+            binding.tvScanInstruction.text = "مطلوب إذن التخزين لحفظ الصور"
+            storagePermissionLauncher.launch(Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                data = Uri.parse("package:$packageName")
+            })
         } else {
-            Timber.i("Camera permission already granted")
+            Timber.i("All permissions already granted")
             setupCameraPreview()
         }
     }
@@ -106,10 +116,26 @@ class AnalysisActivity : BaseCameraActivity() {
         if (granted) {
             Timber.i("Camera permission granted by user")
             binding.tvScanInstruction.text = "جاري تهيئة الكاميرا..."
-            setupCameraPreview()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
+                storagePermissionLauncher.launch(Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                    data = Uri.parse("package:$packageName")
+                })
+            } else {
+                setupCameraPreview()
+            }
         } else {
             Timber.w("Camera permission denied by user")
             binding.tvScanInstruction.text = "لا يمكن بدء المسح بدون إذن الكاميرا"
+        }
+    }
+
+    private val storagePermissionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager()) {
+            Timber.i("MANAGE_EXTERNAL_STORAGE granted")
+            setupCameraPreview()
+        } else {
+            Timber.w("MANAGE_EXTERNAL_STORAGE denied, using internal storage fallback")
+            setupCameraPreview()
         }
     }
 

@@ -308,7 +308,24 @@ class AnalysisViewModel @Inject constructor(
         analysisJob = viewModelScope.launch {
             _statusMessage.value = "Initializing analysis..."
 
-            val outputDir = File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DCIM), "Jenincare/$reportId")
+            val outputDir = try {
+                val dcimDir = File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DCIM), "Jenincare/$reportId")
+                if (!dcimDir.exists()) dcimDir.mkdirs()
+                if (dcimDir.exists() && dcimDir.canWrite()) {
+                    Timber.i("Using DCIM path: ${dcimDir.absolutePath}")
+                    dcimDir
+                } else {
+                    val fallbackDir = File(context.filesDir, "captures/$reportId")
+                    fallbackDir.mkdirs()
+                    Timber.w("DCIM not writable, falling back to: ${fallbackDir.absolutePath}")
+                    fallbackDir
+                }
+            } catch (e: Exception) {
+                val fallbackDir = File(context.filesDir, "captures/$reportId")
+                fallbackDir.mkdirs()
+                Timber.w(e, "DCIM path failed, falling back to: ${fallbackDir.absolutePath}")
+                fallbackDir
+            }
 
             val captureResult = repository.startAnalysis(outputDir, diagnosisMode, previewSurface)
 
@@ -376,14 +393,19 @@ class AnalysisViewModel @Inject constructor(
 
     private fun cleanupOldCaptures() {
         try {
-            val capturesDir = File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DCIM), "Jenincare")
-            if (!capturesDir.exists()) return
-            val dirs = capturesDir.listFiles()?.filter { it.isDirectory }?.sortedBy { it.lastModified() } ?: return
-            val maxDirs = 10
-            if (dirs.size > maxDirs) {
-                dirs.take(dirs.size - maxDirs).forEach { dir ->
-                    dir.deleteRecursively()
-                    Timber.d("Cleaned up old capture dir: ${dir.name}")
+            // Clean DCIM captures
+            val dcimCaptures = File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DCIM), "Jenincare")
+            // Clean internal captures
+            val internalCaptures = File(context.filesDir, "captures")
+            for (capturesDir in listOf(dcimCaptures, internalCaptures)) {
+                if (!capturesDir.exists()) continue
+                val dirs = capturesDir.listFiles()?.filter { it.isDirectory }?.sortedBy { it.lastModified() } ?: continue
+                val maxDirs = 10
+                if (dirs.size > maxDirs) {
+                    dirs.take(dirs.size - maxDirs).forEach { dir ->
+                        dir.deleteRecursively()
+                        Timber.d("Cleaned up old capture dir: ${dir.name}")
+                    }
                 }
             }
         } catch (e: Exception) {
