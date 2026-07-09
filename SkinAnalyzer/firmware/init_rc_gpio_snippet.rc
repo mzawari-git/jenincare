@@ -1,0 +1,86 @@
+# =============================================================================
+# JeninCare Skin Analyzer — GPIO Init Script for ZMLH02 Firmware
+# =============================================================================
+# Add this to: /vendor/etc/init/hw/init.zmlh02.rc (or init.rk3399.rc)
+# This runs BEFORE any app starts, with root privileges.
+# =============================================================================
+
+# --- FISE GPIO Setup for LED Ring (8-spectrum skin analyzer) ---
+# Called automatically on boot, no ADB or human intervention needed.
+
+on post-fs
+    # Wait for kernel GPIO subsystem
+    wait /sys/class/gpio/export 10
+
+    # Unbind FISE driver to release pinctrl claims on GPIO pins
+    write /sys/bus/platform/drivers/fise_gpio/unbind "fise_gpio"
+    sleep 1
+
+    # Export GPIO pins for LED control (Active LOW: 0=ON, 1=OFF)
+    # GPIO34  = WHITE LED
+    # GPIO149 = UV365 LED
+    # GPIO45  = WOODS LED
+    # GPIO54  = POL_P LED (Cross-Polarized)
+    # GPIO56  = POL_N LED (Parallel-Polarized)
+    write /sys/class/gpio/export "34"
+    write /sys/class/gpio/export "149"
+    write /sys/class/gpio/export "45"
+    write /sys/class/gpio/export "54"
+    write /sys/class/gpio/export "56"
+    sleep 1
+
+    # Set direction to output
+    write /sys/class/gpio/gpio34/direction "out"
+    write /sys/class/gpio/gpio149/direction "out"
+    write /sys/class/gpio/gpio45/direction "out"
+    write /sys/class/gpio/gpio54/direction "out"
+    write /sys/class/gpio/gpio56/direction "out"
+
+    # All LEDs OFF by default (active LOW: 1=OFF)
+    write /sys/class/gpio/gpio34/value "1"
+    write /sys/class/gpio/gpio149/value "1"
+    write /sys/class/gpio/gpio45/value "1"
+    write /sys/class/gpio/gpio54/value "1"
+    write /sys/class/gpio/gpio56/value "1"
+
+    # Grant app read/write access (chmod 666 = rw-rw-rw-)
+    chmod 0666 /sys/class/gpio/gpio34/value
+    chmod 0666 /sys/class/gpio/gpio34/direction
+    chmod 0666 /sys/class/gpio/gpio149/value
+    chmod 0666 /sys/class/gpio/gpio149/direction
+    chmod 0666 /sys/class/gpio/gpio45/value
+    chmod 0666 /sys/class/gpio/gpio45/direction
+    chmod 0666 /sys/class/gpio/gpio54/value
+    chmod 0666 /sys/class/gpio/gpio54/direction
+    chmod 0666 /sys/class/gpio/gpio56/value
+    chmod 0666 /sys/class/gpio/gpio56/direction
+
+    # Rebind FISE driver (optional, only if FISE sysfs interface is needed)
+    # write /sys/bus/platform/drivers/fise_gpio/bind "fise_gpio"
+
+    # Log success
+    log -t ZMLH02_GPIO "GPIO export complete: 34(WHITE) 149(UV) 45(WOODS) 54(POL_P) 56(POL_N) — all OFF"
+
+# =============================================================================
+# Alternative: Shell script approach (if init.rc write commands don't work)
+# Place as: /vendor/bin/setup_gpio.sh
+# Add to init.rc: exec /vendor/bin/setup_gpio.sh
+# =============================================================================
+
+# #!/system/bin/sh
+# PINS="34 149 45 54 56"
+# echo "ZMLH02: Setting up GPIO for LED ring..."
+# echo fise_gpio > /sys/bus/platform/drivers/fise_gpio/unbind 2>/dev/null
+# sleep 1
+# for pin in $PINS; do
+#     echo $pin > /sys/class/gpio/export 2>/dev/null
+#     sleep 0.1
+# done
+# sleep 1
+# for pin in $PINS; do
+#     echo out > /sys/class/gpio/gpio${pin}/direction 2>/dev/null
+#     echo 1 > /sys/class/gpio/gpio${pin}/value 2>/dev/null
+#     chmod 666 /sys/class/gpio/gpio${pin}/value 2>/dev/null
+#     chmod 666 /sys/class/gpio/gpio${pin}/direction 2>/dev/null
+# done
+# echo "ZMLH02: GPIO setup complete"

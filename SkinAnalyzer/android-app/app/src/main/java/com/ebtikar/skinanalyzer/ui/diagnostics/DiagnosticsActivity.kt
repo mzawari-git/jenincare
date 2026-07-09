@@ -13,6 +13,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import com.ebtikar.skinanalyzer.R
 import com.ebtikar.skinanalyzer.camera.USBCameraManager
+import com.ebtikar.skinanalyzer.camera.CameraWatchdog
 import com.ebtikar.skinanalyzer.databinding.ActivityDiagnosticsBinding
 import com.ebtikar.skinanalyzer.hardware.FiseGpioController
 import com.ebtikar.skinanalyzer.hardware.LightSpectrum
@@ -39,6 +40,7 @@ class DiagnosticsActivity : AppCompatActivity() {
     @Inject lateinit var serialBusManager: SerialBusManager
     @Inject lateinit var networkMonitor: NetworkMonitor
     @Inject lateinit var cameraManager: USBCameraManager
+    @Inject lateinit var cameraWatchdog: CameraWatchdog
     @Inject lateinit var fiseGpioController: FiseGpioController
     @Inject lateinit var spectrumController: SpectrumController
 
@@ -87,6 +89,24 @@ class DiagnosticsActivity : AppCompatActivity() {
 
     private fun setupUI() {
         binding.btnBack.setOnClickListener { finish() }
+
+        // LED Control Buttons
+        binding.btnLedWhite.setOnClickListener { toggleSpectrum(LightSpectrum.WHITE, it as com.google.android.material.button.MaterialButton) }
+        binding.btnLedUv.setOnClickListener { toggleSpectrum(LightSpectrum.UV365, it as com.google.android.material.button.MaterialButton) }
+        binding.btnLedCross.setOnClickListener { toggleSpectrum(LightSpectrum.POL_N, it as com.google.android.material.button.MaterialButton) }
+        binding.btnLedParallel.setOnClickListener { toggleSpectrum(LightSpectrum.POL_P, it as com.google.android.material.button.MaterialButton) }
+        binding.btnLedWoods.setOnClickListener { toggleSpectrum(LightSpectrum.WOODS, it as com.google.android.material.button.MaterialButton) }
+        binding.btnLedBlue.setOnClickListener { toggleSpectrum(LightSpectrum.BLUE, it as com.google.android.material.button.MaterialButton) }
+        binding.btnLedRed.setOnClickListener { toggleSpectrum(LightSpectrum.RED, it as com.google.android.material.button.MaterialButton) }
+        binding.btnLedBrown.setOnClickListener { toggleSpectrum(LightSpectrum.BROWN, it as com.google.android.material.button.MaterialButton) }
+        
+        binding.btnLedOff.setOnClickListener {
+            scope.launch {
+                spectrumController.activate(LightSpectrum.OFF)
+                resetLedButtonStyles()
+                appendLog("→ تم إطفاء جميع الأضواء")
+            }
+        }
 
         binding.btnRefresh.setOnClickListener {
             appendLog("→ تحديث الحالة...")
@@ -205,6 +225,9 @@ class DiagnosticsActivity : AppCompatActivity() {
             appendLine("Camera: ${camId ?: "not found"}")
             appendLine("Ready: ${cameraManager.isReady}")
             appendLine()
+            appendLine("--- Camera Watchdog ---")
+            appendLine(cameraWatchdog.getStatusSummary())
+            appendLine()
             appendLine("--- Network ---")
             appendLine("Online: ${networkMonitor.isOnline()}")
             appendLine()
@@ -254,6 +277,7 @@ class DiagnosticsActivity : AppCompatActivity() {
         updateNetworkStatus()
         updateGpioStatus()
         updateCameraStatus()
+        updateCameraWatchdogStatus()
         updateAIStatus()
         updateLiveStats()
     }
@@ -302,6 +326,19 @@ class DiagnosticsActivity : AppCompatActivity() {
         }
     }
 
+    private fun updateCameraWatchdogStatus() {
+        val healthy = cameraWatchdog.isHealthy
+        val timeouts = cameraWatchdog.currentConsecutiveTimeouts
+        val totalEvents = cameraWatchdog.totalTimeoutEvents
+        val resets = cameraWatchdog.totalResetAttempts
+        val status = if (healthy) {
+            if (totalEvents == 0L) "سليم ✓" else "تعافى (${totalEvents} أحداث سابقة)"
+        } else {
+            "يحتاج إعادة تشغيل (${timeouts} فترات انتظار)"
+        }
+        appendLog("  مراقب الكاميرا: $status (محاولات إعادة: $resets)")
+    }
+
     private fun updateAIStatus() {
         binding.tvAIStatus.text = "TFLite جاهز"
         binding.dotAI.setBackgroundResource(R.drawable.shape_status_dot_green)
@@ -342,6 +379,8 @@ class DiagnosticsActivity : AppCompatActivity() {
             testNetwork()
             delay(300)
             testCamera()
+            delay(300)
+            testCameraWatchdog()
             delay(300)
             testAI()
             delay(300)
@@ -389,6 +428,15 @@ class DiagnosticsActivity : AppCompatActivity() {
         }
     }
 
+    private suspend fun testCameraWatchdog() {
+        appendLog("→ اختبار مراقب الكاميرا...")
+        delay(300)
+        val status = cameraWatchdog.getStatusSummary()
+        appendLog("  الحالة: ${if (cameraWatchdog.isHealthy) "✓ سليم" else "✗ غير سليم"}")
+        appendLog("  الأحداث: ${cameraWatchdog.totalTimeoutEvents} | محاولات إعادة: ${cameraWatchdog.totalResetAttempts}")
+        updateCameraWatchdogStatus()
+    }
+
     private suspend fun testAI() {
         appendLog("→ اختبار محرك AI...")
         delay(500)
@@ -432,6 +480,9 @@ class DiagnosticsActivity : AppCompatActivity() {
             appendLine("  - fise_led: exists=${ledFile.exists()}, value=${try { ledFile.readText().trim() } catch (_: Exception) { "?" }}")
             appendLine("### Serial: `${serialBusManager.isConnected}` | Error: `${serialBusManager.lastError.value}`")
             appendLine("### Camera: `${cameraManager.findBestCamera() ?: "none"}` | Network: `${networkMonitor.isOnline()}`")
+            appendLine("### Camera Watchdog")
+            appendLine("- Healthy: `${cameraWatchdog.isHealthy}` | Timeouts: `${cameraWatchdog.currentConsecutiveTimeouts}`/3")
+            appendLine("- Total Events: `${cameraWatchdog.totalTimeoutEvents}` | Resets: `${cameraWatchdog.totalResetAttempts}` (success: `${cameraWatchdog.totalSuccessfulResets}`)")
             appendLine("### Log")
             val log = binding.tvLogOutput.text.toString().takeLast(500)
             appendLine("```$log```")
@@ -566,6 +617,42 @@ class DiagnosticsActivity : AppCompatActivity() {
             appendLog("→ FISE GPIO status: ${if (ok) "✓ متاح" else "✗ لا يزال غير متاح"}")
             updateGpioStatus()
         }
+    }
+
+    private var activeSpectrum: LightSpectrum = LightSpectrum.OFF
+
+    private fun toggleSpectrum(spectrum: LightSpectrum, button: com.google.android.material.button.MaterialButton) {
+        scope.launch {
+            if (activeSpectrum == spectrum) {
+                spectrumController.activate(LightSpectrum.OFF)
+                activeSpectrum = LightSpectrum.OFF
+                button.strokeWidth = 0
+                appendLog("→ إطفاء ${spectrum.displayName}")
+            } else {
+                // Turn off previous if any
+                resetLedButtonStyles()
+                
+                val result = spectrumController.activate(spectrum)
+                if (result.isSuccess) {
+                    activeSpectrum = spectrum
+                    button.strokeWidth = 4
+                    button.setStrokeColorResource(R.color.primary)
+                    appendLog("★ تشغيل ${spectrum.displayName} ✓")
+                } else {
+                    appendLog("✗ فشل تشغيل ${spectrum.displayName}: ${result.exceptionOrNull()?.message}")
+                }
+            }
+        }
+    }
+
+    private fun resetLedButtonStyles() {
+        val buttons = listOf(
+            binding.btnLedWhite, binding.btnLedUv, binding.btnLedCross,
+            binding.btnLedParallel, binding.btnLedWoods, binding.btnLedBlue,
+            binding.btnLedRed, binding.btnLedBrown
+        )
+        buttons.forEach { it.strokeWidth = 0 }
+        activeSpectrum = LightSpectrum.OFF
     }
 
     private fun appendLog(message: String) {

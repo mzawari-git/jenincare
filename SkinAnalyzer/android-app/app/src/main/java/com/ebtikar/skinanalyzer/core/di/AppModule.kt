@@ -11,6 +11,7 @@ import com.ebtikar.skinanalyzer.hardware.SerialBusManager
 import com.ebtikar.skinanalyzer.hardware.SpectrumController
 import com.ebtikar.skinanalyzer.camera.FrameCapturePipeline
 import com.ebtikar.skinanalyzer.camera.USBCameraManager
+import com.ebtikar.skinanalyzer.camera.CameraWatchdog
 import com.ebtikar.skinanalyzer.ai.TFLiteEngine
 import com.ebtikar.skinanalyzer.ai.FaceLandmarkDetector
 import com.ebtikar.skinanalyzer.ai.FeatureExtractor
@@ -49,8 +50,14 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideUSBCameraManager(@ApplicationContext context: Context): USBCameraManager {
-        return USBCameraManager(context)
+    fun provideCameraWatchdog(@ApplicationContext context: Context): CameraWatchdog {
+        return CameraWatchdog(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUSBCameraManager(@ApplicationContext context: Context, cameraWatchdog: CameraWatchdog): USBCameraManager {
+        return USBCameraManager(context, cameraWatchdog)
     }
 
     @Provides

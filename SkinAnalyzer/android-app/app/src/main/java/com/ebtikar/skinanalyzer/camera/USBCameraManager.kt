@@ -35,7 +35,8 @@ import kotlin.coroutines.resumeWithException
 
 @Singleton
 class USBCameraManager @Inject constructor(
-    private val context: Context
+    private val context: Context,
+    private val cameraWatchdog: CameraWatchdog
 ) {
 
     companion object {
@@ -153,6 +154,7 @@ class USBCameraManager @Inject constructor(
                         cameraManager.openCamera(cameraId, object : CameraDevice.StateCallback() {
                             override fun onOpened(camera: CameraDevice) {
                                 cameraDevice = camera
+                                cameraWatchdog.startMonitoring()
                                 Timber.i("Camera opened: $cameraId, sensorOrientation=$sensorOrientation, displayRotation=$displayRotationDegrees")
                                 val ps = previewSurface
                                 if (ps != null) {
@@ -174,7 +176,15 @@ class USBCameraManager @Inject constructor(
                                                                 configureAutoExposure(this)
                                                                 configureAutoFocusPreview(this)
                                                             }
-                                                            session.setRepeatingRequest(request.build(), null, backgroundHandler)
+                                                            session.setRepeatingRequest(request.build(), object : CameraCaptureSession.CaptureCallback() {
+                                                                override fun onCaptureCompleted(
+                                                                    session: CameraCaptureSession,
+                                                                    request: CaptureRequest,
+                                                                    result: TotalCaptureResult
+                                                                ) {
+                                                                    cameraWatchdog.onFrameArrived()
+                                                                }
+                                                            }, backgroundHandler)
                                                         } catch (e: Exception) {
                                                             Timber.w(e, "Preview request failed, capture-only mode")
                                                         }
@@ -302,12 +312,14 @@ class USBCameraManager @Inject constructor(
                         set(CaptureRequest.JPEG_QUALITY, 100.toByte())
                         configureAutoExposure(this, spectrum)
                     }
+                    cameraWatchdog.onCaptureStarted()
                     session.capture(captureBuilder.build(), object : CameraCaptureSession.CaptureCallback() {
                         override fun onCaptureCompleted(
                             session: CameraCaptureSession,
                             request: CaptureRequest,
                             result: TotalCaptureResult
                         ) {
+                            cameraWatchdog.onCaptureEnded()
                             Timber.d("Still capture completed for ${spectrum?.name}")
                         }
                     }, backgroundHandler)
@@ -366,6 +378,7 @@ class USBCameraManager @Inject constructor(
         if (isClosing) return
         isClosing = true
         try {
+            cameraWatchdog.stopMonitoring()
             captureSession?.close()
             captureSession = null
             cameraDevice?.close()
