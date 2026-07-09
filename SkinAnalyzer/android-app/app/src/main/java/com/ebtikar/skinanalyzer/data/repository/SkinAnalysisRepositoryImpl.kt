@@ -5,6 +5,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.ebtikar.skinanalyzer.ai.AdvancedSkinAnalyzer
 import com.ebtikar.skinanalyzer.ai.CVUtils
+import com.ebtikar.skinanalyzer.ai.EngineHealthMonitor
+import com.ebtikar.skinanalyzer.ai.EnsembleAnalysisEngine
 import com.ebtikar.skinanalyzer.ai.FaceLandmarkDetector
 import com.ebtikar.skinanalyzer.ai.FeatureExtractor
 import com.ebtikar.skinanalyzer.ai.LocalTFLiteProvider
@@ -35,6 +37,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import timber.log.Timber
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -51,13 +54,18 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
     private val advancedSkinAnalyzer: AdvancedSkinAnalyzer,
     private val localTFLiteProvider: LocalTFLiteProvider,
     private val knowledgeRepository: SkinKnowledgeRepository,
-    private val faceLandmarkDetector: FaceLandmarkDetector
+    private val faceLandmarkDetector: FaceLandmarkDetector,
+    private val ensembleEngine: EnsembleAnalysisEngine,
+    private val healthMonitor: EngineHealthMonitor
 ) : SkinAnalysisRepository {
 
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
     private val _analysisState = MutableStateFlow<AnalysisState>(AnalysisState.Idle)
     override fun getAnalysisState(): StateFlow<AnalysisState> = _analysisState.asStateFlow()
+
+    /** Analysis cache: reportId -> cached report for quick re-analysis */
+    private val analysisCache = ConcurrentHashMap<String, SkinAnalysisReport>()
 
     override suspend fun startAnalysis(
         outputDir: File,
@@ -122,6 +130,13 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                 if (rawFile.exists()) rawFile else file
             }
 
+            // Check cache for quick re-analysis
+            val cacheKey = analysisFrames.values.joinToString("|") { it.nameWithoutExtension }
+            analysisCache[cacheKey]?.let { cached ->
+                Timber.i("Analysis cache hit for key=$cacheKey, returning cached report")
+                return Result.success(cached)
+            }
+
             val faceCheckOrder = listOf(LightSpectrum.WHITE, LightSpectrum.POL_N, LightSpectrum.POL_P)
             var faceDetected = false
             for (spectrum in faceCheckOrder) {
@@ -141,160 +156,172 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                 }
             }
             if (!faceDetected) {
-                Timber.w("Post-capture face check: no face in RGB/polarized frames — proceeding anyway (face was validated during capture)")
+                Timber.w("Post-capture face check: no face in RGB/polarized frames — proceeding anyway")
             }
 
             val useCloud = mode == Constants.ANALYSIS_CLOUD || mode == Constants.ANALYSIS_AUTO
             val useLocal = mode == Constants.ANALYSIS_LOCAL || mode == Constants.ANALYSIS_AUTO
 
+            // Phase 1: Try cloud analysis
             if (useCloud) {
+                val startTime = System.currentTimeMillis()
                 val apiResult = cloudUploadService.uploadAndAnalyze(analysisFrames)
+                val elapsed = System.currentTimeMillis() - startTime
                 if (apiResult.isSuccess) {
                     _analysisState.value = AnalysisState.Analyzing("Cloud_API")
                     val cloudReport = apiResult.getOrNull()
+                    cloudReport?.let {
+                        healthMonitor.recordSuccess("Cloud_API", elapsed, it.confidence, it.metrics.size)
+                    }
                     Timber.i("Engine used: Cloud_API — providerName=${cloudReport?.providerName}, metrics=${cloudReport?.metrics?.size}, confidence=${cloudReport?.confidence}")
+                    cloudReport?.let { analysisCache[cacheKey] = it }
                     return apiResult
                 }
+                healthMonitor.recordFailure("Cloud_API", apiResult.exceptionOrNull()?.message ?: "Unknown", elapsed)
                 if (mode == Constants.ANALYSIS_CLOUD) {
                     return Result.failure(apiResult.exceptionOrNull() ?: Exception("Cloud analysis failed"))
                 }
                 Timber.w("Cloud API failed, falling back to local analysis: ${apiResult.exceptionOrNull()?.message}")
             }
 
-            if (useLocal) {
-                _analysisState.value = AnalysisState.Analyzing("Local_TFLite")
-                val localMetrics = performLocalTFLiteAnalysis(analysisFrames)
-                if (localMetrics.isNotEmpty()) {
-                    val crossValidated = localMetrics.toMutableMap()
-                    validateCrossSpectrum(crossValidated)
-                    val metricsList = SkinMetric.ALL_TYPES.mapNotNull { type ->
-                        crossValidated[type]
-                    }
-                    val metricsMap = metricsList.associateBy { it.type }
-                    val expertTips = mockEngine.generateExpertTips(metricsMap)
-                    val products = mockEngine.generateProductRecommendations(metricsMap)
-                    val skinProfile = mockEngine.generateSkinProfile(metricsMap)
-                    val report = SkinAnalysisReport(
-                        providerName = "Local_TFLite_Engine",
-                        overallScore = metricsList.map { it.score }.average().toFloat(),
-                        metrics = metricsList, executionTimeMs = 1500,
-                        aiAnalysisTextAr = generateAIAnalysisText(metricsList, skinProfile),
-                        expertTipsAr = expertTips, productRecommendations = products,
-                        skinProfile = skinProfile, confidence = 0.88f
-                    )
-                    Timber.i("Engine used: Local_TFLite_Engine — metrics=${metricsList.size}, overallScore=${report.overallScore}")
-                    return Result.success(report)
+            // Phase 2: Run all local engines and collect results
+            val ensembleResults = mutableListOf<EnsembleAnalysisEngine.EngineResult>()
+
+            // 2a: TFLite engine
+            _analysisState.value = AnalysisState.Analyzing("Local_TFLite")
+            val tfliteStartTime = System.currentTimeMillis()
+            try {
+                val tfliteMetrics = performLocalTFLiteAnalysis(analysisFrames)
+                val tfliteElapsed = System.currentTimeMillis() - tfliteStartTime
+                if (tfliteMetrics.isNotEmpty()) {
+                    healthMonitor.recordSuccess("Local_TFLite", tfliteElapsed, 0.88f, tfliteMetrics.size)
+                    ensembleResults.add(EnsembleAnalysisEngine.EngineResult(
+                        engineName = "Local_TFLite",
+                        metrics = tfliteMetrics,
+                        confidence = 0.88f,
+                        executionTimeMs = tfliteElapsed
+                    ))
+                    Timber.i("TFLite: ${tfliteMetrics.size} metrics in ${tfliteElapsed}ms")
+                } else {
+                    healthMonitor.recordFailure("Local_TFLite", "No metrics returned", tfliteElapsed)
                 }
-                Timber.w("TFLite analysis returned no metrics, falling back to advanced analysis")
+            } catch (e: Exception) {
+                healthMonitor.recordFailure("Local_TFLite", e.message ?: "Exception")
+                Timber.w(e, "TFLite analysis failed")
             }
 
+            // 2b: Advanced/MediaPipe engine
             _analysisState.value = AnalysisState.Analyzing("Advanced_Analysis_Engine")
-
-            Timber.i("analysis: frames.size=${analysisFrames.size}, existingFiles=${analysisFrames.count { it.value.exists() }}")
-            analysisFrames.forEach { (s, f) -> Timber.d("  frame ${s.name}: exists=${f.exists()}, size=${f.length()}") }
-
-            val advancedMetrics = try {
-                performAdvancedAnalysis(analysisFrames)
-            } catch (e: Throwable) {
-                Timber.e(e, "Advanced analysis engine failed completely")
-                emptyMap()
-            }
-            Timber.i("Advanced analysis returned ${advancedMetrics.size} metric types: ${advancedMetrics.keys.joinToString { it.name }}")
-            if (advancedMetrics.size >= 5) {
-                val crossValidated = advancedMetrics.toMutableMap()
-                validateCrossSpectrum(crossValidated)
-                val metricsList = SkinMetric.ALL_TYPES.mapNotNull { type ->
-                    crossValidated[type]
+            val advancedStartTime = System.currentTimeMillis()
+            try {
+                val advancedMetrics = performAdvancedAnalysis(analysisFrames)
+                val advancedElapsed = System.currentTimeMillis() - advancedStartTime
+                if (advancedMetrics.isNotEmpty()) {
+                    healthMonitor.recordSuccess("Advanced_MediaPipe", advancedElapsed, 0.92f, advancedMetrics.size)
+                    ensembleResults.add(EnsembleAnalysisEngine.EngineResult(
+                        engineName = "Advanced_MediaPipe",
+                        metrics = advancedMetrics,
+                        confidence = 0.92f,
+                        executionTimeMs = advancedElapsed
+                    ))
+                    Timber.i("Advanced: ${advancedMetrics.size} metrics in ${advancedElapsed}ms")
+                } else {
+                    healthMonitor.recordFailure("Advanced_MediaPipe", "No metrics returned", advancedElapsed)
                 }
-                val metricsMap = metricsList.associateBy { it.type }
-                val expertTips = mockEngine.generateExpertTips(metricsMap)
-                val products = mockEngine.generateProductRecommendations(metricsMap)
-                val skinProfile = mockEngine.generateSkinProfile(metricsMap)
-                val report = SkinAnalysisReport(
-                    providerName = "Advanced_MediaPipe_Engine",
-                    overallScore = metricsList.map { it.score }.average().toFloat(),
-                    metrics = metricsList, executionTimeMs = 1200,
-                    aiAnalysisTextAr = generateAIAnalysisText(metricsList, skinProfile),
-                    expertTipsAr = expertTips, productRecommendations = products,
-                    skinProfile = skinProfile, confidence = 0.92f
-                )
-                Timber.i("Engine used: Advanced_MediaPipe_Engine — metrics=${metricsList.size}, overallScore=${report.overallScore}")
-                return Result.success(report)
+            } catch (e: Throwable) {
+                healthMonitor.recordFailure("Advanced_MediaPipe", e.message ?: "Exception")
+                Timber.w(e, "Advanced analysis failed")
             }
 
+            // 2c: OpenCV engine
             _analysisState.value = AnalysisState.Analyzing("CV_Analysis_Engine")
-
-            val whiteFile = analysisFrames.entries.find { it.key == LightSpectrum.WHITE }?.value
-            Timber.i("OpenCV analysis: whiteFile=${whiteFile?.name}, exists=${whiteFile?.exists()}")
-            val pixelMetrics = try {
-                withContext(Dispatchers.Default) {
+            val opencvStartTime = System.currentTimeMillis()
+            try {
+                val whiteFile = analysisFrames.entries.find { it.key == LightSpectrum.WHITE }?.value
+                val opencvMetrics = withContext(Dispatchers.Default) {
                     openCVSkinAnalyzer.analyze(analysisFrames, whiteFile)
                 }
-            } catch (e: Throwable) {
-                Timber.e(e, "OpenCV analysis engine failed completely")
-                emptyMap()
-            }
-            Timber.i("OpenCV analysis returned ${pixelMetrics.size} metric types: ${pixelMetrics.keys.joinToString { it.name }}")
-
-            if (pixelMetrics.size >= 5) {
-                val crossValidated = pixelMetrics.toMutableMap()
-                validateCrossSpectrum(crossValidated)
-                val metricsList = SkinMetric.ALL_TYPES.mapNotNull { type ->
-                    crossValidated[type]
-                }
-                val metricsMap = metricsList.associateBy { it.type }
-                val expertTips = mockEngine.generateExpertTips(metricsMap)
-                val products = mockEngine.generateProductRecommendations(metricsMap)
-                val skinProfile = mockEngine.generateSkinProfile(metricsMap)
-                val report = SkinAnalysisReport(
-                    providerName = "CV_Analysis_Engine",
-                    overallScore = metricsList.map { it.score }.average().toFloat(),
-                    metrics = metricsList, executionTimeMs = 1200,
-                    aiAnalysisTextAr = generateAIAnalysisText(metricsList, skinProfile),
-                    expertTipsAr = expertTips, productRecommendations = products,
-                    skinProfile = skinProfile, confidence = 0.82f
-                )
-                Timber.i("Engine used: CV_Analysis_Engine — metrics=${metricsList.size}, overallScore=${report.overallScore}")
-                Result.success(report)
-            } else {
-                Timber.w("OpenCV returned only ${pixelMetrics.size} metrics — falling back to Basic Pixel analysis")
-                _analysisState.value = AnalysisState.Analyzing("Basic_Pixel_Engine")
-                val basicMetrics = try {
-                    performBasicPixelAnalysis(analysisFrames)
-                } catch (e: Throwable) {
-                    Timber.e(e, "Basic Pixel analysis failed")
-                    emptyMap()
-                }
-                Timber.i("Basic Pixel analysis returned ${basicMetrics.size} metric types")
-                if (basicMetrics.isNotEmpty()) {
-                    val merged = pixelMetrics.toMutableMap()
-                    basicMetrics.forEach { (type, metric) ->
-                        if (merged[type] == null || merged[type]!!.score == 0f) {
-                            merged[type] = metric
-                        }
-                    }
-                    validateCrossSpectrum(merged)
-                    val metricsList = SkinMetric.ALL_TYPES.mapNotNull { type -> merged[type] }
-                    val metricsMap = metricsList.associateBy { it.type }
-                    val expertTips = mockEngine.generateExpertTips(metricsMap)
-                    val products = mockEngine.generateProductRecommendations(metricsMap)
-                    val skinProfile = mockEngine.generateSkinProfile(metricsMap)
-                    val report = SkinAnalysisReport(
-                        providerName = "Basic_Pixel_Engine",
-                        overallScore = metricsList.map { it.score }.average().toFloat(),
-                        metrics = metricsList, executionTimeMs = 800,
-                        aiAnalysisTextAr = generateAIAnalysisText(metricsList, skinProfile),
-                        expertTipsAr = expertTips, productRecommendations = products,
-                        skinProfile = skinProfile, confidence = 0.75f
-                    )
-                    Timber.i("Engine used: Basic_Pixel_Engine — metrics=${metricsList.size}, overallScore=${report.overallScore}")
-                    Result.success(report)
+                val opencvElapsed = System.currentTimeMillis() - opencvStartTime
+                if (opencvMetrics.isNotEmpty()) {
+                    healthMonitor.recordSuccess("CV_OpenCV", opencvElapsed, 0.82f, opencvMetrics.size)
+                    ensembleResults.add(EnsembleAnalysisEngine.EngineResult(
+                        engineName = "CV_OpenCV",
+                        metrics = opencvMetrics,
+                        confidence = 0.82f,
+                        executionTimeMs = opencvElapsed
+                    ))
+                    Timber.i("OpenCV: ${opencvMetrics.size} metrics in ${opencvElapsed}ms")
                 } else {
-                    Timber.w("All analysis engines failed to produce sufficient metrics")
-                    _analysisState.value = AnalysisState.Error("لم يتمكن التحليل من استخراج بيانات كافية. تأكد من وجود الوجه بشكل واضح أمام الكاميرا وأعد المحاولة.")
-                    return Result.failure(Exception("Insufficient metrics: OpenCV=${pixelMetrics.size}, BasicPixel=${basicMetrics.size}"))
+                    healthMonitor.recordFailure("CV_OpenCV", "No metrics returned", opencvElapsed)
                 }
+            } catch (e: Throwable) {
+                healthMonitor.recordFailure("CV_OpenCV", e.message ?: "Exception")
+                Timber.w(e, "OpenCV analysis failed")
             }
+
+            // 2d: Basic Pixel engine (always run as fallback)
+            _analysisState.value = AnalysisState.Analyzing("Basic_Pixel_Engine")
+            val basicStartTime = System.currentTimeMillis()
+            try {
+                val basicMetrics = performBasicPixelAnalysis(analysisFrames)
+                val basicElapsed = System.currentTimeMillis() - basicStartTime
+                if (basicMetrics.isNotEmpty()) {
+                    healthMonitor.recordSuccess("Basic_Pixel", basicElapsed, 0.75f, basicMetrics.size)
+                    ensembleResults.add(EnsembleAnalysisEngine.EngineResult(
+                        engineName = "Basic_Pixel",
+                        metrics = basicMetrics,
+                        confidence = 0.75f,
+                        executionTimeMs = basicElapsed
+                    ))
+                    Timber.i("Basic Pixel: ${basicMetrics.size} metrics in ${basicElapsed}ms")
+                } else {
+                    healthMonitor.recordFailure("Basic_Pixel", "No metrics returned", basicElapsed)
+                }
+            } catch (e: Throwable) {
+                healthMonitor.recordFailure("Basic_Pixel", e.message ?: "Exception")
+                Timber.w(e, "Basic Pixel analysis failed")
+            }
+
+            // Phase 3: Combine results using ensemble engine
+            if (ensembleResults.isEmpty()) {
+                _analysisState.value = AnalysisState.Error("لم يتمكن التحليل من استخراج بيانات كافية. تأكد من وجود الوجه بشكل واضح أمام الكاميرا وأعد المحاولة.")
+                return Result.failure(Exception("All analysis engines failed"))
+            }
+
+            _analysisState.value = AnalysisState.Analyzing("Ensemble_Combining")
+            val ensembleReport = ensembleEngine.combineResults(ensembleResults)
+
+            // Apply cross-spectrum validation
+            val crossValidated = ensembleReport.metrics.toMutableMap()
+            validateCrossSpectrum(crossValidated)
+
+            val metricsList = SkinMetric.ALL_TYPES.mapNotNull { type -> crossValidated[type] }
+            val metricsMap = metricsList.associateBy { it.type }
+            val expertTips = mockEngine.generateExpertTips(metricsMap)
+            val products = mockEngine.generateProductRecommendations(metricsMap)
+            val skinProfile = mockEngine.generateSkinProfile(metricsMap)
+
+            val report = SkinAnalysisReport(
+                providerName = "Ensemble_Engine(${ensembleResults.joinToString("+") { it.engineName }})",
+                overallScore = metricsList.map { it.score }.average().toFloat(),
+                metrics = metricsList,
+                executionTimeMs = ensembleResults.sumOf { it.executionTimeMs },
+                aiAnalysisTextAr = generateAIAnalysisText(metricsList, skinProfile),
+                expertTipsAr = expertTips,
+                productRecommendations = products,
+                skinProfile = skinProfile,
+                confidence = ensembleReport.overallConfidence
+            )
+
+            // Cache the result
+            analysisCache[cacheKey] = report
+
+            Timber.i("Ensemble analysis complete: ${metricsList.size} metrics, overallScore=${report.overallScore}, " +
+                "confidence=${report.confidence}, engines=${ensembleReport.engineCount}, " +
+                "agreement=${"%.0f".format(ensembleReport.agreementScore * 100)}%")
+            Timber.i("Engine contributions: ${ensembleReport.engineContributions}")
+
+            Result.success(report)
         } catch (e: Throwable) {
             Timber.e(e, "analyzeImages failed")
             _analysisState.value = AnalysisState.Error(e.message ?: "Analysis failed")

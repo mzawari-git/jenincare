@@ -14,6 +14,7 @@ import androidx.core.view.updatePadding
 import com.ebtikar.skinanalyzer.R
 import com.ebtikar.skinanalyzer.camera.USBCameraManager
 import com.ebtikar.skinanalyzer.camera.CameraWatchdog
+import com.ebtikar.skinanalyzer.ai.EngineHealthMonitor
 import com.ebtikar.skinanalyzer.databinding.ActivityDiagnosticsBinding
 import com.ebtikar.skinanalyzer.hardware.FiseGpioController
 import com.ebtikar.skinanalyzer.hardware.LightSpectrum
@@ -41,6 +42,7 @@ class DiagnosticsActivity : AppCompatActivity() {
     @Inject lateinit var networkMonitor: NetworkMonitor
     @Inject lateinit var cameraManager: USBCameraManager
     @Inject lateinit var cameraWatchdog: CameraWatchdog
+    @Inject lateinit var engineHealthMonitor: EngineHealthMonitor
     @Inject lateinit var fiseGpioController: FiseGpioController
     @Inject lateinit var spectrumController: SpectrumController
 
@@ -227,6 +229,9 @@ class DiagnosticsActivity : AppCompatActivity() {
             appendLine()
             appendLine("--- Camera Watchdog ---")
             appendLine(cameraWatchdog.getStatusSummary())
+            appendLine()
+            appendLine("--- Engine Health ---")
+            appendLine(engineHealthMonitor.getHealthReport())
             appendLine()
             appendLine("--- Network ---")
             appendLine("Online: ${networkMonitor.isOnline()}")
@@ -483,6 +488,11 @@ class DiagnosticsActivity : AppCompatActivity() {
             appendLine("### Camera Watchdog")
             appendLine("- Healthy: `${cameraWatchdog.isHealthy}` | Timeouts: `${cameraWatchdog.currentConsecutiveTimeouts}`/3")
             appendLine("- Total Events: `${cameraWatchdog.totalTimeoutEvents}` | Resets: `${cameraWatchdog.totalResetAttempts}` (success: `${cameraWatchdog.totalSuccessfulResets}`)")
+            appendLine("### Engine Health")
+            val allStats = engineHealthMonitor.getAllStats()
+            for ((name, stat) in allStats) {
+                appendLine("- $name: ${stat.successfulAttempts}/${stat.totalAttempts} (${"%.0f".format(stat.successRate * 100)}%) | avg ${"%.0f".format(stat.avgExecutionTimeMs)}ms")
+            }
             appendLine("### Log")
             val log = binding.tvLogOutput.text.toString().takeLast(500)
             appendLine("```$log```")

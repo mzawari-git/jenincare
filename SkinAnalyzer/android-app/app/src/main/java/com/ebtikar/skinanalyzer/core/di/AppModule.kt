@@ -2,6 +2,8 @@ package com.ebtikar.skinanalyzer.core.di
 
 import android.content.Context
 import com.ebtikar.skinanalyzer.ai.CloudAnalysisProvider
+import com.ebtikar.skinanalyzer.ai.EngineHealthMonitor
+import com.ebtikar.skinanalyzer.ai.EnsembleAnalysisEngine
 import com.ebtikar.skinanalyzer.ai.LocalTFLiteProvider
 import com.ebtikar.skinanalyzer.core.provider.AnalysisProviderManager
 import com.ebtikar.skinanalyzer.data.repository.SkinAnalysisRepository
@@ -109,6 +111,18 @@ object AppModule {
     @Singleton
     fun provideUpdateChecker(@ApplicationContext context: Context): UpdateChecker {
         return UpdateChecker(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideEnsembleAnalysisEngine(): EnsembleAnalysisEngine {
+        return EnsembleAnalysisEngine()
+    }
+
+    @Provides
+    @Singleton
+    fun provideEngineHealthMonitor(): EngineHealthMonitor {
+        return EngineHealthMonitor()
     }
 
 
