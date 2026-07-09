@@ -340,7 +340,19 @@ class FrameCapturePipeline @Inject constructor(
         val totalSteps = spectra.size
         _captureState.value = CaptureState.CAPTURING
 
-        Timber.i("captureWithRealLeds HIGH-SPEED STROBE: ${spectra.size} spectra, serialBusManager.isConnected=${serialBusManager.isConnected}")
+        val serialConnected = serialBusManager.isConnected
+        val gpioAvailable = fiseGpioController.isAvailable
+
+        // Log which LEDs can fire
+        val gpioSpectra = spectra.filter { fiseGpioController.supportsSpectrum(it) }
+        val serialSpectra = spectra.filter { !fiseGpioController.supportsSpectrum(it) && it != LightSpectrum.OFF && it != LightSpectrum.ALL }
+        val unavailableSpectra = serialSpectra.filter { !serialConnected }
+
+        Timber.i("captureWithRealLeds: ${spectra.size} spectra, GPIO=${gpioAvailable}(${gpioSpectra.size}), serial=$serialConnected(${serialSpectra.size})")
+        if (unavailableSpectra.isNotEmpty()) {
+            Timber.e("UNAVAILABLE LEDs (no hardware): ${unavailableSpectra.joinToString { it.name }} — these frames will be DARK")
+            _positionMessage.value = "⚠️ أضواء [${unavailableSpectra.joinToString { it.displayNameAr }}] غير متصلة — الصور ستكون بدون إضاءة"
+        }
 
         for ((stepIndex, spectrum) in spectra.withIndex()) {
             val step = stepIndex + 1
@@ -351,17 +363,26 @@ class FrameCapturePipeline @Inject constructor(
 
             val ledResult = spectrumController.activate(spectrum)
             if (ledResult.isFailure) {
-                Timber.e("LED activation FAILED for ${spectrum.name}: ${ledResult.exceptionOrNull()?.message}")
-                _positionMessage.value = "⚠️ فشل تفعيل ${spectrum.displayNameAr}"
+                val isSerialOnly = !fiseGpioController.supportsSpectrum(spectrum) &&
+                    spectrum != LightSpectrum.OFF && spectrum != LightSpectrum.ALL
+                if (isSerialOnly && !serialConnected) {
+                    // Expected failure — serial-only LED without serial connection
+                    Timber.w("LED ${spectrum.name} skipped (serial-only, serial disconnected)")
+                } else {
+                    Timber.e("LED activation FAILED for ${spectrum.name}: ${ledResult.exceptionOrNull()?.message}")
+                    _positionMessage.value = "⚠️ فشل تفعيل ${spectrum.displayNameAr}"
+                }
             } else {
                 Timber.i("LED OK: ${spectrum.name}")
             }
 
-            kotlinx.coroutines.delay(spectrum.settlingWindowMs)
+            // Settling delay — use adaptive timing
+            val settlingMs = getAdaptiveSettlingMs(spectrum)
+            kotlinx.coroutines.delay(settlingMs)
 
             // Wait for auto-exposure to converge before capturing
             if (spectrum != LightSpectrum.OFF && spectrum != LightSpectrum.ALL) {
-                cameraManager.waitForAeConvergence(1000L)
+                cameraManager.waitForAeConvergence(800L)
             }
 
             _currentPhase.value = phase.copy(status = CapturePhase.Status.CAPTURING)
@@ -492,13 +513,40 @@ class FrameCapturePipeline @Inject constructor(
         _ledTestResults.value = emptyList()
     }
 
+    /**
+     * Get adaptive settling time based on spectrum type.
+     * Dark spectra (UV, Woods) need more time for AE adjustment.
+     * Bright spectra (White, Pol) can settle faster.
+     */
+    private fun getAdaptiveSettlingMs(spectrum: LightSpectrum): Long = when (spectrum) {
+        LightSpectrum.UV365, LightSpectrum.WOODS -> 1800L  // Dark, needs more AE time
+        LightSpectrum.BLUE, LightSpectrum.RED, LightSpectrum.BROWN -> 1500L  // Moderate
+        LightSpectrum.WHITE, LightSpectrum.POL_P, LightSpectrum.POL_N -> 1500L  // Bright, settles fast
+        LightSpectrum.ALL -> 2000L  // All LEDs, extra time
+        else -> 1000L
+    }
+
     private suspend fun runLedPreTest(spectra: List<LightSpectrum>): List<LedTestResult> {
         _ledTestStatus.value = "فحص أضواء التشخيص..."
         _ledTestResults.value = emptyList()
         val results = mutableListOf<LedTestResult>()
 
+        val serialConnected = serialBusManager.isConnected
+        val gpioAvailable = fiseGpioController.isAvailable
+
+        // Log hardware status
+        val gpioSpectra = spectra.filter { fiseGpioController.supportsSpectrum(it) }
+        val serialSpectra = spectra.filter { !fiseGpioController.supportsSpectrum(it) && it != LightSpectrum.OFF && it != LightSpectrum.ALL }
+        Timber.i("LED pre-test: GPIO=${gpioAvailable}(${gpioSpectra.size} spectra), serial=$serialConnected(${serialSpectra.size} spectra)")
+        if (serialSpectra.isNotEmpty() && !serialConnected) {
+            Timber.e("Serial-only LEDs will NOT fire: ${serialSpectra.joinToString { it.name }}")
+        }
+
         for ((index, spectrum) in spectra.withIndex()) {
             _ledTestStatus.value = "فحص ${spectrum.displayNameAr} (${index + 1}/${spectra.size})"
+
+            val isSerialOnly = !fiseGpioController.supportsSpectrum(spectrum) &&
+                spectrum != LightSpectrum.OFF && spectrum != LightSpectrum.ALL
 
             val activateResult = try {
                 spectrumController.activate(spectrum)
@@ -509,8 +557,9 @@ class FrameCapturePipeline @Inject constructor(
 
             val ok = activateResult.isSuccess
             val method = when {
+                !ok && isSerialOnly && !serialConnected -> "UNAVAILABLE (serial disconnected)"
                 !ok -> "NONE"
-                fiseGpioController.isAvailable -> "GPIO"
+                fiseGpioController.supportsSpectrum(spectrum) -> "GPIO"
                 serialBusManager.isConnected -> "Serial"
                 else -> "Unknown"
             }
@@ -524,9 +573,19 @@ class FrameCapturePipeline @Inject constructor(
         }
 
         val allPassed = results.all { it.ok }
-        _ledTestStatus.value = if (allPassed) "جميع الأضواء تعمل ✓" else {
-            val failed = results.filter { !it.ok }.map { it.spectrum.displayNameAr }
-            "⚠️ أضواء لا تعمل: ${failed.joinToString(", ")}"
+        val failed = results.filter { !it.ok }
+        _ledTestStatus.value = when {
+            allPassed -> "جميع الأضواء تعمل ✓"
+            failed.isEmpty() -> "جميع الأضواء تعمل ✓"
+            else -> {
+                val failedNames = failed.joinToString(", ") { it.spectrum.displayNameAr }
+                val unavailableCount = failed.count { it.method.contains("UNAVAILABLE") }
+                if (unavailableCount > 0) {
+                    "⚠️ ${failed.size} أضواء لا تعمل (${unavailableCount} غير متصلة)"
+                } else {
+                    "⚠️ أضواء لا تعمل: $failedNames"
+                }
+            }
         }
         _ledTestResults.value = results
         return results

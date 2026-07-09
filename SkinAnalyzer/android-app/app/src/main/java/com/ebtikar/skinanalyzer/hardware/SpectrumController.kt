@@ -81,18 +81,25 @@ class SpectrumController @Inject constructor(
             return@withLock Result.success(Unit)
         }
 
+        // Try GPIO first for supported spectra
         if (fiseGpio.supportsSpectrum(spectrum)) {
             Timber.d("Activating spectrum via FISE GPIO: ${spectrum.name}")
             val ok = fiseGpio.activateSpectrum(spectrum)
             if (ok) {
-                currentSpectrum = spectrum
-                _currentSpectrumFlow.value = spectrum
-                notifyListeners(spectrum)
-                return@withLock Result.success(Unit)
+                // Verify LED actually turned on by reading back
+                val verified = verifyLedActivation(spectrum)
+                if (verified) {
+                    currentSpectrum = spectrum
+                    _currentSpectrumFlow.value = spectrum
+                    notifyListeners(spectrum)
+                    return@withLock Result.success(Unit)
+                }
+                Timber.w("FISE GPIO activation for ${spectrum.name} wrote OK but verification failed")
             }
             Timber.e("FISE GPIO activation FAILED for ${spectrum.name}")
         }
 
+        // Serial fallback (for BLUE/RED/BROWN which are serial-only)
         if (serialBus.isConnected) {
             Timber.d("Activating spectrum via serial bus: ${spectrum.name}")
             val result = serialBus.sendCommand(spectrum)
@@ -104,10 +111,40 @@ class SpectrumController @Inject constructor(
                 return@withLock Result.success(Unit)
             }
             Timber.w("Serial activation failed for ${spectrum.name}: ${result.exceptionOrNull()?.message}")
+        } else {
+            // Serial not connected — this is critical for BLUE/RED/BROWN
+            val serialOnly = spectrum == LightSpectrum.BLUE || spectrum == LightSpectrum.RED || spectrum == LightSpectrum.BROWN
+            if (serialOnly) {
+                Timber.e("CRITICAL: ${spectrum.name} is serial-only but serial bus is NOT connected — LED will NOT fire!")
+            }
         }
 
         Timber.e("No working GPIO or serial for ${spectrum.name}. LED will NOT turn on.")
         return@withLock Result.failure(IllegalStateException("No LED hardware for ${spectrum.name}: GPIO=${fiseGpio.isAvailable}, serial=${serialBus.isConnected}"))
+    }
+
+    /**
+     * Verify that the LED actually turned on by reading back the GPIO state.
+     * Returns true if verification passes or is not applicable.
+     */
+    private fun verifyLedActivation(spectrum: LightSpectrum): Boolean {
+        val gpioIndex = when (spectrum) {
+            LightSpectrum.WHITE -> 0
+            LightSpectrum.UV365 -> 1
+            LightSpectrum.WOODS -> 2
+            LightSpectrum.POL_P -> 3
+            LightSpectrum.POL_N -> 4
+            else -> return true  // No GPIO verification for serial-only spectra
+        }
+        // Give the GPIO a moment to settle
+        Thread.sleep(50)
+        val currentValue = fiseGpio.readGpioValue(gpioIndex)
+        val expectedOn = "0"  // Active LOW: 0=ON
+        val verified = currentValue == expectedOn
+        if (!verified) {
+            Timber.w("LED verification failed for ${spectrum.name}: expected=$expectedOn, actual=$currentValue")
+        }
+        return verified
     }
 
     suspend fun executeCaptureSequence(

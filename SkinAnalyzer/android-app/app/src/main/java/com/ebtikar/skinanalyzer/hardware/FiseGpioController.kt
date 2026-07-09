@@ -389,6 +389,30 @@ class FiseGpioController @Inject constructor(
         }
     }
 
+    /**
+     * Read the current value of a GPIO pin for verification.
+     * Returns "0" if ON, "1" if OFF, or null if unreadable.
+     */
+    fun readGpioValue(index: Int): String? {
+        if (index < 0 || index >= rawGpioFiles.size) return null
+        val file = rawGpioFiles[index]
+        if (!file.exists()) return null
+        return try {
+            val value = file.readText().trim()
+            Timber.d("GPIO $index readback: $value")
+            value
+        } catch (e: Exception) {
+            // Try FISE file
+            if (index < gpioFiles.size && gpioFiles[index].exists()) {
+                try {
+                    gpioFiles[index].readText().trim()
+                } catch (_: Exception) { null }
+            } else {
+                null
+            }
+        }
+    }
+
     fun turnAllOff() {
         for (i in gpioFiles.indices) {
             setGpio(i, false)

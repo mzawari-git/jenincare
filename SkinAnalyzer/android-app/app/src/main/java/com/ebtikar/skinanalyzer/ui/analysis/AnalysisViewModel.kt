@@ -109,6 +109,18 @@ class AnalysisViewModel @Inject constructor(
     private val _ledTestResults = MutableStateFlow<Map<LightSpectrum, Boolean>>(emptyMap())
     val ledTestResults: StateFlow<Map<LightSpectrum, Boolean>> = _ledTestResults.asStateFlow()
 
+    /** LED hardware status: spectrum -> method (GPIO/Serial/Unavailable) */
+    private val _ledHardwareStatus = MutableStateFlow<Map<LightSpectrum, String>>(emptyMap())
+    val ledHardwareStatus: StateFlow<Map<LightSpectrum, String>> = _ledHardwareStatus.asStateFlow()
+
+    /** Estimated time remaining in seconds */
+    private val _estimatedTimeRemaining = MutableStateFlow(0)
+    val estimatedTimeRemaining: StateFlow<Int> = _estimatedTimeRemaining.asStateFlow()
+
+    /** Current phase name (Face Detection / LED Test / Capturing / Analyzing) */
+    private val _currentPhaseName = MutableStateFlow("")
+    val currentPhaseName: StateFlow<String> = _currentPhaseName.asStateFlow()
+
     private var reportId = UUID.randomUUID().toString()
     @Volatile private var isAborted = false
     private var analysisJob: kotlinx.coroutines.Job? = null
@@ -121,36 +133,48 @@ class AnalysisViewModel @Inject constructor(
         repository.getAnalysisState().onEach { state ->
             when (state) {
                 is AnalysisState.WaitingForFace -> {
+                    _currentPhaseName.value = "كشف الوجه"
                     _statusMessage.value = "ضع وجهك أمام الكاميرا — جاري البحث عن الوجه..."
                     _progress.value = 5
+                    _estimatedTimeRemaining.value = 35
                 }
                 is AnalysisState.Capturing -> {
                     _currentSpectrumName.value = state.phase.displayName
+                    _currentPhaseName.value = "المسح الضوئي"
                     _progress.value = state.progress
                     _currentStep.value = state.step
                     _totalSteps.value = state.totalSteps
                     val arName = state.spectrumDisplayAr.ifBlank { state.phase.displayNameAr }
                     if (state.step > 0 && state.totalSteps > 0) {
                         _statusMessage.value = "${state.step} من ${state.totalSteps} — $arName"
+                        // Estimate remaining: (remaining spectra × 2.5s settling) + analysis time
+                        val remaining = (state.totalSteps - state.step) * 3
+                        _estimatedTimeRemaining.value = remaining + 10  // +10s for analysis
                     } else {
                         _statusMessage.value = "جاري المسح..."
                     }
                 }
                 is AnalysisState.Analyzing -> {
+                    _currentPhaseName.value = "التحليل بالذكاء الاصطناعي"
                     _statusMessage.value = "جاري التحليل عبر ${state.provider}..."
                     _progress.value = 85
+                    _estimatedTimeRemaining.value = 5
                 }
                 is AnalysisState.Saving -> {
+                    _currentPhaseName.value = "حفظ التقرير"
                     _statusMessage.value = "جاري حفظ التقرير..."
                     _progress.value = 95
+                    _estimatedTimeRemaining.value = 2
                 }
                 is AnalysisState.Complete -> {
                     _progress.value = 100
                     _isComplete.value = true
                     _statusMessage.value = "اكتمل التحليل"
+                    _estimatedTimeRemaining.value = 0
                 }
                 is AnalysisState.Error -> {
                     _error.value = state.message
+                    _estimatedTimeRemaining.value = 0
                 }
                 else -> {}
             }
@@ -206,9 +230,25 @@ class AnalysisViewModel @Inject constructor(
 
     fun runLedPreTest(spectra: List<LightSpectrum> = LightSpectrum.ALL_SPECTRA) {
         viewModelScope.launch {
+            _currentPhaseName.value = "فحص الأضواء"
             _ledTestProgress.value = "جاري فحص أضواء التشخيص..."
             _ledTestResults.value = emptyMap()
             val results = mutableMapOf<LightSpectrum, Boolean>()
+            val hwStatus = mutableMapOf<LightSpectrum, String>()
+
+            // Detect hardware capabilities first
+            val gpioAvail = withContext(Dispatchers.IO) { spectrumController.ensureHardwareReady() }
+            for (spectrum in spectra) {
+                val isSerialOnly = !listOf(LightSpectrum.WHITE, LightSpectrum.UV365, LightSpectrum.WOODS, LightSpectrum.POL_P, LightSpectrum.POL_N).contains(spectrum)
+                hwStatus[spectrum] = when {
+                    spectrum == LightSpectrum.OFF || spectrum == LightSpectrum.ALL -> "N/A"
+                    !isSerialOnly && gpioAvail -> "GPIO"
+                    isSerialOnly -> "Serial"
+                    else -> "Unavailable"
+                }
+            }
+            _ledHardwareStatus.value = hwStatus
+
             for ((index, spectrum) in spectra.withIndex()) {
                 _ledTestProgress.value = "فحص ${spectrum.displayNameAr} (${index + 1}/${spectra.size})"
                 val result = withContext(Dispatchers.IO) {
@@ -219,12 +259,17 @@ class AnalysisViewModel @Inject constructor(
                 kotlinx.coroutines.delay(150)
                 withContext(Dispatchers.IO) { spectrumController.activate(LightSpectrum.OFF) }
                 kotlinx.coroutines.delay(50)
-                Timber.i("LED pre-test ${spectrum.name}: ok=$ok")
+                Timber.i("LED pre-test ${spectrum.name}: ok=$ok, hw=${hwStatus[spectrum]}")
             }
             _ledTestResults.value = results
             val allOk = results.values.all { it }
-            _ledTestProgress.value = if (allOk) "جميع الأضواء تعمل ✓" else "⚠️ بعض الأضواء لا تعمل"
-            Timber.i("LED pre-test complete: allOk=$allOk, results=$results")
+            val failedCount = results.values.count { !it }
+            _ledTestProgress.value = when {
+                allOk -> "جميع الأضواء تعمل ✓"
+                failedCount <= 2 -> "⚠️ $failedCount أضواء لا تعمل — الفحص قد يكون مكتملاً"
+                else -> "⚠️ $failedCount أضواء لا تعمل — قد تتأثر جودة التحليل"
+            }
+            Timber.i("LED pre-test complete: allOk=$allOk, results=$results, hwStatus=$hwStatus")
         }
     }
 
