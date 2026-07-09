@@ -334,7 +334,7 @@ class AnalysisActivity : BaseCameraActivity() {
                 }
 
                 launch {
-                    viewModel.ledTestStatus.collect { status ->
+                    viewModel.ledTestProgress.collect { status ->
                         if (status.isNotEmpty()) {
                             binding.tvLedStatus.text = status
                             binding.tvLedStatus.visibility = android.view.View.VISIBLE

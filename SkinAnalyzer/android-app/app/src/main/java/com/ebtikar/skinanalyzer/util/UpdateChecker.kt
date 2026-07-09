@@ -32,7 +32,8 @@ data class GitHubRelease(
     val name: String? = null,
     val body: String? = null,
     val assets: List<GitHubAsset> = emptyList(),
-    val prerelease: Boolean = false
+    val prerelease: Boolean = false,
+    val published_at: String? = null
 )
 
 @Serializable
@@ -49,7 +50,8 @@ data class UpdateInfo(
     val releaseNotes: String?,
     val assetName: String,
     val isPrerelease: Boolean,
-    val assetId: Long = 0
+    val assetId: Long = 0,
+    val publishedAt: String? = null
 )
 
 @Singleton
@@ -106,7 +108,8 @@ class UpdateChecker @Inject constructor(
                     releaseNotes = release.body,
                     assetName = apkAsset.name,
                     isPrerelease = release.prerelease,
-                    assetId = apkAsset.id
+                    assetId = apkAsset.id,
+                    publishedAt = release.published_at
                 )
             }
         } catch (e: Exception) {
@@ -346,7 +349,8 @@ class UpdateChecker @Inject constructor(
                         releaseNotes = release.body,
                         assetName = apkAsset.name,
                         isPrerelease = release.prerelease,
-                        assetId = apkAsset.id
+                        assetId = apkAsset.id,
+                        publishedAt = release.published_at
                     )
                 }
                 .filter { it.latestVersion != current } // exclude current version

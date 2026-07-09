@@ -459,28 +459,133 @@ class SettingsActivity : AppCompatActivity() {
      */
     private fun showRollbackDialog(releases: List<UpdateInfo>) {
         val current = updateChecker.getCurrentVersion()
-        val labels = releases.map { release ->
-            val suffix = if (release.isPrerelease) " (تجريبي)" else " (مستقر)"
-            "v${release.latestVersion}$suffix"
-        }.toTypedArray()
+
+        // Build a scrollable list of versions with info
+        val scrollView = android.widget.ScrollView(this).apply {
+            setPadding(48, 32, 48, 16)
+        }
+        val container = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+        }
+
+        // Current version header
+        val currentLabel = android.widget.TextView(this).apply {
+            text = "الإصدار الحالي: v$current"
+            setTextColor(android.graphics.Color.parseColor("#D4AF37"))
+            textSize = 14f
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setPadding(0, 0, 0, 16)
+        }
+        container.addView(currentLabel)
+
+        for (release in releases) {
+            val card = com.google.android.material.card.MaterialCardView(this).apply {
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { bottomMargin = 12 }
+                setCardBackgroundColor(android.graphics.Color.parseColor("#1E1E1E"))
+                radius = 12f
+                cardElevation = 2f
+                isClickable = true
+                isFocusable = true
+                setOnClickListener { showRollbackConfirm(release, current) }
+            }
+
+            val cardContent = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                setPadding(24, 16, 24, 16)
+            }
+
+            // Version + badge row
+            val versionRow = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+            }
+
+            val versionText = android.widget.TextView(this).apply {
+                text = "v${release.latestVersion}"
+                setTextColor(android.graphics.Color.WHITE)
+                textSize = 16f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+            }
+            versionRow.addView(versionText)
+
+            val badge = android.widget.TextView(this).apply {
+                text = if (release.isPrerelease) "تجريبي" else "مستقر"
+                setTextColor(if (release.isPrerelease) android.graphics.Color.parseColor("#FF9800") else android.graphics.Color.parseColor("#4CAF50"))
+                textSize = 11f
+                setPadding(16, 2, 16, 2)
+                val bg = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(android.graphics.Color.parseColor(if (release.isPrerelease) "#33FF9800" else "#334CAF50"))
+                    cornerRadius = 8f
+                }
+                background = bg
+            }
+            val badgeParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { marginStart = 12 }
+            versionRow.addView(badge, badgeParams)
+            cardContent.addView(versionRow)
+
+            // Date
+            if (release.publishedAt != null) {
+                val dateText = try {
+                    val input = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US)
+                    val output = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale("ar"))
+                    val date = input.parse(release.publishedAt)
+                    if (date != null) output.format(date) else release.publishedAt
+                } catch (_: Exception) { release.publishedAt }
+                val dateLabel = android.widget.TextView(this).apply {
+                    text = dateText
+                    setTextColor(android.graphics.Color.parseColor("#80FFFFFF"))
+                    textSize = 12f
+                    setPadding(0, 4, 0, 0)
+                }
+                cardContent.addView(dateLabel)
+            }
+
+            // Release notes (truncated)
+            if (!release.releaseNotes.isNullOrBlank()) {
+                val notesPreview = release.releaseNotes.take(150).trim() +
+                    if (release.releaseNotes.length > 150) "..." else ""
+                val notesText = android.widget.TextView(this).apply {
+                    text = notesPreview
+                    setTextColor(android.graphics.Color.parseColor("#B0FFFFFF"))
+                    textSize = 11f
+                    maxLines = 3
+                    setPadding(0, 8, 0, 0)
+                }
+                cardContent.addView(notesText)
+            }
+
+            card.addView(cardContent)
+            container.addView(card)
+        }
+
+        scrollView.addView(container)
 
         android.app.AlertDialog.Builder(this)
-            .setTitle("اختر الإصدار للرجوع إليه")
-            .setMessage("الإصدار الحالي: v$current\nسيتم تنزيل الإصدار المحدد وتثبيته.")
-            .setItems(labels) { _, index ->
-                val selected = releases[index]
-                // Confirmation step
-                android.app.AlertDialog.Builder(this)
-                    .setTitle("تأكيد الرجوع")
-                    .setMessage(
-                        "هل تريد الرجوع من v$current إلى v${selected.latestVersion}؟\n\n" +
-                        "سيتم تنزيل الإصدار وتثبيته. قد يحتاج التطبيق لإعادة التشغيل."
-                    )
-                    .setPositiveButton("رجوع") { _, _ ->
-                        downloadAndInstallVersion(selected)
-                    }
-                    .setNegativeButton("إلغاء", null)
-                    .show()
+            .setTitle("اختر إصداراً للرجوع إليه")
+            .setView(scrollView)
+            .setNegativeButton("إلغاء", null)
+            .show()
+    }
+
+    private fun showRollbackConfirm(release: UpdateInfo, current: String) {
+        val notesPreview = if (!release.releaseNotes.isNullOrBlank()) {
+            "\n\nملاحظات الإصدار:\n${release.releaseNotes.take(200)}"
+        } else ""
+
+        android.app.AlertDialog.Builder(this)
+            .setTitle("تأكيد الرجوع إلى v${release.latestVersion}")
+            .setMessage(
+                "من: v$current\nإلى: v${release.latestVersion}$notesPreview\n\n" +
+                "سيتم تنزيل الإصدار وتثبيته."
+            )
+            .setPositiveButton("تنزيل وتثبيت") { _, _ ->
+                downloadAndInstallVersion(release)
             }
             .setNegativeButton("إلغاء", null)
             .show()
@@ -490,18 +595,38 @@ class SettingsActivity : AppCompatActivity() {
      * Downloads a specific release APK and triggers installation.
      */
     private fun downloadAndInstallVersion(updateInfo: UpdateInfo) {
-        val progressDialog = android.app.ProgressDialog(this).apply {
-            setTitle("جاري تنزيل v${updateInfo.latestVersion}")
-            setMessage("يرجى الانتظار...")
-            setProgressStyle(android.app.ProgressDialog.STYLE_HORIZONTAL)
-            setMax(100)
-            setCancelable(false)
-            show()
+        val dialogView = layoutInflater.inflate(android.R.layout.simple_list_item_1, null).apply {
+            setPadding(48, 32, 48, 16)
         }
+        val messageText = dialogView.findViewById<android.widget.TextView>(android.R.id.text1)?.apply {
+            text = "يرجى الانتظار..."
+            textSize = 14f
+        }
+        val progressBar = android.widget.ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+            max = 100
+            progress = 0
+            setPadding(48, 16, 48, 8)
+        }
+        val dialogContainer = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            addView(progressBar)
+            addView(dialogView)
+        }
+
+        val progressDialog = android.app.AlertDialog.Builder(this)
+            .setTitle("جاري تنزيل v${updateInfo.latestVersion}")
+            .setView(dialogContainer)
+            .setCancelable(false)
+            .create()
+        progressDialog.show()
+
         lifecycleScope.launch {
             val uri: android.net.Uri? = withContext(Dispatchers.IO) {
                 updateChecker.downloadApk(updateInfo) { progress ->
-                    runOnUiThread { progressDialog.progress = (progress * 100).toInt() }
+                    runOnUiThread {
+                        progressBar.progress = (progress * 100).toInt()
+                        messageText?.text = "جاري التنزيل... ${(progress * 100).toInt()}%"
+                    }
                 }
             }
             progressDialog.dismiss()
