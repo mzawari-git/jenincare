@@ -34,7 +34,10 @@ import com.ebtikar.skinanalyzer.databinding.ActivityAnalysisBinding
 import com.ebtikar.skinanalyzer.hardware.FiseGpioController
 import com.ebtikar.skinanalyzer.hardware.SerialBusManager
 import com.ebtikar.skinanalyzer.hardware.LightSpectrum
-import com.ebtikar.skinanalyzer.ui.report.ReportActivity
+import com.ebtikar.skinanalyzer.model.MetricSeverity
+import com.ebtikar.skinanalyzer.model.SkinMetric
+import com.ebtikar.skinanalyzer.ui.result.ResultActivity
+import com.ebtikar.skinanalyzer.ui.scan.AnalysisMarker
 import com.ebtikar.skinanalyzer.util.Constants
 import com.ebtikar.skinanalyzer.util.PreferencesManager
 import com.ebtikar.skinanalyzer.util.VoiceGuideManager
@@ -307,6 +310,8 @@ class AnalysisActivity : BaseCameraActivity() {
                             binding.btnViewReport.visibility = android.view.View.VISIBLE
                             binding.medicalLens.visibility = android.view.View.GONE
                             binding.digitalMesh.visibility = android.view.View.GONE
+                            binding.faceGridOverlay.visibility = android.view.View.GONE
+                            showAnalysisMarkers()
                             val rv = viewModel.radarValues.value
                             val rl = viewModel.radarLabels.value
                             if (rv.isNotEmpty() && rl.isNotEmpty()) {
@@ -433,6 +438,7 @@ class AnalysisActivity : BaseCameraActivity() {
                             binding.scanDataPanel.setFaceDetected(detected)
                             binding.digitalMesh.updateFacePosition(cx, cy)
                             binding.faceGuideOverlay.setFacePosition(cx, cy)
+                            binding.faceGridOverlay.setFacePosition(cx, cy)
                         }
                 }
 
@@ -466,6 +472,7 @@ class AnalysisActivity : BaseCameraActivity() {
                 launch {
                     capturePipeline.faceGuideVisible.collect { visible ->
                         binding.faceGuideOverlay.visibility = if (visible) android.view.View.VISIBLE else android.view.View.GONE
+                        binding.faceGridOverlay.visibility = if (visible) android.view.View.VISIBLE else android.view.View.GONE
                     }
                 }
             }
@@ -538,7 +545,7 @@ class AnalysisActivity : BaseCameraActivity() {
     }
 
     private fun navigateToReport() {
-        val intent = Intent(this, ReportActivity::class.java).apply {
+        val intent = Intent(this, ResultActivity::class.java).apply {
             putExtra("report_id", viewModel.getReportId())
         }
         startActivity(intent)
@@ -598,6 +605,45 @@ class AnalysisActivity : BaseCameraActivity() {
         runOnUiThread {
             updatePhaseUI(phase.copy(status = CapturePhase.Status.COMPLETE))
             voiceGuide.speakCaptureComplete(phase.spectrum.displayNameAr)
+        }
+    }
+
+    private fun showAnalysisMarkers() {
+        val markers = mutableListOf<AnalysisMarker>()
+        val metrics = viewModel.capturedImages.value
+
+        val hydration = viewModel.hydration.value
+        val pores = viewModel.pores.value
+        val redness = viewModel.redness.value
+        val texture = viewModel.texture.value
+        val acne = viewModel.acne.value
+        val sensitivity = viewModel.sensitivity.value
+        val pigmentation = viewModel.pigmentation.value
+
+        if (pigmentation > 0f) {
+            markers.add(AnalysisMarker(0.5f, 0.3f, AnalysisMarker.MarkerType.PIGMENTATION, "التصبغ", pigmentation / 100f))
+        }
+        if (acne > 0f) {
+            markers.add(AnalysisMarker(0.4f, 0.55f, AnalysisMarker.MarkerType.ACNE, "حب الشباب", acne / 100f))
+            markers.add(AnalysisMarker(0.6f, 0.5f, AnalysisMarker.MarkerType.ACNE, "حب الشباب", acne / 100f * 0.8f))
+        }
+        if (pores > 60f) {
+            markers.add(AnalysisMarker(0.45f, 0.45f, AnalysisMarker.MarkerType.OILY, "الدهون", pores / 100f))
+        }
+        if (texture < 50f) {
+            markers.add(AnalysisMarker(0.55f, 0.35f, AnalysisMarker.MarkerType.DRYNESS, "الجفاف", (100f - texture) / 100f))
+        }
+        if (redness > 50f) {
+            markers.add(AnalysisMarker(0.35f, 0.4f, AnalysisMarker.MarkerType.ACNE, "الاحمرار", redness / 100f))
+        }
+
+        markers.add(AnalysisMarker(0.5f, 0.65f, AnalysisMarker.MarkerType.DARK_CIRCLES, "الهالات", 0.7f))
+
+        if (markers.isNotEmpty()) {
+            binding.analysisMarkersOverlay.visibility = android.view.View.VISIBLE
+            val faceRect = binding.faceGuideOverlay.getFaceRect()
+            binding.analysisMarkersOverlay.setMarkers(markers, faceRect)
+            Timber.i("Analysis markers displayed: ${markers.size} markers")
         }
     }
 

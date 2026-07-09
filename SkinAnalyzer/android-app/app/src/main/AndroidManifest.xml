@@ -78,6 +78,11 @@
             android:screenOrientation="landscape" />
 
         <activity
+            android:name=".ui.result.ResultActivity"
+            android:exported="false"
+            android:screenOrientation="landscape" />
+
+        <activity
             android:name=".ui.settings.SettingsActivity"
             android:exported="false"
             android:screenOrientation="landscape" />

@@ -308,7 +308,7 @@ class AnalysisViewModel @Inject constructor(
         analysisJob = viewModelScope.launch {
             _statusMessage.value = "Initializing analysis..."
 
-            val outputDir = File(context.filesDir, "captures/$reportId")
+            val outputDir = File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DCIM), "Jenincare/$reportId")
 
             val captureResult = repository.startAnalysis(outputDir, diagnosisMode, previewSurface)
 
@@ -376,7 +376,7 @@ class AnalysisViewModel @Inject constructor(
 
     private fun cleanupOldCaptures() {
         try {
-            val capturesDir = File(context.filesDir, "captures")
+            val capturesDir = File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DCIM), "Jenincare")
             if (!capturesDir.exists()) return
             val dirs = capturesDir.listFiles()?.filter { it.isDirectory }?.sortedBy { it.lastModified() } ?: return
             val maxDirs = 10

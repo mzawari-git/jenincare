@@ -46,6 +46,20 @@
         android:layout_height="match_parent"
         android:visibility="gone" />
 
+    <!-- Face Grid Overlay (3x3 grid + face oval) -->
+    <com.ebtikar.skinanalyzer.ui.scan.FaceGridOverlay
+        android:id="@+id/faceGridOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <!-- Analysis Markers Overlay (colored skin issue markers) -->
+    <com.ebtikar.skinanalyzer.ui.scan.AnalysisMarkersOverlay
+        android:id="@+id/analysisMarkersOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
     <!-- Capture Flash Overlay -->
     <View
         android:id="@+id/captureFlashOverlay"

@@ -28,7 +28,7 @@ android {
 
     defaultConfig {
         applicationId = "com.ebtikar.skinanalyzer.pro"
-        minSdk = 24
+        minSdk = 27
         //noinspection EditedTargetSdkVersion
         targetSdk = 33
         versionCode = 50

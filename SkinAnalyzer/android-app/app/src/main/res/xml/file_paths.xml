@@ -4,4 +4,6 @@
     <cache-path name="pdf_reports_cache" path="pdf_reports/" />
     <files-path name="pdf_reports_files" path="pdf_reports/" />
     <files-path name="exports" path="exports/" />
+    <external-path name="dcim_jenincare" path="DCIM/Jenincare/" />
+    <external-files-path name="external_files" path="." />
 </paths>
