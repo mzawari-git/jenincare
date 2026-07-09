@@ -127,7 +127,7 @@ class SpectrumController @Inject constructor(
      * Verify that the LED actually turned on by reading back the GPIO state.
      * Returns true if verification passes or is not applicable.
      */
-    private fun verifyLedActivation(spectrum: LightSpectrum): Boolean {
+    private suspend fun verifyLedActivation(spectrum: LightSpectrum): Boolean {
         val gpioIndex = when (spectrum) {
             LightSpectrum.WHITE -> 0
             LightSpectrum.UV365 -> 1
@@ -137,7 +137,7 @@ class SpectrumController @Inject constructor(
             else -> return true  // No GPIO verification for serial-only spectra
         }
         // Give the GPIO a moment to settle
-        Thread.sleep(50)
+        delay(50)
         val currentValue = fiseGpio.readGpioValue(gpioIndex)
         val expectedOn = "0"  // Active LOW: 0=ON
         val verified = currentValue == expectedOn
