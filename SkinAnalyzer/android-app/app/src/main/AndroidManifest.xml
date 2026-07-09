@@ -111,6 +111,11 @@
             android:screenOrientation="landscape" />
 
         <activity
+            android:name=".ui.timeline.TimelineActivity"
+            android:exported="false"
+            android:screenOrientation="landscape" />
+
+        <activity
             android:name=".ui.demo.DemoActivity"
             android:exported="false"
             android:screenOrientation="landscape" />

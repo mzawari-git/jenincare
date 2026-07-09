@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.ebtikar.skinanalyzer.databinding.ActivityHistoryBinding
 import com.ebtikar.skinanalyzer.ui.report.ReportActivity
+import com.ebtikar.skinanalyzer.ui.timeline.TimelineActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -82,6 +83,9 @@ class HistoryActivity : AppCompatActivity() {
 
     private fun setupUI() {
         binding.btnBack.setOnClickListener { finish() }
+        binding.btnTimeline.setOnClickListener {
+            startActivity(Intent(this, TimelineActivity::class.java))
+        }
     }
 
     private fun observeViewModel() {

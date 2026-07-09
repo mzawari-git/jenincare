@@ -26,6 +26,8 @@ import com.ebtikar.skinanalyzer.model.MetricSeverity
 import com.ebtikar.skinanalyzer.model.SkinAnalysisReport
 import com.ebtikar.skinanalyzer.model.SkinMetric
 import com.ebtikar.skinanalyzer.model.SkinProfile
+import com.ebtikar.skinanalyzer.model.HeatmapPoint
+import com.ebtikar.skinanalyzer.model.SkinZone
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -300,6 +302,7 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
             val expertTips = mockEngine.generateExpertTips(metricsMap)
             val products = mockEngine.generateProductRecommendations(metricsMap)
             val skinProfile = mockEngine.generateSkinProfile(metricsMap)
+            val heatmapPoints = generateHeatmapPoints(metricsList)
 
             val report = SkinAnalysisReport(
                 providerName = "Ensemble_Engine(${ensembleResults.joinToString("+") { it.engineName }})",
@@ -310,7 +313,8 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                 expertTipsAr = expertTips,
                 productRecommendations = products,
                 skinProfile = skinProfile,
-                confidence = ensembleReport.overallConfidence
+                confidence = ensembleReport.overallConfidence,
+                heatmapPoints = heatmapPoints
             )
 
             // Cache the result
@@ -384,6 +388,37 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                 metrics[SkinMetric.Type.WRINKLES] = m.copy(score = adjustedWrinkles, details = m.details + " | تم تعديله بناءً على الرطوبة")
             }
         }
+    }
+
+    private fun generateHeatmapPoints(metrics: List<SkinMetric>): List<HeatmapPoint> {
+        val points = mutableListOf<HeatmapPoint>()
+        val zoneToCoords = mapOf(
+            SkinZone.T_ZONE to listOf(Pair(0.5f, 0.35f)),
+            SkinZone.U_ZONE to listOf(Pair(0.3f, 0.55f), Pair(0.7f, 0.55f)),
+            SkinZone.O_ZONE to listOf(Pair(0.25f, 0.5f), Pair(0.75f, 0.5f)),
+            SkinZone.EYE_AREA to listOf(Pair(0.35f, 0.4f), Pair(0.65f, 0.4f)),
+            SkinZone.FULL_FACE to listOf(Pair(0.5f, 0.5f))
+        )
+
+        for (metric in metrics) {
+            if (metric.severity == MetricSeverity.EXCELLENT || metric.severity == MetricSeverity.GOOD) continue
+            val coords = zoneToCoords[metric.zone] ?: continue
+            val severityValue = (100f - metric.score) / 100f
+            for (coord in coords) {
+                val x = coord.first
+                val y = coord.second
+                val jitterX = x + (Math.random().toFloat() - 0.5f) * 0.06f
+                val jitterY = y + (Math.random().toFloat() - 0.5f) * 0.06f
+                points.add(HeatmapPoint(
+                    x = jitterX.coerceIn(0.1f, 0.9f),
+                    y = jitterY.coerceIn(0.1f, 0.9f),
+                    value = severityValue.coerceIn(0f, 1f),
+                    label = metric.type.name
+                ))
+            }
+        }
+        Timber.i("Generated ${points.size} heatmap points from ${metrics.size} metrics")
+        return points
     }
 
     private fun generateAIAnalysisText(metrics: List<SkinMetric>, profile: SkinProfile): String {
@@ -732,5 +767,9 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
         }
         Timber.d("getCapturedImages: found ${images.size} images")
         return images
+    }
+
+    override fun getReportsSince(sinceTimestamp: Long): Flow<List<SkinReportEntity>> {
+        return reportDao.getReportsSince(sinceTimestamp)
     }
 }

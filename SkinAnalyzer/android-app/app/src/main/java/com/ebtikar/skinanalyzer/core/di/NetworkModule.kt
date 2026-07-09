@@ -29,7 +29,11 @@ object NetworkModule {
     @Singleton
     fun provideAuthInterceptor(tokenManager: TokenManager): Interceptor {
         return Interceptor { chain ->
-            val token = runBlocking { tokenManager.getToken() }
+            val token = try {
+                kotlinx.coroutines.runBlocking {
+                    kotlinx.coroutines.withTimeoutOrNull(2000L) { tokenManager.getToken() }
+                }
+            } catch (_: Exception) { null }
             val requestBuilder = chain.request().newBuilder()
                 .addHeader("Accept", "application/json")
 
@@ -65,7 +69,11 @@ object NetworkModule {
         return OkHttpClient.Builder()
             .addInterceptor { chain ->
                 val originalRequest = chain.request()
-                val customUrl = runBlocking { preferencesManager.apiUrlFlow.first() }
+                val customUrl = try {
+                    runBlocking {
+                        kotlinx.coroutines.withTimeoutOrNull(2000L) { preferencesManager.apiUrlFlow.first() } ?: ""
+                    }
+                } catch (_: Exception) { "" }
                 
                 if (customUrl.isNotBlank()) {
                     try {

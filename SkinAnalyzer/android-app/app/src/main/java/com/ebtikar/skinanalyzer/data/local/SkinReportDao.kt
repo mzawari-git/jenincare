@@ -26,4 +26,7 @@ interface SkinReportDao {
 
     @Query("SELECT COUNT(*) FROM skin_reports")
     suspend fun getReportCount(): Int
+
+    @Query("SELECT * FROM skin_reports WHERE timestamp >= :sinceTimestamp ORDER BY timestamp ASC")
+    fun getReportsSince(sinceTimestamp: Long): Flow<List<SkinReportEntity>>
 }

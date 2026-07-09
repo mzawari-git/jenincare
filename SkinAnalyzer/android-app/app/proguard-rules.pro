@@ -44,3 +44,7 @@
 # MediaPipe
 -keep class com.google.mediapipe.** { *; }
 -dontwarn com.google.mediapipe.**
+
+# javax.lang.model (referenced by autovalue/JavaPoet in annotation processors)
+-dontwarn javax.lang.model.**
+-dontwarn autovalue.shaded.**

@@ -82,6 +82,52 @@ class VoiceGuideManager @Inject constructor(
         speak(message)
     }
 
+    fun speakLedTestResults(passed: Int, total: Int) {
+        if (passed == total) {
+            speak("فحص $total أضواء — جميعها تعمل بشكل صحيح")
+        } else {
+            val failed = total - passed
+            speak("فحص $total أضواء — $passed تعمل و $failed لا تعمل")
+        }
+    }
+
+    fun speakSettling(spectrumNameAr: String) {
+        speak("ثبّت الإضاءة — جاري التقاط صورة $spectrumNameAr")
+    }
+
+    fun speakCountdown(value: Int) {
+        when (value) {
+            3 -> speak("ثلاثة")
+            2 -> speak("اثنان")
+            1 -> speak("واحد")
+        }
+    }
+
+    fun speakHardwareWarning(warning: String) {
+        speak(warning)
+    }
+
+    fun speakScanComplete() {
+        speak("اكتمل المسح الضوئي — جاري تحليل البشرة")
+    }
+
+    fun speakSaveReport() {
+        speak("جاري حفظ التقرير")
+    }
+
+    private var lastPositionMessage = ""
+    private var lastPositionTime = 0L
+    private val positionDebounceMs = 3000L
+
+    fun speakPositionGuideDebounced(message: String) {
+        val now = System.currentTimeMillis()
+        if (message != lastPositionMessage || now - lastPositionTime > positionDebounceMs) {
+            lastPositionMessage = message
+            lastPositionTime = now
+            speak(message)
+        }
+    }
+
     fun shutdown() {
         tts?.stop()
         tts?.shutdown()

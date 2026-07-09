@@ -83,7 +83,7 @@ data class ProductRecommendation(
     val shopUrl: String = ""
 ) {
     val displayUrl: String
-        get() = shopUrl.ifEmpty { "https://jenincare.shop/products/$id" }
+        get() = shopUrl.ifEmpty { "https://jenincare.shop/public/product/$id" }
 }
 
 @Serializable

@@ -367,54 +367,94 @@ class MockAnalysisEngine @Inject constructor(
 
     private fun fallbackProduct(type: SkinMetric.Type): ProductRecommendation = when (type) {
         SkinMetric.Type.MOISTURE -> ProductRecommendation(
-            id = "p1", name = "Hyaluronic Acid Serum", nameAr = "سيروم حمض الهيالورونيك",
-                    brand = "JeniCare", category = "serum", price = 189f, currency = "ILS",
-            matchScore = 0.95f, reason = "Deep hydration", reasonAr = "ترطيب عميق للبشرة الجافة"
+            id = "krym-trtyb", name = "Moisturizing Cream", nameAr = "كريم ترطيب",
+            brand = "JeniCare", category = "moisturizer", price = 90f, currency = "ILS",
+            matchScore = 0.95f, reason = "Deep hydration", reasonAr = "ترطيب عميق للبشرة الجافة",
+            shopUrl = "https://jenincare.shop/public/product/krym-trtyb"
         )
         SkinMetric.Type.PORES -> ProductRecommendation(
-            id = "p2", name = "BHA Pore Minimizer", nameAr = "غسول تصغير المسام",
-            brand = "JeniCare", category = "cleanser", price = 149f, currency = "ILS",
-            matchScore = 0.92f, reason = "Pore cleansing", reasonAr = "تنظيف عميق وتقليص المسام"
+            id = "syrom-llmsamat-aark-sos", name = "Pore Serum Licorice", nameAr = "سيروم للمسامات عرق سوس",
+            brand = "JeniCare", category = "serum", price = 20f, currency = "ILS",
+            matchScore = 0.92f, reason = "Pore cleansing", reasonAr = "تنظيف عميق وتقليص المسام",
+            shopUrl = "https://jenincare.shop/public/product/syrom-llmsamat-aark-sos"
         )
         SkinMetric.Type.WRINKLES -> ProductRecommendation(
-            id = "p3", name = "Retinol Night Cream", nameAr = "كريم الريتينول الليلي",
-            brand = "JeniCare", category = "cream", price = 249f, currency = "ILS",
-            matchScore = 0.90f, reason = "Anti-aging", reasonAr = "مكافحة التجاعيد وشد البشرة"
+            id = "syrom-kolagyn", name = "Collagen Serum", nameAr = "سيروم كولاجين",
+            brand = "JeniCare", category = "serum", price = 35f, currency = "ILS",
+            matchScore = 0.90f, reason = "Anti-aging", reasonAr = "مكافحة التجاعيد وشد البشرة",
+            shopUrl = "https://jenincare.shop/public/product/syrom-kolagyn"
         )
         SkinMetric.Type.UV_SPOTS -> ProductRecommendation(
-            id = "p4", name = "SPF 50+ Sunscreen", nameAr = "واقي شمس SPF 50+",
-            brand = "JeniCare", category = "sunscreen", price = 129f, currency = "ILS",
-            matchScore = 0.93f, reason = "UV protection", reasonAr = "حماية فائقة من أشعة الشمس"
+            id = "oaky-shms", name = "Sunscreen SPF 50+", nameAr = "واقي شمس",
+            brand = "JeniCare", category = "sunscreen", price = 35f, currency = "ILS",
+            matchScore = 0.93f, reason = "UV protection", reasonAr = "حماية فائقة من أشعة الشمس",
+            shopUrl = "https://jenincare.shop/public/product/oaky-shms"
         )
         SkinMetric.Type.PIGMENTATION -> ProductRecommendation(
-            id = "p5", name = "Vitamin C Brightening Serum", nameAr = "سيروم فيتامين سي المفتح",
-            brand = "JeniCare", category = "serum", price = 199f, currency = "ILS",
-            matchScore = 0.91f, reason = "Brightening", reasonAr = "تفتيح وتوحيد لون البشرة"
+            id = "krym-tftyh", name = "Whitening Cream", nameAr = "كريم تفتيح",
+            brand = "JeniCare", category = "cream", price = 40f, currency = "ILS",
+            matchScore = 0.91f, reason = "Brightening", reasonAr = "تفتيح وتوحيد لون البشرة",
+            shopUrl = "https://jenincare.shop/public/product/krym-tftyh"
         )
         SkinMetric.Type.ACNE -> ProductRecommendation(
-            id = "p6", name = "Tea Tree Oil Gel", nameAr = "جل شجرة الشاي",
-            brand = "JeniCare", category = "treatment", price = 99f, currency = "ILS",
-            matchScore = 0.88f, reason = "Acne treatment", reasonAr = "علاج حب الشباب والالتهابات"
+            id = "knaaa-asod", name = "Black Mask", nameAr = "قناع اسود",
+            brand = "JeniCare", category = "mask", price = 10f, currency = "ILS",
+            matchScore = 0.88f, reason = "Acne treatment", reasonAr = "علاج حب الشباب والالتهابات",
+            shopUrl = "https://jenincare.shop/public/product/knaaa-asod"
         )
         SkinMetric.Type.DARK_CIRCLES -> ProductRecommendation(
-            id = "p7", name = "Eye Cream with Caffeine", nameAr = "كريم العين بالكافيين",
-            brand = "JeniCare", category = "eye_care", price = 159f, currency = "ILS",
-            matchScore = 0.89f, reason = "Dark circle reduction", reasonAr = "تقليل الهالات الداكنة حول العين"
+            id = "krym-fytamyn-c-llaayon", name = "Vitamin C Eye Cream", nameAr = "كريم فيتامين سي للعيون",
+            brand = "JeniCare", category = "eye_care", price = 20f, currency = "ILS",
+            matchScore = 0.89f, reason = "Dark circle reduction", reasonAr = "تقليل الهالات الداكنة حول العين",
+            shopUrl = "https://jenincare.shop/public/product/krym-fytamyn-c-llaayon"
         )
         SkinMetric.Type.ROSACEA -> ProductRecommendation(
-            id = "p10", name = "Niacinamide & Zinc Serum", nameAr = "سيروم النياسيناميد والزنك",
-            brand = "JeniCare", category = "serum", price = 179f, currency = "ILS",
-            matchScore = 0.89f, reason = "Soothing redness", reasonAr = "تهدئة الاحمرار وعلاج الوردية"
+            id = "larosh-syrom", name = "La Roche Serum", nameAr = "لاروش سيروم",
+            brand = "La Roche-Posay", category = "serum", price = 50f, currency = "ILS",
+            matchScore = 0.89f, reason = "Soothing redness", reasonAr = "تهدئة الاحمرار وعلاج الوردية",
+            shopUrl = "https://jenincare.shop/public/product/larosh-syrom"
         )
         SkinMetric.Type.MELASMA -> ProductRecommendation(
-            id = "p11", name = "Arbutin Dark Spot Corrector", nameAr = "مصحح البقع الداكنة بالأربوتين",
-            brand = "JeniCare", category = "treatment", price = 209f, currency = "ILS",
-            matchScore = 0.88f, reason = "Melasma treatment", reasonAr = "علاج الكلف والتصبغات العميقة"
+            id = "syrom-aark-sos", name = "Licorice Serum", nameAr = "سيروم عرق سوس",
+            brand = "JeniCare", category = "serum", price = 20f, currency = "ILS",
+            matchScore = 0.88f, reason = "Melasma treatment", reasonAr = "علاج الكلف والتصبغات العميقة",
+            shopUrl = "https://jenincare.shop/public/product/syrom-aark-sos"
         )
-        else -> ProductRecommendation(
-            id = "p_def", name = "Daily Moisturizer", nameAr = "مرطب يومي متعدد الفوائد",
-            brand = "JeniCare", category = "moisturizer", price = 139f, currency = "ILS",
-            matchScore = 0.80f, reason = "Daily care", reasonAr = "عناية يومية شاملة للبشرة"
+        SkinMetric.Type.TEXTURE -> ProductRecommendation(
+            id = "mkshr-ogh", name = "Face Scrub", nameAr = "مقشر وجه",
+            brand = "JeniCare", category = "exfoliant", price = 18f, currency = "ILS",
+            matchScore = 0.87f, reason = "Skin smoothing", reasonAr = "تنعيم الملمس وإزالة الخلايا الميتة",
+            shopUrl = "https://jenincare.shop/public/product/mkshr-ogh"
+        )
+        SkinMetric.Type.SEBUM -> ProductRecommendation(
+            id = "ghsol-alogh-almrtb-mn-cerave", name = "CeraVe Face Wash", nameAr = "غسول الوجه المرطب من CeraVe",
+            brand = "CeraVe", category = "cleanser", price = 18f, currency = "ILS",
+            matchScore = 0.90f, reason = "Oil control", reasonAr = "تنظيف لطيف والتحكم في الدهون",
+            shopUrl = "https://jenincare.shop/public/product/ghsol-alogh-almrtb-mn-cerave"
+        )
+        SkinMetric.Type.BLACKHEADS -> ProductRecommendation(
+            id = "maknh-zoan", name = "Blackhead Remover", nameAr = "ماكنه زوان",
+            brand = "JeniCare", category = "tool", price = 25f, currency = "ILS",
+            matchScore = 0.86f, reason = "Blackhead removal", reasonAr = "إزالة الرؤوس السوداء",
+            shopUrl = "https://jenincare.shop/public/product/maknh-zoan"
+        )
+        SkinMetric.Type.VASCULAR -> ProductRecommendation(
+            id = "larosh-syrom", name = "La Roche Serum", nameAr = "لاروش سيروم",
+            brand = "La Roche-Posay", category = "serum", price = 50f, currency = "ILS",
+            matchScore = 0.89f, reason = "Vascular soothing", reasonAr = "تهدئة الأوعية الدموية والاحمرار",
+            shopUrl = "https://jenincare.shop/public/product/larosh-syrom"
+        )
+        SkinMetric.Type.SKIN_TONE -> ProductRecommendation(
+            id = "mrtb-fytamyn-sy", name = "Vitamin C Moisturizer", nameAr = "مرطب فيتامين سي",
+            brand = "JeniCare", category = "moisturizer", price = 25f, currency = "ILS",
+            matchScore = 0.88f, reason = "Skin tone evening", reasonAr = "توحيد لون البشرة وإشراقتها",
+            shopUrl = "https://jenincare.shop/public/product/mrtb-fytamyn-sy"
+        )
+        SkinMetric.Type.SENSITIVITY -> ProductRecommendation(
+            id = "ghsol-alogh-almrtb-mn-cerave", name = "CeraVe Face Wash", nameAr = "غسول الوجه المرطب من CeraVe",
+            brand = "CeraVe", category = "cleanser", price = 18f, currency = "ILS",
+            matchScore = 0.90f, reason = "Gentle cleansing", reasonAr = "تنظيف لطيف للبشرة الحساسة",
+            shopUrl = "https://jenincare.shop/public/product/ghsol-alogh-almrtb-mn-cerave"
         )
     }
 

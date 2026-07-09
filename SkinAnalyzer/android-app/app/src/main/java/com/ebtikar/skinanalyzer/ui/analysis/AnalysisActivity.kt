@@ -412,6 +412,14 @@ class AnalysisActivity : BaseCameraActivity() {
                     capturePipeline.positionMessage.collect { msg ->
                         if (msg.isNotEmpty() && viewModel.error.value == null) {
                             binding.tvScanInstruction.text = msg
+                            if (msg.contains("تم التحقق من وضع الوجه") || msg.contains("تم التحقق بواسطة الذكاء الاصطناعي")) {
+                                voiceGuide.speakFaceDetected()
+                            } else if (msg.contains("ارفع") || msg.contains("اقترب") || msg.contains("ابتعد") ||
+                                msg.contains("تمركز") || msg.contains("لم يتم") || msg.contains("اضبط")) {
+                                voiceGuide.speakPositionGuideDebounced(msg)
+                            } else if (msg.contains("اكتمل التحليل")) {
+                                voiceGuide.speakAnalysisComplete()
+                            }
                         }
                     }
                 }
@@ -474,6 +482,7 @@ class AnalysisActivity : BaseCameraActivity() {
                             binding.countdownOverlay.visibility = android.view.View.VISIBLE
                             binding.tvCountdown.text = "$value"
                             binding.tvCountdown.alpha = 1f
+                            voiceGuide.speakCountdown(value)
                             binding.tvCountdown.animate().scaleX(1.4f).scaleY(1.4f).setDuration(200).withEndAction {
                                 binding.tvCountdown.animate().scaleX(1f).scaleY(1f).setDuration(150).start()
                             }.start()
@@ -556,7 +565,10 @@ class AnalysisActivity : BaseCameraActivity() {
         val statusText = when (phase.status) {
             CapturePhase.Status.ACTIVATING -> "جاري تفعيل ${phase.spectrum.displayNameAr}..."
             CapturePhase.Status.SETTLING -> "ثبت الإضاءة — ${phase.spectrum.displayNameAr}..."
-            CapturePhase.Status.CAPTURING -> "جاري التقاط الصورة — ${phase.spectrum.displayNameAr}..."
+            CapturePhase.Status.CAPTURING -> {
+                voiceGuide.speakCaptureReady()
+                "جاري التقاط الصورة — ${phase.spectrum.displayNameAr}..."
+            }
             CapturePhase.Status.PROCESSING -> "معالجة ${phase.spectrum.displayNameAr}..."
             CapturePhase.Status.COMPLETE -> "تم — ${phase.spectrum.displayNameAr} ✓"
             CapturePhase.Status.FAILED -> "فشل ${phase.spectrum.displayNameAr} — سيتم المحاولة التالية"

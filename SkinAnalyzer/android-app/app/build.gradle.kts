@@ -31,8 +31,8 @@ android {
         minSdk = 27
         //noinspection EditedTargetSdkVersion
         targetSdk = 33
-        versionCode = 50
-        versionName = "1.2.50"
+        versionCode = 51
+        versionName = "1.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -146,6 +146,9 @@ dependencies {
 
     // Image Loading
     implementation("io.coil-kt:coil:2.7.0")
+
+    // Charts (Timeline)
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 
     // Room Database (for history)
     implementation("androidx.room:room-runtime:2.6.1")

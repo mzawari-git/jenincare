@@ -19,4 +19,5 @@ interface SkinAnalysisRepository {
     suspend fun deleteReport(id: String)
     suspend fun getReportCount(): Int
     fun getCapturedImages(reportId: String): Map<LightSpectrum, File>
+    fun getReportsSince(sinceTimestamp: Long): Flow<List<SkinReportEntity>>
 }
