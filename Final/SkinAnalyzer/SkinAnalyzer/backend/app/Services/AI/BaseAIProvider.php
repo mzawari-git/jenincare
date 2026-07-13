@@ -1,0 +1,199 @@
+<?php
+
+namespace App\Services\AI;
+
+use App\Models\AIProvider;
+use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+
+abstract class BaseAIProvider implements AIProviderInterface
+{
+    protected AIProvider $aiProvider;
+
+    protected Filesystem $disk;
+
+    public function __construct(AIProvider $aiProvider)
+    {
+        $this->aiProvider = $aiProvider;
+        $this->disk = Storage::disk(config('skinanalyzer.scan_disk', 'local'));
+    }
+
+    public function getProviderName(): string
+    {
+        return $this->aiProvider->name;
+    }
+
+    public function isAvailable(): bool
+    {
+        return $this->aiProvider->is_active
+            && $this->aiProvider->hasQuotaAvailable()
+            && ! empty($this->aiProvider->api_credentials);
+    }
+
+    public function getQuotaStatus(): array
+    {
+        return [
+            'provider' => $this->aiProvider->driver_key,
+            'limit' => $this->aiProvider->quota_limit,
+            'used' => $this->aiProvider->quota_used,
+            'remaining' => $this->aiProvider->quota_limit > 0
+                ? max(0, $this->aiProvider->quota_limit - $this->aiProvider->quota_used)
+                : null,
+            'available' => $this->isAvailable(),
+        ];
+    }
+
+    protected function validateImage(array $imageData): void
+    {
+        if (empty($imageData['path']) && empty($imageData['base64'])) {
+            throw new \InvalidArgumentException('Image data must contain either a path or base64 encoded string.');
+        }
+
+        if (! empty($imageData['path'])) {
+            if (! $this->disk->exists($imageData['path'])) {
+                throw new \InvalidArgumentException("Image file not found at path: {$imageData['path']}");
+            }
+
+            $mimeType = $this->disk->mimeType($imageData['path']);
+
+            if (! in_array($mimeType, ['image/jpeg', 'image/png', 'image/webp'], true)) {
+                throw new \InvalidArgumentException("Unsupported image mime type: {$mimeType}. Only JPEG, PNG, and WebP are allowed.");
+            }
+        }
+    }
+
+    protected function encryptImage(string $path): string
+    {
+        $rawContent = $this->disk->get($path);
+        $encrypted = Crypt::encryptString($rawContent);
+
+        $encryptedPath = $path . '.enc';
+        $this->disk->put($encryptedPath, $encrypted);
+
+        return $encryptedPath;
+    }
+
+    protected function decryptImage(string $path): string
+    {
+        $encrypted = $this->disk->get($path);
+        return Crypt::decryptString($encrypted);
+    }
+
+    protected function logRequest(array $response): void
+    {
+        Log::channel('ai_requests')->info('AI Provider request completed', [
+            'provider' => $this->aiProvider->driver_key,
+            'engine_type' => $this->aiProvider->engine_type,
+            'response_keys' => array_keys($response),
+            'timestamp' => now()->toIso8601String(),
+        ]);
+    }
+
+    protected function normalizeResponse(array $rawResponse): UnifiedSkinData
+    {
+        return UnifiedSkinData::fromProviderResponse($rawResponse, $this->aiProvider->driver_key);
+    }
+
+    public function getEngineType(): \App\Enums\EngineType
+    {
+        return \App\Enums\EngineType::from($this->aiProvider->engine_type ?? 'structured');
+    }
+
+    protected function credentials(string $key, mixed $default = null): mixed
+    {
+        $credentials = $this->aiProvider->api_credentials;
+
+        if (! is_array($credentials)) {
+            return $default;
+        }
+
+        return $credentials[$key] ?? $default;
+    }
+
+    protected function config(string $key, mixed $default = null): mixed
+    {
+        $config = $this->aiProvider->config;
+
+        if (! is_array($config)) {
+            return $default;
+        }
+
+        return $config[$key] ?? $default;
+    }
+
+    protected function extractBase64(array $imageData): string
+    {
+        if (! empty($imageData['base64'])) {
+            $base64 = $imageData['base64'];
+
+            if (str_contains($base64, 'base64,')) {
+                $parts = explode('base64,', $base64, 2);
+                return $parts[1];
+            }
+
+            return $base64;
+        }
+
+        if (! empty($imageData['path'])) {
+            $content = $this->disk->get($imageData['path']);
+            return base64_encode($content);
+        }
+
+        throw new \InvalidArgumentException('No valid image data provided.');
+    }
+
+    protected function detectMediaType(array $imageData): string
+    {
+        if (! empty($imageData['base64']) && str_contains($imageData['base64'], 'data:')) {
+            if (preg_match('/data:(image\/\w+);base64,/', $imageData['base64'], $matches)) {
+                return $matches[1];
+            }
+        }
+
+        if (! empty($imageData['path'])) {
+            $mimeType = $this->disk->mimeType($imageData['path']);
+            if ($mimeType) {
+                return $mimeType;
+            }
+        }
+
+        return 'image/jpeg';
+    }
+
+    protected function mapHeatmap(array $rawPoints, string $labelPrefix = ''): array
+    {
+        $coordinates = [];
+
+        foreach ($rawPoints as $point) {
+            if (isset($point['x'], $point['y'], $point['label'])) {
+                $coordinates[] = [
+                    'x' => (float) $point['x'],
+                    'y' => (float) $point['y'],
+                    'label' => $labelPrefix ? $labelPrefix . ' ' . $point['label'] : (string) $point['label'],
+                    'severity' => isset($point['severity']) ? (int) $point['severity'] : 0,
+                ];
+            }
+        }
+
+        return $coordinates;
+    }
+
+    protected function mapDefects(array $rawDefects, string $typeKey = 'type'): array
+    {
+        $defects = [];
+
+        foreach ($rawDefects as $defect) {
+            if (isset($defect[$typeKey])) {
+                $defects[] = [
+                    'type' => (string) $defect[$typeKey],
+                    'severity' => isset($defect['severity']) ? (int) $defect['severity'] : 0,
+                    'description' => $defect['description'] ?? '',
+                ];
+            }
+        }
+
+        return $defects;
+    }
+}

@@ -303,9 +303,8 @@ class AnalysisViewModel @Inject constructor(
         _recentScans.value = emptyList()
         _recommendations.value = emptyList()
 
-        cleanupOldCaptures()
-
         analysisJob = viewModelScope.launch {
+            withContext(Dispatchers.IO) { cleanupOldCaptures() }
             _statusMessage.value = "Initializing analysis..."
 
             val outputDir = try {

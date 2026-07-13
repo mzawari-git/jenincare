@@ -69,7 +69,6 @@ class Store3dController extends Controller
     {
         $products = Product::where('status', 'active')
             ->where('show_in_b2c', true)
-            ->where('published_at', '<=', now())
             ->with('category:id,name_ar,name_en')
             ->select('id', 'category_id', 'name_ar', 'name_en', 'slug', 'b2c_price', 'discount_percentage', 'discount_amount', 'discount_starts_at', 'discount_ends_at', 'average_rating', 'reviews_count', 'main_image', 'thumbnail', 'is_featured', 'is_bestseller')
             ->get();
@@ -97,18 +96,27 @@ class Store3dController extends Controller
             }
         }
 
-        // Always put discounted/featured products in offers section too
-        $offersExtra = $products->filter(fn($p) => $p->isDiscountActive() || $p->is_featured || $p->is_bestseller);
-        $grouped['offers'] = collect($grouped['offers'])
-            ->merge($offersExtra)
-            ->unique('id')
-            ->take(6)
-            ->values()
-            ->all();
+        // Also prepare a flat all-products list for the wall display
+        $allFlat = $products->map(function ($p) {
+            $price = $p->getCurrentPrice();
+            return [
+                'id' => $p->id,
+                'name_ar' => $p->name_ar,
+                'name_en' => $p->name_en,
+                'slug' => $p->slug,
+                'price' => $price,
+                'rating' => (float) ($p->average_rating ?? 0),
+                'reviews_count' => $p->reviews_count ?? 0,
+                'image' => $p->main_image_url ?? '',
+                'thumbnail' => $p->thumbnail ?? '',
+                'is_featured' => $p->is_featured,
+                'is_on_sale' => $p->isDiscountActive(),
+            ];
+        })->values();
 
-        // Limit each section to 4 products (matching 3 shelf positions per section)
+        // Return all products grouped by section AND a flat list
         foreach ($grouped as $section => $items) {
-            $grouped[$section] = collect($items)->take(4)->values()->map(function ($p) {
+            $grouped[$section] = collect($items)->map(function ($p) {
                 $price = $p->getCurrentPrice();
                 return [
                     'id' => $p->id,
@@ -123,8 +131,10 @@ class Store3dController extends Controller
                     'is_featured' => $p->is_featured,
                     'is_on_sale' => $p->isDiscountActive(),
                 ];
-            })->all();
+            })->values()->all();
         }
+
+        $grouped['all'] = $allFlat->all();
 
         return response()->json(['data' => $grouped]);
     }

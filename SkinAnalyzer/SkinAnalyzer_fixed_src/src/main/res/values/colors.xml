@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- DERMA AI — Premium Dark Luxury Color System                   -->
+    <!-- Optimized for Bitmoji ZMLH02 (1920×1080 Landscape)           -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+
+    <!-- Brand / Primary -->
+    <color name="primary">#FF00D4FF</color>
+    <color name="primary_dark">#FF0099CC</color>
+    <color name="primary_light">#1A00D4FF</color>
+    <color name="primary_glow">#3300D4FF</color>
+
+    <!-- Aliases for compatibility -->
+    <color name="accent_cyan">#FF00D4FF</color>
+
+    <!-- Secondary / Accent -->
+    <color name="accent_purple">#FF7C3AED</color>
+    <color name="accent_purple_light">#1A7C3AED</color>
+    <color name="accent_gold">#FFF59E0B</color>
+    <color name="accent_gold_light">#1AF59E0B</color>
+    <color name="accent_rose">#FFF43F5E</color>
+    <color name="accent_coral">#FFE11D48</color>
+    <color name="accent_emerald">#FF10B981</color>
+
+    <!-- Background Layers -->
+    <color name="background_primary">#FF05051A</color>
+    <color name="background_secondary">#FF0A0A2E</color>
+    <color name="background_tertiary">#FF0F0F3D</color>
+    <color name="background_card">#FF0D0D28</color>
+    <color name="background_dark">#FF020210</color>
+
+    <!-- Surface / Card -->
+    <color name="surface_card">#FF0D1B3E</color>
+    <color name="surface_card_2">#FF111B3A</color>
+    <color name="surface_elevated">#FF152040</color>
+    <color name="surface_glass">#1AFFFFFF</color>
+    <color name="surface_glass_border">#14FFFFFF</color>
+    <color name="surface_card_dark">#FF0A1428</color>
+
+    <!-- Text -->
+    <color name="text_primary">#FFFFFFFF</color>
+    <color name="text_secondary">#FF94A3B8</color>
+    <color name="text_muted">#FF475569</color>
+    <color name="text_accent">#FF00D4FF</color>
+    <color name="text_gold">#FFF59E0B</color>
+    <color name="text_primary_dark">#FFEEEEEE</color>
+    <color name="text_secondary_dark">#FFB0B0B0</color>
+
+    <!-- Status Indicators -->
+    <color name="status_online">#FF10B981</color>
+    <color name="status_offline">#FFF43F5E</color>
+    <color name="status_ready">#FF00D4FF</color>
+    <color name="status_warning">#FFF59E0B</color>
+    <color name="status_processing">#FF7C3AED</color>
+
+    <!-- Severity / Score Colors -->
+    <color name="severity_excellent">#FF10B981</color>
+    <color name="severity_good">#FF34D399</color>
+    <color name="severity_fair">#FFF59E0B</color>
+    <color name="severity_poor">#FFF97316</color>
+    <color name="severity_critical">#FFF43F5E</color>
+
+    <!-- Severity Backgrounds (10% opacity) -->
+    <color name="severity_excellent_bg">#1A10B981</color>
+    <color name="severity_good_bg">#1A34D399</color>
+    <color name="severity_fair_bg">#1AF59E0B</color>
+    <color name="severity_poor_bg">#1AF97316</color>
+    <color name="severity_critical_bg">#1AF43F5E</color>
+
+    <!-- Skin Metric Specific Colors -->
+    <color name="metric_hydration">#FF06B6D4</color>
+    <color name="metric_pores">#FF8B5CF6</color>
+    <color name="metric_wrinkles">#FFF59E0B</color>
+    <color name="metric_spots">#FFF97316</color>
+    <color name="metric_elasticity">#FF10B981</color>
+    <color name="metric_uv">#FFEC4899</color>
+    <color name="metric_oil">#FF84CC16</color>
+    <color name="metric_sensitivity">#FFEAB308</color>
+    <color name="metric_texture">#FF6366F1</color>
+    <color name="metric_vascular">#FFEF4444</color>
+    <color name="metric_porphyrins">#FF9B59B6</color>
+    <color name="metric_rosacea">#FFE11D48</color>
+    <color name="metric_melasma">#FFD35400</color>
+
+    <!-- Utility -->
+    <color name="white">#FFFFFFFF</color>
+    <color name="white_70">#B3FFFFFF</color>
+    <color name="white_50">#80FFFFFF</color>
+    <color name="white_20">#33FFFFFF</color>
+    <color name="white_10">#1AFFFFFF</color>
+    <color name="black">#FF000000</color>
+    <color name="black_50">#80000000</color>
+    <color name="transparent">#00000000</color>
+
+    <!-- Dividers / Borders -->
+    <color name="divider">#1AFFFFFF</color>
+    <color name="divider_dark">#0DFFFFFF</color>
+    <color name="border_card">#14FFFFFF</color>
+    <color name="border_glow">#3300D4FF</color>
+
+    <!-- Gradients (start/end pairs — used via shapes) -->
+    <color name="gradient_brand_start">#FF00D4FF</color>
+    <color name="gradient_brand_end">#FF7C3AED</color>
+    <color name="gradient_gold_start">#FFF59E0B</color>
+    <color name="gradient_gold_end">#FFFBBF24</color>
+    <color name="gradient_bg_start">#FF05051A</color>
+    <color name="gradient_bg_end">#FF0A0A2E</color>
+    <color name="splash_start">#FF00D4FF</color>
+    <color name="splash_end">#FF7C3AED</color>
+
+    <!-- Overlay -->
+    <color name="overlay_gradient">#CC000000</color>
+    <color name="overlay_top">#E6000000</color>
+    <color name="overlay_bottom">#E6000000</color>
+    <color name="overlay_card">#80FFFFFF</color>
+    <color name="scrim">#99000000</color>
+
+    <!-- Error / Success -->
+    <color name="error">#FFF43F5E</color>
+    <color name="success">#FF10B981</color>
+    <color name="warning">#FFF59E0B</color>
+    <color name="info">#FF00D4FF</color>
+</resources>

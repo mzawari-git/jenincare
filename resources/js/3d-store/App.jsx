@@ -11,6 +11,7 @@ import AIAssistant from './AIAssistant';
 import { PRODUCT_SHELVES } from './data/sections';
 
 const BASE = window.basePath || '';
+const CAROUSEL_INTERVAL = 8000; // 8 seconds
 
 export default function App() {
     const [selectedProduct, setSelectedProduct] = useState(null);
@@ -21,23 +22,54 @@ export default function App() {
     const [showCart, setShowCart] = useState(false);
     const [notification, setNotification] = useState(null);
     const [shelves, setShelves] = useState(PRODUCT_SHELVES);
+    const [carouselOffset, setCarouselOffset] = useState(0);
+    const allProductsRef = useRef({});
     const joystickRef = useRef({ x: 0, y: 0 });
 
+    // Fetch products from API and build carousel
     useEffect(() => {
         fetch(BASE + '/api/store-3d/shelves')
             .then((r) => r.json())
             .then((res) => {
                 const productsBySection = res.data || {};
-                const merged = PRODUCT_SHELVES.map((shelf) => {
-                    const products = productsBySection[shelf.section] || [];
-                    const idx = PRODUCT_SHELVES.filter((s) => s.section === shelf.section).indexOf(shelf);
-                    const product = products[idx] || null;
-                    return { ...shelf, product };
-                });
-                setShelves(merged);
+                allProductsRef.current = productsBySection;
+                mergeShelves(productsBySection, 0);
             })
             .catch(() => {});
     }, []);
+
+    // Carousel: cycle products every CAROUSEL_INTERVAL
+    useEffect(() => {
+        if (Object.keys(allProductsRef.current).length === 0) return;
+        const timer = setInterval(() => {
+            setCarouselOffset((prev) => {
+                const next = prev + 1;
+                mergeShelves(allProductsRef.current, next);
+                return next;
+            });
+        }, CAROUSEL_INTERVAL);
+        return () => clearInterval(timer);
+    }, []);
+
+    function mergeShelves(productsBySection, offset) {
+        const allFlat = productsBySection.all || [];
+        const merged = PRODUCT_SHELVES.map((shelf) => {
+            const sectionProds = productsBySection[shelf.section] || [];
+            const shelfIndex = PRODUCT_SHELVES.filter((s) => s.section === shelf.section).indexOf(shelf);
+            // Try section-specific products first, cycle with offset
+            let product = null;
+            if (sectionProds.length > 0) {
+                const idx = (shelfIndex + offset) % sectionProds.length;
+                product = sectionProds[idx];
+            } else if (allFlat.length > 0) {
+                // Fall back to flat all-products list
+                const globalIdx = (shelfIndex + offset) % allFlat.length;
+                product = allFlat[globalIdx];
+            }
+            return { ...shelf, product };
+        });
+        setShelves(merged);
+    }
 
     useEffect(() => {
         fetch(BASE + '/cart/count')

@@ -49,6 +49,8 @@
                 padding: 0;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
             .paper {
                 background: #fff;
@@ -59,6 +61,18 @@
                 box-shadow: none;
             }
             .no-print { display: none !important; }
+            .barcode-section svg {
+                /* Prevent any browser scaling/distortion */
+                transform: none !important;
+                -webkit-transform: none !important;
+                image-rendering: crisp-edges !important;
+                -ms-interpolation-mode: nearest-neighbor !important;
+            }
+            /* Force 1:1 scale for Zebra printers */
+            .thermal-label-inner {
+                transform: scale(1) !important;
+                -webkit-transform: scale(1) !important;
+            }
         }
 
         .thermal-label {
@@ -110,12 +124,17 @@
         .barcode-section {
             margin: 1px auto;
             text-align: center;
+            width: 100%;
+            overflow: visible;
         }
         .barcode-section svg {
-            max-width: 100%;
             display: block;
             margin: 0 auto;
-            height: auto;
+            image-rendering: crisp-edges;
+            -ms-interpolation-mode: nearest-neighbor;
+            max-width: none !important;
+            width: auto !important;
+            height: auto !important;
         }
         .divider {
             border-top: 1px dashed #d0d0d0;
@@ -133,9 +152,11 @@
     </div>
     @if($isThermal)
     <div class="no-print" style="background:#fff3cd;padding:10px 14px;font-size:12px;font-family:'Segoe UI',sans-serif;color:#856404;border-bottom:1px solid #ffc107;text-align:right;">
-        <strong>إعدادات الطابعة الحرارية في الطباعة (Ctrl+P):</strong><br>
-        • <u>Margins: None</u> (أزل الهوامش) &nbsp; • ألغِ <u>Headers and Footers</u><br>
-        • <u>Scale: 100</u> (حجم فعلي) &nbsp; • <u>Paper Size: 80mm</u> (حسب تعريف الطابعة)
+        <strong>إعدادات طابعة Zebra ZD410 في الطباعة (Ctrl+P):</strong><br>
+        • <u>Scale: 100</u> (حجم فعلي - الأهم) &nbsp; • <u>Margins: None</u> (أزل الهوامش)<br>
+        • ألغِ <u>Headers and Footers</u> (رؤوس وتذييلات) &nbsp; • <u>Paper Size: 80x50mm</u> أو حسب ورقك<br>
+        • اختر الطابعة <u>Zebra ZD410</u> من قائمة الطابعات &nbsp; • اختر <u>تغذية الورق: Roll</u><br>
+        <strong>ملاحظة:</strong> إذا لم يقرأ الباركود، تأكد من أن الإعدادات السابقة صحيحة وأن الباركود يظهر واضحاً بحجمه الكامل.
     </div>
     @endif
     <div class="paper">

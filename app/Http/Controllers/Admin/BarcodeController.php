@@ -211,13 +211,16 @@ class BarcodeController extends Controller
         $siteSettings = \App\Models\Setting::pluck('value', 'key')->all();
 
         $generator = new BarcodeGeneratorSVG();
+        $isThermalLayout = in_array($layout, ['thermal', 'thermal_a5', 'thermal_a6', 'thermal_custom']);
+        $barWidth = $isThermalLayout ? 3 : 2;
+        $barHeight = $isThermalLayout ? 120 : 80;
         foreach ($expanded as $product) {
             if ($product->barcode) {
                 try {
-                    $product->barcode_svg = $generator->getBarcode(trim($product->barcode), $generator::TYPE_EAN_13, 2, 80);
+                    $product->barcode_svg = $generator->getBarcode(trim($product->barcode), $generator::TYPE_EAN_13, $barWidth, $barHeight);
                 } catch (\Exception $e) {
                     try {
-                        $product->barcode_svg = $generator->getBarcode(trim($product->barcode), $generator::TYPE_CODE_128, 2, 80);
+                        $product->barcode_svg = $generator->getBarcode(trim($product->barcode), $generator::TYPE_CODE_128, $barWidth, $barHeight);
                     } catch (\Exception $e2) {
                         $product->barcode_svg = null;
                     }
@@ -259,14 +262,18 @@ class BarcodeController extends Controller
     /**
      * عرض باركود SVG (للمعاينة في الجدول)
      */
-    public function svg($code)
+    public function svg($code, Request $request)
     {
+        $width = (int) $request->input('width', 2);
+        $height = (int) $request->input('height', 60);
+        $width = max(1, min(5, $width));
+        $height = max(20, min(200, $height));
         $generator = new BarcodeGeneratorSVG();
         try {
-            $svg = $generator->getBarcode(trim($code), $generator::TYPE_EAN_13, 2, 60);
+            $svg = $generator->getBarcode(trim($code), $generator::TYPE_EAN_13, $width, $height);
         } catch (\Exception $e) {
             try {
-                $svg = $generator->getBarcode(trim($code), $generator::TYPE_CODE_128, 2, 60);
+                $svg = $generator->getBarcode(trim($code), $generator::TYPE_CODE_128, $width, $height);
             } catch (\Exception $e2) {
                 abort(404, 'Cannot generate barcode for: ' . $code);
             }

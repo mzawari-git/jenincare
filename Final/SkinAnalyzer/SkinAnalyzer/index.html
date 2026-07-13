@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, initial-scale=1.0">
+<title>DERMA AI — Face Scan Ultra Pro</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+--primary:#00D4FF;--primary-dark:#0099CC;--primary-light:rgba(0,212,255,0.1);--primary-glow:rgba(0,212,255,0.2);
+--accent-purple:#7C3AED;--accent-purple-light:rgba(124,58,237,0.1);
+--accent-gold:#F59E0B;--accent-gold-light:rgba(245,158,11,0.1);
+--accent-rose:#F43F5E;--accent-emerald:#10B981;
+--bg-primary:#05051A;--bg-secondary:#0A0A2E;--bg-tertiary:#0F0F3D;--bg-card:#0D0D28;--bg-dark:#020210;
+--surface-card:#0D1B3E;--surface-card-2:#111B3A;--surface-elevated:#152040;
+--text-primary:#FFFFFF;--text-secondary:#94A3B8;--text-muted:#475569;
+--border-card:rgba(255,255,255,0.08);--border-glow:rgba(0,212,255,0.2);--divider:rgba(255,255,255,0.1);
+--severity-excellent:#10B981;--severity-good:#34D399;--severity-fair:#F59E0B;--severity-poor:#F97316;--severity-critical:#F43F5E;
+--gradient-brand:linear-gradient(135deg,#00D4FF,#7C3AED);--gradient-gold:linear-gradient(135deg,#F59E0B,#FBBF24);
+--radius-xs:6px;--radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-xl:20px;--radius-xxl:28px;--radius-pill:100px;
+--font:'Segoe UI','Tahoma','Arial',sans-serif;
+}
+html,body{width:1920px;height:1080px;overflow:hidden;font-family:var(--font);background:var(--bg-primary);color:var(--text-primary)}
+body{position:relative}
+
+.orb{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0}
+.orb-cyan{width:600px;height:600px;top:-200px;left:-200px;background:var(--primary);opacity:0.04}
+.orb-purple{width:500px;height:500px;bottom:-150px;right:-150px;background:var(--accent-purple);opacity:0.04}
+
+.auth-overlay{position:fixed;inset:0;background:var(--bg-primary);z-index:1000;display:flex;align-items:center;justify-content:center}
+.auth-overlay.hidden{display:none}
+.auth-container{width:480px;padding:48px;background:var(--surface-card);border-radius:var(--radius-xxl);border:1px solid var(--border-glow);position:relative;overflow:hidden}
+.auth-container::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,212,255,0.03),transparent 50%);pointer-events:none}
+.auth-logo{width:80px;height:80px;margin:0 auto 24px;background:var(--primary-light);border-radius:var(--radius-xxl);border:1px solid var(--border-glow);display:flex;align-items:center;justify-content:center}
+.auth-logo svg{width:48px;height:48px}
+.auth-title{font-size:28px;font-weight:700;text-align:center;margin-bottom:8px}
+.auth-subtitle{font-size:14px;color:var(--text-muted);text-align:center;margin-bottom:32px}
+.auth-tabs{display:flex;gap:4px;background:var(--bg-secondary);border-radius:var(--radius-lg);padding:4px;margin-bottom:24px}
+.auth-tab{flex:1;height:44px;border:none;border-radius:var(--radius-md);background:transparent;color:var(--text-muted);font-size:14px;font-weight:600;font-family:var(--font);cursor:pointer;transition:all 0.2s}
+.auth-tab.active{background:var(--gradient-brand);color:var(--bg-primary)}
+.auth-form{display:flex;flex-direction:column;gap:16px}
+.auth-form.hidden{display:none}
+.auth-input{height:52px;padding:0 16px;background:var(--bg-secondary);border:1px solid var(--border-card);border-radius:var(--radius-md);color:var(--text-primary);font-size:14px;font-family:var(--font);outline:none;transition:border-color 0.2s}
+.auth-input:focus{border-color:var(--primary)}
+.auth-input::placeholder{color:var(--text-muted)}
+.auth-btn{height:56px;background:var(--gradient-brand);border:none;border-radius:var(--radius-lg);color:var(--bg-primary);font-size:16px;font-weight:700;font-family:var(--font);cursor:pointer;transition:all 0.2s}
+.auth-btn:hover{opacity:0.9;transform:translateY(-1px)}
+.auth-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.auth-error{padding:12px;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.3);border-radius:var(--radius-md);color:var(--accent-rose);font-size:13px;text-align:center;display:none}
+.auth-error.show{display:block}
+
+.status-bar{position:fixed;top:0;left:0;right:0;height:40px;background:var(--bg-dark);display:flex;align-items:center;padding:0 20px;z-index:100;gap:12px;border-bottom:1px solid var(--divider)}
+.status-brand{font-size:12px;font-weight:700;color:var(--primary);letter-spacing:0.06em}
+.status-divider{width:1px;height:16px;background:var(--divider)}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--accent-emerald);box-shadow:0 0 8px var(--accent-emerald)}
+.status-text{font-size:11px;color:var(--text-muted)}
+.status-spacer{flex:1}
+.status-chip{background:var(--primary-light);border:1px solid rgba(0,212,255,0.16);border-radius:var(--radius-pill);padding:2px 8px;font-size:11px;color:var(--primary)}
+.status-user{font-size:11px;color:var(--text-secondary);cursor:pointer}
+.status-logout{background:transparent;border:1px solid var(--border-card);border-radius:var(--radius-sm);padding:4px 10px;font-size:11px;color:var(--text-muted);cursor:pointer;font-family:var(--font);transition:all 0.2s}
+.status-logout:hover{border-color:var(--accent-rose);color:var(--accent-rose)}
+
+.app{display:flex;height:100%;padding-top:40px}
+
+.sidebar{width:320px;height:100%;background:var(--bg-secondary);display:flex;flex-direction:column;padding:24px;border-left:1px solid var(--divider);flex-shrink:0}
+.brand-header{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.brand-icon-wrap{width:44px;height:44px;background:var(--primary-light);border-radius:var(--radius-md);border:1px solid var(--border-glow);display:flex;align-items:center;justify-content:center}
+.brand-icon-wrap svg{width:26px;height:26px}
+.brand-name{font-size:16px;font-weight:700;letter-spacing:0.08em;color:var(--text-primary)}
+.brand-sub{font-size:11px;color:var(--text-muted)}
+
+.device-card{background:var(--surface-card);border-radius:var(--radius-lg);border:1px solid var(--border-card);padding:16px;margin-bottom:20px}
+.device-card-label{font-size:11px;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px}
+.status-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.status-row:last-child{margin-bottom:0}
+.row-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.row-dot.green{background:var(--accent-emerald);box-shadow:0 0 6px var(--accent-emerald)}
+.row-dot.cyan{background:var(--primary);box-shadow:0 0 6px var(--primary)}
+.row-dot.purple{background:var(--accent-purple);box-shadow:0 0 6px var(--accent-purple)}
+.row-text{font-size:13px;color:var(--text-secondary);flex:1}
+.row-chip{border-radius:var(--radius-pill);padding:2px 8px;font-size:11px;font-weight:600}
+.row-chip.green{background:rgba(16,185,129,0.1);color:var(--severity-excellent)}
+.row-chip.cyan{background:var(--primary-light);color:var(--primary)}
+.row-chip.purple{background:var(--accent-purple-light);color:var(--accent-purple)}
+
+.stats-row{display:flex;gap:8px;margin-bottom:20px}
+.stat-card{flex:1;background:var(--surface-card);border-radius:14px;border:1px solid var(--border-card);padding:14px;text-align:center}
+.stat-value{font-size:24px;font-weight:700;color:var(--primary)}
+.stat-value.gold{color:var(--accent-gold)}
+.stat-label{font-size:11px;color:var(--text-muted);margin-top:2px}
+
+.nav-btn{width:100%;height:52px;background:transparent;border:1px solid var(--border-card);border-radius:14px;color:var(--text-secondary);font-size:14px;font-family:var(--font);cursor:pointer;display:flex;align-items:center;padding:0 16px;gap:12px;margin-bottom:10px;transition:all 0.2s}
+.nav-btn:hover{background:var(--surface-card);color:var(--text-primary);border-color:var(--border-glow)}
+.nav-btn svg{width:20px;height:20px;opacity:0.6}
+
+.sidebar-footer{margin-top:auto;font-size:11px;color:var(--text-muted)}
+
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.top-bar{height:72px;background:var(--bg-secondary);display:flex;align-items:center;padding:0 32px;border-bottom:1px solid var(--divider);gap:16px;flex-shrink:0}
+.top-title{font-size:22px;font-weight:700;color:var(--text-primary)}
+.top-subtitle{font-size:12px;color:var(--text-muted)}
+.top-spacer{flex:1}
+.top-btn{height:44px;padding:0 20px;border-radius:var(--radius-md);border:1px solid var(--border-card);background:transparent;color:var(--text-secondary);font-size:13px;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:8px;transition:all 0.2s}
+.top-btn:hover{border-color:var(--border-glow);color:var(--primary)}
+.top-btn.primary{background:var(--gradient-brand);color:var(--bg-primary);font-weight:700;border:none}
+.top-btn.primary:hover{opacity:0.9;box-shadow:0 0 20px var(--primary-glow)}
+
+.content{flex:1;overflow-y:auto;padding:32px;display:flex;flex-direction:column;gap:24px}
+.content::-webkit-scrollbar{width:6px}
+.content::-webkit-scrollbar-track{background:transparent}
+.content::-webkit-scrollbar-thumb{background:var(--border-card);border-radius:3px}
+
+.scan-section{background:var(--surface-card);border-radius:var(--radius-xxl);border:1px solid var(--border-glow);padding:28px;display:flex;align-items:center;gap:28px;position:relative;overflow:hidden}
+.scan-section::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,212,255,0.03),transparent 50%);pointer-events:none}
+
+.scan-visual{width:120px;height:120px;background:var(--primary-light);border-radius:var(--radius-xxl);border:1px solid var(--border-glow);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0}
+.scan-visual svg{width:64px;height:64px}
+.scan-visual::after{content:'';position:absolute;inset:-4px;border-radius:var(--radius-xxl);border:2px solid transparent;background:var(--gradient-brand) border-box;-webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:pulse-border 3s ease-in-out infinite}
+@keyframes pulse-border{0%,100%{opacity:0.3}50%{opacity:1}}
+
+.scan-info{flex:1}
+.scan-title{font-size:24px;font-weight:700;color:var(--text-primary);margin-bottom:8px}
+.scan-desc{font-size:14px;color:var(--text-secondary);line-height:1.6;margin-bottom:16px}
+.scan-chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border-radius:var(--radius-pill);padding:5px 12px;font-size:12px;font-weight:600}
+.chip.cyan{background:var(--primary-light);border:1px solid rgba(0,212,255,0.16);color:var(--primary)}
+.chip.purple{background:var(--accent-purple-light);border:1px solid rgba(124,58,237,0.16);color:var(--accent-purple)}
+.chip.gold{background:var(--accent-gold-light);border:1px solid rgba(245,158,11,0.16);color:var(--accent-gold)}
+
+.scan-action{width:200px;height:72px;background:var(--gradient-brand);border:none;border-radius:var(--radius-xxl);color:var(--bg-primary);font-size:18px;font-weight:700;font-family:var(--font);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all 0.3s;flex-shrink:0;position:relative;overflow:hidden}
+.scan-action:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--primary-glow)}
+.scan-action::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transform:translateX(-100%);transition:transform 0.6s}
+.scan-action:hover::after{transform:translateX(100%)}
+.scan-action svg{width:24px;height:24px}
+.scan-action:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+
+.quick-cards{display:flex;gap:12px}
+.quick-card{flex:1;height:100px;background:var(--surface-card);border-radius:18px;border:1px solid var(--border-card);display:flex;align-items:center;padding:20px;gap:16px;cursor:pointer;transition:all 0.2s}
+.quick-card:hover{border-color:var(--border-glow);transform:translateY(-2px)}
+.quick-icon{width:44px;height:44px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.quick-icon.purple{background:var(--accent-purple-light)}
+.quick-icon.gold{background:var(--accent-gold-light)}
+.quick-icon.green{background:rgba(16,185,129,0.1)}
+.quick-icon svg{width:24px;height:24px}
+.quick-title{font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:2px}
+.quick-sub{font-size:12px;color:var(--text-muted)}
+
+.section-header{display:flex;align-items:center;justify-content:space-between}
+.section-title{font-size:18px;font-weight:700;color:var(--text-primary)}
+.section-link{font-size:13px;color:var(--text-muted);background:transparent;border:none;cursor:pointer;font-family:var(--font);transition:color 0.2s}
+.section-link:hover{color:var(--primary)}
+
+.recent-list{background:var(--surface-card);border-radius:var(--radius-xl);border:1px solid var(--border-card);padding:8px}
+.recent-item{display:flex;align-items:center;padding:12px 16px;border-radius:14px;gap:14px;transition:background 0.2s;cursor:pointer}
+.recent-item:hover{background:var(--surface-card-2)}
+.recent-ring{width:44px;height:44px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.recent-ring svg{width:44px;height:44px;transform:rotate(-90deg)}
+.recent-ring .score{position:absolute;font-size:13px;font-weight:700;color:var(--text-primary)}
+.recent-date{font-size:13px;font-weight:700;color:var(--text-primary)}
+.recent-time{font-size:12px;color:var(--text-muted)}
+.recent-dot{width:4px;height:4px;border-radius:50%;background:var(--text-muted);opacity:0.4;margin:0 8px}
+.recent-spacer{flex:1}
+.recent-provider{background:var(--primary-light);border:1px solid rgba(0,212,255,0.16);border-radius:var(--radius-pill);padding:2px 8px;font-size:11px;color:var(--primary)}
+.recent-score{font-size:20px;font-weight:700;color:var(--text-primary);margin:0 12px}
+.recent-score-label{font-size:11px;color:var(--text-muted);text-align:center}
+.recent-arrow{width:16px;height:16px;opacity:0.3;margin-right:8px}
+.recent-empty{padding:48px;text-align:center;color:var(--text-muted);font-size:14px}
+
+.scan-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;display:none;align-items:center;justify-content:center;flex-direction:column}
+.scan-overlay.active{display:flex}
+.scan-ring-container{width:420px;height:420px;position:relative;display:flex;align-items:center;justify-content:center}
+.scan-ring{position:absolute;border-radius:50%;border:2px solid transparent}
+.scan-ring-1{inset:0;border-color:rgba(0,212,255,0.15);animation:spin 8s linear infinite}
+.scan-ring-2{inset:20px;border-color:rgba(124,58,237,0.12);animation:spin 12s linear infinite reverse}
+.scan-ring-3{inset:40px;border-color:rgba(0,212,255,0.08);animation:spin 6s linear infinite}
+.scan-ring-active{position:absolute;inset:0;border-radius:50%;border:3px solid transparent;border-top-color:var(--primary);animation:spin 2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.scan-face-guide{width:260px;height:320px;opacity:0.4}
+.scan-face-guide svg{width:100%;height:100%}
+.scan-percent{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);border:1px solid var(--border-card);border-radius:var(--radius-pill);padding:6px 16px;font-size:16px;font-weight:700;color:var(--primary)}
+.scan-instruction{margin-top:16px;font-size:15px;color:var(--text-secondary);text-align:center}
+.scan-phases{display:flex;gap:8px;margin-top:20px;align-items:center}
+.phase-chip{height:32px;padding:0 16px;border-radius:var(--radius-pill);display:flex;align-items:center;font-size:12px;font-weight:600;gap:6px}
+.phase-chip.active{background:var(--primary-light);border:1px solid rgba(0,212,255,0.3);color:var(--primary)}
+.phase-chip.inactive{background:rgba(255,255,255,0.05);border:1px solid var(--border-card);color:var(--text-muted)}
+.phase-arrow{color:var(--text-muted);font-size:12px}
+.scan-close{position:absolute;top:20px;right:20px;width:48px;height:48px;border-radius:var(--radius-md);background:rgba(255,255,255,0.1);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.scan-close svg{width:24px;height:24px;color:rgba(255,255,255,0.7)}
+
+.scan-progress-bar{position:absolute;bottom:0;left:0;right:0;height:6px;background:var(--divider)}
+.scan-progress-fill{height:100%;background:var(--gradient-brand);border-radius:3px;width:0%;transition:width 0.3s}
+
+.result-overlay{position:fixed;inset:0;background:var(--bg-primary);z-index:300;display:none;flex-direction:column}
+.result-overlay.active{display:flex}
+.result-header{height:64px;background:var(--bg-secondary);display:flex;align-items:center;padding:0 24px;gap:16px;border-bottom:1px solid var(--divider)}
+.result-back{width:48px;height:48px;border-radius:var(--radius-md);background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.result-back svg{width:24px;height:24px;color:var(--text-primary)}
+.result-title{font-size:18px;font-weight:700;color:var(--text-primary)}
+.result-date{font-size:12px;color:var(--text-muted)}
+.result-spacer{flex:1}
+.result-btn{height:44px;padding:0 20px;border-radius:var(--radius-md);font-size:13px;font-weight:600;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:8px}
+.result-btn.primary{background:var(--gradient-brand);color:var(--bg-primary);border:none}
+.result-btn.ghost{background:transparent;border:1px solid var(--border-card);color:var(--text-secondary)}
+
+.result-body{flex:1;display:flex;overflow:hidden}
+.result-score-panel{width:260px;background:var(--bg-secondary);display:flex;flex-direction:column;align-items:center;padding:24px 20px;border-left:1px solid var(--divider)}
+.score-gauge{width:180px;height:180px;position:relative;display:flex;align-items:center;justify-content:center}
+.score-gauge svg{width:180px;height:180px;transform:rotate(-90deg)}
+.score-gauge .value{position:absolute;font-size:48px;font-weight:700;color:var(--primary)}
+.score-chip{margin-top:6px;height:30px;border-radius:var(--radius-pill);padding:0 14px;display:flex;align-items:center;font-size:13px;font-weight:600;background:rgba(16,185,129,0.1);color:var(--severity-excellent)}
+.result-divider{width:100%;height:1px;background:var(--divider);margin:20px 0}
+.meta-row{width:100%;margin-bottom:12px}
+.meta-label{font-size:11px;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase}
+.meta-value{font-size:12px;color:var(--text-secondary);margin-top:3px}
+.meta-value.highlight{color:var(--primary);font-size:14px;font-weight:700}
+
+.result-metrics{flex:1;padding:20px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;align-content:start}
+.result-metrics::-webkit-scrollbar{width:6px}
+.result-metrics::-webkit-scrollbar-track{background:transparent}
+.result-metrics::-webkit-scrollbar-thumb{background:var(--border-card);border-radius:3px}
+.metric-card{background:var(--surface-card-2);border-radius:18px;border:1px solid var(--border-card);padding:16px}
+.metric-top{display:flex;align-items:center;gap:12px}
+.metric-icon{width:40px;height:40px;border-radius:var(--radius-md);background:var(--primary-light);display:flex;align-items:center;justify-content:center}
+.metric-icon svg{width:22px;height:22px}
+.metric-name{font-size:13px;color:var(--text-secondary);flex:1}
+.metric-status{border-radius:var(--radius-pill);padding:3px 8px;font-size:11px;font-weight:600}
+.metric-status.excellent{background:rgba(16,185,129,0.1);color:var(--severity-excellent)}
+.metric-status.good{background:rgba(52,211,153,0.1);color:var(--severity-good)}
+.metric-status.fair{background:rgba(245,158,11,0.1);color:var(--severity-fair)}
+.metric-status.poor{background:rgba(249,115,22,0.1);color:var(--severity-poor)}
+.metric-value-row{display:flex;align-items:baseline;gap:3px;margin-top:12px}
+.metric-value{font-size:28px;font-weight:700;color:var(--text-primary)}
+.metric-unit{font-size:14px;color:var(--text-muted);margin-bottom:5px}
+.metric-bar{height:6px;background:var(--divider);border-radius:3px;margin-top:8px;overflow:hidden}
+.metric-bar-fill{height:100%;border-radius:3px;transition:width 1s ease}
+
+.result-insights{width:240px;background:var(--bg-secondary);padding:20px 16px;border-right:1px solid var(--divider);overflow-y:auto;display:flex;flex-direction:column;gap:20px}
+.insight-label{font-size:11px;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase}
+.insight-card{background:var(--surface-card);border-radius:14px;border:1px solid var(--border-card);padding:14px;display:flex;align-items:center;gap:12px}
+.skin-swatch{width:36px;height:36px;border-radius:var(--radius-md);background:linear-gradient(135deg,#D4A574,#C4956A)}
+.skin-type{font-size:13px;font-weight:700;color:var(--text-primary)}
+.skin-fitz{font-size:11px;color:var(--text-muted)}
+.concern-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+
+.version-badge{position:fixed;top:52px;left:24px;background:rgba(255,255,255,0.05);border:1px solid var(--border-card);border-radius:var(--radius-pill);padding:4px 10px;font-size:11px;color:var(--text-muted);z-index:50}
+
+.file-input{display:none}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.animate-in{animation:fadeIn 0.6s ease forwards}
+.animate-in-delay{animation:fadeIn 0.6s ease 0.2s forwards;opacity:0}
+.animate-in-delay-2{animation:fadeIn 0.6s ease 0.4s forwards;opacity:0}
+</style>
+</head>
+<body>
+
+<div class="orb orb-cyan"></div>
+<div class="orb orb-purple"></div>
+
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-container">
+    <div class="auth-logo">
+      <svg viewBox="0 0 120 120" fill="none">
+        <path d="M60,10 C32.4,10 10,32.4 10,60 C10,87.6 32.4,110 60,110 C87.6,110 110,87.6 110,60 C110,32.4 87.6,10 60,10 Z M60,20 C82.1,20 100,37.9 100,60 C100,82.1 82.1,100 60,100 C37.9,100 20,82.1 20,60 C20,37.9 37.9,20 60,20 Z" fill="#00D4FF"/>
+        <path d="M60,35 C50,35 42,40 38,47 C42,45 47,44 52,44 C58,44 64,46 68,50 C72,46 78,44 82,44 C78,39 70,35 60,35 Z" fill="#00D4FF"/>
+        <circle cx="45" cy="55" r="5" fill="#00D4FF"/>
+        <circle cx="75" cy="55" r="5" fill="#00D4FF"/>
+        <path d="M42,70 Q60,82 78,70" stroke="#00D4FF" stroke-width="3" fill="none"/>
+        <path d="M30,90 L40,85 L50,92 L60,83 L70,90 L80,84 L90,90" stroke="rgba(0,212,255,0.25)" stroke-width="2" fill="none"/>
+      </svg>
+    </div>
+    <div class="auth-title">DERMA AI</div>
+    <div class="auth-subtitle">محلل البشرة الذكي المتقدم</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">تسجيل الدخول</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">حساب جديد</button>
+    </div>
+    <div class="auth-error" id="authError"></div>
+    <form class="auth-form" id="loginForm" onsubmit="handleLogin(event)">
+      <input type="email" class="auth-input" id="loginEmail" placeholder="البريد الإلكتروني" required>
+      <input type="password" class="auth-input" id="loginPassword" placeholder="كلمة المرور" required>
+      <button type="submit" class="auth-btn" id="loginBtn">دخول</button>
+    </form>
+    <form class="auth-form hidden" id="registerForm" onsubmit="handleRegister(event)">
+      <input type="text" class="auth-input" id="regName" placeholder="الاسم الكامل" required>
+      <input type="email" class="auth-input" id="regEmail" placeholder="البريد الإلكتروني" required>
+      <input type="tel" class="auth-input" id="regPhone" placeholder="رقم الهاتف (اختياري)">
+      <input type="password" class="auth-input" id="regPassword" placeholder="كلمة المرور" required minlength="8">
+      <input type="password" class="auth-input" id="regPasswordConfirm" placeholder="تأكيد كلمة المرور" required>
+      <button type="submit" class="auth-btn" id="registerBtn">إنشاء حساب</button>
+    </form>
+  </div>
+</div>
+
+<div class="status-bar">
+  <span class="status-brand">DERMA AI</span>
+  <div class="status-divider"></div>
+  <div class="status-dot"></div>
+  <span class="status-text">متصل — ZMLH02 Max</span>
+  <div class="status-divider"></div>
+  <span class="status-text" id="statusTime">08:30 م — السبت 7 يونيو 2026</span>
+  <div class="status-spacer"></div>
+  <span class="status-chip">TFLite AI</span>
+  <div class="status-divider"></div>
+  <span class="status-user" id="statusUser">المستخدم</span>
+  <button class="status-logout" onclick="handleLogout()">خروج</button>
+</div>
+
+<div class="version-badge">v2.0</div>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand-header">
+      <div class="brand-icon-wrap">
+        <svg viewBox="0 0 120 120" fill="none">
+          <path d="M60,10 C32.4,10 10,32.4 10,60 C10,87.6 32.4,110 60,110 C87.6,110 110,87.6 110,60 C110,32.4 87.6,10 60,10 Z M60,20 C82.1,20 100,37.9 100,60 C100,82.1 82.1,100 60,100 C37.9,100 20,82.1 20,60 C20,37.9 37.9,20 60,20 Z" fill="#00D4FF"/>
+          <path d="M60,35 C50,35 42,40 38,47 C42,45 47,44 52,44 C58,44 64,46 68,50 C72,46 78,44 82,44 C78,39 70,35 60,35 Z" fill="#00D4FF"/>
+          <circle cx="45" cy="55" r="5" fill="#00D4FF"/>
+          <circle cx="75" cy="55" r="5" fill="#00D4FF"/>
+          <path d="M42,70 Q60,82 78,70" stroke="#00D4FF" stroke-width="3" fill="none"/>
+          <path d="M30,90 L40,85 L50,92 L60,83 L70,90 L80,84 L90,90" stroke="rgba(0,212,255,0.25)" stroke-width="2" fill="none"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">DERMA AI</div>
+        <div class="brand-sub">محلل البشرة الذكي</div>
+      </div>
+    </div>
+
+    <div class="device-card">
+      <div class="device-card-label">حالة الجهاز</div>
+      <div class="status-row">
+        <div class="row-dot green"></div>
+        <span class="row-text">متصل بالشبكة</span>
+        <span class="row-chip green">Online</span>
+      </div>
+      <div class="status-row">
+        <div class="row-dot cyan"></div>
+        <span class="row-text">الكاميرا جاهزة</span>
+        <span class="row-chip cyan">Ready</span>
+      </div>
+      <div class="status-row">
+        <div class="row-dot purple"></div>
+        <span class="row-text">محرك الذكاء الاصطناعي</span>
+        <span class="row-chip purple">Active</span>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value" id="todayCount">0</div>
+        <div class="stat-label">اليوم</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value gold" id="totalCount">0</div>
+        <div class="stat-label">الإجمالي</div>
+      </div>
+    </div>
+
+    <button class="nav-btn" onclick="loadHistory()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      سجل التحليلات
+    </button>
+    <button class="nav-btn" onclick="showNotification('الإعدادات')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      الإعدادات
+    </button>
+
+    <div class="sidebar-footer">ZMLH02 Max Edition</div>
+  </aside>
+
+  <main class="main">
+    <div class="top-bar">
+      <div>
+        <div class="top-title">مرحباً بكم</div>
+        <div class="top-subtitle" id="dateTime">الجمعة، 6 يونيو 2026 — 08:30 م</div>
+      </div>
+      <div class="top-spacer"></div>
+      <button class="top-btn" onclick="showNotification('المعايرة')">معايرة</button>
+      <button class="top-btn" onclick="showNotification('التشخيص')">تشخيص</button>
+    </div>
+
+    <div class="content">
+      <div class="scan-section animate-in">
+        <div class="scan-visual">
+          <svg viewBox="0 0 120 120" fill="none">
+            <path d="M60,10 C32.4,10 10,32.4 10,60 C10,87.6 32.4,110 60,110 C87.6,110 110,87.6 110,60 C110,32.4 87.6,10 60,10 Z M60,20 C82.1,20 100,37.9 100,60 C100,82.1 82.1,100 60,100 C37.9,100 20,82.1 20,60 C20,37.9 37.9,20 60,20 Z" fill="#00D4FF"/>
+            <path d="M60,35 C50,35 42,40 38,47 C42,45 47,44 52,44 C58,44 64,46 68,50 C72,46 78,44 82,44 C78,39 70,35 60,35 Z" fill="#00D4FF"/>
+            <circle cx="45" cy="55" r="5" fill="#00D4FF"/>
+            <circle cx="75" cy="55" r="5" fill="#00D4FF"/>
+            <path d="M42,70 Q60,82 78,70" stroke="#00D4FF" stroke-width="3" fill="none"/>
+            <path d="M30,90 L40,85 L50,92 L60,83 L70,90 L80,84 L90,90" stroke="rgba(0,212,255,0.25)" stroke-width="2" fill="none"/>
+          </svg>
+        </div>
+        <div class="scan-info">
+          <div class="scan-title">تحليل البشرة بالذكاء الاصطناعي</div>
+          <div class="scan-desc">فحص شامل بـ 14 مؤشراً باستخدام الكاميرا متعددة الأطياف<br>نتائج دقيقة خلال ثوانٍ بدعم من محرك الذكاء الاصطناعي</div>
+          <div class="scan-chips">
+            <span class="chip cyan">8 أطياف ضوئية</span>
+            <span class="chip purple">AI تحليل فوري</span>
+            <span class="chip gold">تقرير PDF</span>
+          </div>
+        </div>
+        <button class="scan-action" id="startScanBtn" onclick="triggerFileUpload()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          ابدأ التحليل
+        </button>
+        <input type="file" class="file-input" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
+      </div>
+
+      <div class="quick-cards animate-in-delay">
+        <div class="quick-card" onclick="showNotification('مقارنة النتائج')">
+          <div class="quick-icon purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          </div>
+          <div>
+            <div class="quick-title">مقارنة النتائج</div>
+            <div class="quick-sub">قبل وبعد</div>
+          </div>
+        </div>
+        <div class="quick-card" onclick="loadHistory()">
+          <div class="quick-icon gold">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          </div>
+          <div>
+            <div class="quick-title">السجل الكامل</div>
+            <div class="quick-sub" id="historyCount">0 تحليل</div>
+          </div>
+        </div>
+        <div class="quick-card" onclick="showNotification('تقرير PDF')">
+          <div class="quick-icon green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17,21 17,14 13,14 13,21"/><polyline points="7,9 11,9 11,5"/></svg>
+          </div>
+          <div>
+            <div class="quick-title">تقرير PDF</div>
+            <div class="quick-sub">تصدير واطباعة</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="animate-in-delay-2">
+        <div class="section-header" style="margin-bottom:12px">
+          <div class="section-title">آخر التحليلات</div>
+          <button class="section-link" onclick="loadHistory()">عرض الكل</button>
+        </div>
+        <div class="recent-list" id="recentList">
+          <div class="recent-empty">جارٍ تحميل البيانات...</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="scan-overlay" id="scanOverlay">
+  <button class="scan-close" onclick="closeScan()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+  <div class="scan-ring-container">
+    <div class="scan-ring scan-ring-1"></div>
+    <div class="scan-ring scan-ring-2"></div>
+    <div class="scan-ring scan-ring-3"></div>
+    <div class="scan-ring-active"></div>
+    <div class="scan-face-guide">
+      <svg viewBox="0 0 260 320" fill="none">
+        <ellipse cx="130" cy="140" rx="100" ry="130" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-dasharray="8 6"/>
+        <circle cx="90" cy="120" r="12" stroke="rgba(0,212,255,0.5)" stroke-width="1"/>
+        <circle cx="170" cy="120" r="12" stroke="rgba(0,212,255,0.5)" stroke-width="1"/>
+        <path d="M100,190 Q130,215 160,190" stroke="rgba(0,212,255,0.5)" stroke-width="1" fill="none"/>
+        <line x1="130" y1="10" x2="130" y2="50" stroke="rgba(0,212,255,0.3)" stroke-width="1"/>
+        <line x1="130" y1="270" x2="130" y2="310" stroke="rgba(0,212,255,0.3)" stroke-width="1"/>
+      </svg>
+    </div>
+    <div class="scan-percent" id="scanPercent">0%</div>
+  </div>
+  <div class="scan-instruction" id="scanInstruction">جارٍ رفع الصورة...</div>
+  <div class="scan-phases">
+    <div class="phase-chip active" id="phase1">رفع</div>
+    <span class="phase-arrow">←</span>
+    <div class="phase-chip inactive" id="phase2">معالجة</div>
+    <span class="phase-arrow">←</span>
+    <div class="phase-chip inactive" id="phase3">تحليل</div>
+  </div>
+  <div class="scan-progress-bar"><div class="scan-progress-fill" id="scanProgressFill"></div></div>
+</div>
+
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-header">
+    <button class="result-back" onclick="closeResult()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </button>
+    <div>
+      <div class="result-title">تقرير تحليل البشرة</div>
+      <div class="result-date" id="resultDate">6 يونيو 2026 — 08:30 م</div>
+    </div>
+    <div class="result-spacer"></div>
+    <button class="result-btn primary" onclick="closeResult()">تحليل جديد</button>
+    <button class="result-btn ghost" onclick="showNotification('مشاركة التقرير')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    </button>
+    <button class="result-btn ghost" onclick="showNotification('حفظ التقرير')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="2" width="20" height="20"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17,21 17,14 13,14 13,21"/><polyline points="7,9 11,9 11,5"/></svg>
+    </button>
+  </div>
+  <div class="result-body">
+    <div class="result-score-panel">
+      <div class="score-gauge">
+        <svg viewBox="0 0 180 180">
+          <circle cx="90" cy="90" r="78" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="14"/>
+          <circle cx="90" cy="90" r="78" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round" stroke-dasharray="490" stroke-dashoffset="490" id="gaugeArc"/>
+          <defs><linearGradient id="gaugeGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#00D4FF"/><stop offset="100%" stop-color="#7C3AED"/></linearGradient></defs>
+        </svg>
+        <span class="value" id="resultScore">0</span>
+      </div>
+      <div class="score-chip" id="resultScoreLabel">ممتاز</div>
+      <div class="result-divider"></div>
+      <div class="meta-row"><div class="meta-label">محرك التحليل</div><div class="meta-value" id="resultProvider">-</div></div>
+      <div class="meta-row"><div class="meta-label">وقت التحليل</div><div class="meta-value" id="resultTime">-</div></div>
+      <div class="meta-row"><div class="meta-label">المؤشرات المحللة</div><div class="meta-value highlight">14 / 14</div></div>
+      <div style="flex:1"></div>
+      <button class="result-btn ghost" style="width:100%;justify-content:center" onclick="showNotification('طباعة التقرير')">طباعة التقرير</button>
+    </div>
+    <div class="result-metrics" id="resultMetrics"></div>
+    <div class="result-insights">
+      <div>
+        <div class="insight-label">التوصيات الرئيسية</div>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px" id="insightList"></div>
+      </div>
+      <div class="result-divider"></div>
+      <div>
+        <div class="insight-label">نوع البشرة المكتشف</div>
+        <div class="insight-card" style="margin-top:10px">
+          <div class="skin-swatch"></div>
+          <div><div class="skin-type">مختلطة</div><div class="skin-fitz">Fitzpatrick III</div></div>
+        </div>
+      </div>
+      <div class="result-divider"></div>
+      <div>
+        <div class="insight-label">المشكلات الرئيسية</div>
+        <div class="concern-chips" id="concernChips"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="notification" style="position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface-card);border:1px solid var(--border-glow);border-radius:var(--radius-lg);padding:14px 24px;font-size:14px;color:var(--text-primary);z-index:500;transition:transform 0.3s ease;box-shadow:0 8px 32px rgba(0,0,0,0.4)"></div>
+
+<script>
+const API_BASE = 'https://jenincare.shop/api';
+let authToken = localStorage.getItem('auth_token');
+let currentUser = JSON.parse(localStorage.getItem('user_data') || 'null');
+let currentScanId = null;
+let pollInterval = null;
+
+const metricNames = {
+  hydration: 'الرطوبة المائية',
+  sebum: 'الإفرازات الدهنية',
+  pigmentation: 'التصبغات',
+  pores: 'المسام الجلدية',
+  elasticity: 'مرونة الكولاجين'
+};
+
+const metricIcons = {
+  hydration: '<path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>',
+  sebum: '<path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>',
+  pigmentation: '<circle cx="13.5" cy="6.5" r="0.5" fill="currentColor"/><circle cx="17.5" cy="10.5" r="0.5" fill="currentColor"/><circle cx="8.5" cy="7.5" r="0.5" fill="currentColor"/><circle cx="6.5" cy="12.5" r="0.5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 011.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>',
+  pores: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
+  elasticity: '<polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>'
+};
+
+const metricColors = {
+  hydration: '#06B6D4',
+  sebum: '#84CC16',
+  pigmentation: '#EC4899',
+  pores: '#8B5CF6',
+  elasticity: '#10B981'
+};
+
+function apiHeaders() {
+  return {
+    'Accept': 'application/json',
+    'Authorization': `Bearer ${authToken}`
+  };
+}
+
+async function apiCall(endpoint, options = {}) {
+  const url = `${API_BASE}${endpoint}`;
+  const config = {
+    ...options,
+    headers: { ...apiHeaders(), ...options.headers }
+  };
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'حدث خطأ في الاتصال بالخادم');
+    }
+    return data;
+  } catch (error) {
+    console.error(`API Error [${endpoint}]:`, error);
+    throw error;
+  }
+}
+
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.auth-form').forEach(f => f.classList.add('hidden'));
+  document.getElementById('authError').classList.remove('show');
+  if (tab === 'login') {
+    document.querySelectorAll('.auth-tab')[0].classList.add('active');
+    document.getElementById('loginForm').classList.remove('hidden');
+  } else {
+    document.querySelectorAll('.auth-tab')[1].classList.add('active');
+    document.getElementById('registerForm').classList.remove('hidden');
+  }
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('authError');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.textContent = 'جارٍ تسجيل الدخول...';
+  document.getElementById('authError').classList.remove('show');
+  try {
+    const data = await apiCall('/v1/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: document.getElementById('loginEmail').value,
+        password: document.getElementById('loginPassword').value
+      })
+    });
+    if (data.data && data.data.token) {
+      authToken = data.data.token;
+      currentUser = data.data.user;
+      localStorage.setItem('auth_token', authToken);
+      localStorage.setItem('user_data', JSON.stringify(currentUser));
+      document.getElementById('authOverlay').classList.add('hidden');
+      initApp();
+    } else {
+      showAuthError('بيانات الدخول غير صحيحة');
+    }
+  } catch (err) {
+    showAuthError(err.message || 'فشل تسجيل الدخول');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'دخول';
+  }
+}
+
+async function handleRegister(e) {
+  e.preventDefault();
+  const btn = document.getElementById('registerBtn');
+  const password = document.getElementById('regPassword').value;
+  const passwordConfirm = document.getElementById('regPasswordConfirm').value;
+  if (password !== passwordConfirm) {
+    showAuthError('كلمتا المرور غير متطابقتين');
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'جارٍ إنشاء الحساب...';
+  document.getElementById('authError').classList.remove('show');
+  try {
+    const data = await apiCall('/v1/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: document.getElementById('regName').value,
+        email: document.getElementById('regEmail').value,
+        password: password,
+        password_confirmation: passwordConfirm,
+        phone: document.getElementById('regPhone').value || null
+      })
+    });
+    if (data.data && data.data.token) {
+      authToken = data.data.token;
+      currentUser = data.data.user;
+      localStorage.setItem('auth_token', authToken);
+      localStorage.setItem('user_data', JSON.stringify(currentUser));
+      document.getElementById('authOverlay').classList.add('hidden');
+      initApp();
+    } else {
+      showAuthError('فشل إنشاء الحساب');
+    }
+  } catch (err) {
+    showAuthError(err.message || 'فشل إنشاء الحساب');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'إنشاء حساب';
+  }
+}
+
+function handleLogout() {
+  authToken = null;
+  currentUser = null;
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('user_data');
+  document.getElementById('authOverlay').classList.remove('hidden');
+  if (pollInterval) clearInterval(pollInterval);
+}
+
+function initApp() {
+  if (currentUser) {
+    document.getElementById('statusUser').textContent = currentUser.name;
+    document.getElementById('todayCount').textContent = '0';
+    document.getElementById('totalCount').textContent = currentUser.total_analyses || 0;
+    document.getElementById('historyCount').textContent = `${currentUser.total_analyses || 0} تحليل`;
+  }
+  loadHistory();
+  updateTime();
+  setInterval(updateTime, 60000);
+}
+
+function triggerFileUpload() {
+  document.getElementById('fileInput').click();
+}
+
+async function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    showNotification('يرجى اختيار صورة صحيحة');
+    return;
+  }
+  startScan(file);
+  event.target.value = '';
+}
+
+async function startScan(file) {
+  const overlay = document.getElementById('scanOverlay');
+  overlay.classList.add('active');
+  const percentEl = document.getElementById('scanPercent');
+  const fillEl = document.getElementById('scanProgressFill');
+  const instruction = document.getElementById('scanInstruction');
+  const p1 = document.getElementById('phase1');
+  const p2 = document.getElementById('phase2');
+  const p3 = document.getElementById('phase3');
+
+  p1.className = 'phase-chip active';
+  p2.className = 'phase-chip inactive';
+  p3.className = 'phase-chip inactive';
+  instruction.textContent = 'جارٍ رفع الصورة...';
+  percentEl.textContent = '0%';
+  fillEl.style.width = '0%';
+
+  let progress = 0;
+  const progressAnim = setInterval(() => {
+    progress = Math.min(progress + Math.random() * 5, 40);
+    percentEl.textContent = Math.round(progress) + '%';
+    fillEl.style.width = progress + '%';
+  }, 100);
+
+  try {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await fetch(`${API_BASE}/v1/scans`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${authToken}`, 'Accept': 'application/json' },
+      body: formData
+    });
+
+    clearInterval(progressAnim);
+    const data = await response.json();
+
+    if (!response.ok || !data.data) {
+      throw new Error(data.message || 'فشل رفع الصورة');
+    }
+
+    currentScanId = data.data.id;
+    progress = 50;
+    percentEl.textContent = Math.round(progress) + '%';
+    fillEl.style.width = progress + '%';
+
+    p1.className = 'phase-chip active';
+    p2.className = 'phase-chip active';
+    p3.className = 'phase-chip inactive';
+    instruction.textContent = 'معالجة البيانات بواسطة الذكاء الاصطناعي...';
+
+    startPolling(currentScanId);
+  } catch (err) {
+    clearInterval(progressAnim);
+    instruction.textContent = 'خطأ: ' + err.message;
+    setTimeout(() => { overlay.classList.remove('active'); }, 2000);
+  }
+}
+
+function startPolling(scanId) {
+  const percentEl = document.getElementById('scanPercent');
+  const fillEl = document.getElementById('scanProgressFill');
+  const instruction = document.getElementById('scanInstruction');
+  const p1 = document.getElementById('phase1');
+  const p2 = document.getElementById('phase2');
+  const p3 = document.getElementById('phase3');
+  let progress = 50;
+
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(async () => {
+    try {
+      const data = await apiCall(`/v1/scans/${scanId}/status`);
+      progress = Math.min(progress + 5, 90);
+      percentEl.textContent = Math.round(progress) + '%';
+      fillEl.style.width = progress + '%';
+
+      if (data.status === 'approved' || data.status === 'analyzed') {
+        clearInterval(pollInterval);
+        p1.className = 'phase-chip active';
+        p2.className = 'phase-chip active';
+        p3.className = 'phase-chip active';
+        instruction.textContent = 'اكتمل التحليل بنجاح!';
+        progress = 100;
+        percentEl.textContent = '100%';
+        fillEl.style.width = '100%';
+        setTimeout(async () => {
+          document.getElementById('scanOverlay').classList.remove('active');
+          await loadReport(scanId);
+        }, 800);
+      } else if (data.status === 'rejected') {
+        clearInterval(pollInterval);
+        instruction.textContent = 'تم رفض الفحص. يرجى المحاولة مرة أخرى.';
+        setTimeout(() => { document.getElementById('scanOverlay').classList.remove('active'); }, 2000);
+      }
+    } catch (err) {
+      console.error('Polling error:', err);
+    }
+  }, 3000);
+}
+
+async function loadReport(scanId) {
+  try {
+    const data = await apiCall(`/v1/scans/${scanId}/report`);
+    showResult(data);
+  } catch (err) {
+    showNotification('فشل تحميل التقرير: ' + err.message);
+  }
+}
+
+function showResult(data) {
+  const overlay = document.getElementById('resultOverlay');
+  overlay.classList.add('active');
+
+  const score = data.scan?.overall_score || data.metrics ? 
+    Math.round((data.metrics.hydration + data.metrics.sebum + data.metrics.pigmentation + data.metrics.pores + data.metrics.elasticity) / 5) : 0;
+
+  const scoreEl = document.getElementById('resultScore');
+  const arc = document.getElementById('gaugeArc');
+  const label = document.getElementById('resultScoreLabel');
+  const total = 490;
+
+  let current = 0;
+  const interval = setInterval(() => {
+    current++;
+    if (current > score) { clearInterval(interval); return; }
+    scoreEl.textContent = current;
+    arc.setAttribute('stroke-dashoffset', total - (current / 100) * total);
+  }, 15);
+
+  label.textContent = score >= 85 ? 'ممتاز' : score >= 70 ? 'جيد' : score >= 50 ? 'مقبول' : 'ضعيف';
+  label.style.background = score >= 85 ? 'rgba(16,185,129,0.1)' : score >= 70 ? 'rgba(52,211,153,0.1)' : score >= 50 ? 'rgba(245,158,11,0.1)' : 'rgba(244,63,94,0.1)';
+  label.style.color = score >= 85 ? 'var(--severity-excellent)' : score >= 70 ? 'var(--severity-good)' : score >= 50 ? 'var(--severity-fair)' : 'var(--severity-critical)';
+
+  document.getElementById('resultProvider').textContent = data.scan?.analyzed_by || 'TFLite Engine v2';
+  document.getElementById('resultDate').textContent = data.scan?.created_at ? new Date(data.scan.created_at).toLocaleDateString('ar-SA') : new Date().toLocaleDateString('ar-SA');
+
+  renderMetrics(data.metrics);
+  renderInsights(data.custom_arabic_analysis, data.general_tips);
+}
+
+function renderMetrics(metrics) {
+  const container = document.getElementById('resultMetrics');
+  if (!metrics) {
+    container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted)">لا توجد بيانات مؤشرات متاحة</div>';
+    return;
+  }
+
+  const metricEntries = Object.entries(metrics);
+  container.innerHTML = metricEntries.map(([key, value], i) => {
+    const name = metricNames[key] || key;
+    const icon = metricIcons[key] || metricIcons.hydration;
+    const color = metricColors[key] || '#00D4FF';
+    const score = Math.round(value);
+    const status = score >= 85 ? 'excellent' : score >= 70 ? 'good' : score >= 50 ? 'fair' : 'poor';
+    const statusText = score >= 85 ? 'ممتاز' : score >= 70 ? 'جيد' : score >= 50 ? 'مقبول' : 'ضعيف';
+    const barColor = score >= 85 ? 'var(--severity-excellent)' : score >= 70 ? 'var(--severity-good)' : score >= 50 ? 'var(--severity-fair)' : 'var(--severity-poor)';
+
+    return `<div class="metric-card" style="animation:slideUp 0.4s ease ${i * 0.05}s forwards;opacity:0">
+      <div class="metric-top">
+        <div class="metric-icon" style="background:${color}15">
+          <svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg>
+        </div>
+        <div class="metric-name">${name}</div>
+        <span class="metric-status ${status}">${statusText}</span>
+      </div>
+      <div class="metric-value-row">
+        <span class="metric-value">${score}</span>
+        <span class="metric-unit">%</span>
+      </div>
+      <div class="metric-bar"><div class="metric-bar-fill" style="width:0%;background:${barColor}" data-width="${score}%"></div></div>
+    </div>`;
+  }).join('');
+
+  setTimeout(() => {
+    document.querySelectorAll('.metric-bar-fill').forEach(el => { el.style.width = el.dataset.width; });
+  }, 200);
+}
+
+function renderInsights(analysis, tips) {
+  const insightList = document.getElementById('insightList');
+  const tipsList = tips || [];
+  const analysisText = typeof analysis === 'string' ? analysis : '';
+
+  if (analysisText) {
+    tipsList.unshift(analysisText);
+  }
+
+  if (tipsList.length === 0) {
+    tipsList.push('استخدمي مرطباً بحمض الهيالورونيك يومياً', 'واقي شمس SPF 50 ضروري يومياً', 'تنظيف لطيف مرتين يومياً');
+  }
+
+  insightList.innerHTML = tipsList.map(t =>
+    `<div style="background:var(--surface-card);border-radius:12px;border:1px solid var(--border-card);padding:10px 12px;font-size:12px;color:var(--text-secondary);line-height:1.5">${t}</div>`
+  ).join('');
+
+  const concerns = [];
+  if (analysisText) concerns.push('تحليل مخصص');
+  document.getElementById('concernChips').innerHTML = concerns.map(c =>
+    `<span class="chip gold" style="font-size:11px">${c}</span>`
+  ).join('');
+}
+
+async function loadHistory() {
+  try {
+    const data = await apiCall('/v1/scans/history');
+    renderRecent(data.scans || []);
+    const total = data.scans ? data.scans.length : 0;
+    document.getElementById('totalCount').textContent = total;
+    document.getElementById('historyCount').textContent = `${total} تحليل`;
+  } catch (err) {
+    document.getElementById('recentList').innerHTML = '<div class="recent-empty">فشل تحميل السجل</div>';
+  }
+}
+
+function renderRecent(scans) {
+  const list = document.getElementById('recentList');
+  if (!scans || scans.length === 0) {
+    list.innerHTML = '<div class="recent-empty">لا توجد تحليلات سابقة</div>';
+    return;
+  }
+
+  list.innerHTML = scans.slice(0, 5).map((r, i) => {
+    const score = r.overall_score || 0;
+    const circumference = 2 * Math.PI * 18;
+    const offset = circumference - (score / 100) * circumference;
+    const color = score >= 85 ? '#10B981' : score >= 70 ? '#34D399' : '#F59E0B';
+    const date = r.created_at ? new Date(r.created_at).toLocaleDateString('ar-SA') : '-';
+    const time = r.created_at ? new Date(r.created_at).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }) : '-';
+    const statusLabel = r.status === 'approved' ? 'مكتمل' : r.status === 'pending' ? 'قيد المعالجة' : r.status;
+
+    return `<div class="recent-item" onclick="loadReport('${r.id}')" style="animation:fadeIn 0.4s ease ${i * 0.1}s forwards;opacity:0">
+      <div class="recent-ring">
+        <svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="3"/>
+        <circle cx="22" cy="22" r="18" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"/></svg>
+        <span class="score">${Math.round(score)}</span>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center">
+          <span class="recent-date">${date}</span>
+          <span class="recent-dot"></span>
+          <span class="recent-time">${time}</span>
+        </div>
+      </div>
+      <div class="recent-spacer"></div>
+      <span class="recent-provider">${statusLabel}</span>
+      <div style="margin-right:12px;text-align:center">
+        <div style="font-size:20px;font-weight:700;color:var(--text-primary)">${Math.round(score)}</div>
+        <div style="font-size:11px;color:var(--text-muted)">${score >= 85 ? 'ممتاز' : score >= 70 ? 'جيد' : 'مقبول'}</div>
+      </div>
+      <svg class="recent-arrow" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </div>`;
+  }).join('');
+}
+
+function closeScan() {
+  document.getElementById('scanOverlay').classList.remove('active');
+  if (pollInterval) clearInterval(pollInterval);
+}
+
+function closeResult() {
+  document.getElementById('resultOverlay').classList.remove('active');
+  loadHistory();
+}
+
+function showNotification(msg) {
+  const el = document.getElementById('notification');
+  el.textContent = msg;
+  el.style.transform = 'translateX(-50%) translateY(0)';
+  setTimeout(() => { el.style.transform = 'translateX(-50%) translateY(100px)'; }, 2000);
+}
+
+function updateTime() {
+  const now = new Date();
+  const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  const date = now.toLocaleDateString('ar-SA', opts);
+  const time = now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+  document.getElementById('dateTime').textContent = `${date} — ${time}`;
+  document.getElementById('statusTime').textContent = `${time} — ${date}`;
+}
+
+if (authToken && currentUser) {
+  document.getElementById('authOverlay').classList.add('hidden');
+  initApp();
+} else {
+  document.getElementById('authOverlay').classList.remove('hidden');
+}
+</script>
+</body>
+</html>

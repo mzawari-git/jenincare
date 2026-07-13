@@ -165,11 +165,13 @@ class UpdateChecker @Inject constructor(
             val response = client.newCall(request).execute()
             if (!response.isSuccessful) {
                 Timber.w("Download response: ${response.code} ${response.message}")
+                response.close()
                 return@withContext null
             }
 
             val body = response.body ?: run {
                 Timber.w("Download response body null")
+                response.close()
                 return@withContext null
             }
             val totalBytes = body.contentLength()

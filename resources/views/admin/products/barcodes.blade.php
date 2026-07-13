@@ -64,7 +64,7 @@
     <form id="printForm" method="POST" action="{{ route('admin.barcodes.print') }}" target="_blank">
         @csrf
         <input type="hidden" name="select_all" id="selectAllInput" value="0">
-        <input type="hidden" name="layout" value="a4_24">
+        <input type="hidden" name="layout" value="thermal">
         <input type="hidden" name="barcode_position" value="bottom">
         <input type="hidden" name="show_name" value="1">
         <input type="hidden" name="show_price" value="1">
@@ -224,8 +224,36 @@
                         <label class="form-label fw-bold mb-2">حجم الورق</label>
                         <div class="row g-2">
                             <div class="col-4">
-                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer {{ request('layout', 'a4_24') == 'a4_24' ? 'border-primary bg-light' : '' }}" onclick="selectPrintLayout(this, 'a4_24')">
-                                    <input type="radio" name="layout" value="a4_24" class="d-none" {{ request('layout', 'a4_24') == 'a4_24' ? 'checked' : '' }}>
+                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer border-primary bg-light" onclick="selectPrintLayout(this, 'thermal')">
+                                    <input type="radio" name="layout" value="thermal" class="d-none" checked>
+                                    <div class="fw-bold">حراري ZD410</div>
+                                    <small class="text-muted">50x30mm</small>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'thermal_a5')">
+                                    <input type="radio" name="layout" value="thermal_a5" class="d-none">
+                                    <div class="fw-bold">حراري A5</div>
+                                    <small class="text-muted">ملصق واحد</small>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'thermal_a6')">
+                                    <input type="radio" name="layout" value="thermal_a6" class="d-none">
+                                    <div class="fw-bold">حراري A6</div>
+                                    <small class="text-muted">ملصق واحد</small>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'thermal_custom')">
+                                    <input type="radio" name="layout" value="thermal_custom" class="d-none">
+                                    <div class="fw-bold">حراري مخصص</div>
+                                    <small class="text-muted">مقاس مخصص</small>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'a4_24')">
+                                    <input type="radio" name="layout" value="a4_24" class="d-none">
                                     <div class="fw-bold">A4</div>
                                     <small class="text-muted">24 ملصق</small>
                                 </label>
@@ -287,24 +315,10 @@
                                 </label>
                             </div>
                             <div class="col-4">
-                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'thermal_a5')">
-                                    <input type="radio" name="layout" value="thermal_a5" class="d-none">
-                                    <div class="fw-bold">A5</div>
-                                    <small class="text-muted">ملصق واحد</small>
-                                </label>
-                            </div>
-                            <div class="col-4">
-                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'thermal_a6')">
-                                    <input type="radio" name="layout" value="thermal_a6" class="d-none">
-                                    <div class="fw-bold">A6</div>
-                                    <small class="text-muted">ملصق واحد</small>
-                                </label>
-                            </div>
-                            <div class="col-4">
-                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'thermal')">
-                                    <input type="radio" name="layout" value="thermal" class="d-none">
-                                    <div class="fw-bold">حراري</div>
-                                    <small class="text-muted">80mm</small>
+                                <label class="print-option d-block text-center p-3 border rounded cursor-pointer" onclick="selectPrintLayout(this, 'custom')">
+                                    <input type="radio" name="layout" value="custom" class="d-none">
+                                    <div class="fw-bold">مخصص</div>
+                                    <small class="text-muted">مقاس مخصص</small>
                                 </label>
                             </div>
                             <div class="col-4">
@@ -412,6 +426,10 @@ function selectPrintLayout(el, value) {
     el.classList.add('border-primary', 'bg-light');
     el.querySelector('input') && (el.querySelector('input').checked = true);
     document.getElementById('modalCustomSize').style.display = (value === 'custom' || value === 'thermal_custom') ? 'block' : 'none';
+    if (value === 'thermal_custom') {
+        document.querySelector('input[name="width"]').value = 50;
+        document.querySelector('input[name="height"]').value = 30;
+    }
 }
 
 function selectPosition(el, value) {

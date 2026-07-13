@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">AI Skin Analyzer</string>
+
+    <string name="home_title">Skin Analysis Dashboard</string>
+    <string name="action_start_analysis">Start Analysis</string>
+    <string name="action_history">History</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_abort">Abort</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_close">Close</string>
+    <string name="action_new_analysis">New Analysis</string>
+
+    <string name="label_analysis_mode">Analysis Mode</string>
+    <string name="label_recent_analyses">Recent Analyses</string>
+    <string name="label_current_spectrum">Current Spectrum</string>
+    <string name="label_provider">Analysis Engine</string>
+    <string name="label_analysis_time">Processing Time</string>
+    <string name="label_resolution">Screen Resolution</string>
+
+    <string name="report_title">Analysis Report</string>
+    <string name="settings_title">Settings</string>
+
+    <string name="phase_activating">Activating light source...</string>
+    <string name="phase_settling">Stabilizing sensor...</string>
+    <string name="phase_capturing">Capturing frame...</string>
+    <string name="phase_processing">Processing spectral data...</string>
+    <string name="phase_complete">Phase complete</string>
+    <string name="phase_failed">Phase failed</string>
+
+    <string name="analysis_complete">Analysis Complete</string>
+    <string name="analysis_initializing">Initializing comprehensive skin analysis...</string>
+
+    <string name="score_excellent">Excellent</string>
+    <string name="score_good">Good</string>
+    <string name="score_fair">Fair</string>
+    <string name="score_poor">Poor</string>
+    <string name="score_critical">Critical</string>
+
+    <string name="section_analysis_engine">Analysis Engine</string>
+    <string name="section_api_provider">API Provider</string>
+    <string name="section_language">Language / اللغة</string>
+    <string name="section_device_info">Device Information</string>
+    <string name="section_tools">Tools</string>
+
+    <string name="mode_auto">Auto (Cloud + Local Fallback)</string>
+    <string name="mode_local">Local Only (TFLite On-Device)</string>
+    <string name="mode_cloud">Cloud Only (Cloud Engine)</string>
+
+    <string name="lang_arabic">العربية (Arabic)</string>
+    <string name="lang_english">English</string>
+
+    <string name="metric_moisture">Moisture Level</string>
+    <string name="metric_pores">Pore Size</string>
+    <string name="metric_sebum">Sebum Density</string>
+    <string name="metric_wrinkles">Wrinkle Depth</string>
+    <string name="metric_texture">Surface Texture</string>
+    <string name="metric_uv_spots">UV Sun Damage</string>
+    <string name="metric_vascular">Vascular Health</string>
+    <string name="metric_pigmentation">Pigmentation</string>
+    <string name="metric_dark_circles">Dark Circles</string>
+    <string name="metric_blackheads">Blackheads</string>
+    <string name="metric_acne">Acne Index</string>
+    <string name="metric_collagen">Collagen Elasticity</string>
+    <string name="metric_skin_tone">Skin Tone Evenness</string>
+    <string name="metric_sensitivity">Sensitivity</string>
+    <string name="metric_porphyrins">Porphyrins</string>
+    <string name="metric_rosacea">Rosacea</string>
+    <string name="metric_melasma">Melasma</string>
+
+    <string name="processing_local">Analyzing locally via on-device AI processor</string>
+    <string name="processing_cloud">Extracting advanced indicators via secure cloud server</string>
+    <string name="fallback_alert">Alert: Switched to local analysis due to unstable network connection</string>
+
+    <string name="history_title">Analysis History</string>
+    <string name="history_empty">No analysis reports yet</string>
+    <string name="history_delete_confirm">Delete this report?</string>
+
+    <string name="calibration_title">Calibration</string>
+    <string name="calibration_start">Start Calibration</string>
+    <string name="calibration_running">Running...</string>
+    <string name="calibration_usb_test">USB Connection Test</string>
+    <string name="calibration_camera_test">Camera Test</string>
+    <string name="calibration_spectrum_test">Spectrum Light Test</string>
+    <string name="calibration_pass">Pass</string>
+    <string name="calibration_fail">Fail</string>
+
+    <string name="diagnostics_title">Diagnostics</string>
+    <string name="demo_title">ZMLH02 Demo</string>
+    <string name="diagnostics_usb_status">USB Status</string>
+    <string name="diagnostics_network_status">Network Status</string>
+    <string name="diagnostics_camera_status">Camera Status</string>
+    <string name="diagnostics_ai_status">AI Engine Status</string>
+
+    <string name="comparison_title">Before / After Comparison</string>
+    <string name="comparison_select_before">Before</string>
+    <string name="comparison_select_after">After</string>
+    <string name="comparison_improved">Improved</string>
+    <string name="comparison_declined">Declined</string>
+
+    <string name="radar_chart_title">Metrics Overview</string>
+    <string name="report_gallery_title">Captured Images</string>
+    <string name="report_share_title">Share Report</string>
+
+    <string name="status_usb_connected">USB Connected</string>
+    <string name="status_usb_disconnected">USB Disconnected</string>
+    <string name="status_network_online">Network Online</string>
+    <string name="status_network_offline">Network Offline</string>
+
+    <string name="pdf_header_clinic">Skin Analysis Report</string>
+    <string name="pdf_section_metrics">Detailed Metrics</string>
+    <string name="pdf_section_recommendations">Recommendations</string>
+
+    <string name="error_no_camera">No camera available</string>
+    <string name="error_no_usb">USB device not connected</string>
+    <string name="error_no_network">Network unavailable</string>
+    <string name="error_analysis_failed">Analysis failed</string>
+
+    <string name="splash_app_name" translatable="false" tools:ignore="SpellCheckingInspection">DERMA AI</string>
+    <string name="splash_tagline">محلل البشرة الذكي المتقدم</string>
+    <string name="splash_status_initializing">جارٍ تهيئة المحرك الذكي…</string>
+    <string name="splash_powered_by">مدعوم بتقنية الذكاء الاصطناعي</string>
+    <string name="splash_device_info" translatable="false" tools:ignore="SpellCheckingInspection">Bitmoji ZMLH02 Max Edition</string>
+    <string name="splash_version" translatable="false">v2.0</string>
+
+    <string name="home_subtitle">محلل البشرة الذكي</string>
+    <string name="device_model_name" translatable="false" tools:ignore="SpellCheckingInspection">ZMLH02 Max Edition</string>
+    <string name="chip_online" translatable="false">Online</string>
+    <string name="chip_ready" translatable="false">Ready</string>
+    <string name="chip_active" translatable="false">Active</string>
+
+    <string name="diagnosis_title">Lighting &amp; Diagnosis Mode</string>
+    <string name="diagnosis_white">White Light (RGB)</string>
+    <string name="diagnosis_white_desc">Pores, wrinkles, skin tone</string>
+    <string name="diagnosis_uv">UV Light</string>
+    <string name="diagnosis_uv_desc">Porphyrins, sun damage, sebum</string>
+    <string name="diagnosis_cross_pol">Cross-Polarized</string>
+    <string name="diagnosis_cross_pol_desc">Blood vessels, redness, rosacea</string>
+    <string name="diagnosis_parallel_pol">Parallel-Polarized</string>
+    <string name="diagnosis_parallel_pol_desc">Fine lines, texture, surface</string>
+    <string name="diagnosis_woods">Wood\'s Light</string>
+    <string name="diagnosis_woods_desc">Hydration, deep melasma</string>
+
+    <string name="device_status_title">Device Status</string>
+    <string name="label_network_status">Network</string>
+    <string name="label_camera_status">Camera / Hardware</string>
+    <string name="label_ai_status">AI Mode</string>
+
+    <string name="cd_app_logo" translatable="false">App logo</string>
+    <string name="cd_brand_icon" translatable="false">Brand icon</string>
+    <string name="cd_scan_icon" translatable="false">Scan icon</string>
+    <string name="cd_comparison_icon" translatable="false">Comparison icon</string>
+    <string name="cd_history_icon" translatable="false">History icon</string>
+    <string name="cd_report_icon" translatable="false">Report icon</string>
+    <string name="cd_arrow" translatable="false">Arrow</string>
+    <string name="cd_metric_icon" translatable="false">Metric icon</string>
+</resources>

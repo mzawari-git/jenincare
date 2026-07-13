@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- DERMA AI — Premium Dark Theme System                        -->
+    <!-- Bitmoji ZMLH02 | 1920×1080 Landscape | Android             -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+
+    <!-- ── Core App Theme ── -->
+    <style name="Theme.SkinAnalyzer" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorOnPrimary">@color/background_primary</item>
+        <item name="colorPrimaryContainer">@color/primary_light</item>
+        <item name="colorSecondary">@color/accent_purple</item>
+        <item name="colorTertiary">@color/accent_gold</item>
+        <item name="colorSurface">@color/surface_card</item>
+        <item name="colorSurfaceVariant">@color/surface_card_2</item>
+        <item name="colorError">@color/error</item>
+        <item name="android:colorBackground">@color/background_primary</item>
+        <item name="android:windowBackground">@color/background_primary</item>
+        <item name="android:statusBarColor">@color/background_dark</item>
+        <item name="android:navigationBarColor">@color/background_dark</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <!-- Landscape lock handled per-Activity in Manifest -->
+    </style>
+
+    <!-- ── Splash Theme ── -->
+    <style name="Theme.SkinAnalyzer.Splash" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+        <item name="android:statusBarColor">@color/background_dark</item>
+        <item name="android:navigationBarColor">@color/background_dark</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <!-- ── Dark variant (alias — same as core) ── -->
+    <style name="Theme.SkinAnalyzer.Dark" parent="Theme.SkinAnalyzer" />
+
+    <!-- ════════════════════════════════════ -->
+    <!-- Typography Styles                    -->
+    <!-- ════════════════════════════════════ -->
+
+    <style name="TextStyle.Display" parent="TextAppearance.Material3.DisplayLarge">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+
+    <style name="TextStyle.Headline" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">-0.01</item>
+    </style>
+
+    <style name="TextStyle.Title" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextStyle.Body" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textColor">@color/text_secondary</item>
+    </style>
+
+    <style name="TextStyle.Label" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:textColor">@color/text_muted</item>
+        <item name="android:letterSpacing">0.05</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <style name="TextStyle.Score" parent="TextAppearance.Material3.DisplayMedium">
+        <item name="android:textColor">@color/primary</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextStyle.MetricValue" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- Legacy aliases (keep for existing XML references) -->
+    <style name="CardTitle" parent="TextStyle.Title" />
+    <style name="CardSubtitle" parent="TextStyle.Body" />
+    <style name="MetricScore" parent="TextStyle.MetricValue" />
+
+    <!-- ════════════════════════════════════ -->
+    <!-- Button Styles                        -->
+    <!-- ════════════════════════════════════ -->
+
+    <style name="Button.Primary" parent="Widget.Material3.Button">
+        <item name="android:minHeight">56dp</item>
+        <item name="android:paddingStart">32dp</item>
+        <item name="android:paddingEnd">32dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/background_primary</item>
+        <item name="backgroundTint">@color/primary</item>
+        <item name="cornerRadius">16dp</item>
+        <item name="android:stateListAnimator">@null</item>
+    </style>
+
+    <style name="Button.Secondary" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:minHeight">56dp</item>
+        <item name="android:paddingStart">32dp</item>
+        <item name="android:paddingEnd">32dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/primary</item>
+        <item name="strokeColor">@color/primary</item>
+        <item name="strokeWidth">1.5dp</item>
+        <item name="cornerRadius">16dp</item>
+    </style>
+
+    <style name="Button.Ghost" parent="Widget.Material3.Button.TextButton">
+        <item name="android:minHeight">48dp</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="cornerRadius">12dp</item>
+    </style>
+
+    <style name="Button.Icon" parent="Widget.Material3.Button.IconButton">
+        <item name="android:minWidth">48dp</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="iconTint">@color/text_secondary</item>
+    </style>
+
+    <style name="Button.Large" parent="Button.Primary">
+        <item name="android:minHeight">72dp</item>
+        <item name="android:textSize">20sp</item>
+        <item name="cornerRadius">20dp</item>
+    </style>
+
+    <!-- ════════════════════════════════════ -->
+    <!-- Card Styles                          -->
+    <!-- ════════════════════════════════════ -->
+
+    <style name="Card.Base" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardBackgroundColor">@color/surface_card</item>
+        <item name="cardCornerRadius">20dp</item>
+        <item name="cardElevation">0dp</item>
+        <item name="strokeColor">@color/border_card</item>
+        <item name="strokeWidth">1dp</item>
+    </style>
+
+    <style name="Card.Metric" parent="Card.Base">
+        <item name="cardCornerRadius">16dp</item>
+        <item name="cardBackgroundColor">@color/surface_card_2</item>
+    </style>
+
+    <style name="Card.Glow" parent="Card.Base">
+        <item name="strokeColor">@color/border_glow</item>
+        <item name="strokeWidth">1dp</item>
+    </style>
+
+    <style name="Card.Elevated" parent="Card.Base">
+        <item name="cardElevation">8dp</item>
+        <item name="cardBackgroundColor">@color/surface_elevated</item>
+    </style>
+
+    <!-- ════════════════════════════════════ -->
+    <!-- Progress / Indicator Styles          -->
+    <!-- ════════════════════════════════════ -->
+
+    <style name="Progress.Linear" parent="Widget.Material3.LinearProgressIndicator">
+        <item name="indicatorColor">@color/primary</item>
+        <item name="trackColor">@color/white_10</item>
+        <item name="trackThickness">6dp</item>
+        <item name="trackCornerRadius">3dp</item>
+        <item name="indicatorTrackGapSize">0dp</item>
+    </style>
+
+    <style name="Progress.Linear.Gold" parent="Progress.Linear">
+        <item name="indicatorColor">@color/accent_gold</item>
+    </style>
+
+    <style name="Progress.Circular" parent="Widget.Material3.CircularProgressIndicator">
+        <item name="indicatorColor">@color/primary</item>
+        <item name="trackColor">@color/white_10</item>
+        <item name="trackThickness">8dp</item>
+        <item name="indicatorSize">80dp</item>
+    </style>
+
+    <!-- ════════════════════════════════════ -->
+    <!-- Chip / Tag Styles                    -->
+    <!-- ════════════════════════════════════ -->
+
+    <style name="Chip.Status" parent="Widget.Material3.Chip.Assist">
+        <item name="android:textSize">12sp</item>
+        <item name="chipMinHeight">28dp</item>
+        <item name="chipCornerRadius">14dp</item>
+    </style>
+
+    <style name="Chip.Status.Good" parent="Chip.Status">
+        <item name="chipBackgroundColor">@color/severity_excellent_bg</item>
+        <item name="android:textColor">@color/severity_excellent</item>
+    </style>
+
+    <style name="Chip.Status.Warning" parent="Chip.Status">
+        <item name="chipBackgroundColor">@color/severity_fair_bg</item>
+        <item name="android:textColor">@color/severity_fair</item>
+    </style>
+
+    <style name="Chip.Status.Alert" parent="Chip.Status">
+        <item name="chipBackgroundColor">@color/severity_critical_bg</item>
+        <item name="android:textColor">@color/severity_critical</item>
+    </style>
+
+    <!-- ════════════════════════════════════ -->
+    <!-- Divider Styles                       -->
+    <!-- ════════════════════════════════════ -->
+
+    <style name="Divider">
+        <item name="android:background">@color/divider</item>
+    </style>
+
+    <style name="Divider.Horizontal" parent="Divider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">1dp</item>
+    </style>
+
+    <style name="Divider.Vertical" parent="Divider">
+        <item name="android:layout_width">1dp</item>
+        <item name="android:layout_height">match_parent</item>
+    </style>
+
+</resources>

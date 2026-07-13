@@ -34,8 +34,12 @@
                 overflow: visible !important;
             }
             .barcode-section svg {
-                max-width: 100% !important;
+                max-width: none !important;
                 height: auto !important;
+                transform: none !important;
+                -webkit-transform: none !important;
+                image-rendering: crisp-edges !important;
+                -ms-interpolation-mode: nearest-neighbor !important;
             }
         }
 
@@ -260,10 +264,12 @@
             align-items: center;
         }
         .barcode-section svg {
-            max-width: 100%;
-            height: auto;
             display: block;
             margin: 0 auto;
+            max-width: none !important;
+            height: auto !important;
+            image-rendering: crisp-edges;
+            -ms-interpolation-mode: nearest-neighbor;
         }
         .info-section {
             display: flex;

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- DERMA AI — Spacing & Sizing System                          -->
+    <!-- Optimized for Bitmoji ZMLH02 (1920×1080) touch display     -->
+    <!-- Min touch target = 48dp (Material 3 guideline)             -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+
+    <!-- ── Spacing Scale ── -->
+    <dimen name="space_2">2dp</dimen>
+    <dimen name="space_4">4dp</dimen>
+    <dimen name="space_6">6dp</dimen>
+    <dimen name="space_8">8dp</dimen>
+    <dimen name="space_12">12dp</dimen>
+    <dimen name="space_16">16dp</dimen>
+    <dimen name="space_20">20dp</dimen>
+    <dimen name="space_24">24dp</dimen>
+    <dimen name="space_32">32dp</dimen>
+    <dimen name="space_40">40dp</dimen>
+    <dimen name="space_48">48dp</dimen>
+    <dimen name="space_56">56dp</dimen>
+    <dimen name="space_64">64dp</dimen>
+
+    <!-- Legacy aliases -->
+    <dimen name="padding_xs">4dp</dimen>
+    <dimen name="padding_sm">8dp</dimen>
+    <dimen name="padding_md">16dp</dimen>
+    <dimen name="padding_lg">24dp</dimen>
+    <dimen name="padding_xl">32dp</dimen>
+    <dimen name="padding_xxl">48dp</dimen>
+
+    <!-- ── Screen Layout Columns (for 1920px landscape) ── -->
+    <!-- Sidebar: 320dp | Content: fills rest -->
+    <dimen name="sidebar_width">320dp</dimen>
+    <dimen name="sidebar_header_height">80dp</dimen>
+    <dimen name="content_header_height">72dp</dimen>
+    <dimen name="bottom_bar_height">0dp</dimen>
+
+    <!-- ── Score Panel (left panel on report/result screens) ── -->
+    <dimen name="score_panel_width">260dp</dimen>
+    <dimen name="score_gauge_size">180dp</dimen>
+    <dimen name="score_gauge_stroke">16dp</dimen>
+
+    <!-- ── Metric Cards ── -->
+    <dimen name="metric_card_min_height">100dp</dimen>
+    <dimen name="metric_bar_height">6dp</dimen>
+    <dimen name="metric_icon_size">40dp</dimen>
+
+    <!-- ── Corner Radii ── -->
+    <dimen name="corner_xs">6dp</dimen>
+    <dimen name="corner_sm">8dp</dimen>
+    <dimen name="corner_md">12dp</dimen>
+    <dimen name="corner_lg">16dp</dimen>
+    <dimen name="corner_xl">20dp</dimen>
+    <dimen name="corner_xxl">28dp</dimen>
+    <dimen name="corner_full">100dp</dimen>
+
+    <!-- Legacy -->
+    <dimen name="corner_radius_sm">8dp</dimen>
+    <dimen name="corner_radius_md">12dp</dimen>
+    <dimen name="corner_radius_lg">16dp</dimen>
+    <dimen name="corner_radius_xl">20dp</dimen>
+
+    <!-- ── Typography (sp) ── -->
+    <dimen name="text_xs">11sp</dimen>
+    <dimen name="text_caption">12sp</dimen>
+    <dimen name="text_body_sm">13sp</dimen>
+    <dimen name="text_body">14sp</dimen>
+    <dimen name="text_body_lg">15sp</dimen>
+    <dimen name="text_subtitle">16sp</dimen>
+    <dimen name="text_subtitle_lg">18sp</dimen>
+    <dimen name="text_title">20sp</dimen>
+    <dimen name="text_title_lg">22sp</dimen>
+    <dimen name="text_headline">28sp</dimen>
+    <dimen name="text_headline_lg">34sp</dimen>
+    <dimen name="text_display_sm">40sp</dimen>
+    <dimen name="text_display">56sp</dimen>
+    <dimen name="text_display_lg">72sp</dimen>
+
+    <!-- ── Touch Targets (min 48dp for accessibility) ── -->
+    <dimen name="touch_target_min">48dp</dimen>
+    <dimen name="touch_target_md">56dp</dimen>
+    <dimen name="touch_target_lg">64dp</dimen>
+    <dimen name="touch_target_xl">72dp</dimen>
+
+    <!-- Button Heights -->
+    <dimen name="button_height_sm">40dp</dimen>
+    <dimen name="button_height_md">48dp</dimen>
+    <dimen name="button_height_lg">60dp</dimen>
+    <dimen name="button_height_xl">72dp</dimen>
+
+    <!-- ── Icons ── -->
+    <dimen name="icon_size_xs">16dp</dimen>
+    <dimen name="icon_size_sm">20dp</dimen>
+    <dimen name="icon_size_md">24dp</dimen>
+    <dimen name="icon_size_lg">32dp</dimen>
+    <dimen name="icon_size_xl">48dp</dimen>
+    <dimen name="icon_size_xxl">64dp</dimen>
+    <dimen name="icon_size_hero">120dp</dimen>
+
+    <!-- ── Progress / Charts ── -->
+    <dimen name="progress_thickness">4dp</dimen>
+    <dimen name="progress_thickness_lg">8dp</dimen>
+    <dimen name="progress_thickness_xl">12dp</dimen>
+
+    <!-- Card Elevation -->
+    <dimen name="card_elevation">0dp</dimen>
+    <dimen name="card_elevation_raised">4dp</dimen>
+    <dimen name="card_elevation_high">12dp</dimen>
+
+    <!-- Status dot -->
+    <dimen name="status_dot_size">10dp</dimen>
+    <dimen name="status_dot_size_lg">14dp</dimen>
+
+    <!-- Divider -->
+    <dimen name="divider_height">1dp</dimen>
+
+    <!-- Scan / Camera specific -->
+    <dimen name="scan_circle_size">440dp</dimen>
+    <dimen name="scan_ring_stroke">3dp</dimen>
+    <dimen name="face_guide_size">320dp</dimen>
+
+</resources>

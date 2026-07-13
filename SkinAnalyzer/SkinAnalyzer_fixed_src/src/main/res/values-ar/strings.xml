@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">محلل البشرة الذكي</string>
+
+    <string name="home_title">لوحة تحليل البشرة</string>
+    <string name="action_start_analysis">بدء التحليل</string>
+    <string name="action_history">السجل</string>
+    <string name="action_settings">الإعدادات</string>
+    <string name="action_abort">إلغاء</string>
+    <string name="action_retry">إعادة المحاولة</string>
+    <string name="action_close">إغلاق</string>
+    <string name="action_new_analysis">تحليل جديد</string>
+
+    <string name="label_analysis_mode">وضع التحليل</string>
+    <string name="label_recent_analyses">التحليلات الأخيرة</string>
+    <string name="label_current_spectrum">الطيف الحالي</string>
+    <string name="label_provider">محرك التحليل</string>
+    <string name="label_analysis_time">وقت المعالجة</string>
+    <string name="label_resolution">دقة الشاشة</string>
+
+    <string name="report_title">تقرير التحليل</string>
+    <string name="settings_title">الإعدادات</string>
+
+    <string name="phase_activating">تفعيل مصدر الضوء...</string>
+    <string name="phase_settling">تثبيت المستشعر...</string>
+    <string name="phase_capturing">التقاط الإطار...</string>
+    <string name="phase_processing">معالجة البيانات الطيفية...</string>
+    <string name="phase_complete">اكتملت المرحلة</string>
+    <string name="phase_failed">فشل المرحلة</string>
+
+    <string name="analysis_complete">اكتمل التحليل</string>
+    <string name="analysis_initializing">بدء عملية فحص البشرة الشاملة...</string>
+
+    <string name="score_excellent">ممتاز</string>
+    <string name="score_good">جيد</string>
+    <string name="score_fair">مقبول</string>
+    <string name="score_poor">ضعيف</string>
+    <string name="score_critical">حرج</string>
+
+    <string name="section_analysis_engine">محرك التحليل</string>
+    <string name="section_api_provider">مزود API</string>
+    <string name="section_language">اللغة / Language</string>
+    <string name="section_device_info">معلومات الجهاز</string>
+    <string name="section_tools">الأدوات</string>
+
+    <string name="mode_auto">تلقائي (سحابي + احتياطي محلي)</string>
+    <string name="mode_local">محلي فقط (TFLite على الجهاز)</string>
+    <string name="mode_cloud">سحابي فقط (محرك ييمي)</string>
+
+    <string name="lang_arabic">العربية</string>
+    <string name="lang_english">English (إنجليزية)</string>
+
+    <string name="metric_moisture">مستوى الرطوبة المائية</string>
+    <string name="metric_pores">مقياس اتساع المسام الجلدية</string>
+    <string name="metric_sebum">كثافة الإفرازات الدهنية</string>
+    <string name="metric_wrinkles">عمق التجاعيد وخطوط البشرة</string>
+    <string name="metric_texture">نعومة وملمس السطح الخارجي</string>
+    <string name="metric_uv_spots">الضرر الناتج عن أشعة الشمس (البقع العميقة)</string>
+    <string name="metric_vascular">سلامة الأوعية الدموية ومدى الاحمرار</string>
+    <string name="metric_pigmentation">توزيع التصبغات الجلدية</string>
+    <string name="metric_dark_circles">الهالات السوداء المحيطة بالعين</string>
+    <string name="metric_blackheads">كثافة الرؤوس السوداء والشوائب</string>
+    <string name="metric_acne">مؤشر انتشار حب الشباب والالتهابات</string>
+    <string name="metric_collagen">مرونة الجلد ومستوى الكولاجين</string>
+    <string name="metric_skin_tone">تجانس وتناسق لون البشرة العام</string>
+    <string name="metric_sensitivity">حساسية وتهيج الجلد الفوري</string>
+    <string name="metric_porphyrins">مستوى البورفيرين (بكتيريا الحب)</string>
+    <string name="metric_rosacea">مؤشر الوردية والاحمرار</string>
+    <string name="metric_melasma">مستوى الكلف والتصبغ العميق</string>
+
+    <string name="processing_local">يتم التحليل محلياً عبر معالج الذكاء الاصطناعي الخاص بالجهاز</string>
+    <string name="processing_cloud">يتم استخلاص المؤشرات المتقدمة عبر الخادم السحابي الآمن</string>
+    <string name="fallback_alert">تنبيه: تم التحويل إلى التحليل المحلي نظراً لعدم استقرار الاتصال بالشبكة</string>
+
+    <string name="history_title">سجل التحليلات</string>
+    <string name="history_empty">لا توجد تقارير تحليل بعد</string>
+    <string name="history_delete_confirm">حذف هذا التقرير؟</string>
+
+    <string name="calibration_title">المعايرة</string>
+    <string name="calibration_start">بدء المعايرة</string>
+    <string name="calibration_running">جاري التشغيل...</string>
+    <string name="calibration_usb_test">اختبار اتصال USB</string>
+    <string name="calibration_camera_test">اختبار الكاميرا</string>
+    <string name="calibration_spectrum_test">اختبار أضواء الطيف</string>
+    <string name="calibration_pass">نجح</string>
+    <string name="calibration_fail">فشل</string>
+
+    <string name="diagnostics_title">التشخيص</string>
+    <string name="diagnostics_usb_status">حالة USB</string>
+    <string name="diagnostics_network_status">حالة الشبكة</string>
+    <string name="diagnostics_camera_status">حالة الكاميرا</string>
+    <string name="diagnostics_ai_status">حالة محرك الذكاء الاصطناعي</string>
+
+    <string name="comparison_title">مقارنة قبل / بعد</string>
+    <string name="comparison_select_before">قبل</string>
+    <string name="comparison_select_after">بعد</string>
+    <string name="comparison_improved">تحسن</string>
+    <string name="comparison_declined">تراجع</string>
+
+    <string name="radar_chart_title">نظرة عامة على المؤشرات</string>
+    <string name="report_gallery_title">الصور الملتقطة</string>
+    <string name="report_share_title">مشاركة التقرير</string>
+
+    <string name="status_usb_connected">USB متصل</string>
+    <string name="status_usb_disconnected">USB غير متصل</string>
+    <string name="status_network_online">الشبكة متصلة</string>
+    <string name="status_network_offline">الشبكة غير متصلة</string>
+
+    <string name="pdf_header_clinic">تقرير تحليل البشرة</string>
+    <string name="pdf_section_metrics">المؤشرات التفصيلية</string>
+    <string name="pdf_section_recommendations">التوصيات</string>
+
+    <string name="error_no_camera">لا توجد كاميرا متاحة</string>
+    <string name="error_no_usb">جهاز USB غير متصل</string>
+    <string name="error_no_network">الشبكة غير متاحة</string>
+    <string name="error_analysis_failed">فشل التحليل</string>
+
+    <string name="home_subtitle">محلل البشرة الذكي</string>
+
+    <string name="diagnosis_title">أوضاع الإضاءة والتشخيص</string>
+    <string name="diagnosis_white">الضوء المرئي (RGB)</string>
+    <string name="diagnosis_white_desc">المسام، التجاعيد، لون البشرة</string>
+    <string name="diagnosis_uv">الأشعة فوق البنفسجية</string>
+    <string name="diagnosis_uv_desc">البورفيرين، أضرار الشمس، الزهم</string>
+    <string name="diagnosis_cross_pol">ضوء مستقطب متقاطع</string>
+    <string name="diagnosis_cross_pol_desc">الأوعية الدموية، الاحمرار، الوردية</string>
+    <string name="diagnosis_parallel_pol">ضوء مستقطب موازٍ</string>
+    <string name="diagnosis_parallel_pol_desc">الخطوط الدقيقة، الملمس، السطح</string>
+    <string name="diagnosis_woods">ضوء وودز السريري</string>
+    <string name="diagnosis_woods_desc">الترطيب، الكلف العميق</string>
+
+    <string name="device_status_title">حالة الجهاز</string>
+    <string name="label_network_status">الشبكة</string>
+    <string name="label_camera_status">الكاميرا / العتاد</string>
+    <string name="label_ai_status">وضع الذكاء الاصطناعي</string>
+</resources>

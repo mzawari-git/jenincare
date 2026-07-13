@@ -443,6 +443,10 @@ const PRODS = {
 
 // منتجات الموقع الحقيقية (تُمرَّر من الـ controller) — تستبدل بيانات العرض حيثما توفّرت
 const SERVER_PRODS = @json($shelfProducts ?? []);
+// جميع المنتجات بشكل مسطح — المصدر الرئيسي لعرض الجدار الدوّار
+const ALL_PRODUCTS = @json($allProducts ?? []);
+// هل لدينا منتجات حقيقية من قاعدة البيانات؟
+const HAS_REAL_PRODUCTS = ALL_PRODUCTS.length > 0;
 const ZONE_STYLE = {
   left:   { color: 0xEC4899, emoji: '🧴' },
   right:  { color: 0x8B5CF6, emoji: '💇' },
@@ -457,33 +461,64 @@ const CAT_EMOJI = {
   'الباديكير': '👣', 'الحجامة': '🩸', 'العناية باللحية': '🧔',
   'الرموش': '👀', 'البيرسينج': '💎',
 };
-['left', 'right', 'back', 'island'].forEach(z => {
-  const list = SERVER_PRODS[z];
-  if (Array.isArray(list) && list.length) {
-    PRODS[z] = list.map(p => {
-      const zoneStyle = ZONE_STYLE[z] || { color: 0xdddddd, emoji: '🧴' };
-      let emoji = zoneStyle.emoji;
-      let color = zoneStyle.color;
-      for (const [kw, e] of Object.entries(CAT_EMOJI)) {
-        if ((p.zone || '').includes(kw) || (p.cat || '').includes(kw)) {
-          emoji = e;
-          color = (e === '💇' || e === '🎨') ? 0x8B5CF6 :
-                  (e === '💄' || e === '💅') ? 0xEC4899 :
-                  (e === '🌹' || e === '🌸') ? 0xF59E0B :
-                  (e === '👑' || e === '🔬') ? 0x3B82F6 :
-                  (e === '🎁' || e === '⚡') ? 0xEF4444 :
-                  (e === '🧔' || e === '👣') ? 0x10B981 : color;
-          break;
-        }
+// Replace PRODS with real products from database if available
+if (HAS_REAL_PRODUCTS) {
+  // Distribute all products across the 4 zones evenly (round-robin)
+  const zoneKeys = ['left', 'right', 'back', 'island'];
+  ALL_PRODUCTS.forEach((p, i) => {
+    const z = zoneKeys[i % zoneKeys.length];
+    if (!PRODS[z]) PRODS[z] = [];
+    const zoneStyle = ZONE_STYLE[z] || { color: 0xdddddd, emoji: '🧴' };
+    let emoji = zoneStyle.emoji;
+    let color = zoneStyle.color;
+    for (const [kw, e] of Object.entries(CAT_EMOJI)) {
+      if ((p.zone || '').includes(kw) || (p.cat || '').includes(kw)) {
+        emoji = e;
+        color = (e === '💇' || e === '🎨') ? 0x8B5CF6 :
+                (e === '💄' || e === '💅') ? 0xEC4899 :
+                (e === '🌹' || e === '🌸') ? 0xF59E0B :
+                (e === '👑' || e === '🔬') ? 0x3B82F6 :
+                (e === '🎁' || e === '⚡') ? 0xEF4444 :
+                (e === '🧔' || e === '👣') ? 0x10B981 : color;
+        break;
       }
-      return {
-        id: p.id, name: p.name, price: p.price,
-        old: p.old || null, slug: p.slug, image: p.image || '',
-        zone: p.zone || '', emoji, color, cat: p.cat || '',
-      };
+    }
+    PRODS[z].push({
+      id: p.id, name: p.name, price: p.price,
+      old: p.old || null, slug: p.slug, image: p.image || '',
+      zone: p.zone || '', emoji, color, cat: p.cat || '',
     });
-  }
-});
+  });
+} else {
+  // Fallback: use SERVER_PRODS zone grouping if available
+  ['left', 'right', 'back', 'island'].forEach(z => {
+    const list = SERVER_PRODS[z];
+    if (Array.isArray(list) && list.length) {
+      PRODS[z] = list.map(p => {
+        const zoneStyle = ZONE_STYLE[z] || { color: 0xdddddd, emoji: '🧴' };
+        let emoji = zoneStyle.emoji;
+        let color = zoneStyle.color;
+        for (const [kw, e] of Object.entries(CAT_EMOJI)) {
+          if ((p.zone || '').includes(kw) || (p.cat || '').includes(kw)) {
+            emoji = e;
+            color = (e === '💇' || e === '🎨') ? 0x8B5CF6 :
+                    (e === '💄' || e === '💅') ? 0xEC4899 :
+                    (e === '🌹' || e === '🌸') ? 0xF59E0B :
+                    (e === '👑' || e === '🔬') ? 0x3B82F6 :
+                    (e === '🎁' || e === '⚡') ? 0xEF4444 :
+                    (e === '🧔' || e === '👣') ? 0x10B981 : color;
+            break;
+          }
+        }
+        return {
+          id: p.id, name: p.name, price: p.price,
+          old: p.old || null, slug: p.slug, image: p.image || '',
+          zone: p.zone || '', emoji, color, cat: p.cat || '',
+        };
+      });
+    }
+  });
+}
 
 // ============================================================
 //  SCENE, RENDERER, CAMERA
@@ -561,7 +596,7 @@ const M = {
   glass:  new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.22, roughness: 0.05 }),
 };
 
-const USE_REAL_WALL_PHOTOS = true;
+const USE_REAL_WALL_PHOTOS = false;
 const BASE_PATH = window.location.pathname.replace(/\/virtual-store\/3d.*$/, '') + '/';
 const PANEL_W = 3.55;
 const PANEL_H = H - 0.48;
@@ -800,42 +835,82 @@ function placeRow(side, baseX, baseZ, prods, unitIdx, shelfIdx) {
 
 // ============================================================
 //  WALL PRODUCT PANELS — real product images floating on all walls
+//  ALL products from DB cycle across the walls. Click any panel
+//  to see product card and add to cart.
 // ============================================================
 const wallTexLoader = new THREE.TextureLoader();
 const wallPanelMeshes = [];
+// Raycaster for clicking wall panels
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let wallClickHandler = null;
+
+// Create a text sprite (name label) for a product panel
+function makeTextSprite(name, color = '#ffffff') {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.roundRect(0, 0, 256, 64, 8);
+  ctx.fill();
+  ctx.fillStyle = color;
+  ctx.font = 'bold 20px Cairo, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  // Truncate long names
+  const displayName = name.length > 18 ? name.slice(0, 16) + '..' : name;
+  ctx.fillText(displayName, 128, 34);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  const spriteMat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+  const sprite = new THREE.Sprite(spriteMat);
+  sprite.scale.set(1.0, 0.25, 1);
+  sprite.userData = { isSprite: true };
+  sprite.isSprite = true;
+  return sprite;
+}
 
 function wallPanel(p, x, y, z, rotY, scaleW, scaleH) {
-  const w = scaleW || 0.38, h = scaleH || 0.50;
+  const w = scaleW || 0.42, h = scaleH || 0.56;
   let mat;
   if (p.image) {
     const tx = wallTexLoader.load(p.image);
     tx.encoding = THREE.sRGBEncoding;
     tx.minFilter = THREE.LinearFilter;
     tx.magFilter = THREE.LinearFilter;
-    mat = new THREE.MeshBasicMaterial({ map: tx, transparent: true, side: THREE.DoubleSide });
+    mat = new THREE.MeshBasicMaterial({ map: tx, transparent: true, side: THREE.DoubleSide, depthWrite: false });
   } else {
     mat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(p.color || 0xdddddd),
+      color: new THREE.Color(p.color || 0x8B5CF6),
       roughness: 0.5, metalness: 0.1,
+      emissive: new THREE.Color(p.color || 0x8B5CF6),
+      emissiveIntensity: 0.15,
     });
   }
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
   mesh.position.set(x, y + h / 2, z);
   mesh.rotation.y = rotY;
-  mesh.userData = { product: p };
+  mesh.userData = { product: p, isWallPanel: true };
   scene.add(mesh);
   wallPanelMeshes.push(mesh);
+
+  // Add name label below the panel
+  const label = makeTextSprite(p.name || 'منتج', '#ffffff');
+  label.position.set(x, y - 0.05, z);
+  label.renderOrder = 999;
+  scene.add(label);
+  wallPanelMeshes.push(label);
+
   return mesh;
 }
 
 // Carousel offset — increments every few seconds to show different products
 let carouselOffset = 0;
-const CAROUSEL_INTERVAL = 5000; // 5 seconds
+const CAROUSEL_INTERVAL = 6000; // 6 seconds
 
-// Update wall panel textures to show next batch of products
 function cycleWallDisplay() {
   carouselOffset++;
-  // Rebuild all wall panels with shifted product indices
   rebuildWallPanels();
 }
 
@@ -850,56 +925,88 @@ function clearWallPanels() {
 
 function rebuildWallPanels() {
   clearWallPanels();
+  // Show more panels per zone: 2 vertical rows × 3 horizontal = 6 per zone
   const PANELS_PER_ZONE = 3;
-  const PAD = 0.6;
+  const ROWS = 2;
+  const ROW_HEIGHTS = [0.8, 2.2]; // low and mid row
+
+  // Build a single flat array of all products across all zones for cycling
+  const allProducts = Object.values(PRODS).flat().filter(Boolean);
+  if (!allProducts.length) return;
+
+  let globalIdx = 0;
 
   // Left wall — 5 zones
   for (let u = 0; u < 5; u++) {
     const z = -D / 2 + 2.0 + u * 4.0;
-    const prods = PRODS.left;
-    if (!prods || !prods.length) continue;
-    for (let s = 0; s < PANELS_PER_ZONE; s++) {
-      const idx = ((u * PANELS_PER_ZONE + s) + carouselOffset) % prods.length;
-      const p = prods[idx];
-      if (!p) continue;
-      const yy = 1.2 + s * 0.7;
-      const rot = Math.PI / 2;
-      wallPanel(p, LX + 0.25, yy, z + (s - 1) * 0.35, rot);
+    for (let r = 0; r < ROWS; r++) {
+      for (let s = 0; s < PANELS_PER_ZONE; s++) {
+        const idx = (globalIdx + carouselOffset) % allProducts.length;
+        const p = allProducts[idx];
+        if (!p) continue;
+        globalIdx++;
+        const yy = ROW_HEIGHTS[r];
+        const rot = Math.PI / 2;
+        wallPanel(p, LX + 0.25, yy, z + (s - 1) * 0.35, rot);
+      }
     }
   }
 
   // Right wall — 5 zones
   for (let u = 0; u < 5; u++) {
     const z = -D / 2 + 2.0 + u * 4.0;
-    const prods = PRODS.right;
-    if (!prods || !prods.length) continue;
-    for (let s = 0; s < PANELS_PER_ZONE; s++) {
-      const idx = ((u * PANELS_PER_ZONE + s) + carouselOffset) % prods.length;
-      const p = prods[idx];
-      if (!p) continue;
-      const yy = 1.2 + s * 0.7;
-      const rot = -Math.PI / 2;
-      wallPanel(p, RX - 0.25, yy, z + (s - 1) * 0.35, rot);
+    for (let r = 0; r < ROWS; r++) {
+      for (let s = 0; s < PANELS_PER_ZONE; s++) {
+        const idx = (globalIdx + carouselOffset) % allProducts.length;
+        const p = allProducts[idx];
+        if (!p) continue;
+        globalIdx++;
+        const yy = ROW_HEIGHTS[r];
+        const rot = -Math.PI / 2;
+        wallPanel(p, RX - 0.25, yy, z + (s - 1) * 0.35, rot);
+      }
     }
   }
 
-  // Back wall — 4 zones
+  // Back wall — 4 zones × 2 rows × 3 cols = 24 panels
   for (let u = 0; u < 4; u++) {
     const x = -W / 2 + 2.0 + u * 4.0;
-    const prods = PRODS.back;
-    if (!prods || !prods.length) continue;
-    for (let s = 0; s < PANELS_PER_ZONE; s++) {
-      const idx = ((u * PANELS_PER_ZONE + s) + carouselOffset) % prods.length;
-      const p = prods[idx];
-      if (!p) continue;
-      const yy = 1.2 + s * 0.7;
-      wallPanel(p, x + (s - 1) * 0.35, yy, BZ + 0.25, 0);
+    for (let r = 0; r < ROWS; r++) {
+      for (let s = 0; s < PANELS_PER_ZONE; s++) {
+        const idx = (globalIdx + carouselOffset) % allProducts.length;
+        const p = allProducts[idx];
+        if (!p) continue;
+        globalIdx++;
+        const yy = ROW_HEIGHTS[r];
+        wallPanel(p, x + (s - 1) * 0.35, yy, BZ + 0.25, 0);
+      }
     }
   }
 
-  // Island — keep existing but also cycle
+  // Island
   placeIslandProducts();
 }
+
+// ——— Click handler for wall panels via raycaster ———
+function handleWallClick(event) {
+  if (!gameOn) return;
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  const clickTargets = wallPanelMeshes.filter(m => !m.isSprite).concat(islandMeshes);
+  const intersects = raycaster.intersectObjects(clickTargets);
+  if (intersects.length > 0) {
+    const hit = intersects[0].object;
+    const p = hit.userData?.product;
+    if (p) {
+      showCardForProduct(p);
+    }
+  }
+}
+
+// Show card for a specific product (not zone-based)
+
 
 // جزيرة — ألواح صور المنتجات الحقيقية واقفة على الطاولة المركزية
 function islandPanel(p, x, y, z, rotY) {
@@ -919,12 +1026,18 @@ function islandPanel(p, x, y, z, rotY) {
   mesh.rotation.y = rotY;
   mesh.userData = { product: p };
   scene.add(mesh);
+
+  const label = makeTextSprite(p.name || 'منتج', '#ffffff');
+  label.position.set(x, y - 0.05, z);
+  label.renderOrder = 999;
+  scene.add(label);
+  islandMeshes.push(label);
+
   return mesh;
 }
 
 let islandMeshes = [];
 function placeIslandProducts() {
-  // Remove old island panels
   for (const m of islandMeshes) {
     scene.remove(m);
     if (m.material.map) m.material.map.dispose();
@@ -932,13 +1045,13 @@ function placeIslandProducts() {
   }
   islandMeshes = [];
 
-  const items = PRODS.island;
-  if (!items || !items.length) return;
+  const allItems = Object.values(PRODS).flat().filter(Boolean);
+  if (!allItems.length) return;
   const topY = 1.45 + 0.02;
-  const visible = Math.min(8, items.length);
+  const visible = Math.min(10, allItems.length);
   const selected = [];
   for (let i = 0; i < visible; i++) {
-    selected.push(items[(i + carouselOffset) % items.length]);
+    selected.push(allItems[(i + carouselOffset) % allItems.length]);
   }
   const half = Math.ceil(selected.length / 2);
   const front = selected.slice(0, half);
@@ -969,7 +1082,14 @@ const keys = {};
 let yaw = 0, pitch = 0;
 let locked = false, drag = false, mx0 = 0, my0 = 0;
 
-canvas.addEventListener('click', () => { if (gameOn) canvas.requestPointerLock(); });
+canvas.addEventListener('click', (event) => {
+  // First try wall panel click (only when not locked)
+  if (!document.pointerLockElement) {
+    handleWallClick(event);
+  }
+  // Then request pointer lock
+  if (gameOn) canvas.requestPointerLock();
+});
 document.addEventListener('pointerlockchange', () => { locked = !!document.pointerLockElement; });
 document.addEventListener('mousemove', e => {
   if (locked)        { yaw -= e.movementX * LSPD; pitch -= e.movementY * LSPD; }
@@ -1063,17 +1183,20 @@ const zoneLbl = document.getElementById('zoneLabel');
 
 function checkProx() {
   const cx = camera.position.x, cz = camera.position.z;
-  let near = null, nearD = PROX;
-  for (const z of shelfZones) {
-    const d = Math.hypot(cx - z.x, cz - z.z);
-    if (d < nearD) { nearD = d; near = z; }
+  let nearMesh = null, nearD = PROX;
+  // Check proximity to each wall panel mesh (skip sprites)
+  for (const m of wallPanelMeshes) {
+    if (!m.userData?.product || m.isSprite) continue;
+    const d = Math.hypot(cx - m.position.x, cz - m.position.z);
+    if (d < nearD) { nearD = d; nearMesh = m; }
   }
   const ring = document.getElementById('proxRing');
-  if (near && nearD < PROX * 0.65) {
+  if (nearMesh && nearD < PROX * 0.65) {
     ring.style.opacity = '0';
-    showCard(near);
-    showZone(near.label);
-  } else if (near && nearD < PROX) {
+    const p = nearMesh.userData.product;
+    if (p) showCardForProduct(p);
+    showZone('🛒 اقتربت من منتج — اضغط لإضافة للسلة');
+  } else if (nearMesh && nearD < PROX) {
     ring.style.opacity = '1';
     hideCard();
   } else {
@@ -1083,10 +1206,8 @@ function checkProx() {
   }
 }
 
-function showCard(zone) {
-  const ps = zone.prods;
-  const idx = Math.abs(Math.floor(camera.position.x * 4 + camera.position.z * 7)) % ps.length;
-  const p = ps[idx];
+function showCardForProduct(p) {
+  if (!p) return;
   if (p === curProd && cardShowing) return;
   curProd = p; cardShowing = true;
   const imgEl = document.getElementById('pEmoji');
@@ -1098,9 +1219,9 @@ function showCard(zone) {
     imgEl.style.backgroundPosition = 'center';
   } else {
     imgEl.style.backgroundImage = '';
-    imgEl.textContent = p.emoji || '🧴';
+    imgEl.textContent = p.emoji || (p.name ? p.name[0] : '🛒');
   }
-  document.getElementById('pZone').textContent  = p.zone;
+  document.getElementById('pZone').textContent  = p.zone || 'منتج';
   document.getElementById('pName').textContent  = p.name;
   document.getElementById('pPrice').textContent = p.price;
   document.getElementById('pOld').textContent   = p.old ? `${p.old}₪` : '';

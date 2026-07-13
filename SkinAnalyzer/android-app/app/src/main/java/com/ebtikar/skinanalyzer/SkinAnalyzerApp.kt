@@ -13,8 +13,10 @@ import com.ebtikar.skinanalyzer.util.UpdateChecker
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -38,21 +40,34 @@ class SkinAnalyzerApp : Application(), Configuration.Provider {
             .setMinimumLoggingLevel(if (BuildConfig.DEBUG) android.util.Log.DEBUG else android.util.Log.ERROR)
             .build()
 
+    private val appScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
     override fun onCreate() {
         super.onCreate()
 
+        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             Timber.e(throwable, "Uncaught exception in thread ${thread.name}")
             android.util.Log.e("SkinAnalyzer", "FATAL: ${throwable.message}", throwable)
+            defaultHandler?.uncaughtException(thread, throwable)
         }
 
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }
 
-        providerManager.initializeAll()
+        createUpdateNotificationChannel()
+        ScanReminderWorker.createChannel(this)
 
-        CoroutineScope(Dispatchers.IO + kotlinx.coroutines.SupervisorJob()).launch {
+        appScope.launch {
+            try {
+                withContext(Dispatchers.IO) { providerManager.initializeAll() }
+            } catch (e: Exception) {
+                Timber.e(e, "Provider initialization failed")
+            }
+        }
+
+        appScope.launch {
             try {
                 preferencesManager.runDiagnosisModeMigration()
             } catch (e: Exception) {
@@ -60,10 +75,7 @@ class SkinAnalyzerApp : Application(), Configuration.Provider {
             }
         }
 
-        createUpdateNotificationChannel()
-        ScanReminderWorker.createChannel(this)
-
-        CoroutineScope(Dispatchers.IO + kotlinx.coroutines.SupervisorJob()).launch {
+        appScope.launch {
             try {
                 val enabled = preferencesManager.scanReminderEnabledFlow.first()
                 if (enabled) {
@@ -75,8 +87,9 @@ class SkinAnalyzerApp : Application(), Configuration.Provider {
             }
         }
 
-        CoroutineScope(Dispatchers.IO + kotlinx.coroutines.SupervisorJob()).launch {
+        appScope.launch {
             try {
+                fiseGpioController.awaitInitialized()
                 if (!fiseGpioController.isAvailable) {
                     Timber.i("GPIO not available, attempting shell setup...")
                     fiseGpioController.setupGpioViaShell()
@@ -86,25 +99,32 @@ class SkinAnalyzerApp : Application(), Configuration.Provider {
             }
         }
 
-        CoroutineScope(Dispatchers.IO + kotlinx.coroutines.SupervisorJob()).launch {
+        appScope.launch {
             try {
                 val autoUpdateEnabled = preferencesManager.autoUpdateEnabledFlow.first()
-                if (autoUpdateEnabled) {
-                    val channel = preferencesManager.updateChannelFlow.first()
-                    Timber.i("Auto-update check: enabled=$autoUpdateEnabled, channel=$channel")
-                    val updateInfo = updateChecker.checkForUpdate(channel)
-                    if (updateInfo != null && updateChecker.isNewerVersion(updateInfo.latestVersion)) {
-                        Timber.i("Auto-update found: v${updateInfo.latestVersion} (current: ${updateChecker.getCurrentVersion()})")
-                        val uri = updateChecker.downloadApkWithNotification(updateInfo)
-                        if (uri != null) {
-                            updateChecker.showInstallNotification(updateInfo, uri)
-                            Timber.i("Auto-update downloaded, install notification shown")
-                        }
-                    } else {
-                        Timber.i("Auto-update: app is up to date (v${updateChecker.getCurrentVersion()})")
-                    }
-                    preferencesManager.setLastUpdateCheck(System.currentTimeMillis())
+                if (!autoUpdateEnabled) return@launch
+
+                val lastCheck = preferencesManager.lastUpdateCheckFlow.first()
+                val hoursSinceLastCheck = (System.currentTimeMillis() - lastCheck) / 3600000L
+                if (hoursSinceLastCheck < 24) {
+                    Timber.i("Auto-update: skipped (${hoursSinceLastCheck}h since last check, need 24h)")
+                    return@launch
                 }
+
+                val channel = preferencesManager.updateChannelFlow.first()
+                Timber.i("Auto-update check: enabled=$autoUpdateEnabled, channel=$channel")
+                val updateInfo = updateChecker.checkForUpdate(channel)
+                if (updateInfo != null && updateChecker.isNewerVersion(updateInfo.latestVersion)) {
+                    Timber.i("Auto-update found: v${updateInfo.latestVersion} (current: ${updateChecker.getCurrentVersion()})")
+                    val uri = updateChecker.downloadApkWithNotification(updateInfo)
+                    if (uri != null) {
+                        updateChecker.showInstallNotification(updateInfo, uri)
+                        Timber.i("Auto-update downloaded, install notification shown")
+                    }
+                } else {
+                    Timber.i("Auto-update: app is up to date (v${updateChecker.getCurrentVersion()})")
+                }
+                preferencesManager.setLastUpdateCheck(System.currentTimeMillis())
             } catch (e: Exception) {
                 Timber.w(e, "Auto-update check failed")
             }

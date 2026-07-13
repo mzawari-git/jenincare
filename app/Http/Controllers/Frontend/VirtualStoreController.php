@@ -58,11 +58,36 @@ class VirtualStoreController extends Controller
 
     public function store3d()
     {
-        // The 3D store is a self-contained HTML page (no layout needed)
+        $shelfProducts = $this->shelfProducts();
+        $allProducts = $this->allProductsFlat();
+
         return response(view('frontend.virtual-store.3d-store', [
             'csrf_token' => csrf_token(),
-            'shelfProducts' => $this->shelfProducts(),
+            'shelfProducts' => $shelfProducts,
+            'allProducts' => $allProducts,
         ]));
+    }
+
+    protected function allProductsFlat(): array
+    {
+        return Product::where('status', 'active')
+            ->with('category:id,name_ar,name_en,slug')
+            ->orderBy('is_featured', 'desc')
+            ->orderBy('sales_count', 'desc')
+            ->orderBy('id')
+            ->get()
+            ->map(fn($p) => [
+                'id'    => $p->id,
+                'name'  => $p->name,
+                'price' => round($p->getCurrentPrice()),
+                'old'   => $p->is_on_sale ? round($p->b2c_price) : null,
+                'slug'  => $p->slug,
+                'image' => $p->main_image_url ?? '',
+                'zone'  => $p->category?->name_ar ?? '',
+                'cat'   => $p->category?->slug ?? '',
+            ])
+            ->values()
+            ->all();
     }
 
     /**
@@ -81,12 +106,11 @@ class VirtualStoreController extends Controller
             'island' => ['مكياج', 'شفاه', 'ظل', 'ريمل', 'كونسيلر', 'makeup', 'lip', 'mascara'],
         ];
 
-        $products = Product::active()
-            ->showInB2C()
+        $products = Product::where('status', 'active')
             ->with('category:id,name_ar,name_en,slug')
-            ->whereNotNull('main_image')
             ->orderBy('is_featured', 'desc')
             ->orderBy('sales_count', 'desc')
+            ->orderBy('id')
             ->get();
 
         $fallbackOrder = array_keys($zones);
@@ -122,7 +146,6 @@ class VirtualStoreController extends Controller
             ];
         }
 
-        // Drop empty zones so the view falls back to demo data only where needed.
         return array_filter($zones, fn($items) => count($items) > 0);
     }
 

@@ -24,7 +24,8 @@ class Product extends Model
         'meta_description', 'meta_keywords', 'og_image', 'average_rating', 'reviews_count', 'views_count',
         'sales_count', 'status', 'is_featured', 'is_new', 'is_bestseller', 'show_in_b2c', 'show_in_b2b',
         'published_at', 'free_shipping', 'shipping_cost', 'estimated_delivery_days', 'compliance_checked',
-        'compliance_checked_at', 'compliance_flags', 'safety_warnings', 'barcode_slug', 'print_count', 'last_printed_at'
+        'compliance_checked_at', 'compliance_flags', 'safety_warnings', 'barcode_slug', 'print_count', 'last_printed_at',
+        'show_on_landing'
     ];
 
     protected $casts = [
@@ -49,6 +50,7 @@ class Product extends Model
         'allow_backorder' => 'boolean',
         'track_inventory' => 'boolean',
         'compliance_checked' => 'boolean',
+        'show_on_landing' => 'boolean',
     ];
 
     protected $appends = [
@@ -402,6 +404,11 @@ class Product extends Model
     public function scopeB2B($query)
     {
         return $query->where('show_in_b2b', true);
+    }
+
+    public function scopeShowOnLanding($query)
+    {
+        return $query->where('show_on_landing', true);
     }
 
     public function scopeOnSale($query)

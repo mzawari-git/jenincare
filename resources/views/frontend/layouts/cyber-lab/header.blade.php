@@ -28,15 +28,23 @@
             </a>
 
             {{-- Desktop Nav --}}
-            <nav class="hidden lg:flex items-center gap-6 text-sm font-bold">
+            <nav class="hidden lg:flex items-center gap-5 text-sm font-bold">
                 <a href="{{ route('home') }}" class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}">الرئيسية</a>
                 <a href="{{ route('shop') }}" class="nav-link {{ request()->routeIs('shop') ? 'active' : '' }}">المتجر</a>
-                <a href="{{ route('virtual-store.index') }}" class="nav-link {{ request()->routeIs('virtual-store*') ? 'active' : '' }}"><i class="ph ph-globe-hemisphere-west"></i> جولة المتجر</a>
-                <a href="{{ route('b2b') }}" class="nav-link {{ request()->routeIs('b2b') ? 'active' : '' }}">الأعمال</a>
-                <a href="{{ route('affiliate.landing') }}" class="nav-link {{ request()->routeIs('affiliate.*') ? 'active' : '' }}" style="color:#ec4899;">تسويق</a>
+                <a href="{{ route('virtual-store.index') }}" class="nav-link {{ request()->routeIs('virtual-store*') ? 'active' : '' }}">جولة المتجر</a>
                 <a href="{{ route('blog.index') }}" class="nav-link {{ request()->routeIs('blog.*') ? 'active' : '' }}">مدونة</a>
-                <a href="{{ route('musk-collection') }}" class="nav-link"><span style="color:#D4AF37;">مجموعة المسك</span></a>
-                <a href="{{ route('contact') }}" class="nav-link {{ request()->routeIs('contact') ? 'active' : '' }}">تواصل</a>
+                <a href="{{ route('musk-collection') }}" class="nav-link" style="color:#D4AF37;">مجموعة المسك</a>
+                <a href="{{ route('wheel.of.fortune') }}" class="nav-link {{ request()->routeIs('wheel.of.fortune') ? 'active' : '' }}"><i class="ph-fill ph-spinner" style="color:#FFD700;"></i> دولاب الحظ</a>
+                {{-- Dropdown --}}
+                <div class="relative dropdown-group">
+                    <button class="nav-link dropdown-trigger" onclick="toggleDropdown(this)" style="cursor:pointer;"><i class="ph ph-dots-three-outline-vertical"></i> المزيد</button>
+                    <div class="dropdown-menu absolute top-full right-0 mt-2 w-48 rounded-xl p-2 shadow-2xl" style="background:var(--surface);border:1px solid rgba(255,255,255,0.08);display:none;">
+                        <a href="{{ route('b2b') }}" class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium dropdown-link {{ request()->routeIs('b2b') ? 'active' : '' }}">الأعمال</a>
+                        <a href="{{ route('affiliate.landing') }}" class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium dropdown-link {{ request()->routeIs('affiliate.*') ? 'active' : '' }}" style="color:#ec4899;">تسويق</a>
+                        <a href="{{ route('products.landing') }}" class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium dropdown-link {{ request()->routeIs('products.landing') ? 'active' : '' }}"><i class="ph-fill ph-gift" style="color:#EC4899;"></i> منتجات حصرية</a>
+                        <a href="{{ route('contact') }}" class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium dropdown-link {{ request()->routeIs('contact') ? 'active' : '' }}">تواصل</a>
+                    </div>
+                </div>
             </nav>
         </div>
 
@@ -97,11 +105,18 @@
             <a href="{{ route('home') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium" style="color:var(--ink);text-decoration:none;"><span class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-house text-lg" style="color:var(--ink-dim);"></i></span> الرئيسية</a>
             <a href="{{ route('shop') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium" style="color:var(--ink);text-decoration:none;"><span class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-storefront text-lg" style="color:var(--ink-dim);"></i></span> المتجر</a>
             <a href="{{ route('virtual-store.index') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium" style="color:var(--ink);text-decoration:none;"><span class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-globe-hemisphere-west text-lg" style="color:var(--ink-dim);"></i></span> جولة المتجر</a>
-            <a href="{{ route('b2b') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium" style="color:var(--ink);text-decoration:none;"><span class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-buildings text-lg" style="color:var(--ink-dim);"></i></span> الأعمال</a>
-            <a href="{{ route('affiliate.landing') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-bold" style="color:#ec4899;text-decoration:none;"><span class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(236,72,153,0.1);"><i class="ph ph-share-network text-lg" style="color:#ec4899;"></i></span> التسويق بالعمولة</a>
             <a href="{{ route('blog.index') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium" style="color:var(--ink);text-decoration:none;"><span class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-article text-lg" style="color:var(--ink-dim);"></i></span> المدونة</a>
             <a href="{{ route('musk-collection') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium" style="color:var(--ink);text-decoration:none;"><span class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-flask text-base" style="color:#D4AF37;"></i></span><span style="color:#D4AF37;">مجموعة المسك</span></a>
-            <a href="{{ route('contact') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium" style="color:var(--ink);text-decoration:none;"><span class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-envelope text-lg" style="color:var(--ink-dim);"></i></span> تواصل معنا</a>
+            <a href="{{ route('wheel.of.fortune') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium" style="color:var(--ink);text-decoration:none;"><span class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph-fill ph-spinner text-base" style="color:#FFD700;"></i></span><span style="color:#FFD700;">دولاب الحظ</span></a>
+            <div style="border-top:1px solid rgba(255,255,255,0.06);margin:8px 0;padding-top:8px;">
+                <button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='block'?'none':'block'" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:10px;font-size:0.875rem;font-weight:600;background:none;border:none;color:var(--ink-dim);cursor:pointer;"><i class="ph ph-dots-three-outline-vertical"></i> المزيد <i class="ph ph-caret-down mr-auto"></i></button>
+                <div style="display:none;">
+                    <a href="{{ route('b2b') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium" style="color:var(--ink);text-decoration:none;"><span class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-buildings text-lg" style="color:var(--ink-dim);"></i></span> الأعمال</a>
+                    <a href="{{ route('affiliate.landing') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-bold" style="color:#ec4899;text-decoration:none;"><span class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(236,72,153,0.1);"><i class="ph ph-share-network text-lg" style="color:#ec4899;"></i></span> التسويق بالعمولة</a>
+                    <a href="{{ route('products.landing') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium" style="color:var(--ink);text-decoration:none;"><span class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph-fill ph-gift text-base" style="color:#EC4899;"></i></span><span style="color:#EC4899;">منتجات حصرية</span></a>
+                    <a href="{{ route('contact') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium" style="color:var(--ink);text-decoration:none;"><span class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-envelope text-lg" style="color:var(--ink-dim);"></i></span> تواصل معنا</a>
+                </div>
+            </div>
         </div>
         <div class="border-t px-4 py-3" style="border-color:rgba(255,255,255,0.06);">
             @auth
@@ -127,6 +142,13 @@
     padding: 4px 0;
 }
 .nav-link:hover, .nav-link.active { color: var(--brand-500) !important; }
+
+/* ?? Dropdown ?? */
+.dropdown-group { position: relative; }
+.dropdown-menu { z-index: 100; }
+.dropdown-link { color: var(--ink-muted); text-decoration: none !important; transition: all 0.15s; }
+.dropdown-link:hover { background: rgba(255,255,255,0.06); color: var(--ink) !important; }
+.dropdown-link.active { color: var(--brand-500) !important; background: rgba(255,255,255,0.04); }
 
 /* ?? Icon Button ?? */
 .icon-btn {
@@ -191,6 +213,8 @@
 function toggleSearchV3(){var o=document.getElementById('searchOverlayV3');o.classList.contains('hidden')?(o.classList.remove('hidden'),o.classList.add('flex'),o.querySelector('input')?.focus()):(o.classList.add('hidden'),o.classList.remove('flex'));}
 document.getElementById('searchOverlayV3')?.addEventListener('click',function(e){if(e.target===this)toggleSearchV3();});
 function toggleMobileMenuV3(){var m=document.getElementById('mobileMenuV3'),p=document.getElementById('mobileMenuPanelV3'),i=document.getElementById('mobileMenuIconV3');m.classList.contains('hidden')?(m.classList.remove('hidden'),setTimeout(function(){p.style.transform='translateX(0)'},10),i.className='ph ph-x text-xl'):(p.style.transform='translateX(100%)',setTimeout(function(){m.classList.add('hidden')},300),i.className='ph ph-list text-xl');}
+function toggleDropdown(btn){var m=btn.nextElementSibling;m.style.display=m.style.display==='block'?'none':'block';}
+document.addEventListener('click',function(e){if(!e.target.closest('.dropdown-group')){document.querySelectorAll('.dropdown-menu').forEach(function(m){m.style.display='none';});}});
 window.addEventListener('scroll',function(){var h=document.getElementById('mainHeaderV3');if(!h)return;h.style.background=window.scrollY>50?'rgba(5,5,5,0.92)':'var(--header-bg)';h.style.boxShadow=window.scrollY>50?'0 4px 30px rgba(0,0,0,0.4)':'none';});
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){var s=document.getElementById('searchOverlayV3');if(s&&!s.classList.contains('hidden'))toggleSearchV3();var m=document.getElementById('mobileMenuV3');if(m&&!m.classList.contains('hidden'))toggleMobileMenuV3();}});
 </script>

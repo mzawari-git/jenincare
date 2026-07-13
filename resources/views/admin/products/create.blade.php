@@ -172,6 +172,10 @@
                         <input type="checkbox" name="is_bestseller" class="form-check-input" value="1" id="is_bestseller">
                         <label class="form-check-label" for="is_bestseller">الأكثر مبيعاً</label>
                     </div>
+                    <div class="form-check form-switch d-inline-block me-3">
+                        <input type="checkbox" name="show_on_landing" class="form-check-input" value="1" id="show_on_landing">
+                        <label class="form-check-label" for="show_on_landing"><i class="fas fa-gift text-pink" style="color:var(--pink-600);"></i> عرض في صفحة المنتجات (Landing)</label>
+                    </div>
                 </div>
             </div>
             <button type="submit" class="btn btn-pink">حفظ</button>

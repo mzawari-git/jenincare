@@ -52,7 +52,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
@@ -193,13 +192,19 @@ class AnalysisActivity : BaseCameraActivity() {
                 isScanning = false
                 return@launch
             }
-            analysisSurface?.release()
-            val validSurface = Surface(currentSurface)
-            analysisSurface = validSurface
+            val newSurface: Surface
+            try {
+                analysisSurface?.release()
+                Surface(currentSurface).also { newSurface = it; analysisSurface = it }
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to create Surface from texture")
+                isScanning = false
+                return@launch
+            }
             analysisInitialized = true
             runOnUiThread {
                 checkLightingHardware {
-                    viewModel.initializeAnalysis(validSurface)
+                    viewModel.initializeAnalysis(newSurface)
                 }
             }
         }
@@ -664,7 +669,7 @@ class AnalysisActivity : BaseCameraActivity() {
                 if (rotated !== bitmap) bitmap.recycle()
                 return rotated
             }
-        } catch (_: Exception) { }
+        } catch (_: Throwable) { }
         return bitmap
     }
 
@@ -694,7 +699,6 @@ class AnalysisActivity : BaseCameraActivity() {
 
     private fun showAnalysisMarkers() {
         val markers = mutableListOf<AnalysisMarker>()
-        val metrics = viewModel.capturedImages.value
 
         val hydration = viewModel.hydration.value
         val pores = viewModel.pores.value

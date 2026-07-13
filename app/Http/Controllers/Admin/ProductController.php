@@ -60,6 +60,7 @@ class ProductController extends Controller
             'is_featured' => 'nullable|boolean',
             'is_new' => 'nullable|boolean',
             'is_bestseller' => 'nullable|boolean',
+            'show_on_landing' => 'nullable|boolean',
             'meta_title' => 'nullable|string|max:160',
             'meta_description' => 'nullable|string|max:320',
             'meta_keywords' => 'nullable|string|max:500',
@@ -113,6 +114,7 @@ class ProductController extends Controller
             'is_featured' => 'nullable|boolean',
             'is_new' => 'nullable|boolean',
             'is_bestseller' => 'nullable|boolean',
+            'show_on_landing' => 'nullable|boolean',
             'meta_title' => 'nullable|string|max:160',
             'meta_description' => 'nullable|string|max:320',
             'meta_keywords' => 'nullable|string|max:500',
@@ -195,6 +197,69 @@ class ProductController extends Controller
         };
 
         return response()->streamDownload($callback, 'products_template.csv', $headers);
+    }
+
+    public function landing()
+    {
+        $products = Product::latest()->paginate(50);
+        $landingProducts = Product::showOnLanding()->latest()->get();
+        return view('admin.products.landing', compact('products', 'landingProducts'));
+    }
+
+    public function toggleLanding(Request $request, Product $product)
+    {
+        $product->update(['show_on_landing' => !$product->show_on_landing]);
+        return redirect()->route('admin.products.landing')->with('success',
+            $product->show_on_landing
+                ? 'تم إضافة "' . $product->name_ar . '" إلى صفحة العرض'
+                : 'تم إزالة "' . $product->name_ar . '" من صفحة العرض');
+    }
+
+    public function export()
+    {
+        $products = Product::orderBy('name_ar')->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="products-export.csv"',
+        ];
+
+        $callback = function () use ($products) {
+            $handle = fopen('php://output', 'w');
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($handle, [
+                'ID', 'SKU', 'Barcode', 'Name (AR)', 'Name (EN)',
+                'Price', 'B2C Price', 'B2B Price', 'Cost Price',
+                'Stock', 'Status', 'Category', 'Brand',
+                'Weight (g)', 'Dimensions',
+                'Featured', 'New', 'Bestseller',
+            ]);
+            foreach ($products as $p) {
+                fputcsv($handle, [
+                    $p->id,
+                    $p->sku,
+                    $p->barcode,
+                    $p->name_ar,
+                    $p->name_en,
+                    $p->base_price,
+                    $p->b2c_price,
+                    $p->b2b_price,
+                    $p->cost_price,
+                    $p->stock_quantity,
+                    $p->status,
+                    $p->category?->name_ar ?? '',
+                    $p->brand?->name_ar ?? '',
+                    $p->weight,
+                    $p->dimensions,
+                    $p->is_featured ? 'Yes' : 'No',
+                    $p->is_new ? 'Yes' : 'No',
+                    $p->is_bestseller ? 'Yes' : 'No',
+                ]);
+            }
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     public function destroy(Product $product)

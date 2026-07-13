@@ -2,8 +2,12 @@ package com.ebtikar.skinanalyzer.hardware
 
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
@@ -41,10 +45,24 @@ class FiseGpioController @Inject constructor(
     val rootManagerDetected: Boolean = false
     val detectedRootManagerPackage: String? = null
 
+    private var initJob: kotlinx.coroutines.Job? = null
+    private val initDeferred = CompletableDeferred<Unit>()
+
     init {
         checkSelinux()
+        initJob = CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+            initialize()
+            initDeferred.complete(Unit)
+        }
+    }
+
+    suspend fun awaitInitialized() {
+        initDeferred.await()
+    }
+
+    private suspend fun initialize() {
         val driverBound = isFiseDriverBound()
-        val fiseFilesExist = gpioFiles.all { it.exists() } && ledFile.exists()
+        val fiseFilesExist = withContext(Dispatchers.IO) { gpioFiles.all { it.exists() } && ledFile.exists() }
         val fiseWriteOk = if (fiseFilesExist) verifyWriteAccess() else false
         val fiseActuallyWorks = if (fiseWriteOk) testFiseWriteEffect() else false
 
@@ -108,10 +126,16 @@ class FiseGpioController @Inject constructor(
 
                 Timber.d("Running GPIO setup script: $fullScript")
                 val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", fullScript))
-                val exitCode = process.waitFor()
+                val completed = process.waitFor(10, TimeUnit.SECONDS)
+                if (!completed) {
+                    process.destroyForcibly()
+                    Timber.w("GPIO setup script timed out (10s)")
+                    return@withContext false
+                }
                 val stderr = process.errorStream.bufferedReader().readText()
                 val stdout = process.inputStream.bufferedReader().readText()
 
+                val exitCode = process.exitValue()
                 if (exitCode != 0) {
                     Timber.w("GPIO setup script exit code: $exitCode, stderr: $stderr")
                 } else {
@@ -201,16 +225,16 @@ class FiseGpioController @Inject constructor(
         return allOk && rawGpioFiles.all { it.exists() }
     }
 
-    private fun testFiseWriteEffect(): Boolean {
+    private suspend fun testFiseWriteEffect(): Boolean {
         val testFile = gpioFiles[0]
         val rawTestFile = rawGpioFiles[0]
         if (!testFile.exists()) return false
         val fiseOk = try {
             testFile.writeText("0")
-            Thread.sleep(100)
+            delay(100)
             val r1 = testFile.readText().trim()
             testFile.writeText("1")
-            Thread.sleep(100)
+            delay(100)
             val r2 = testFile.readText().trim()
             Timber.i("FISE self-test: 0→$r1, 1→$r2")
             r1 == "0" && r2 == "1"
@@ -220,10 +244,10 @@ class FiseGpioController @Inject constructor(
         }
         val rawOk = if (rawTestFile.exists()) {
             val w1 = shellWrite(rawTestFile.absolutePath, "0")
-            Thread.sleep(50)
+            delay(50)
             val r1 = shellRead(rawTestFile.absolutePath)
             val w2 = shellWrite(rawTestFile.absolutePath, "1")
-            Thread.sleep(50)
+            delay(50)
             val r2 = shellRead(rawTestFile.absolutePath)
             Timber.i("Raw GPIO shell test: write0=$w1 read=$r1, write1=$w2 read=$r2")
             r1 == "0" && r2 == "1"
@@ -308,7 +332,13 @@ class FiseGpioController @Inject constructor(
     private fun shellWrite(path: String, value: String): Boolean {
         return try {
             val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo $value > $path"))
-            val exitCode = process.waitFor()
+            val completed = process.waitFor(3, TimeUnit.SECONDS)
+            if (!completed) {
+                process.destroyForcibly()
+                Timber.w("Shell write TIMEOUT for $path")
+                return false
+            }
+            val exitCode = process.exitValue()
             if (exitCode != 0) {
                 Timber.w("Shell write failed for $path: exit=$exitCode")
                 return false
@@ -323,8 +353,13 @@ class FiseGpioController @Inject constructor(
     private fun shellRead(path: String): String {
         return try {
             val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", "cat $path"))
+            val completed = process.waitFor(3, TimeUnit.SECONDS)
+            if (!completed) {
+                process.destroyForcibly()
+                Timber.w("Shell read TIMEOUT for $path")
+                return "?"
+            }
             val result = process.inputStream.bufferedReader().readText().trim()
-            process.waitFor()
             result
         } catch (e: Exception) {
             Timber.w("Shell read failed for $path: ${e.message}")

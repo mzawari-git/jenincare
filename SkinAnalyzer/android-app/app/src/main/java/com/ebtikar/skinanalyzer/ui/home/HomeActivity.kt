@@ -19,12 +19,14 @@ import com.ebtikar.skinanalyzer.util.Constants
 import com.google.android.material.button.MaterialButton
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @AndroidEntryPoint
 class HomeActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityHomeBinding
     private val viewModel: HomeViewModel by viewModels()
+    private var scanEnabled = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,9 +39,18 @@ class HomeActivity : AppCompatActivity() {
 
     private fun setupUI() {
         val startScan = {
-            val intent = Intent(this, AnalysisActivity::class.java)
-                .putExtra("diagnosis_mode", viewModel.diagnosisMode.value)
-            startActivity(intent)
+            if (scanEnabled) {
+                scanEnabled = false
+                binding.btnStartScan.postDelayed({ scanEnabled = true }, 1000)
+                try {
+                    val intent = Intent(this, AnalysisActivity::class.java)
+                        .putExtra("diagnosis_mode", viewModel.diagnosisMode.value)
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    scanEnabled = true
+                    Timber.e(e, "Failed to start scan")
+                }
+            }
         }
         binding.cardQuickScan.setOnClickListener { startScan() }
         binding.btnStartScan.setOnClickListener { startScan() }

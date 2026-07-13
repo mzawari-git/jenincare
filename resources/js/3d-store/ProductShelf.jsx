@@ -28,37 +28,26 @@ export default function ProductShelf({ shelf, onClick }) {
     const shelfModel = useMemo(
         () => (
             <group position={position} rotation={rotation}>
-                {/* Shelf spotlight */}
-                <pointLight position={[0, 1.5, 0.3]} intensity={0.4} color="#ffddaa" distance={2} />
-
                 {/* Shelf base — white */}
-                <mesh position={[0, -0.1, 0]} castShadow>
-                    <boxGeometry args={[1.6, 0.05, 0.8]} />
+                <mesh position={[0, -0.08, 0]} castShadow>
+                    <boxGeometry args={[1.2, 0.04, 0.6]} />
                     <meshStandardMaterial color="#f0ece4" roughness={0.8} metalness={0} />
                 </mesh>
 
                 {/* Shelf back panel */}
-                <mesh position={[0, 0.65, -0.4]} castShadow>
-                    <boxGeometry args={[1.6, 1.6, 0.05]} />
+                <mesh position={[0, 0.45, -0.3]} castShadow>
+                    <boxGeometry args={[1.2, 0.9, 0.03]} />
                     <meshStandardMaterial color="#e8e0d8" roughness={0.9} metalness={0} />
                 </mesh>
 
-                {/* Shelf sides */}
-                {[-0.75, 0.75].map((x, i) => (
-                    <mesh key={i} position={[x, 0.65, 0]} castShadow>
-                        <boxGeometry args={[0.05, 1.6, 0.8]} />
-                        <meshStandardMaterial color="#e8e0d8" roughness={0.9} metalness={0} />
-                    </mesh>
-                ))}
-
-                {/* Product image plane — large, double-sided, bright */}
+                {/* Product image plane */}
                 <mesh
-                    position={[0, 0.8, 0.1]}
+                    position={[0, 0.5, 0.08]}
                     onPointerOver={() => setHovered(true)}
                     onPointerOut={() => setHovered(false)}
                     onClick={(e) => { e.stopPropagation(); onClick(); }}
                 >
-                    <planeGeometry args={[1.3, 1.3]} />
+                    <planeGeometry args={[0.9, 0.9]} />
                     <meshStandardMaterial
                         map={tex}
                         color={tex ? '#ffffff' : (hovered ? '#ff6b9d' : (isOnSale ? '#EF4444' : '#8B5CF6'))}
@@ -66,15 +55,15 @@ export default function ProductShelf({ shelf, onClick }) {
                         metalness={tex ? 0.05 : 0.5}
                         side={THREE.DoubleSide}
                         emissive={tex ? '#222233' : '#000000'}
-                        emissiveIntensity={0.2}
+                        emissiveIntensity={0.15}
                     />
                 </mesh>
 
                 {/* Glow on hover */}
                 {hovered && (
-                    <mesh position={[0, 0.8, 0.1]}>
-                        <planeGeometry args={[1.5, 1.5]} />
-                        <meshStandardMaterial color="#ff88cc" transparent opacity={0.25} side={THREE.DoubleSide} />
+                    <mesh position={[0, 0.5, 0.08]}>
+                        <planeGeometry args={[1.0, 1.0]} />
+                        <meshStandardMaterial color="#ff88cc" transparent opacity={0.2} side={THREE.DoubleSide} />
                     </mesh>
                 )}
             </group>

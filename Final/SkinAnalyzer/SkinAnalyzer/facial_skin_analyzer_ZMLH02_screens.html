@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Skin Analyzer ZMLH02 — Multi-Spectrum Demo</title>
+<style>
+:root{--bg:#0b0b18;--text:#e0e7ff;--text2:#9ca3af;--text3:#6b7280;--indigo:#4f46e5;--indigo2:#818cf8;--red:#ef4444;--green:#22c55e;--amber:#fbbf24;--pink:#f472b6;--cyan:#06b6d4;--purple:#a78bfa;--card:#161628;--border:#2a2a3e;--track:#1f1f35;--bg2:#0e0e1a;--bg3:#0a0a18;--bg4:#090912}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);font-family:'Segoe UI',Tahoma,Arial,sans-serif;min-height:100vh;position:relative}
+h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+
+.wrap{display:grid;grid-template-columns:repeat(5,1fr);gap:18px;padding:1.5rem 0;direction:ltr;max-width:1100px;margin:0 auto}
+@media(max-width:900px){.wrap{grid-template-columns:repeat(3,1fr);gap:14px}}
+@media(max-width:600px){.wrap{grid-template-columns:1fr;gap:20px;padding:1rem}.sw{flex-direction:row;gap:12px}.slbl{font-size:10px}.pf{width:130px;height:280px}}
+.sw{display:flex;flex-direction:column;align-items:center;gap:8px}
+.slbl{font-size:11px;font-weight:500;color:var(--text2);text-align:center}
+.pf{width:155px;height:340px;background:var(--bg2);border-radius:26px;border:2.5px solid var(--border);overflow:hidden;display:flex;flex-direction:column;position:relative;transition:border-color .3s}
+.pf.active{border-color:var(--indigo);box-shadow:0 0 20px rgba(79,70,229,.25)}
+.notch{width:55px;height:11px;background:#060610;border-radius:0 0 10px 10px;margin:0 auto;z-index:5;flex-shrink:0}
+.sc{flex:1;overflow:hidden;position:relative;display:flex;flex-direction:column}
+
+/* SCREEN 1 */
+.s1{background:var(--bg3);align-items:center;justify-content:center;gap:10px;height:100%}
+.s1-logo{width:54px;height:54px;border-radius:18px;background:#1a1040;border:1px solid var(--indigo);display:flex;align-items:center;justify-content:center}
+.s1-brand{font-size:13px;font-weight:700;color:var(--text);text-align:center;line-height:1.3}
+.s1-sub{font-size:8px;color:var(--indigo2);text-align:center;padding:0 12px;line-height:1.5}
+.s1-tag{font-size:7px;color:var(--indigo);border:.5px solid var(--indigo);padding:2px 8px;border-radius:10px}
+.s1-btn{margin-top:6px;padding:7px 22px;background:var(--indigo);color:#fff;font-size:9px;font-weight:700;border-radius:20px;cursor:pointer;border:none;font-family:inherit;transition:background .2s}
+.s1-btn:hover{background:#6366f1}
+
+/* SCREEN 2 */
+.s2{background:var(--bg4);height:100%;display:flex;flex-direction:column}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:6px 10px}
+.topbar span{font-size:8px;color:#888}
+.live{background:var(--red);color:#fff;font-size:7px;padding:2px 5px;border-radius:8px;font-weight:700}
+.mode-tabs{display:flex;gap:0;padding:0 10px;margin-bottom:2px}
+.mode-tab{flex:1;text-align:center;font-size:7px;font-weight:700;padding:4px 0;border-radius:8px;cursor:pointer;border:.5px solid transparent;transition:all .2s;background:transparent;color:#555;font-family:inherit}
+.mode-tab.active-rgb{border-color:rgba(129,140,248,.5);color:var(--indigo2);background:rgba(79,70,229,.15)}
+.mode-tab.active-uv{border-color:rgba(147,51,234,.5);color:#a78bfa;background:rgba(147,51,234,.15)}
+.mode-tab.active-cross{border-color:rgba(239,68,68,.5);color:#fca5a5;background:rgba(239,68,68,.15)}
+
+.cam-view{flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:var(--bg4);overflow:hidden}
+.cam-view-inner{width:100%;height:100%;position:relative;transition:filter .4s}
+.cam-view-inner.filter-rgb{filter:none}
+.cam-view-inner.filter-uv{filter:hue-rotate(220deg) saturate(0.6) brightness(0.8) contrast(1.3)}
+.cam-view-inner.filter-cross{filter:sepia(0.7) saturate(1.8) brightness(1.1) contrast(1.2) hue-rotate(-10deg)}
+.face-scan-frame{width:88px;height:104px;position:absolute;top:50%;left:50%;transform:translate(-50%,-55%)}
+.fc{position:absolute;width:13px;height:13px;border-color:var(--indigo);border-style:solid}
+.fc-tl{top:0;left:0;border-width:2px 0 0 2px}
+.fc-tr{top:0;right:0;border-width:2px 2px 0 0}
+.fc-bl{bottom:0;left:0;border-width:0 0 2px 2px}
+.fc-br{bottom:0;right:0;border-width:0 2px 2px 0}
+.face-oval{width:70px;height:90px;border-radius:50%;border:1.5px solid var(--indigo);position:absolute;top:50%;left:50%;transform:translate(-50%,-58%);opacity:.5;pointer-events:none}
+.scan-ln{position:absolute;width:84px;height:1.5px;background:var(--indigo);top:45%;left:2px;opacity:.7;animation:scanMove 2s ease-in-out infinite}
+@keyframes scanMove{0%,100%{top:25%;opacity:.4}50%{top:65%;opacity:1}}
+.dot-map{position:absolute;top:8px;left:11px;width:66px;height:82px}
+.spectrum-bar{position:absolute;bottom:12px;left:8px;right:8px}
+.sp-lbl{font-size:7px;color:#666;margin-bottom:2px;text-align:center}
+.sp-chips{display:flex;gap:2px;justify-content:center}
+.sp-chip{width:12px;height:5px;border-radius:1px;transition:all .3s}
+.sp-chip.dim{opacity:.2;height:3px}
+.s2-progress-wrap{padding:4px 10px;background:var(--bg2)}
+.s2-progress-bar{height:2px;background:var(--track);border-radius:1px;overflow:hidden}
+.s2-progress-fill{height:100%;border-radius:1px;transition:width .3s}
+.s2-progress-txt{font-size:7px;margin-top:2px}
+.s2-bottom{padding:7px 10px;display:flex;align-items:center;justify-content:space-between;background:var(--bg2)}
+.s2-cnt{font-size:8px;color:var(--green);font-weight:700}
+.s2-cnt.done{color:var(--indigo2)}
+.s2-btn{width:28px;height:28px;border-radius:50%;background:var(--indigo);display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;transition:background .2s}
+.s2-btn:hover{background:#6366f1}
+.s2-mode{font-size:7px;color:#555;cursor:pointer}
+.s2-mode:hover{color:var(--indigo2)}
+
+/* SCREEN 3 */
+.s3{background:var(--bg2);height:100%;display:flex;flex-direction:column;padding:9px}
+.s3-title{font-size:10px;font-weight:700;color:var(--text);margin-bottom:2px}
+.s3-sub{font-size:7px;color:var(--text3)}
+.s3-mode-legend{display:flex;gap:4px;margin-top:2px}
+.s3-mode-dot{display:flex;align-items:center;gap:2px;font-size:6px;cursor:pointer;opacity:.5;transition:opacity .2s}
+.s3-mode-dot.active{opacity:1}
+.s3-mode-dot div{width:5px;height:5px;border-radius:50%}
+.face-map-wrap{position:relative;width:100%;height:78px;display:flex;align-items:center;justify-content:center;margin:6px 0}
+.s3-metrics{display:grid;grid-template-columns:1fr 1fr;gap:5px;flex:1}
+.met-card{background:var(--card);border-radius:7px;padding:6px 7px;border:.5px solid var(--border);transition:border-color .3s}
+.met-card.highlight{border-color:var(--indigo)}
+.met-val{font-size:14px;font-weight:700;transition:all .3s}
+.met-lbl{font-size:7px;color:var(--text2);margin-top:1px}
+.met-bar{height:3px;background:var(--track);border-radius:2px;margin-top:4px;overflow:hidden}
+.met-fill{height:100%;border-radius:2px;transition:width .5s}
+
+/* SCREEN 4 */
+.s4{background:var(--bg2);height:100%;display:flex;flex-direction:column;padding:9px;gap:6px}
+.s4-header{display:flex;align-items:center;justify-content:space-between}
+.s4-title{font-size:10px;font-weight:700;color:var(--text)}
+.score-ring-wrap{display:flex;justify-content:center;align-items:center;margin:4px 0}
+.ind-list{display:flex;flex-direction:column;gap:4px;flex:1;overflow-y:auto}
+.ind-row{display:flex;align-items:center;gap:6px}
+.ind-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.ind-name{font-size:7px;color:var(--text2);flex:1}
+.ind-track{flex:2;height:3px;background:var(--track);border-radius:2px;overflow:hidden}
+.ind-fill{height:100%;border-radius:2px;transition:width .5s}
+.ind-pct{font-size:7px;font-weight:700;min-width:20px;text-align:right}
+.ind-src{font-size:5px;padding:1px 3px;border-radius:3px;margin-left:2px}
+
+/* SCREEN 5 */
+.s5{background:var(--bg2);height:100%;display:flex;flex-direction:column;padding:9px;gap:6px}
+.s5-title{font-size:10px;font-weight:700;color:var(--text)}
+.rec-list{display:flex;flex-direction:column;gap:5px;flex:1}
+.rec-item{background:var(--card);border-radius:8px;padding:7px 8px;border:.5px solid var(--border);display:flex;align-items:flex-start;gap:7px;cursor:pointer;transition:border-color .2s}
+.rec-item:hover{border-color:var(--indigo)}
+.rec-icon{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.rec-body{flex:1}
+.rec-name{font-size:8px;font-weight:700;color:var(--text)}
+.rec-desc{font-size:7px;color:var(--text3);margin-top:1px;line-height:1.4}
+.rec-tag{display:inline-block;font-size:6px;padding:1px 5px;border-radius:4px;margin-top:3px;font-weight:600}
+.rec-src{font-size:6px;color:var(--text3);margin-top:2px}
+.bnav{height:34px;background:#0a0a16;border-top:.5px solid var(--track);display:flex;align-items:center;justify-content:space-around}
+.ni{display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer}
+.ni-ico{font-size:12px}
+.ni-lbl{font-size:6px}
+.na{color:var(--indigo2)}
+.nin{color:#444}
+
+/* SETTINGS GEAR */
+.gear-btn{position:fixed;bottom:24px;right:24px;width:44px;height:44px;border-radius:50%;background:var(--indigo);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:900;box-shadow:0 4px 16px rgba(79,70,229,.4);transition:transform .2s}
+.gear-btn:hover{transform:rotate(30deg) scale(1.05)}
+.gear-btn svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2}
+
+/* SETTINGS MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--bg2);border-radius:16px;border:1px solid var(--border);padding:24px;width:380px;max-width:95vw;direction:rtl}
+.modal-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px}
+.modal-sub{font-size:11px;color:var(--text3);margin-bottom:18px}
+.modal-field{margin-bottom:14px}
+.modal-field label{display:block;font-size:11px;color:var(--text2);margin-bottom:5px;font-weight:600}
+.modal-field input{width:100%;padding:10px 12px;background:var(--bg4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-family:monospace;outline:none;transition:border-color .2s}
+.modal-field input:focus{border-color:var(--indigo)}
+.modal-field .hint{font-size:9px;color:var(--text3);margin-top:4px}
+.modal-btns{display:flex;gap:8px;margin-top:18px}
+.modal-btn{padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:opacity .2s}
+.modal-btn:hover{opacity:.85}
+.modal-save{background:var(--indigo);color:#fff;flex:1}
+.modal-close{background:var(--track);color:var(--text2)}
+.modal-status{font-size:10px;margin-top:8px;text-align:center;min-height:16px}
+.modal-status.ok{color:var(--green)}
+.modal-status.err{color:var(--red)}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;right:24px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 16px;font-size:11px;color:var(--text);z-index:1100;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.ok{border-color:var(--green)}
+.toast.err{border-color:var(--red)}
+
+/* TREATMENT PLAN OVERLAY */
+.treatment-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:none;align-items:center;justify-content:center}
+.treatment-overlay.open{display:flex}
+.treatment-box{background:var(--bg2);border-radius:16px;border:1px solid var(--indigo);padding:24px;width:420px;max-width:95vw;max-height:80vh;overflow-y:auto;direction:rtl}
+.treatment-box h3{font-size:15px;font-weight:700;color:var(--indigo2);margin-bottom:12px}
+.treatment-box p,.treatment-box li{font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:6px}
+.treatment-box ul{padding-right:16px;margin-bottom:10px}
+.treatment-box .close-btn{background:var(--track);border:none;color:var(--text2);padding:8px 20px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:12px;margin-top:12px;float:left}
+</style>
+</head>
+<body>
+
+<h2 class="sr-only">جهاز تحليل بشرة الوجه ZMLH02 — RGB · UV · Cross-Polarized</h2>
+
+<!-- SETTINGS GEAR -->
+<button class="gear-btn" onclick="openSettings()" title="API Settings">
+  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+</button>
+
+<!-- API SETTINGS MODAL -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal-box">
+    <div class="modal-title">إعدادات API</div>
+    <div class="modal-sub">أدخل بيانات الاتصال بخادم Jenin Care</div>
+    <div class="modal-field">
+      <label>رابط API الأساسي</label>
+      <input type="text" id="apiBaseUrl" placeholder="https://jenincare.shop/api" value="https://jenincare.shop/api">
+      <div class="hint">مثال: https://jenincare.shop/api</div>
+    </div>
+    <div class="modal-field">
+      <label>رمز المصادقة (Bearer Token)</label>
+      <input type="password" id="apiToken" placeholder="ادخل رمز API Token هنا...">
+      <div class="hint">يتم الحصول عليه بعد تسجيل الدخول أو من لوحة التحكم</div>
+    </div>
+    <div class="modal-field">
+      <label>البريد الإلكتروني</label>
+      <input type="email" id="apiEmail" placeholder="user@example.com">
+    </div>
+    <div class="modal-field">
+      <label>كلمة المرور</label>
+      <input type="password" id="apiPassword" placeholder="كلمة المرور">
+      <div class="hint" style="color:var(--indigo2);cursor:pointer" onclick="autoLogin()">تسجيل الدخول تلقائياً والحصول على التوكن</div>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-close" onclick="closeSettings()">إلغاء</button>
+      <button class="modal-btn modal-save" id="settingsSaveBtn" onclick="saveSettings()">حفظ الإعدادات</button>
+    </div>
+    <div class="modal-status" id="settingsStatus"></div>
+  </div>
+</div>
+
+<!-- TREATMENT PLAN OVERLAY -->
+<div class="treatment-overlay" id="treatmentOverlay">
+  <div class="treatment-box" id="treatmentContent"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<div class="wrap">
+
+  <!-- 1: SPLASH -->
+  <div class="sw" id="screen-1-wrap">
+    <div class="pf active" id="pf-1">
+      <div class="notch"></div>
+      <div class="sc">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;height:100%;background:var(--bg3)">
+          <div class="s1-logo">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <ellipse cx="14" cy="10" rx="7" ry="8" stroke="#818cf8" stroke-width="1.5"/>
+              <path d="M7 10 Q7 20 14 22 Q21 20 21 10" stroke="#818cf8" stroke-width="1.5" fill="none"/>
+              <line x1="14" y1="2" x2="14" y2="4" stroke="#818cf8" stroke-width="1.5"/>
+              <circle cx="10" cy="10" r="1.5" fill="#4f46e5"/>
+              <circle cx="18" cy="10" r="1.5" fill="#4f46e5"/>
+              <path d="M11 14 Q14 16 17 14" stroke="#4f46e5" stroke-width="1" fill="none"/>
+            </svg>
+          </div>
+          <div class="s1-brand">Skin Analyzer<br/>ZMLH02</div>
+          <div class="s1-sub">تحليل البشرة بثلاثة أنماط ضوئية</div>
+          <div class="s1-tag">36MP · RGB · UV · Cross</div>
+          <button class="s1-btn" onclick="focusScanScreen()">ابدأ الفحص</button>
+          <div style="font-size:7px;color:#333;margin-top:4px">v4.0 ZMLH02 Professional</div>
+        </div>
+      </div>
+    </div>
+    <div class="slbl">١ — الشاشة الرئيسية</div>
+  </div>
+
+  <!-- 2: LIVE SCAN -->
+  <div class="sw" id="screen-2-wrap">
+    <div class="pf" id="pf-2">
+      <div class="notch"></div>
+      <div class="sc">
+        <div class="s2" id="scanScreen">
+          <div class="topbar">
+            <span id="scanTopLabel">الفحص المباشر</span>
+            <span class="live" id="liveBadge">● LIVE</span>
+          </div>
+          <div class="mode-tabs" id="modeTabs">
+            <button class="mode-tab active-rgb" data-mode="rgb" onclick="switchMode('rgb')">🔆 RGB</button>
+            <button class="mode-tab" data-mode="uv" onclick="switchMode('uv')">🔮 UV</button>
+            <button class="mode-tab" data-mode="cross" onclick="switchMode('cross')">🔴 Cross</button>
+          </div>
+          <div class="cam-view" id="camView">
+            <div class="cam-view-inner filter-rgb" id="camFilter" style="width:100%;height:100%">
+              <!-- Simulated face with skin zones -->
+              <svg width="100%" height="100%" viewBox="0 0 120 170" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0">
+                <defs>
+                  <radialGradient id="skinGrad" cx="50%" cy="45%" r="45%">
+                    <stop offset="0%" stop-color="#e8c8a0"/><stop offset="60%" stop-color="#d4a878"/><stop offset="100%" stop-color="#b88960"/>
+                  </radialGradient>
+                  <radialGradient id="cheekGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#f0a0a0"/><stop offset="100%" stop-color="transparent"/>
+                  </radialGradient>
+                </defs>
+                <ellipse cx="60" cy="80" rx="48" ry="60" fill="url(#skinGrad)" opacity=".15"/>
+                <ellipse cx="38" cy="78" rx="16" ry="12" fill="url(#cheekGrad)" opacity=".12"/>
+                <ellipse cx="82" cy="78" rx="16" ry="12" fill="url(#cheekGrad)" opacity=".12"/>
+                <ellipse cx="60" cy="108" rx="8" ry="4" fill="#c07070" opacity=".1"/>
+                <ellipse cx="45" cy="60" rx="9" ry="7" fill="#fff" opacity=".05"/>
+                <ellipse cx="75" cy="60" rx="9" ry="7" fill="#fff" opacity=".05"/>
+                <ellipse cx="45" cy="58" rx="4" ry="4" fill="#3a2010" opacity=".12"/>
+                <ellipse cx="75" cy="58" rx="4" ry="4" fill="#3a2010" opacity=".12"/>
+                <path d="M52 96 Q60 100 68 96" stroke="#b06060" stroke-width="1.5" fill="none" opacity=".15"/>
+                <line x1="60" y1="74" x2="60" y2="96" stroke="#c8a078" stroke-width="1" opacity=".06"/>
+                <path d="M28 46 Q24 44 22 48" stroke="#6a5a4a" stroke-width="1" fill="none" opacity=".08"/>
+                <path d="M92 46 Q96 44 98 48" stroke="#6a5a4a" stroke-width="1" fill="none" opacity=".08"/>
+                <!-- Zone markers -->
+                <text x="60" y="45" text-anchor="middle" font-size="6" fill="#4f46e5" opacity=".4">T-ZONE</text>
+                <text x="34" y="72" text-anchor="middle" font-size="5" fill="#ef4444" opacity=".3">CHEEK</text>
+                <text x="86" y="72" text-anchor="middle" font-size="5" fill="#ef4444" opacity=".3">CHEEK</text>
+              </svg>
+              <div class="face-scan-frame">
+                <div class="fc fc-tl"></div><div class="fc fc-tr"></div>
+                <div class="fc fc-bl"></div><div class="fc fc-br"></div>
+                <div class="face-oval"></div>
+                <div class="scan-ln"></div>
+                <div class="dot-map" id="dotMap">
+                  <svg width="66" height="82" viewBox="0 0 66 82" fill="none">
+                    <ellipse cx="33" cy="38" rx="26" ry="32" stroke="#4f46e5" stroke-width="0.8" stroke-dasharray="2 2" opacity=".4"/>
+                    <circle cx="22" cy="30" r="2" fill="#4f46e5" opacity=".9"/>
+                    <circle cx="44" cy="30" r="2" fill="#4f46e5" opacity=".9"/>
+                    <circle cx="33" cy="38" r="1.5" fill="#818cf8"/>
+                    <circle cx="20" cy="48" r="3" fill="#22c55e" opacity=".6"/>
+                    <circle cx="46" cy="48" r="3" fill="#22c55e" opacity=".6"/>
+                    <circle cx="33" cy="55" r="2" fill="#fbbf24" opacity=".7"/>
+                    <circle cx="26" cy="22" r="1.5" fill="#f472b6" opacity=".8"/>
+                    <circle cx="40" cy="22" r="1.5" fill="#f472b6" opacity=".8"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="spectrum-bar">
+                <div class="sp-lbl" id="spectrumLabel">8-Spectrum Imaging</div>
+                <div class="sp-chips" id="spectrumChips">
+                  <div class="sp-chip" style="background:#9333ea" data-chip="uv"></div>
+                  <div class="sp-chip" style="background:#3b82f6" data-chip="uv"></div>
+                  <div class="sp-chip" style="background:#06b6d4" data-chip="rgb"></div>
+                  <div class="sp-chip" style="background:#22c55e" data-chip="rgb"></div>
+                  <div class="sp-chip" style="background:#eab308" data-chip="rgb"></div>
+                  <div class="sp-chip" style="background:#f97316" data-chip="cross"></div>
+                  <div class="sp-chip" style="background:#ef4444" data-chip="cross"></div>
+                  <div class="sp-chip" style="background:#6b21a8" data-chip="cross"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="s2-progress-wrap">
+            <div class="s2-progress-bar"><div class="s2-progress-fill" id="scanFill" style="width:0%;background:var(--indigo)"></div></div>
+            <div class="s2-progress-txt" id="scanProgressTxt" style="color:var(--indigo2)">جاهز للفحص</div>
+          </div>
+          <div class="s2-bottom">
+            <span class="s2-cnt" id="scanInfo">36MP · Multi</span>
+            <button class="s2-btn" id="captureBtn" onclick="captureScan()">
+              <svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="4" stroke="#fff" stroke-width="1.5"/><circle cx="6" cy="6" r="1.5" fill="#fff"/></svg>
+            </button>
+            <span class="s2-mode" id="currentModeLabel" onclick="cycleMode()">AI</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slbl">٢ — شاشة الفحص</div>
+  </div>
+
+  <!-- 3: FACE MAP + METRICS -->
+  <div class="sw" id="screen-3-wrap">
+    <div class="pf" id="pf-3">
+      <div class="notch"></div>
+      <div class="sc">
+        <div class="s3">
+          <div class="s3-title" id="mapTitle">خريطة البشرة</div>
+          <div class="s3-sub" id="mapSub">17 مؤشر · ثلاثة أنماط</div>
+          <div class="s3-mode-legend" id="modeLegend">
+            <div class="s3-mode-dot active" data-legend="rgb" onclick="switchMapMode('rgb')"><div style="background:var(--indigo)"></div>RGB</div>
+            <div class="s3-mode-dot" data-legend="uv" onclick="switchMapMode('uv')"><div style="background:#9333ea"></div>UV</div>
+            <div class="s3-mode-dot" data-legend="cross" onclick="switchMapMode('cross')"><div style="background:var(--red)"></div>Cross</div>
+          </div>
+          <div class="face-map-wrap" id="faceMapContainer">
+            <!-- Filled by JS -->
+          </div>
+          <div class="s3-metrics" id="metricsGrid">
+            <!-- Filled by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slbl">٣ — خريطة البشرة</div>
+  </div>
+
+  <!-- 4: FULL REPORT -->
+  <div class="sw" id="screen-4-wrap">
+    <div class="pf" id="pf-4">
+      <div class="notch"></div>
+      <div class="sc">
+        <div class="s4" id="reportScreen">
+          <div class="s4-header">
+            <div class="s4-title">التقرير الكامل</div>
+            <div style="font-size:7px;color:var(--indigo);border:.5px solid var(--indigo);padding:2px 5px;border-radius:4px;cursor:pointer" onclick="showToast('جاري تصدير PDF...','ok')">PDF ↓</div>
+          </div>
+          <div class="score-ring-wrap" id="scoreRingWrap">
+            <!-- Filled by JS -->
+          </div>
+          <div class="ind-list" id="indicatorList">
+            <!-- Filled by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slbl">٤ — التقرير الكامل</div>
+  </div>
+
+  <!-- 5: RECOMMENDATIONS -->
+  <div class="sw" id="screen-5-wrap">
+    <div class="pf" id="pf-5">
+      <div class="notch"></div>
+      <div class="sc">
+        <div class="s5">
+          <div class="s5-title">التوصيات</div>
+          <div class="rec-list" id="recList">
+            <!-- Filled by JS -->
+          </div>
+          <button id="treatmentBtn" style="width:100%;padding:8px;background:var(--indigo);color:#fff;border:none;border-radius:10px;font-size:8px;font-weight:700;cursor:pointer;margin-top:4px;font-family:inherit" onclick="sendPrompt()">خطة علاج مفصلة ↗</button>
+        </div>
+      </div>
+    </div>
+    <div class="slbl">٥ — التوصيات</div>
+  </div>
+
+</div>
+
+<script>
+// ========== STATE ==========
+const S = {
+  mode: 'rgb',
+  mapMode: 'rgb',
+  scanProgress: 0,
+  scanInterval: null,
+  scannedModes: new Set(),
+  apiBase: localStorage.getItem('zml_api_base') || 'https://jenincare.shop/api',
+  apiToken: localStorage.getItem('zml_api_token') || ''
+};
+
+// ========== MODE DATA ==========
+const modeData = {
+  rgb: {
+    name: 'RGB', nameAr: 'الضوء الأبيض', icon: '🔆', color: '#4f46e5', color2: '#818cf8',
+    desc: 'تحليل السطح — المسام، التجاعيد، الملمس',
+    metrics: [
+      {key:'hydration',label:'الترطيب',val:78,color:'#4f46e5',color2:'#818cf8'},
+      {key:'elasticity',label:'المرونة',val:85,color:'#22c55e',color2:'#22c55e'},
+      {key:'oiliness',label:'الدهنية',val:43,color:'#fbbf24',color2:'#fbbf24'},
+      {key:'pores',label:'المسام',val:56,color:'#06b6d4',color2:'#06b6d4'}
+    ],
+    faceZones: [
+      {cx:18,cy:26,r:3,fill:'#4f46e5',op:.8,label:'ترطيب'},
+      {cx:38,cy:26,r:3,fill:'#4f46e5',op:.8,label:'ترطيب'},
+      {cx:28,cy:44,rx:4,ry:2,fill:'#fbbf24',op:.4,label:'دهون'},
+      {cx:22,cy:18,r:2,fill:'#22c55e',op:.7,label:'مرونة'},
+      {cx:34,cy:18,r:2,fill:'#22c55e',op:.7,label:'مرونة'}
+    ]
+  },
+  uv: {
+    name: 'UV', nameAr: 'فوق البنفسجي', icon: '🔮', color: '#9333ea', color2: '#a78bfa',
+    desc: 'كشف التصبغات العميقة وأضرار الشمس',
+    metrics: [
+      {key:'pigmentation',label:'التصبغ',val:72,color:'#f472b6',color2:'#f472b6'},
+      {key:'uv_spots',label:'بقع UV',val:68,color:'#9333ea',color2:'#a78bfa'},
+      {key:'sun_damage',label:'ضرر الشمس',val:55,color:'#f97316',color2:'#f97316'},
+      {key:'wrinkles',label:'التجاعيد',val:18,color:'#a78bfa',color2:'#a78bfa'}
+    ],
+    faceZones: [
+      {cx:22,cy:18,r:2.5,fill:'#f472b6',op:.9,label:'تصبغ'},
+      {cx:34,cy:18,r:2.5,fill:'#f472b6',op:.9,label:'تصبغ'},
+      {cx:18,cy:26,r:2,fill:'#9333ea',op:.7,label:'UV'},
+      {cx:38,cy:26,r:2,fill:'#9333ea',op:.7,label:'UV'},
+      {ellipse:1,cx:16,cy:40,rx:4,ry:2,fill:'#f97316',op:.5,label:'شمس'}
+    ]
+  },
+  cross: {
+    name: 'Cross', nameAr: 'مستقطب متقاطع', icon: '🔴', color: '#ef4444', color2: '#fca5a5',
+    desc: 'كشف الأوعية الدموية والاحمرار والالتهابات',
+    metrics: [
+      {key:'redness',label:'الاحمرار',val:22,color:'#ef4444',color2:'#ef4444'},
+      {key:'vessels',label:'الأوعية',val:42,color:'#dc2626',color2:'#dc2626'},
+      {key:'inflammation',label:'الالتهاب',val:38,color:'#f97316',color2:'#f97316'},
+      {key:'barrier',label:'حاجز البشرة',val:65,color:'#22c55e',color2:'#22c55e'}
+    ],
+    faceZones: [
+      {ellipse:1,cx:16,cy:40,rx:5,ry:3,fill:'#ef4444',op:.5,label:'احمرار'},
+      {ellipse:1,cx:40,cy:40,rx:5,ry:3,fill:'#ef4444',op:.5,label:'احمرار'},
+      {cx:28,cy:32,r:3,fill:'#f97316',op:.4,label:'التهاب'},
+      {path:'M22 36 Q28 40 34 36',stroke:'#22c55e',sw:1,op:.7}
+    ]
+  }
+};
+
+// Combined report data (weighted from all modes)
+const combinedIndicators = [
+  {key:'hydration',label:'الترطيب',val:78,color:'#4f46e5',color2:'#818cf8',src:'rgb'},
+  {key:'elasticity',label:'المرونة',val:85,color:'#22c55e',color2:'#22c55e',src:'rgb'},
+  {key:'oiliness',label:'الدهنية',val:43,color:'#fbbf24',color2:'#fbbf24',src:'cross'},
+  {key:'pigmentation',label:'التصبغ',val:72,color:'#f472b6',color2:'#f472b6',src:'uv'},
+  {key:'redness',label:'الاحمرار',val:22,color:'#ef4444',color2:'#ef4444',src:'cross'},
+  {key:'pores',label:'المسام',val:56,color:'#06b6d4',color2:'#06b6d4',src:'rgb'},
+  {key:'wrinkles',label:'التجاعيد',val:18,color:'#a78bfa',color2:'#a78bfa',src:'uv'}
+];
+
+const allRecommendations = [
+  {name:'مرطب مكثف بحمض الهيالورونيك',desc:'الترطيب أقل من المثالي — يُنصح بمرطب غني',tag:'أولوية عالية',tagBg:'#1a1040',tagColor:'#818cf8',src:'RGB',iconBg:'#1a1040',iconSvg:'<circle cx="7" cy="7" r="5" stroke="#818cf8" stroke-width="1.3"/><path d="M5 7 Q7 9 9 7" stroke="#818cf8" stroke-width="1" fill="none"/>'},
+  {name:'واقي شمس SPF50+ PA++++',desc:'لحماية البشرة من التصبغات وأضرار الأشعة فوق البنفسجية',tag:'يومياً',tagBg:'#0d1f0d',tagColor:'#22c55e',src:'UV',iconBg:'#0d1f0d',iconSvg:'<rect x="2" y="2" width="10" height="10" rx="3" stroke="#22c55e" stroke-width="1.3"/><path d="M5 7 l2 2 3-3" stroke="#22c55e" stroke-width="1" fill="none"/>'},
+  {name:'سيروم نياسيناميد 10%',desc:'لتقليل التصبغات العميقة وتوحيد لون البشرة',tag:'مساءً',tagBg:'#1a1030',tagColor:'#a78bfa',src:'UV',iconBg:'#1a1030',iconSvg:'<path d="M7 2 L9 6 L13 6 L10 9 L11 13 L7 11 L3 13 L4 9 L1 6 L5 6 Z" stroke="#a78bfa" stroke-width="1" fill="none"/>'},
+  {name:'مهدئ بخلاصة الصبار',desc:'لتخفيف الاحمرار والالتهابات في منطقة الخدين',tag:'حسب الحاجة',tagBg:'#1f0808',tagColor:'#fca5a5',src:'Cross',iconBg:'#1f0808',iconSvg:'<circle cx="7" cy="7" r="5" stroke="#fca5a5" stroke-width="1.3"/><path d="M4 7 Q7 5 10 7" stroke="#fca5a5" stroke-width="1" fill="none"/>'},
+  {name:'تقشير إنزيمي خفيف',desc:'لتقليل الدهنية في منطقة T مرتين أسبوعياً',tag:'أسبوعياً',tagBg:'#1f1508',tagColor:'#fbbf24',src:'Cross',iconBg:'#1f1508',iconSvg:'<path d="M7 2 L9 6 L13 6 L10 9 L11 13 L7 11 L3 13 L4 9 L1 6 L5 6 Z" stroke="#fbbf24" stroke-width="1" fill="none"/>'},
+  {name:'كريم ريتينول 0.3%',desc:'لتجديد خلايا البشرة وتقليل التجاعيد الدقيقة',tag:'ليلاً',tagBg:'#1f1020',tagColor:'#c084fc',src:'RGB',iconBg:'#1f1020',iconSvg:'<rect x="2" y="5" width="10" height="7" rx="3" stroke="#c084fc" stroke-width="1.3"/><line x1="5" y1="8" x2="9" y2="8" stroke="#c084fc" stroke-width="1"/>'}
+];
+
+// ========== INITIAL RENDER ==========
+function initAll() {
+  renderFaceMap('rgb');
+  renderMetrics('rgb');
+  renderReport();
+  renderRecommendations();
+  updateSpectrumChips('rgb');
+}
+initAll();
+
+// ========== MODE SWITCHING ==========
+function switchMode(mode) {
+  S.mode = mode;
+  document.querySelectorAll('#modeTabs .mode-tab').forEach(t => {
+    t.className = 'mode-tab';
+    if (t.dataset.mode === mode) t.classList.add('active-' + mode);
+  });
+  const filter = document.getElementById('camFilter');
+  filter.className = 'cam-view-inner filter-' + mode;
+  document.getElementById('currentModeLabel').textContent = modeData[mode].name;
+  document.getElementById('scanTopLabel').textContent = modeData[mode].nameAr;
+  document.getElementById('scanInfo').textContent = '36MP · ' + modeData[mode].name;
+  updateSpectrumChips(mode);
+  if (S.scanProgress === 0) {
+    document.getElementById('scanProgressTxt').textContent = 'جاهز — ' + modeData[mode].desc;
+    document.getElementById('scanProgressTxt').style.color = modeData[mode].color2;
+  }
+}
+
+function cycleMode() {
+  const modes = ['rgb','uv','cross'];
+  const idx = modes.indexOf(S.mode);
+  switchMode(modes[(idx + 1) % 3]);
+}
+
+function switchMapMode(mode) {
+  S.mapMode = mode;
+  document.querySelectorAll('#modeLegend .s3-mode-dot').forEach(d => {
+    d.classList.toggle('active', d.dataset.legend === mode);
+  });
+  renderFaceMap(mode);
+  renderMetrics(mode);
+  document.getElementById('mapTitle').textContent = 'خريطة البشرة — ' + modeData[mode].name;
+  document.getElementById('mapSub').textContent = modeData[mode].desc;
+}
+
+function updateSpectrumChips(mode) {
+  const chips = document.querySelectorAll('#spectrumChips .sp-chip');
+  const modeMap = {rgb:'rgb',uv:'uv',cross:'cross'};
+  chips.forEach(c => {
+    const match = c.dataset.chip === modeMap[mode];
+    c.classList.toggle('dim', !match);
+    c.style.boxShadow = match ? '0 0 6px ' + c.style.background : 'none';
+  });
+  const labels = {rgb:'Surface Light Imaging',uv:'Deep UV Imaging',cross:'Cross-Polarized Imaging'};
+  document.getElementById('spectrumLabel').textContent = labels[mode] || '8-Spectrum Imaging';
+}
+
+// ========== SCAN SIMULATION ==========
+function captureScan() {
+  if (S.scanInterval) return;
+  S.scanProgress = 0;
+  const fill = document.getElementById('scanFill');
+  const txt = document.getElementById('scanProgressTxt');
+  const btn = document.getElementById('captureBtn');
+  const info = document.getElementById('scanInfo');
+  const md = modeData[S.mode];
+
+  fill.style.background = md.color;
+  txt.style.color = md.color2;
+  btn.style.background = '#555';
+  btn.style.pointerEvents = 'none';
+  info.className = 's2-cnt';
+  info.textContent = 'جاري المسح...';
+
+  S.scanInterval = setInterval(() => {
+    S.scanProgress += Math.random() * 8;
+    if (S.scanProgress >= 100) {
+      S.scanProgress = 100;
+      clearInterval(S.scanInterval);
+      S.scanInterval = null;
+      S.scannedModes.add(S.mode);
+      fill.style.width = '100%';
+      txt.textContent = '✓ ' + md.nameAr + ' — مكتمل';
+      info.className = 's2-cnt done';
+      info.textContent = 'مكتمل ✓';
+      btn.style.background = '#22c55e';
+      btn.style.pointerEvents = 'auto';
+      btn.onclick = resetScan;
+
+      // Update results screens
+      if (S.scannedModes.size >= 3) {
+        renderFullReport();
+      } else {
+        setTimeout(() => {
+          showToast('تم مسح ' + md.nameAr + ' ✓ | ' + (3 - S.scannedModes.size) + ' أنماط متبقية', 'ok');
+        }, 400);
+      }
+    } else {
+      fill.style.width = S.scanProgress + '%';
+      txt.textContent = md.desc + '... ' + Math.round(S.scanProgress) + '%';
+    }
+  }, 120);
+}
+
+function resetScan() {
+  S.scanProgress = 0;
+  const fill = document.getElementById('scanFill');
+  const txt = document.getElementById('scanProgressTxt');
+  const btn = document.getElementById('captureBtn');
+  const info = document.getElementById('scanInfo');
+  fill.style.width = '0%';
+  fill.style.background = 'var(--indigo)';
+  txt.style.color = modeData[S.mode].color2;
+  txt.textContent = 'جاهز — ' + modeData[S.mode].desc;
+  btn.style.background = 'var(--indigo)';
+  btn.style.pointerEvents = 'auto';
+  btn.onclick = captureScan;
+  info.className = 's2-cnt';
+  info.textContent = '36MP · ' + modeData[S.mode].name;
+}
+
+function focusScanScreen() {
+  document.getElementById('pf-2').scrollIntoView({behavior:'smooth',block:'center'});
+  document.getElementById('pf-2').classList.add('active');
+  setTimeout(() => document.getElementById('pf-2').classList.remove('active'), 2000);
+  // Auto-scan all 3 modes in sequence for demo
+  autoScanAll();
+}
+
+function autoScanAll() {
+  const modes = ['rgb','uv','cross'];
+  let i = 0;
+  function next() {
+    if (i >= modes.length) return;
+    switchMode(modes[i]);
+    captureScan();
+    i++;
+    if (i < modes.length) setTimeout(next, 2200);
+  }
+  next();
+}
+
+// ========== FACE MAP RENDER ==========
+function renderFaceMap(mode) {
+  const md = modeData[mode];
+  const container = document.getElementById('faceMapContainer');
+  let svgParts = '';
+  md.faceZones.forEach(z => {
+    if (z.ellipse) {
+      svgParts += `<ellipse cx="${z.cx}" cy="${z.cy}" rx="${z.rx}" ry="${z.ry}" fill="${z.fill}" opacity="${z.op}"/>`;
+    } else if (z.path) {
+      svgParts += `<path d="${z.path}" stroke="${z.stroke}" stroke-width="${z.sw||1}" fill="none" opacity="${z.op}"/>`;
+    } else {
+      svgParts += `<circle cx="${z.cx}" cy="${z.cy}" r="${z.r}" fill="${z.fill}" opacity="${z.op}"/>`;
+    }
+  });
+  const legendItems = [
+    {c:modeData[mode].metrics[0].color, l:modeData[mode].metrics[0].label},
+    {c:modeData[mode].metrics[1].color, l:modeData[mode].metrics[1].label},
+    {c:modeData[mode].metrics[2].color, l:modeData[mode].metrics[2].label}
+  ];
+  container.innerHTML = `
+    <svg width="56" height="70" viewBox="0 0 56 70" fill="none">
+      <ellipse cx="28" cy="32" rx="22" ry="28" fill="#161628" stroke="#2a2a3e" stroke-width="1"/>
+      <ellipse cx="28" cy="32" rx="22" ry="28" fill="none" stroke="${md.color}" stroke-width="0.5" stroke-dasharray="2 2" opacity=".5"/>
+      ${svgParts}
+    </svg>
+    <div style="position:absolute;top:2px;right:2px;display:flex;flex-direction:column;gap:3px">
+      ${legendItems.map(l=>`<div style="display:flex;align-items:center;gap:3px"><div style="width:5px;height:5px;border-radius:50%;background:${l.c}"></div><span style="font-size:6px;color:${l.c}">${l.l}</span></div>`).join('')}
+    </div>`;
+}
+
+// ========== METRICS RENDER ==========
+function renderMetrics(mode) {
+  const md = modeData[mode];
+  const grid = document.getElementById('metricsGrid');
+  grid.innerHTML = md.metrics.map(m => `
+    <div class="met-card highlight">
+      <div class="met-val" style="color:${m.color2}">${m.val}</div>
+      <div class="met-lbl">${m.label}</div>
+      <div class="met-bar"><div class="met-fill" style="width:${m.val}%;background:${m.color}"></div></div>
+    </div>`).join('');
+}
+
+// ========== FULL REPORT RENDER ==========
+function renderFullReport() {
+  renderReport(combinedIndicators);
+  renderRecommendations();
+  showToast('تم الانتهاء من فحص الأنماط الثلاثة ✅', 'ok');
+}
+
+function renderReport(indicators) {
+  const inds = indicators || combinedIndicators;
+  const avg = Math.round(inds.reduce((s,i) => s + i.val, 0) / inds.length);
+  const circumference = 2 * Math.PI * 24;
+  const offset = circumference - (avg / 100) * circumference;
+  const grade = avg >= 85 ? 'ممتاز' : avg >= 70 ? 'جيد' : avg >= 50 ? 'مقبول' : 'ضعيف';
+  const gradeColor = avg >= 85 ? '#22c55e' : avg >= 70 ? '#818cf8' : avg >= 50 ? '#fbbf24' : '#ef4444';
+
+  document.getElementById('scoreRingWrap').innerHTML = `
+    <svg width="60" height="60" viewBox="0 0 60 60">
+      <circle cx="30" cy="30" r="24" fill="none" stroke="#1f1f35" stroke-width="5"/>
+      <circle cx="30" cy="30" r="24" fill="none" stroke="${avg >= 85 ? '#22c55e' : '#4f46e5'}" stroke-width="5" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" stroke-linecap="round" transform="rotate(-90 30 30)" style="transition:stroke-dashoffset .8s"/>
+      <text x="30" y="34" text-anchor="middle" font-size="14" font-weight="700" fill="#e0e7ff">${avg}</text>
+    </svg>
+    <div style="margin-left:8px">
+      <div style="font-size:8px;font-weight:700;color:${gradeColor}">${grade}</div>
+      <div style="font-size:7px;color:var(--text3)">نقاط الصحة</div>
+    </div>`;
+
+  document.getElementById('indicatorList').innerHTML = inds.map(ind => `
+    <div class="ind-row">
+      <div class="ind-dot" style="background:${ind.color}"></div>
+      <div class="ind-name">${ind.label}</div>
+      <div class="ind-track"><div class="ind-fill" style="width:${ind.val}%;background:${ind.color}"></div></div>
+      <div class="ind-pct" style="color:${ind.color2}">${ind.val}%</div>
+      <span class="ind-src" style="background:${ind.src==='rgb'?'rgba(79,70,229,.2)':ind.src==='uv'?'rgba(147,51,234,.2)':'rgba(239,68,68,.2)'};color:${ind.src==='rgb'?'#818cf8':ind.src==='uv'?'#a78bfa':'#fca5a5'}">${ind.src}</span>
+    </div>`).join('');
+}
+
+// ========== RECOMMENDATIONS RENDER ==========
+function renderRecommendations() {
+  const recs = S.scannedModes.size >= 3 ? allRecommendations : allRecommendations.filter(r => S.scannedModes.has(r.src.toLowerCase()) || S.scannedModes.size === 0);
+  const list = document.getElementById('recList');
+  list.innerHTML = (recs.length > 0 ? recs : allRecommendations.slice(0, 3)).map(r => `
+    <div class="rec-item">
+      <div class="rec-icon" style="background:${r.iconBg}">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">${r.iconSvg}</svg>
+      </div>
+      <div class="rec-body">
+        <div class="rec-name">${r.name}</div>
+        <div class="rec-desc">${r.desc}</div>
+        <span class="rec-tag" style="background:${r.tagBg};color:${r.tagColor}">${r.tag}</span>
+      </div>
+      <div class="rec-src">${r.src}</div>
+    </div>`).join('');
+}
+
+// ========== sendPrompt (Treatment Plan) ==========
+async function sendPrompt() {
+  const prompt = 'اعطني خطة علاج مفصلة لمدة 4 أسابيع بناءً على نتائج فحص بشرتي من جهاز ZMLH02 متعدد الأطياف (RGB + UV + Cross-Polarized). تشمل النتائج: ترطيب 78%، مرونة 85%، دهنية 43%، تصبغ 72%، احمرار 22%، مسام 56%، تجاعيد 18%.';
+
+  if (S.apiToken) {
+    try {
+      showToast('جاري الاتصال بالخادم...', 'ok');
+      const resp = await fetch(`${S.apiBase}/v1/ai/chat`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','Authorization':`Bearer ${S.apiToken}`,'Accept':'application/json'},
+        body: JSON.stringify({prompt: prompt, mode: 'treatment_plan'})
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        showTreatmentPlan(data.treatment || data.data?.treatment || JSON.stringify(data));
+        return;
+      }
+    } catch(e) { console.log('API fallback:', e.message); }
+  }
+
+  // Offline/local treatment plan
+  const plan = generateTreatmentPlan();
+  showTreatmentPlan(plan);
+}
+
+function generateTreatmentPlan() {
+  const html = `
+    <h3>📋 خطة علاج متكاملة — Skin Analyzer ZMLH02</h3>
+    <p style="color:var(--text3);margin-bottom:12px">بناءً على فحص RGB + UV + Cross-Polarized</p>
+    <p style="font-weight:700;color:var(--indigo2)">الأسبوع الأول — الترطيب والتهدئة</p>
+    <ul>
+      <li>صباحاً: غسول لطيف + سيروم حمض الهيالورونيك + مرطب + SPF50</li>
+      <li>مساءً: تنظيف مزدوج + تونر مهدئ + مرطب ليلي غني</li>
+      <li>قناع مرطب 3 مرات هذا الأسبوع</li>
+    </ul>
+    <p style="font-weight:700;color:#a78bfa">الأسبوع الثاني — معالجة التصبغات</p>
+    <ul>
+      <li>إضافة سيروم نياسيناميد 10% صباحاً قبل المرطب</li>
+      <li>استمرار روتين الترطيب المسائي</li>
+      <li>تقشير إنزيمي مرة واحدة (منطقة T فقط)</li>
+    </ul>
+    <p style="font-weight:700;color:#fca5a5">الأسبوع الثالث — تقوية حاجز البشرة</p>
+    <ul>
+      <li>سيروم سيراميد + ببتيدات مساءً</li>
+      <li>تقليل التقشير — مرة واحدة فقط</li>
+      <li>قناع مهدئ بالصبار للخدين</li>
+    </ul>
+    <p style="font-weight:700;color:var(--green)">الأسبوع الرابع — التجديد والتقييم</p>
+    <ul>
+      <li>بدء كريم ريتينول 0.3% مرتين أسبوعياً (ليلاً فقط)</li>
+      <li>في الأيام بدون ريتينول: روتين ترطيب كامل</li>
+      <li>SPF50 يومياً — أهم خطوة!</li>
+    </ul>
+    <p style="margin-top:12px;padding:10px;background:var(--card);border-radius:8px;font-size:10px">
+      ⚠️ تنبيه: هذه الخطة مولدة محلياً للعرض. للحصول على خطة مخصصة من الذكاء الاصطناعي، قم بتهيئة إعدادات API من زر ⚙️
+    </p>
+    <button class="close-btn" onclick="closeTreatment()">إغلاق</button>`;
+  return html;
+}
+
+function showTreatmentPlan(content) {
+  document.getElementById('treatmentContent').innerHTML = content;
+  document.getElementById('treatmentOverlay').classList.add('open');
+}
+
+function closeTreatment() {
+  document.getElementById('treatmentOverlay').classList.remove('open');
+}
+
+// ========== API SETTINGS ==========
+function openSettings() {
+  document.getElementById('apiBaseUrl').value = S.apiBase;
+  document.getElementById('apiToken').value = S.apiToken;
+  document.getElementById('settingsStatus').textContent = '';
+  document.getElementById('settingsStatus').className = 'modal-status';
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+function saveSettings() {
+  S.apiBase = document.getElementById('apiBaseUrl').value.trim();
+  S.apiToken = document.getElementById('apiToken').value.trim();
+  localStorage.setItem('zml_api_base', S.apiBase);
+  localStorage.setItem('zml_api_token', S.apiToken);
+  const status = document.getElementById('settingsStatus');
+  status.textContent = '✓ تم حفظ الإعدادات بنجاح';
+  status.className = 'modal-status ok';
+  showToast('تم حفظ إعدادات API ✓', 'ok');
+  setTimeout(closeSettings, 1200);
+}
+
+async function autoLogin() {
+  const email = document.getElementById('apiEmail').value.trim();
+  const password = document.getElementById('apiPassword').value.trim();
+  const base = document.getElementById('apiBaseUrl').value.trim();
+  if (!email || !password) {
+    document.getElementById('settingsStatus').textContent = 'الرجاء إدخال البريد وكلمة المرور';
+    document.getElementById('settingsStatus').className = 'modal-status err';
+    return;
+  }
+  const status = document.getElementById('settingsStatus');
+  status.textContent = 'جاري تسجيل الدخول...';
+  status.className = 'modal-status';
+  try {
+    const resp = await fetch(`${base}/auth/login`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','Accept':'application/json'},
+      body: JSON.stringify({email, password})
+    });
+    const data = await resp.json();
+    if (resp.ok && data.data?.token) {
+      document.getElementById('apiToken').value = data.data.token;
+      S.apiBase = base;
+      S.apiToken = data.data.token;
+      localStorage.setItem('zml_api_base', S.apiBase);
+      localStorage.setItem('zml_api_token', S.apiToken);
+      status.textContent = '✓ تم تسجيل الدخول وحفظ التوكن';
+      status.className = 'modal-status ok';
+      showToast('تم تسجيل الدخول ✓', 'ok');
+    } else {
+      status.textContent = 'فشل: ' + (data.message || 'بيانات غير صحيحة');
+      status.className = 'modal-status err';
+    }
+  } catch(e) {
+    status.textContent = 'خطأ في الاتصال: ' + e.message;
+    status.className = 'modal-status err';
+  }
+}
+
+// ========== TOAST ==========
+function showToast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + (type || '') + ' show';
+  clearTimeout(el._timeout);
+  el._timeout = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ========== CLOSE MODALS ON OUTSIDE CLICK ==========
+document.getElementById('settingsModal').addEventListener('click', function(e) {
+  if (e.target === this) closeSettings();
+});
+document.getElementById('treatmentOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeTreatment();
+});
+
+console.log('✅ ZMLH02 Multi-Spectrum Demo Ready');
+console.log('   Modes: RGB | UV | Cross-Polarized');
+console.log('   API: ⚙️ gear button → configure endpoint & token');
+console.log('   Click "ابدأ الفحص" to auto-scan all 3 modes');
+</script>
+</body>
+</html>
