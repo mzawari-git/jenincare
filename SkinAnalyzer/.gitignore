@@ -20,8 +20,8 @@ unknown/
 # Native libraries
 lib/
 
-# Android resources (decompiled)
-res/
+# Android resources (decompiled only)
+# res/
 assets/
 
 # Images

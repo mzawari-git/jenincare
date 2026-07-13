@@ -305,20 +305,27 @@ class FiseGpioController @Inject constructor(
 
     private fun shellWrite(path: String, value: String): Boolean {
         return try {
-            val file = File(path)
-            file.writeText(value)
+            val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", "echo $value > $path"))
+            val exitCode = process.waitFor()
+            if (exitCode != 0) {
+                Timber.w("Shell write failed for $path: exit=$exitCode")
+                return false
+            }
             true
         } catch (e: Exception) {
-            Timber.w("Direct write failed for $path: ${e.message}")
+            Timber.w("Shell write failed for $path: ${e.message}")
             false
         }
     }
 
     private fun shellRead(path: String): String {
         return try {
-            File(path).readText().trim()
+            val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", "cat $path"))
+            val result = process.inputStream.bufferedReader().readText().trim()
+            process.waitFor()
+            result
         } catch (e: Exception) {
-            Timber.w("Direct read failed for $path: ${e.message}")
+            Timber.w("Shell read failed for $path: ${e.message}")
             "?"
         }
     }

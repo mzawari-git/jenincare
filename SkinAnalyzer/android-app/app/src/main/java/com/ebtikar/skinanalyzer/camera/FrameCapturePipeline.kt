@@ -28,6 +28,14 @@ data class LedTestResult(
     val method: String
 )
 
+private data class FaceFallbackResult(
+    val accepted: Boolean,
+    val score: Int = 0,
+    val centerX: Float = 0.5f,
+    val centerY: Float = 0.5f,
+    val message: String = ""
+)
+
 @Singleton
 class FrameCapturePipeline @Inject constructor(
     private val spectrumController: SpectrumController,
@@ -169,9 +177,9 @@ class FrameCapturePipeline @Inject constructor(
                 _positionMessage.value = "ضع وجهك في منتصف الإطار"
                 var positionValid = false
                 var positionAttempts = 0
-                val maxPositionAttempts = 25
+                val maxPositionAttempts = 35
                 var consecutiveValidCount = 0
-                val requiredConsecutive = 1
+                val requiredConsecutive = 2
                 var lastScore = 0
 
                 while (!positionValid && positionAttempts < maxPositionAttempts) {
@@ -235,10 +243,15 @@ class FrameCapturePipeline @Inject constructor(
                                     _positionMessage.value = "جاري التحقق بواسطة الذكاء الاصطناعي..."
                                     delay(100)
                                     val mlFace = tryMlKitFallback()
-                                    if (mlFace) {
+                                    if (mlFace.accepted) {
                                         positionValid = true
+                                        _positionScore.value = mlFace.score
+                                        _skinCenterX.value = mlFace.centerX
+                                        _skinCenterY.value = mlFace.centerY
                                         _positionMessage.value = "تم التحقق بواسطة الذكاء الاصطناعي ✓ — جاري قراءة ملامح الوجه..."
-                                        Timber.i("Face validated via ML Kit intermediate fallback (attempt $positionAttempts)")
+                                        Timber.i("Face validated via ML Kit intermediate fallback (attempt $positionAttempts): score=${mlFace.score}, ${mlFace.message}")
+                                    } else {
+                                        _positionMessage.value = mlFace.message.ifEmpty { "اضبط وجهك داخل الإطار ثم اثبت قليلاً" }
                                     }
                                 } else {
                                     delay(120)
@@ -258,10 +271,15 @@ class FrameCapturePipeline @Inject constructor(
                     _positionMessage.value = "جاري التحقق بواسطة الذكاء الاصطناعي..."
                     delay(200)
                     val mlFace = tryMlKitFallback()
-                    if (mlFace) {
+                    if (mlFace.accepted) {
                         positionValid = true
+                        _positionScore.value = mlFace.score
+                        _skinCenterX.value = mlFace.centerX
+                        _skinCenterY.value = mlFace.centerY
                         _positionMessage.value = "تم التحقق بواسطة الذكاء الاصطناعي ✓ — جاري قراءة ملامح الوجه..."
-                        Timber.i("Face validated via ML Kit fallback")
+                        Timber.i("Face validated via ML Kit fallback: score=${mlFace.score}, ${mlFace.message}")
+                    } else {
+                        _positionMessage.value = mlFace.message.ifEmpty { "لم يتم تأكيد وضع الوجه بواسطة الذكاء الاصطناعي" }
                     }
                 }
 
@@ -276,9 +294,9 @@ class FrameCapturePipeline @Inject constructor(
 
             _positionMessage.value = "تم الكشف عن الوجه ✓ — جاري قراءة ملامح الوجه..."
             _faceGuideVisible.value = true
-            delay(1500)
+            delay(1800)
             _positionMessage.value = "تحليل ملامح الوجه بالذكاء الاصطناعي..."
-            delay(1000)
+            delay(1200)
             _positionMessage.value = "تم تحليل الوجه — جاري البدء بالمسح الضوئي..."
 
             spectrumController.activate(LightSpectrum.OFF)
@@ -477,23 +495,56 @@ class FrameCapturePipeline @Inject constructor(
         _faceGuideVisible.value = false
     }
 
-    private suspend fun tryMlKitFallback(): Boolean {
+    private suspend fun tryMlKitFallback(): FaceFallbackResult {
         return try {
-            val frame = cameraManager.captureFrame() ?: return false
+            val frame = cameraManager.captureFrame()
+                ?: return FaceFallbackResult(false, message = "تعذر قراءة صورة من الكاميرا")
             val checkBmp = if (frame.width > 640 || frame.height > 640) {
                 val scale = 640f / maxOf(frame.width, frame.height)
                 Bitmap.createScaledBitmap(frame,
                     (frame.width * scale).toInt().coerceAtLeast(1),
                     (frame.height * scale).toInt().coerceAtLeast(1), true)
             } else frame
-            val faces = faceDetector.detectFaces(checkBmp)
+            val (faces, quality) = faceDetector.detectFacesWithQuality(checkBmp)
+            val primary = faces.maxByOrNull { it.boundingBox.width() * it.boundingBox.height() }
+            val result = if (primary != null) {
+                val box = primary.boundingBox
+                val centerX = (box.centerX().toFloat() / checkBmp.width).coerceIn(0f, 1f)
+                val centerY = (box.centerY().toFloat() / checkBmp.height).coerceIn(0f, 1f)
+                val coverage = (box.width().toFloat() * box.height().toFloat()) /
+                    (checkBmp.width.toFloat() * checkBmp.height.toFloat())
+                val centeredScore = (1f - (kotlin.math.abs(centerX - 0.5f) / 0.32f)).coerceIn(0f, 1f) *
+                    (1f - (kotlin.math.abs(centerY - 0.5f) / 0.38f)).coerceIn(0f, 1f)
+                val sizeScore = when {
+                    coverage < 0.08f -> coverage / 0.08f
+                    coverage > 0.52f -> (1f - ((coverage - 0.52f) / 0.22f)).coerceIn(0f, 1f)
+                    else -> 1f
+                }
+                val poseScore = quality?.overallQuality ?: 0.72f
+                val score = ((centeredScore * 0.35f + sizeScore * 0.35f + poseScore * 0.30f) * 100f).toInt()
+                val accepted = coverage in 0.08f..0.58f &&
+                    centerX in 0.28f..0.72f &&
+                    centerY in 0.24f..0.76f &&
+                    score >= 58
+                val message = when {
+                    coverage < 0.08f -> "اقترب من الكاميرا أكثر"
+                    coverage > 0.58f -> "ابتعد قليلاً عن الكاميرا"
+                    centerX !in 0.28f..0.72f -> "تمركز في منتصف الإطار"
+                    centerY !in 0.24f..0.76f -> "اضبط ارتفاع الوجه داخل الإطار"
+                    score < 58 -> "اثبت وجهك أمام الكاميرا للحظة"
+                    else -> "quality=${quality?.overallQuality ?: 0f}, coverage=$coverage"
+                }
+                FaceFallbackResult(accepted, score, centerX, centerY, message)
+            } else {
+                FaceFallbackResult(false, message = "لم يتم الكشف عن وجه واضح")
+            }
             if (checkBmp !== frame) checkBmp.recycle()
             frame.recycle()
-            Timber.d("ML Kit fallback: ${faces.size} face(s)")
-            faces.isNotEmpty()
+            Timber.d("ML Kit fallback: ${faces.size} face(s), accepted=${result.accepted}, score=${result.score}, ${result.message}")
+            result
         } catch (e: Exception) {
             Timber.w(e, "ML Kit fallback failed")
-            false
+            FaceFallbackResult(false, message = "فشل التحقق الذكي من الوجه")
         }
     }
 

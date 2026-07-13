@@ -337,12 +337,17 @@ class AnalysisActivity : BaseCameraActivity() {
                             binding.medicalLens.visibility = android.view.View.GONE
                             binding.digitalMesh.visibility = android.view.View.GONE
                             binding.faceGridOverlay.visibility = android.view.View.GONE
+                            binding.tvScanInstruction.visibility = android.view.View.GONE
+                            binding.tvCurrentSpectrum.visibility = android.view.View.GONE
+                            
                             showAnalysisMarkers()
                             val rv = viewModel.radarValues.value
                             val rl = viewModel.radarLabels.value
                             if (rv.isNotEmpty() && rl.isNotEmpty()) {
                                 binding.radarChart.setData(rv, rl)
+                                binding.radarChart.visibility = android.view.View.VISIBLE
                             }
+                            binding.analysisHistory.visibility = android.view.View.VISIBLE
                         }
                     }
                 }
@@ -404,7 +409,9 @@ class AnalysisActivity : BaseCameraActivity() {
                     capturePipeline.positionScore.collect { score ->
                         viewModel.updateTrackingData(score, score > 0)
                         binding.scanDataPanel.setConfidence(score.toFloat())
+                        binding.rightPanel.setConfidence(score.toFloat())
                         binding.scanDataPanel.setTrackingAccuracy(score)
+                        binding.rightPanel.setTrackingAccuracy(score)
                     }
                 }
 
@@ -427,12 +434,14 @@ class AnalysisActivity : BaseCameraActivity() {
                 launch {
                     viewModel.trackingAccuracy.collect { accuracy ->
                         binding.scanDataPanel.setTrackingAccuracy(accuracy)
+                        binding.rightPanel.setTrackingAccuracy(accuracy)
                     }
                 }
 
                 launch {
                     viewModel.faceDetected.collect { detected ->
                         binding.scanDataPanel.setFaceDetected(detected)
+                        binding.rightPanel.setFaceDetected(detected)
                         binding.digitalMesh.visibility = if (detected) android.view.View.VISIBLE else android.view.View.INVISIBLE
                     }
                 }
@@ -440,16 +449,52 @@ class AnalysisActivity : BaseCameraActivity() {
                 launch {
                     viewModel.scanArea.collect { area ->
                         binding.scanDataPanel.setScanArea(area)
+                        binding.rightPanel.setScanArea(area)
                     }
                 }
 
-                launch { viewModel.hydration.collect { binding.medicalIndicator.setHydration(it) } }
-                launch { viewModel.pores.collect { binding.medicalIndicator.setPores(it) } }
-                launch { viewModel.redness.collect { binding.medicalIndicator.setRedness(it) } }
-                launch { viewModel.texture.collect { binding.medicalIndicator.setTexture(it) } }
-                launch { viewModel.acne.collect { binding.medicalIndicator.setAcne(it) } }
-                launch { viewModel.sensitivity.collect { binding.medicalIndicator.setSensitivity(it) } }
-                launch { viewModel.pigmentation.collect { binding.medicalIndicator.setPigmentation(it) } }
+                launch { 
+                    viewModel.hydration.collect { 
+                        binding.medicalIndicator.setHydration(it)
+                        binding.leftPanel.setHydration(it)
+                    } 
+                }
+                launch { 
+                    viewModel.pores.collect { 
+                        binding.medicalIndicator.setPores(it)
+                        binding.leftPanel.setPores(it)
+                    } 
+                }
+                launch { 
+                    viewModel.redness.collect { 
+                        binding.medicalIndicator.setRedness(it)
+                        binding.leftPanel.setRedness(it)
+                    } 
+                }
+                launch { 
+                    viewModel.texture.collect { 
+                        binding.medicalIndicator.setTexture(it)
+                        binding.leftPanel.setTexture(it)
+                    } 
+                }
+                launch { 
+                    viewModel.acne.collect { 
+                        binding.medicalIndicator.setAcne(it)
+                        binding.leftPanel.setAcne(it)
+                    } 
+                }
+                launch { 
+                    viewModel.sensitivity.collect { 
+                        binding.medicalIndicator.setSensitivity(it)
+                        binding.leftPanel.setSensitivity(it)
+                    } 
+                }
+                launch { 
+                    viewModel.pigmentation.collect { 
+                        binding.medicalIndicator.setPigmentation(it)
+                        binding.leftPanel.setPigmentation(it)
+                    } 
+                }
 
                 launch {
                     viewModel.recentScans.collect { entries ->
@@ -470,6 +515,7 @@ class AnalysisActivity : BaseCameraActivity() {
                         .collect { (cx, cy) ->
                             val detected = cx in 0f..1f && cy in 0f..1f
                             binding.scanDataPanel.setFaceDetected(detected)
+                            binding.rightPanel.setFaceDetected(detected)
                             binding.digitalMesh.updateFacePosition(cx, cy)
                             binding.faceGuideOverlay.setFacePosition(cx, cy)
                             binding.faceGridOverlay.setFacePosition(cx, cy)

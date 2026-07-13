@@ -4,12 +4,14 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.Shader
 import android.util.AttributeSet
 import android.view.View
 import android.view.animation.LinearInterpolator
 import kotlin.math.abs
-import kotlin.random.Random
 
 class DigitalMeshOverlay @JvmOverloads constructor(
     context: Context,
@@ -20,10 +22,12 @@ class DigitalMeshOverlay @JvmOverloads constructor(
     private data class MeshNode(
         val ox: Float, val oy: Float,
         val baseAlpha: Int = 180,
-        val pulsePhase: Float = 0f
+        val pulsePhase: Float = 0f,
+        val feature: Boolean = false
     )
 
     private val nodes = mutableListOf<MeshNode>()
+    private val featureLines = mutableListOf<Pair<Int, Int>>()
     private var nodePulse = 0f
     private var time = 0f
     private var pulseAnimator: ValueAnimator? = null
@@ -48,6 +52,12 @@ class DigitalMeshOverlay @JvmOverloads constructor(
         style = Paint.Style.STROKE
         strokeWidth = 1f
     }
+    private val contourPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+    }
+    private val contourPath = Path()
 
     init {
         setLayerType(View.LAYER_TYPE_HARDWARE, null)
@@ -76,25 +86,8 @@ class DigitalMeshOverlay @JvmOverloads constructor(
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         nodes.clear()
-        val density = resources.displayMetrics.density
-        val seed = Random(System.currentTimeMillis())
-        val faceW = w * 0.35f
-        val faceH = h * 0.5f
-
-        val cols = 12
-        val rows = 14
-        val spacingX = faceW / cols
-        val spacingY = faceH / rows
-
-        for (row in 0..rows) {
-            for (col in 0..cols) {
-                val ox = (col - cols / 2f) * spacingX + seed.nextFloat() * 6f * density
-                val oy = (row - rows / 2f) * spacingY + seed.nextFloat() * 6f * density
-                if (ox * ox / (faceW * 0.3f) + oy * oy / (faceH * 0.3f) < 0.9f) {
-                    nodes.add(MeshNode(ox, oy, seed.nextInt(120, 220), seed.nextFloat() * 3f))
-                }
-            }
-        }
+        featureLines.clear()
+        buildAnatomicalMesh(w, h)
     }
 
     fun updateFacePosition(x: Float, y: Float, scale: Float = 1.0f) {
@@ -115,10 +108,11 @@ class DigitalMeshOverlay @JvmOverloads constructor(
         val cx = width * faceX
         val cy = height * faceY
 
-        // Draw mesh lines (golden)
+        drawFaceContours(canvas, density)
+
         linePaint.color = Color.parseColor("#33D4AF37")
         linePaint.strokeWidth = 1.2f * density
-        val connectionDist = 70f * density
+        val connectionDist = 58f * density
 
         for (i in nodes.indices) {
             for (j in i + 1 until nodes.size) {
@@ -133,7 +127,15 @@ class DigitalMeshOverlay @JvmOverloads constructor(
             }
         }
 
-        // Draw cyan accent lines (neural network style)
+        cyanLinePaint.color = Color.parseColor("#6600D4FF")
+        cyanLinePaint.strokeWidth = 1.15f * density
+        for ((a, b) in featureLines) {
+            if (a in nodes.indices && b in nodes.indices) {
+                cyanLinePaint.alpha = 110
+                canvas.drawLine(nodeX(nodes[a]), nodeY(nodes[a]), nodeX(nodes[b]), nodeY(nodes[b]), cyanLinePaint)
+            }
+        }
+
         cyanLinePaint.color = Color.parseColor("#1A00D4FF")
         cyanLinePaint.strokeWidth = 0.8f * density
         for (i in nodes.indices step 3) {
@@ -147,28 +149,28 @@ class DigitalMeshOverlay @JvmOverloads constructor(
             }
         }
 
-        // Draw glowing nodes
         for (node in nodes) {
             val pulse = ((node.pulsePhase + nodePulse) % 1f)
-            val alpha = (node.baseAlpha * (0.6f + 0.4f * pulse)).toInt().coerceIn(80, 220)
+            val alpha = (node.baseAlpha * (0.65f + 0.35f * pulse)).toInt().coerceIn(70, 230)
             val nx = nodeX(node)
             val ny = nodeY(node)
 
-            // Glow
-            nodeGlowPaint.color = Color.parseColor("#1AD4AF37")
-            nodeGlowPaint.alpha = (alpha * 0.3f).toInt()
-            canvas.drawCircle(nx, ny, 8f * density * (0.8f + 0.3f * pulse), nodeGlowPaint)
+            nodeGlowPaint.color = if (node.feature) Color.parseColor("#2600D4FF") else Color.parseColor("#1AD4AF37")
+            nodeGlowPaint.alpha = (alpha * 0.32f).toInt()
+            canvas.drawCircle(nx, ny, if (node.feature) 10f * density else 7f * density, nodeGlowPaint)
 
-            // Core dot
             val distFromCenter = abs(nx - cx) / (width * 0.4f)
-            val isGold = distFromCenter > 0.3f
-            nodePaint.color = if (isGold) Color.parseColor("#FFD4AF37") else Color.parseColor("#FF00D4FF")
+            val isGold = distFromCenter > 0.34f
+            nodePaint.color = when {
+                node.feature -> Color.parseColor("#FF00D4FF")
+                isGold -> Color.parseColor("#FFE8D5A3")
+                else -> Color.parseColor("#FFD4AF37")
+            }
             nodePaint.alpha = alpha
-            val r = (2.5f * density * (0.8f + 0.3f * pulse)).coerceAtLeast(1.5f)
+            val r = ((if (node.feature) 3.2f else 2.1f) * density * (0.85f + 0.25f * pulse)).coerceAtLeast(1.4f)
             canvas.drawCircle(nx, ny, r, nodePaint)
         }
 
-        // Draw connection lines from lens to nodes
         linePaint.color = Color.parseColor("#1AD4AF37")
         linePaint.strokeWidth = 1f * density
         for (i in 0 until minOf(5, nodes.size)) {
@@ -176,5 +178,88 @@ class DigitalMeshOverlay @JvmOverloads constructor(
             linePaint.alpha = (80 - i * 12).coerceIn(20, 80)
             canvas.drawLine(cx, cy, nodeX(nodes[idx]), nodeY(nodes[idx]), linePaint)
         }
+    }
+
+    private fun buildAnatomicalMesh(w: Int, h: Int) {
+        val faceW = w * 0.36f
+        val faceH = h * 0.56f
+        val rx = faceW / 2f
+        val ry = faceH / 2f
+        val rows = 15
+        val cols = 11
+
+        for (row in 0..rows) {
+            val yNorm = -1f + row * 2f / rows
+            val rowWidth = kotlin.math.sqrt((1f - yNorm * yNorm * 0.86f).coerceAtLeast(0.05f))
+            for (col in 0..cols) {
+                val xNorm = -1f + col * 2f / cols
+                if (abs(xNorm) <= rowWidth) {
+                    val cheekCurve = 1f - 0.08f * abs(yNorm)
+                    val ox = xNorm * rx * 0.78f * rowWidth * cheekCurve
+                    val oy = yNorm * ry * 0.88f
+                    val feature = (row in 5..10 && col in 4..7) || row == 6 || row == 11
+                    nodes.add(MeshNode(ox, oy, if (feature) 210 else 145, ((row * 13 + col * 7) % 100) / 100f, feature))
+                }
+            }
+        }
+
+        val leftEye = addFeatureNode(-rx * 0.32f, -ry * 0.22f, 0.12f)
+        val rightEye = addFeatureNode(rx * 0.32f, -ry * 0.22f, 0.24f)
+        val noseTop = addFeatureNode(0f, -ry * 0.12f, 0.36f)
+        val noseTip = addFeatureNode(0f, ry * 0.12f, 0.48f)
+        val mouthL = addFeatureNode(-rx * 0.24f, ry * 0.38f, 0.60f)
+        val mouthR = addFeatureNode(rx * 0.24f, ry * 0.38f, 0.72f)
+        val chin = addFeatureNode(0f, ry * 0.74f, 0.84f)
+        val browL = addFeatureNode(-rx * 0.34f, -ry * 0.36f, 0.18f)
+        val browR = addFeatureNode(rx * 0.34f, -ry * 0.36f, 0.30f)
+
+        featureLines.addAll(listOf(
+            leftEye to noseTop,
+            rightEye to noseTop,
+            noseTop to noseTip,
+            noseTip to mouthL,
+            noseTip to mouthR,
+            mouthL to mouthR,
+            mouthL to chin,
+            mouthR to chin,
+            browL to leftEye,
+            browR to rightEye
+        ))
+    }
+
+    private fun addFeatureNode(ox: Float, oy: Float, phase: Float): Int {
+        nodes.add(MeshNode(ox, oy, 230, phase, true))
+        return nodes.lastIndex
+    }
+
+    private fun drawFaceContours(canvas: Canvas, density: Float) {
+        val cx = width * faceX
+        val cy = height * faceY
+        val rx = width * 0.18f * faceScale
+        val ry = height * 0.28f * faceScale
+
+        contourPaint.strokeWidth = 1.4f * density
+        contourPaint.alpha = 120
+        contourPaint.shader = LinearGradient(cx - rx, cy, cx + rx, cy,
+            intArrayOf(Color.parseColor("#00D4AF37"), Color.parseColor("#BBD4AF37"), Color.parseColor("#6600D4FF")),
+            null,
+            Shader.TileMode.CLAMP
+        )
+
+        contourPath.reset()
+        contourPath.addOval(cx - rx, cy - ry, cx + rx, cy + ry, Path.Direction.CW)
+        canvas.drawPath(contourPath, contourPaint)
+
+        contourPath.reset()
+        contourPath.moveTo(cx - rx * 0.55f, cy - ry * 0.18f)
+        contourPath.cubicTo(cx - rx * 0.30f, cy - ry * 0.28f, cx - rx * 0.10f, cy - ry * 0.20f, cx, cy - ry * 0.05f)
+        contourPath.cubicTo(cx + rx * 0.10f, cy - ry * 0.20f, cx + rx * 0.30f, cy - ry * 0.28f, cx + rx * 0.55f, cy - ry * 0.18f)
+        canvas.drawPath(contourPath, contourPaint)
+
+        contourPath.reset()
+        contourPath.moveTo(cx - rx * 0.38f, cy + ry * 0.34f)
+        contourPath.cubicTo(cx - rx * 0.12f, cy + ry * 0.43f, cx + rx * 0.12f, cy + ry * 0.43f, cx + rx * 0.38f, cy + ry * 0.34f)
+        canvas.drawPath(contourPath, contourPaint)
+        contourPaint.shader = null
     }
 }
