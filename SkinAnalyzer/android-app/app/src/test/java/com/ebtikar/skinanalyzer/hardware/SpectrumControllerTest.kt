@@ -43,20 +43,7 @@ class SpectrumControllerTest {
     }
 
     @Test
-    fun `activate simulates when nothing connected`() = runTest {
-        whenever(mockSerialBus.isConnected).thenReturn(false)
-
-        val result = controller.activate(LightSpectrum.BLUE)
-
-        assertTrue(result.isSuccess)
-        assertEquals(LightSpectrum.BLUE, controller.currentLight)
-    }
-
-    @Test
     fun `BLUE falls back to serial when GPIO has no dedicated channel for it`() = runTest {
-        // GPIO is present and active, but it has no physical channel for the
-        // colored RGB-ring spectra (BLUE/RED/BROWN) - those must go over serial
-        // instead of silently re-activating another GPIO channel.
         whenever(mockFiseGpio.isAvailable).thenReturn(true)
         whenever(mockFiseGpio.supportsSpectrum(LightSpectrum.BLUE)).thenReturn(false)
         whenever(mockSerialBus.isConnected).thenReturn(true)
@@ -73,6 +60,7 @@ class SpectrumControllerTest {
         whenever(mockFiseGpio.isAvailable).thenReturn(true)
         whenever(mockFiseGpio.supportsSpectrum(LightSpectrum.WHITE)).thenReturn(true)
         whenever(mockFiseGpio.activateSpectrum(LightSpectrum.WHITE)).thenReturn(true)
+        whenever(mockFiseGpio.readGpioValue(0)).thenReturn("0")
 
         val result = controller.activate(LightSpectrum.WHITE)
 
@@ -82,14 +70,15 @@ class SpectrumControllerTest {
 
     @Test
     fun `listener receives spectrum changes`() = runTest {
-        whenever(mockSerialBus.isConnected).thenReturn(false)
+        whenever(mockSerialBus.isConnected).thenReturn(true)
+        whenever(mockSerialBus.sendCommand(LightSpectrum.WHITE)).thenReturn(Result.success(Unit))
 
         var receivedSpectrum: LightSpectrum? = null
         controller.addStateListener { receivedSpectrum = it }
 
-        controller.activate(LightSpectrum.RED)
+        controller.activate(LightSpectrum.WHITE)
 
-        assertEquals(LightSpectrum.RED, receivedSpectrum)
+        assertEquals(LightSpectrum.WHITE, receivedSpectrum)
     }
 
     @Test

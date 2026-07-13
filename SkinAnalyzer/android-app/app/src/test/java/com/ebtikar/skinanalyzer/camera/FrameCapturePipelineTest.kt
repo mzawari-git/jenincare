@@ -1,9 +1,13 @@
 package com.ebtikar.skinanalyzer.camera
 
+import com.ebtikar.skinanalyzer.ai.FaceLandmarkDetector
 import com.ebtikar.skinanalyzer.camera.FrameCapturePipeline
+import com.ebtikar.skinanalyzer.camera.FrameValidator
 import com.ebtikar.skinanalyzer.camera.USBCameraManager
+import com.ebtikar.skinanalyzer.hardware.FiseGpioController
 import com.ebtikar.skinanalyzer.hardware.SerialBusManager
 import com.ebtikar.skinanalyzer.hardware.SpectrumController
+import com.ebtikar.skinanalyzer.util.PreferencesManager
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -15,13 +19,29 @@ class FrameCapturePipelineTest {
     private lateinit var mockSpectrumController: SpectrumController
     private lateinit var mockCameraManager: USBCameraManager
     private lateinit var mockSerialBusManager: SerialBusManager
+    private lateinit var mockFaceDetector: FaceLandmarkDetector
+    private lateinit var mockFiseGpioController: FiseGpioController
+    private lateinit var mockPreferencesManager: PreferencesManager
+    private lateinit var mockFrameValidator: FrameValidator
 
     @Before
     fun setup() {
         mockSpectrumController = mock()
         mockCameraManager = mock()
         mockSerialBusManager = mock()
-        pipeline = FrameCapturePipeline(mockSpectrumController, mockCameraManager, mockSerialBusManager)
+        mockFaceDetector = mock()
+        mockFiseGpioController = mock()
+        mockPreferencesManager = mock()
+        mockFrameValidator = mock()
+        pipeline = FrameCapturePipeline(
+            mockSpectrumController,
+            mockCameraManager,
+            mockSerialBusManager,
+            mockFaceDetector,
+            mockFiseGpioController,
+            mockPreferencesManager,
+            mockFrameValidator
+        )
     }
 
     @Test
