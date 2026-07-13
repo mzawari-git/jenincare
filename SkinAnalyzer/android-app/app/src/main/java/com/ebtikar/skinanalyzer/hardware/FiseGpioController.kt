@@ -7,6 +7,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -163,16 +164,19 @@ class FiseGpioController @Inject constructor(
         val chmodCmd = rawGpioPins.joinToString("; ") { "chmod 666 /sys/class/gpio/gpio$it/value /sys/class/gpio/gpio$it/direction" }
 
         try {
-            val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", "$exportCmd; sleep 1; $setDirCmd; sleep 1; $setOffCmd; $chmodCmd"))
-            val exit = process.waitFor()
+            val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", "$exportCmd; $setDirCmd; $setOffCmd; $chmodCmd"))
+            val completed = process.waitFor(3, TimeUnit.SECONDS)
+            if (!completed) {
+                process.destroyForcibly()
+                Timber.w("Raw GPIO shell setup timed out (3s) — untrusted_app cannot export GPIO")
+                return false
+            }
             val stderr = process.errorStream.bufferedReader().readText()
-            Timber.i("Raw GPIO shell setup exit=$exit stderr=$stderr")
+            Timber.i("Raw GPIO shell setup exit=${process.exitValue()} stderr=$stderr")
         } catch (e: Exception) {
             Timber.w("Raw GPIO shell setup failed: ${e.message}")
             return false
         }
-
-        Thread.sleep(200)
 
         for ((i, file) in rawGpioFiles.withIndex()) {
             try {
@@ -181,10 +185,8 @@ class FiseGpioController @Inject constructor(
                     continue
                 }
                 val onOk = shellWrite(file.absolutePath, "0")
-                Thread.sleep(50)
                 val readOn = shellRead(file.absolutePath)
                 val offOk = shellWrite(file.absolutePath, "1")
-                Thread.sleep(50)
                 val readOff = shellRead(file.absolutePath)
                 Timber.d("Raw GPIO write-verify pin ${rawGpioPins[i]}: ON→$readOn (ok=$onOk), OFF→$readOff (ok=$offOk)")
                 if (readOn != "0" || readOff != "1") {
