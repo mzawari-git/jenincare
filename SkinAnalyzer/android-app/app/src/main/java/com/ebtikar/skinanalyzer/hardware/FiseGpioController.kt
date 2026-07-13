@@ -45,7 +45,7 @@ class FiseGpioController @Inject constructor(
         val driverBound = isFiseDriverBound()
         val fiseFilesExist = gpioFiles.all { it.exists() } && ledFile.exists()
         val fiseWriteOk = if (fiseFilesExist) verifyWriteAccess() else false
-        val fiseActuallyWorks = if (fiseWriteOk && driverBound) testFiseWriteEffect() else false
+        val fiseActuallyWorks = if (fiseWriteOk) testFiseWriteEffect() else false
 
         if (fiseActuallyWorks) {
             _available = true
@@ -229,9 +229,9 @@ class FiseGpioController @Inject constructor(
 
         Timber.i("testFiseWriteEffect: fise=$fiseOk raw=$rawOk driverBound=${isFiseDriverBound()}")
         if (fiseOk && !rawOk) {
-            Timber.w("FISE stores values but raw GPIO NOT controlled — driver is orphaned/unbound")
+            Timber.w("FISE stores values but raw GPIO NOT controlled — using FISE only")
         }
-        return fiseOk && rawOk
+        return fiseOk
     }
 
     private fun checkSelinux() {
@@ -270,7 +270,7 @@ class FiseGpioController @Inject constructor(
         val driverBound = isFiseDriverBound()
         val gpioOk = gpioFiles.all { it.exists() } && verifyWriteAccess()
         val ledOk = ledFile.exists()
-        if (gpioOk && driverBound && ledOk) {
+        if (gpioOk && ledOk) {
             val fiseWorks = testFiseWriteEffect()
             if (fiseWorks) {
                 _available = true
@@ -425,7 +425,7 @@ class FiseGpioController @Inject constructor(
         for (i in gpioFiles.indices) {
             setGpio(i, false)
         }
-        if (isFiseDriverBound()) {
+        if (ledFile.exists() || File("/sys/class/fise_led/level").exists()) {
             setMasterLed(false)
         }
     }
@@ -442,11 +442,9 @@ class FiseGpioController @Inject constructor(
         turnAllOff()
         val gpioOk = setGpio(gpioIndex, true)
         if (!gpioOk) return false
-        if (isFiseDriverBound()) {
-            val ledOk = setMasterLed(true)
-            return ledOk
+        if (ledFile.exists() || File("/sys/class/fise_led/level").exists()) {
+            setMasterLed(true)
         }
-        Timber.d("FISE driver unbound — skipping setMasterLed, raw GPIO direct control")
         return true
     }
 
@@ -456,7 +454,7 @@ class FiseGpioController @Inject constructor(
             if (!setGpio(i, true)) allOk = false
         }
         if (!allOk) return false
-        if (isFiseDriverBound()) {
+        if (ledFile.exists() || File("/sys/class/fise_led/level").exists()) {
             return setMasterLed(true)
         }
         return true
