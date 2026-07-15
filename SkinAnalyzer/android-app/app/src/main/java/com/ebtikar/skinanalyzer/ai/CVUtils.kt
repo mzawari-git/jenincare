@@ -233,8 +233,8 @@ object CVUtils {
         val pixels = IntArray(w * h)
         bitmap.getPixels(pixels, 0, w, 0, 0, w, h)
 
-        val sampledW = w / 4
-        val sampledH = h / 4
+        val sampledW = (w + 3) / 4
+        val sampledH = (h + 3) / 4
         val aVals = FloatArray(sampledW * sampledH)
         val bVals = FloatArray(sampledW * sampledH)
         var count = 0

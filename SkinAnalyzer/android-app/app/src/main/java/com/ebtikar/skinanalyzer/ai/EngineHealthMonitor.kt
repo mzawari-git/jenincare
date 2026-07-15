@@ -68,7 +68,7 @@ class EngineHealthMonitor @Inject constructor() {
             lastSuccessTimestamp = System.currentTimeMillis()
         )
 
-        Timber.d("EngineHealth: $engineName success (#$newTotal, ${"%.0f".format(executionTimeMs)}ms, conf=${"%.2f".format(confidence)}, metrics=$metricsCount)")
+        Timber.d("EngineHealth: $engineName success (#$newTotal, ${executionTimeMs}ms, conf=${"%.2f".format(confidence.toDouble())}, metrics=$metricsCount)")
     }
 
     fun recordFailure(engineName: String, error: String, executionTimeMs: Long = 0) {
