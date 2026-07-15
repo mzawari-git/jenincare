@@ -80,7 +80,7 @@ class OpenCVSkinAnalyzer @Inject constructor(
                 val scoreMap = analyzeSpectrum(spectrum, bitmap, faceRect, null, stats, whiteBrightness)
                 for ((type, score) in scoreMap) {
                 val severity = when {
-                    score >= 70f -> MetricSeverity.EXCELLENT
+                    score >= 72f -> MetricSeverity.EXCELLENT
                     score >= 55f -> MetricSeverity.GOOD
                     score >= 35f -> MetricSeverity.FAIR
                     score >= 20f -> MetricSeverity.POOR

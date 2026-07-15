@@ -19,6 +19,7 @@ import com.ebtikar.skinanalyzer.R
 import com.ebtikar.skinanalyzer.databinding.ActivityComparisonBinding
 import com.ebtikar.skinanalyzer.model.MetricSeverity
 import com.ebtikar.skinanalyzer.model.SkinMetric
+import com.ebtikar.skinanalyzer.model.arabicName
 import com.google.android.material.card.MaterialCardView
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -145,7 +146,7 @@ class ComparisonActivity : AppCompatActivity() {
             }
 
             val nameText = TextView(this).apply {
-                text = getArabicName(delta.type)
+                text = delta.type.arabicName()
                 setTextColor(resources.getColor(R.color.text_primary, theme))
                 textSize = 14f
                 setTypeface(typeface, android.graphics.Typeface.BOLD)
@@ -202,21 +203,4 @@ class ComparisonActivity : AppCompatActivity() {
         }
     }
 
-    private fun getArabicName(type: SkinMetric.Type): String = when (type) {
-        SkinMetric.Type.MOISTURE -> "الرطوبة"
-        SkinMetric.Type.PORES -> "المسام"
-        SkinMetric.Type.SEBUM -> "الدهنية"
-        SkinMetric.Type.WRINKLES -> "التجاعيد"
-        SkinMetric.Type.TEXTURE -> "الملمس"
-        SkinMetric.Type.UV_SPOTS -> "البقع"
-        SkinMetric.Type.VASCULAR -> "الأوعية"
-        SkinMetric.Type.PIGMENTATION -> "التصبغ"
-        SkinMetric.Type.DARK_CIRCLES -> "الهالات"
-        SkinMetric.Type.BLACKHEADS -> "الرؤوس"
-        SkinMetric.Type.ACNE -> "الحب"
-        SkinMetric.Type.SKIN_TONE -> "اللون"
-        SkinMetric.Type.SENSITIVITY -> "الحساسية"
-        SkinMetric.Type.ROSACEA -> "الوردية"
-        SkinMetric.Type.MELASMA -> "الكلف"
-    }
 }

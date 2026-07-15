@@ -19,6 +19,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.ebtikar.skinanalyzer.R
 import com.ebtikar.skinanalyzer.databinding.ActivityTimelineBinding
 import com.ebtikar.skinanalyzer.model.SkinMetric
+import com.ebtikar.skinanalyzer.model.arabicName
 import com.ebtikar.skinanalyzer.ui.report.ReportActivity
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
@@ -178,7 +179,7 @@ class TimelineActivity : AppCompatActivity() {
             val entries = points.mapIndexedNotNull { index, point ->
                 point.metricScores[type]?.let { Entry(index.toFloat(), it) }
             }
-            LineDataSet(entries, getArabicName(type)).apply {
+            LineDataSet(entries, type.arabicName()).apply {
                 color = metricColors[type] ?: Color.GRAY
                 setCircleColor(metricColors[type] ?: Color.GRAY)
                 lineWidth = 1.5f
@@ -227,7 +228,7 @@ class TimelineActivity : AppCompatActivity() {
         binding.containerMetricLegend.removeAllViews()
         for (type in metricTypes) {
             val chip = com.google.android.material.chip.Chip(this).apply {
-                text = getArabicName(type)
+                text = type.arabicName()
                 isCheckable = true
                 isChecked = true
                 textSize = 10f
@@ -245,7 +246,7 @@ class TimelineActivity : AppCompatActivity() {
 
     private fun toggleMetricLine(type: SkinMetric.Type, visible: Boolean) {
         val data = binding.lineChartMetrics.data ?: return
-        val index = data.dataSets.indexOfFirst { it.label == getArabicName(type) }
+        val index = data.dataSets.indexOfFirst { it.label == type.arabicName() }
         if (index >= 0) {
             data.dataSets[index].isVisible = visible
             binding.lineChartMetrics.invalidate()
@@ -326,21 +327,4 @@ class TimelineActivity : AppCompatActivity() {
         }
     }
 
-    private fun getArabicName(type: SkinMetric.Type): String = when (type) {
-        SkinMetric.Type.MOISTURE -> "الرطوبة"
-        SkinMetric.Type.PORES -> "المسام"
-        SkinMetric.Type.SEBUM -> "الدهنية"
-        SkinMetric.Type.WRINKLES -> "التجاعيد"
-        SkinMetric.Type.TEXTURE -> "الملمس"
-        SkinMetric.Type.UV_SPOTS -> "البقع"
-        SkinMetric.Type.VASCULAR -> "الأوعية"
-        SkinMetric.Type.PIGMENTATION -> "التصبغ"
-        SkinMetric.Type.DARK_CIRCLES -> "الهالات"
-        SkinMetric.Type.BLACKHEADS -> "الرؤوس"
-        SkinMetric.Type.ACNE -> "الحب"
-        SkinMetric.Type.SKIN_TONE -> "اللون"
-        SkinMetric.Type.SENSITIVITY -> "الحساسية"
-        SkinMetric.Type.ROSACEA -> "الوردية"
-        SkinMetric.Type.MELASMA -> "الكلف"
-    }
 }

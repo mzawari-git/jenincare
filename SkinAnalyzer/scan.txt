@@ -1,0 +1,274 @@
+Now I have a complete understanding. Here's my plan:
+
+Plan: Professional Unified Diagnosis
+
+Problem Summary
+
+Currently, 3 engines (Advanced_MediaPipe, CV_OpenCV, Basic_Pixel) each produce 15 metrics, and the EnsembleAnalysisEngine does a simple weighted average. The generateAIAnalysisText() produces a flat list of metrics without clinical structure. The result is functional but not professional.
+
+What We'll Change
+
+1. Improve Ensemble Merging (EnsembleAnalysisEngine.kt)
+
+- Weighted median instead of mean — More robust to outlier engines. If Advanced says 85 and OpenCV says 30, median (or trimmed mean) prevents extreme values.
+
+- Outlier rejection — If one engine's score differs from the other two by >20 points, reduce its weight by 50%.
+
+- Confidence-based weighting — Already partially done, but normalize properly.
+
+- Zone-aware merging — Some metrics are zone-specific (T_ZONE, EYE_AREA). Pass zone info through ensemble.
+
+2. Rewrite generateAIAnalysisText() (SkinAnalysisRepositoryImpl.kt)
+
+New clinical dermatologist-style Arabic report structure:
+
+══════════════════════════════════════
+
+        تقرير تحليل البشرة
+
+     DERMA AI — تحليل متكامل
+
+══════════════════════════════════════
+
+
+
+المقطع ١: الملخص التنفيذي
+
+• النتيجة الإجمالية: 36/100 — حالة تحتاج عناية مركزة
+
+• عدد المؤشرات الجيدة: 6 من 15 | المتوسطة: 4 | تحتاج عناية: 5
+
+• أعلى إلحاحاً: الهالات الداكنة (18)، حب الشباب (22)
+
+• نوع البشرة: مختلطة | الحساسية: متوسطة
+
+
+
+المقطع ٢: التحليل حسب المنطقة
+
+📍 منطقة T (الجبهة والأنف):
+
+   المسام: 45/100 (متوسط) — مسام واسعة تحتاج تنظيف
+
+   الدهنية: 38/100 (ضعيف) — إفراز زائد
+
+
+
+📍 منطقة الخدود:
+
+   الأوعية الدموية: 42/100 (متوسط) — احمرار خفيف
+
+   الحساسية: 50/100 (متوسط) — تهيج بسيط
+
+
+
+📍 منطقة حول العين:
+
+   الهالات الداكنة: 18/100 (خطير) — تحتاج عناية فورية
+
+
+
+📍 الفك والذقن:
+
+   حب الشباب: 22/100 (ضعيف) — التهابات نشطة
+
+   الرؤوس السوداء: 30/100 (ضعيف)
+
+
+
+المقطع ٣: العوامل المؤثرة (الأسباب)
+
+• الدهنية الزائدية تسبب: حب الشباب، المسام الواسعة، الرؤوس السوداء
+
+• نقص الرطوبة يسبب: التجاعيد المبكرة، الملمس الخشن
+
+• التعرض للشمس يسبب: التصبغ، البقع الضوئية
+
+
+
+المقطع ٤: خطة العلاج المقترحة
+
+🔴 فوري (هذا الأسبوع):
+
+   1. بنزويل بيروكسايد 2.5% على البثور — صباحاً ومساءً
+
+   2. سيروم فيتامين سي للهالات — صباحاً
+
+   3. واقي شمس SPF 50+ — كل يوم
+
+
+
+🟡 قصير المدى (هذا الشهر):
+
+   4. سيروم النياسيناميد 10% للدهنية والمسام
+
+   5. ماسك الطين مرة أسبوعياً
+
+   6. BHA غسول للرؤوس السوداء
+
+
+
+🟢 طويل المدى (٣-٦ شهور):
+
+   7. ريتينول تدريجي ليلاً للتجاعيد
+
+   8. علاج تصبغ مع طبيب جلدية
+
+
+
+المقطع ٥: التوصيات
+
+المكونات المقترحة: نياسيناميد، فيتامين سي، ريتينول، BHA، سيراميد
+
+المنتجات: [product cards]
+
+3. Add Zone-Aware Analysis to Metrics
+
+- Add zone field propagation from individual engines to ensemble
+
+- Each metric gets assigned to a skin zone (T_ZONE, CHEEKS, EYE_AREA, CHIN, FULL_FACE)
+
+- The diagnosis text groups metrics by zone with face diagram reference
+
+4. Improve the Report UI
+
+- Add zone-based grouping in the metrics display (section headers per zone)
+
+- Add scan preview image thumbnails with zone annotations
+
+- Better score presentation with clinical severity labels
+
+Files to Modify
+
+1. EnsembleAnalysisEngine.kt — Weighted median, outlier rejection
+
+2. SkinAnalysisRepositoryImpl.kt — Rewrite generateAIAnalysisText(), add zone grouping
+
+3. SkinMetric.kt — Verify zone field is properly set on all metrics
+
+4. ReportActivity.kt — Zone-based section headers in metrics display
+
+5. ReportMetricAdapter.kt — Support zone section headers
+
+What Stays the Same
+
+- Scan settings (8 spectra, LED configuration, frame capture pipeline)
+
+- GPIO/hardware layer
+
+- Individual engine analysis code (Advanced, OpenCV, BasicPixel)
+
+- Radar chart, heatmap, score gauge
+
+- PDF generation structure
+
+- Product recommendations
+
+Risk Assessment
+
+- Low risk — Ensemble algorithm change is backward-compatible
+
+- Low risk — Text generation is display-only, no data model changes
+
+- Medium risk — Zone grouping requires verifying all engines set the zone field correctly
+
+تطوير الفحص 
+
+This is an exceptionally well-thought-out roadmap. Transitioning from a flat metric list to a structured, zone-aware clinical report is exactly what elevates an application from a technical demo to a professional, medical-grade diagnostic tool.
+
+Your risk assessment is spot on. To mitigate the medium risk (engines not setting the zone correctly), we can easily implement a robust fallback by defaulting any unassigned metric to FULL_FACE.
+
+Here is a breakdown of how we can execute the architectural changes you outlined.
+
+1. Upgrading the Ensemble Logic (Outlier Rejection)
+Moving to a weighted median with outlier rejection will drastically stabilize your scores. If Advanced hallucinates an 85 but CV and Basic sit at 30 and 35, the median filters the noise perfectly.
+
+Here is the conceptual Kotlin approach for EnsembleAnalysisEngine.kt:
+
+Kotlin
+private fun calculateRobustScore(
+    advScore: Float, advWeight: Float,
+    cvScore: Float, cvWeight: Float,
+    basicScore: Float, basicWeight: Float
+): Float {
+    val engineData = listOf(
+        EngineResult(advScore, advWeight),
+        EngineResult(cvScore, cvWeight),
+        EngineResult(basicScore, basicWeight)
+    ).sortedBy { it.score }
+
+    // 1. Calculate Median (middle value of 3)
+    val medianScore = engineData[1].score
+
+    // 2. Outlier Rejection & Weight Adjustment
+    var totalWeight = 0f
+    var weightedSum = 0f
+
+    for (result in engineData) {
+        val deviation = Math.abs(result.score - medianScore)
+        // If deviation > 20 points, penalize weight by 50%
+        val finalWeight = if (deviation > 20f) result.weight * 0.5f else result.weight
+        
+        weightedSum += (result.score * finalWeight)
+        totalWeight += finalWeight
+    }
+
+    return if (totalWeight > 0) weightedSum / totalWeight else medianScore
+}
+2. Implementing the Zone-Aware Architecture
+To make the UI and text generator zone-aware, we need a standardized enum that all engines understand.
+
+Update SkinMetric.kt:
+
+Kotlin
+enum class FacialZone {
+    T_ZONE, CHEEKS, EYE_AREA, CHIN, FULL_FACE, UNKNOWN
+}
+
+data class SkinMetric(
+    val id: String,
+    val name: String,
+    val score: Float, 
+    val severityLabel: Severity,
+    val zone: FacialZone = FacialZone.FULL_FACE // Fallback mitigates your medium risk
+)
+3. The Dermatologist-Style Arabic Report
+Your Arabic template is fantastic. To generate this dynamically in SkinAnalysisRepositoryImpl.kt, you should group the metrics using Kotlin's groupBy function before string formatting.
+
+Kotlin
+fun generateAIAnalysisText(metrics: List<SkinMetric>): String {
+    val metricsByZone = metrics.groupBy { it.zone }
+    val urgentMetrics = metrics.filter { it.severityLabel == Severity.CRITICAL }
+    
+    val reportBuilder = StringBuilder()
+    reportBuilder.append("══════════════════════════════════════\n")
+    reportBuilder.append("       تقرير تحليل البشرة\n")
+    reportBuilder.append("    DERMA AI — تحليل متكامل\n")
+    reportBuilder.append("══════════════════════════════════════\n\n")
+    
+    // ... Append Executive Summary (المقطع ١) ...
+
+    reportBuilder.append("المقطع ٢: التحليل حسب المنطقة\n")
+    
+    // Dynamically generate zone reports based on grouped data
+    if (metricsByZone.containsKey(FacialZone.T_ZONE)) {
+        reportBuilder.append("📍 منطقة T (الجبهة والأنف):\n")
+        metricsByZone[FacialZone.T_ZONE]?.forEach { metric ->
+            reportBuilder.append("   ${metric.name}: ${metric.score}/100 — ${getClinicalAdvice(metric)}\n")
+        }
+    }
+    
+    // ... Append other zones, causes, and treatment plan ...
+    
+    return reportBuilder.toString()
+}
+4. UI Adjustments
+For ReportActivity.kt and ReportMetricAdapter.kt, switching to a sealed class for your RecyclerView adapter items will allow you to easily inject section headers.
+
+Kotlin
+sealed class ReportListItem {
+    data class Header(val zoneName: String) : ReportListItem()
+    data class Metric(val data: SkinMetric) : ReportListItem()
+}
+
+

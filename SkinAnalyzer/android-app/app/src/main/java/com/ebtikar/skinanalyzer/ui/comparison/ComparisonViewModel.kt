@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ebtikar.skinanalyzer.data.repository.SkinAnalysisRepository
 import com.ebtikar.skinanalyzer.model.SkinMetric
+import com.ebtikar.skinanalyzer.model.arabicName
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -84,7 +85,7 @@ class ComparisonViewModel @Inject constructor(
                     )
                 }
 
-                val radarLabels = SkinMetric.ALL_TYPES.map { getArabicName(it) }
+                val radarLabels = SkinMetric.ALL_TYPES.map { it.arabicName() }
                 val beforeRadar = SkinMetric.ALL_TYPES.map { type ->
                     beforeMetrics.find { it.type == type }?.score ?: 0f
                 }
@@ -111,21 +112,4 @@ class ComparisonViewModel @Inject constructor(
         }
     }
 
-    private fun getArabicName(type: SkinMetric.Type): String = when (type) {
-        SkinMetric.Type.MOISTURE -> "الرطوبة"
-        SkinMetric.Type.PORES -> "المسام"
-        SkinMetric.Type.SEBUM -> "الدهنية"
-        SkinMetric.Type.WRINKLES -> "التجاعيد"
-        SkinMetric.Type.TEXTURE -> "الملمس"
-        SkinMetric.Type.UV_SPOTS -> "البقع"
-        SkinMetric.Type.VASCULAR -> "الأوعية"
-        SkinMetric.Type.PIGMENTATION -> "التصبغ"
-        SkinMetric.Type.DARK_CIRCLES -> "الهالات"
-        SkinMetric.Type.BLACKHEADS -> "الرؤوس"
-        SkinMetric.Type.ACNE -> "الحب"
-        SkinMetric.Type.SKIN_TONE -> "اللون"
-        SkinMetric.Type.SENSITIVITY -> "الحساسية"
-        SkinMetric.Type.ROSACEA -> "الوردية"
-        SkinMetric.Type.MELASMA -> "الكلف"
-    }
 }

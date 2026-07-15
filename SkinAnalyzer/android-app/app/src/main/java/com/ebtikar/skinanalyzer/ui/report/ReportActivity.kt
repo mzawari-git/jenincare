@@ -3,7 +3,6 @@ package com.ebtikar.skinanalyzer.ui.report
 import android.content.Intent
 import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.RectF
@@ -11,7 +10,6 @@ import com.ebtikar.skinanalyzer.ai.CVUtils
 import android.media.ExifInterface
 import android.os.Bundle
 import timber.log.Timber
-import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -30,6 +28,7 @@ import com.ebtikar.skinanalyzer.R
 import com.ebtikar.skinanalyzer.databinding.ActivityReportBinding
 import com.ebtikar.skinanalyzer.hardware.LightSpectrum
 import com.ebtikar.skinanalyzer.model.HeatmapPoint
+import com.ebtikar.skinanalyzer.model.arabicName
 import com.ebtikar.skinanalyzer.ui.components.HeatmapOverlayView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.chip.Chip
@@ -97,6 +96,17 @@ class ReportActivity : AppCompatActivity() {
         binding.btnSave.setOnClickListener { viewModel.saveReport() }
         binding.btnNewAnalysis.setOnClickListener { finish() }
         binding.btnExport.setOnClickListener { showExportDialog() }
+
+        binding.btnReportType.setOnClickListener {
+            val current = viewModel.reportType.value
+            if (current == "professional") {
+                viewModel.setReportType("compact")
+                binding.btnReportType.text = "📄 ملخص صفحة واحدة"
+            } else {
+                viewModel.setReportType("professional")
+                binding.btnReportType.text = "📑 تقرير احترافي"
+            }
+        }
     }
 
     private fun showExportDialog() {
@@ -311,12 +321,7 @@ class ReportActivity : AppCompatActivity() {
 
                 launch {
                     viewModel.topConcerns.collect { concerns ->
-                        populateConcernChips(concerns.map { getArabicName(it.type) })
-                    }
-                }
-
-                launch {
-                    viewModel.providerName.collect { name ->
+                        populateConcernChips(concerns.map { it.type.arabicName() })
                     }
                 }
 
@@ -588,23 +593,5 @@ class ReportActivity : AppCompatActivity() {
             score >= 20f -> getString(R.string.score_poor)
             else -> getString(R.string.score_critical)
         }
-    }
-
-    private fun getArabicName(type: com.ebtikar.skinanalyzer.model.SkinMetric.Type): String = when (type) {
-        com.ebtikar.skinanalyzer.model.SkinMetric.Type.MOISTURE -> "الرطوبة"
-        com.ebtikar.skinanalyzer.model.SkinMetric.Type.PORES -> "المسام"
-        com.ebtikar.skinanalyzer.model.SkinMetric.Type.SEBUM -> "الدهنية"
-        com.ebtikar.skinanalyzer.model.SkinMetric.Type.WRINKLES -> "التجاعيد"
-        com.ebtikar.skinanalyzer.model.SkinMetric.Type.TEXTURE -> "الملمس"
-        com.ebtikar.skinanalyzer.model.SkinMetric.Type.UV_SPOTS -> "البقع الضوئية"
-        com.ebtikar.skinanalyzer.model.SkinMetric.Type.VASCULAR -> "الأوعية الدموية"
-        com.ebtikar.skinanalyzer.model.SkinMetric.Type.PIGMENTATION -> "التصبغ"
-        com.ebtikar.skinanalyzer.model.SkinMetric.Type.DARK_CIRCLES -> "الهالات الداكنة"
-        com.ebtikar.skinanalyzer.model.SkinMetric.Type.BLACKHEADS -> "الرؤوس السوداء"
-        com.ebtikar.skinanalyzer.model.SkinMetric.Type.ACNE -> "حب الشباب"
-        com.ebtikar.skinanalyzer.model.SkinMetric.Type.SKIN_TONE -> "لون البشرة"
-        com.ebtikar.skinanalyzer.model.SkinMetric.Type.SENSITIVITY -> "الحساسية"
-        com.ebtikar.skinanalyzer.model.SkinMetric.Type.ROSACEA -> "الوردية"
-        com.ebtikar.skinanalyzer.model.SkinMetric.Type.MELASMA -> "الكلف"
     }
 }

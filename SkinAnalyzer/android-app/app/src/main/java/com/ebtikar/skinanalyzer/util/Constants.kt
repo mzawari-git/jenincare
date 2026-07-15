@@ -29,7 +29,6 @@ object Constants {
     const val DIAGNOSIS_ALL = "all"
 
     const val DB_NAME = "skin_analyzer_db"
-    const val DB_VERSION = 1
 
     const val SPLASH_DELAY_MS = 2500L
 

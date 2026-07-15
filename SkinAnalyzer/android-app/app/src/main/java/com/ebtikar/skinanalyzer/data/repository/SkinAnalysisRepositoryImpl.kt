@@ -25,6 +25,7 @@ import com.ebtikar.skinanalyzer.util.Constants
 import com.ebtikar.skinanalyzer.model.MetricSeverity
 import com.ebtikar.skinanalyzer.model.SkinAnalysisReport
 import com.ebtikar.skinanalyzer.model.SkinMetric
+import com.ebtikar.skinanalyzer.model.arabicName
 import com.ebtikar.skinanalyzer.model.SkinProfile
 import com.ebtikar.skinanalyzer.model.HeatmapPoint
 import com.ebtikar.skinanalyzer.model.SkinZone
@@ -533,7 +534,7 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                 .sortedBy { it.score }
                 .take(3)
             if (urgent.isNotEmpty()) {
-                sb.appendLine("• أعلى إلحاحاً: ${urgent.joinToString("، ") { "${getArabicName(it.type)} (${"%.0f".format(it.score)})" }}")
+                sb.appendLine("• أعلى إلحاحاً: ${urgent.joinToString("، ") { "${it.type.arabicName()} (${"%.0f".format(it.score)})" }}")
             }
         }
         sb.appendLine("• نوع البشرة: ${profile.skinTypeAr} | الحساسية: ${profile.sensitivityLevel}")
@@ -551,7 +552,7 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
             sb.appendLine("${zoneEmoji(zone)} ${zoneNameAr(zone)}:")
             for (m in zoneMetrics.sortedBy { it.score }) {
                 val desc = getDescription(m.type, m.severity)
-                sb.appendLine("   ${getArabicName(m.type)}: ${"%.0f".format(m.score)}/100 (${m.severity.displayAr})")
+                sb.appendLine("   ${m.type.arabicName()}: ${"%.0f".format(m.score)}/100 (${m.severity.displayAr})")
                 sb.appendLine("   $desc")
             }
         }
@@ -569,25 +570,25 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
 
         if (sebum != null && sebum.severity == MetricSeverity.POOR || sebum?.severity == MetricSeverity.CRITICAL) {
             val targets = listOfNotNull(
-                acne?.let { getArabicName(it.type) },
-                pores?.let { getArabicName(it.type) },
-                blackheads?.let { getArabicName(it.type) }
+                acne?.let { it.type.arabicName() },
+                pores?.let { it.type.arabicName() },
+                blackheads?.let { it.type.arabicName() }
             ).joinToString("، ")
             if (targets.isNotEmpty()) causalLinks.add("الإفراز الدهني الزائد يسبب: $targets")
         }
         if (moisture != null && (moisture.severity == MetricSeverity.POOR || moisture.severity == MetricSeverity.CRITICAL)) {
             val targets = listOfNotNull(
-                wrinkles?.let { getArabicName(it.type) },
-                (metrics.find { it.type == SkinMetric.Type.TEXTURE })?.let { getArabicName(it.type) }
+                wrinkles?.let { it.type.arabicName() },
+                (metrics.find { it.type == SkinMetric.Type.TEXTURE })?.let { it.type.arabicName() }
             ).joinToString("، ")
             if (targets.isNotEmpty()) causalLinks.add("نقص الرطوبة يسبب: $targets")
         }
         if (uvSpots != null && (uvSpots.severity == MetricSeverity.POOR || uvSpots.severity == MetricSeverity.CRITICAL)) {
             val targets = listOfNotNull(
-                pigmentation?.let { getArabicName(it.type) }
+                pigmentation?.let { it.type.arabicName() }
             ).joinToString("، ")
             if (targets.isNotEmpty()) causalLinks.add("التعرض للشمس يسبب: $targets")
-            else causalLinks.add("التعرض للشمس يسبب: ${getArabicName(uvSpots.type)}")
+            else causalLinks.add("التعرض للشمس يسبب: ${uvSpots.type.arabicName()}")
         }
 
         if (causalLinks.isNotEmpty()) {
@@ -610,7 +611,7 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
             for (m in urgentMetrics.take(3)) {
                 val tips = getTips(m.type)
                 if (tips.isNotEmpty()) {
-                    sb.appendLine("   $stepNum. ${tips.first()} — ${getArabicName(m.type)}")
+                    sb.appendLine("   $stepNum. ${tips.first()} — ${m.type.arabicName()}")
                     stepNum++
                 }
             }
@@ -627,7 +628,7 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                 for (m in mediumMetrics.take(3)) {
                     val tips = getTips(m.type)
                     if (tips.isNotEmpty()) {
-                        sb.appendLine("   $stepNum. ${tips.first()} — ${getArabicName(m.type)}")
+                        sb.appendLine("   $stepNum. ${tips.first()} — ${m.type.arabicName()}")
                         stepNum++
                     }
                 }
@@ -893,24 +894,6 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
         }
         Timber.i("Emergency fallback: decoded $decodedCount frames, produced ${metrics.size} metrics")
         metrics
-    }
-
-    private fun getArabicName(type: SkinMetric.Type): String = when (type) {
-        SkinMetric.Type.MOISTURE -> "الرطوبة"
-        SkinMetric.Type.PORES -> "المسام"
-        SkinMetric.Type.SEBUM -> "الدهنية"
-        SkinMetric.Type.WRINKLES -> "التجاعيد"
-        SkinMetric.Type.TEXTURE -> "الملمس"
-        SkinMetric.Type.UV_SPOTS -> "البقع الضوئية"
-        SkinMetric.Type.VASCULAR -> "الأوعية الدموية"
-        SkinMetric.Type.PIGMENTATION -> "التصبغ"
-        SkinMetric.Type.DARK_CIRCLES -> "الهالات الداكنة"
-        SkinMetric.Type.BLACKHEADS -> "الرؤوس السوداء"
-        SkinMetric.Type.ACNE -> "حب الشباب"
-        SkinMetric.Type.SKIN_TONE -> "لون البشرة"
-        SkinMetric.Type.SENSITIVITY -> "الحساسية"
-        SkinMetric.Type.ROSACEA -> "الوردية"
-        SkinMetric.Type.MELASMA -> "الكلف"
     }
 
     override suspend fun saveReport(report: SkinAnalysisReport): Result<String> {

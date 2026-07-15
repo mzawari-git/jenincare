@@ -67,6 +67,42 @@ data class SkinMetric(
     }
 }
 
+fun SkinMetric.Type.arabicName(): String = when (this) {
+    SkinMetric.Type.MOISTURE -> "الرطوبة"
+    SkinMetric.Type.PORES -> "المسام"
+    SkinMetric.Type.SEBUM -> "الدهنية"
+    SkinMetric.Type.WRINKLES -> "التجاعيد"
+    SkinMetric.Type.TEXTURE -> "الملمس"
+    SkinMetric.Type.UV_SPOTS -> "البقع الضوئية"
+    SkinMetric.Type.VASCULAR -> "الأوعية الدموية"
+    SkinMetric.Type.PIGMENTATION -> "التصبغ"
+    SkinMetric.Type.DARK_CIRCLES -> "الهالات الداكنة"
+    SkinMetric.Type.BLACKHEADS -> "الرؤوس السوداء"
+    SkinMetric.Type.ACNE -> "حب الشباب"
+    SkinMetric.Type.SKIN_TONE -> "لون البشرة"
+    SkinMetric.Type.SENSITIVITY -> "الحساسية"
+    SkinMetric.Type.ROSACEA -> "الوردية"
+    SkinMetric.Type.MELASMA -> "الكلف"
+}
+
+fun SkinMetric.Type.iconRes(): Int = when (this) {
+    SkinMetric.Type.MOISTURE -> com.ebtikar.skinanalyzer.R.drawable.ic_metric_moisture
+    SkinMetric.Type.PORES -> com.ebtikar.skinanalyzer.R.drawable.ic_metric_pores
+    SkinMetric.Type.SEBUM -> com.ebtikar.skinanalyzer.R.drawable.ic_metric_sebum
+    SkinMetric.Type.WRINKLES -> com.ebtikar.skinanalyzer.R.drawable.ic_metric_wrinkles
+    SkinMetric.Type.TEXTURE -> com.ebtikar.skinanalyzer.R.drawable.ic_metric_texture
+    SkinMetric.Type.UV_SPOTS -> com.ebtikar.skinanalyzer.R.drawable.ic_metric_uv
+    SkinMetric.Type.VASCULAR -> com.ebtikar.skinanalyzer.R.drawable.ic_metric_vascular
+    SkinMetric.Type.PIGMENTATION -> com.ebtikar.skinanalyzer.R.drawable.ic_metric_spots
+    SkinMetric.Type.DARK_CIRCLES -> com.ebtikar.skinanalyzer.R.drawable.ic_metric_dark_circles
+    SkinMetric.Type.BLACKHEADS -> com.ebtikar.skinanalyzer.R.drawable.ic_metric_pores
+    SkinMetric.Type.ACNE -> com.ebtikar.skinanalyzer.R.drawable.ic_metric_sensitivity
+    SkinMetric.Type.SKIN_TONE -> com.ebtikar.skinanalyzer.R.drawable.ic_metric_texture
+    SkinMetric.Type.SENSITIVITY -> com.ebtikar.skinanalyzer.R.drawable.ic_metric_sensitivity
+    SkinMetric.Type.ROSACEA -> com.ebtikar.skinanalyzer.R.drawable.ic_metric_rosacea
+    SkinMetric.Type.MELASMA -> com.ebtikar.skinanalyzer.R.drawable.ic_metric_melasma
+}
+
 @Serializable
 data class ProductRecommendation(
     val id: String = "",

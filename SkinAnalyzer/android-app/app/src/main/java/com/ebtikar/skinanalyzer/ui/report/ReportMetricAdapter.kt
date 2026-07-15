@@ -7,7 +7,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -18,6 +17,8 @@ import com.ebtikar.skinanalyzer.model.MetricSeverity
 import com.ebtikar.skinanalyzer.model.MetricTrend
 import com.ebtikar.skinanalyzer.model.SkinMetric
 import com.ebtikar.skinanalyzer.model.SkinZone
+import com.ebtikar.skinanalyzer.model.arabicName
+import com.ebtikar.skinanalyzer.model.iconRes
 
 sealed class ReportListItem {
     data class ZoneHeader(val zone: SkinZone, val zoneNameAr: String, val emoji: String) : ReportListItem()
@@ -106,8 +107,7 @@ class ReportMetricAdapter : ListAdapter<ReportListItem, RecyclerView.ViewHolder>
         fun bind(metric: SkinMetric, position: Int) {
             binding.tvMetricName.text = metric.type.arabicName()
 
-            val iconRes = metric.type.iconRes()
-            binding.ivMetricIcon.setImageResource(iconRes)
+            binding.ivMetricIcon.setImageResource(metric.type.iconRes())
 
             binding.tvMetricValue.text = "%.0f".format(metric.score)
 
@@ -116,8 +116,8 @@ class ReportMetricAdapter : ListAdapter<ReportListItem, RecyclerView.ViewHolder>
 
             binding.tvConfidence.text = "${(metric.confidence * 100).toInt()}%"
 
-            if (metric.trendDelta != null) {
-                val delta = metric.trendDelta ?: return
+            val delta = metric.trendDelta
+            if (delta != null) {
                 val sign = if (delta >= 0) "+" else ""
                 binding.tvTrend.text = "${sign}${"%.0f".format(delta)}"
                 binding.tvTrend.visibility = View.VISIBLE
@@ -171,42 +171,6 @@ class ReportMetricAdapter : ListAdapter<ReportListItem, RecyclerView.ViewHolder>
             } else {
                 binding.containerRecommendations.visibility = View.GONE
             }
-        }
-
-        private fun SkinMetric.Type.arabicName(): String = when (this) {
-            SkinMetric.Type.MOISTURE      -> "الرطوبة"
-            SkinMetric.Type.PORES         -> "المسام"
-            SkinMetric.Type.SEBUM         -> "الدهنية"
-            SkinMetric.Type.WRINKLES      -> "التجاعيد"
-            SkinMetric.Type.TEXTURE       -> "الملمس"
-            SkinMetric.Type.UV_SPOTS      -> "البقع الضوئية"
-            SkinMetric.Type.VASCULAR      -> "الأوعية الدموية"
-            SkinMetric.Type.PIGMENTATION  -> "التصبغ"
-            SkinMetric.Type.DARK_CIRCLES  -> "الهالات الداكنة"
-            SkinMetric.Type.BLACKHEADS    -> "الرؤوس السوداء"
-            SkinMetric.Type.ACNE          -> "حب الشباب"
-            SkinMetric.Type.SKIN_TONE     -> "لون البشرة"
-            SkinMetric.Type.SENSITIVITY   -> "الحساسية"
-            SkinMetric.Type.ROSACEA       -> "الوردية"
-            SkinMetric.Type.MELASMA       -> "الكلف"
-        }
-
-        private fun SkinMetric.Type.iconRes(): Int = when (this) {
-            SkinMetric.Type.MOISTURE      -> R.drawable.ic_metric_moisture
-            SkinMetric.Type.PORES         -> R.drawable.ic_metric_pores
-            SkinMetric.Type.SEBUM         -> R.drawable.ic_metric_sebum
-            SkinMetric.Type.WRINKLES      -> R.drawable.ic_metric_wrinkles
-            SkinMetric.Type.TEXTURE       -> R.drawable.ic_metric_texture
-            SkinMetric.Type.UV_SPOTS      -> R.drawable.ic_metric_uv
-            SkinMetric.Type.VASCULAR      -> R.drawable.ic_metric_vascular
-            SkinMetric.Type.PIGMENTATION  -> R.drawable.ic_metric_spots
-            SkinMetric.Type.DARK_CIRCLES  -> R.drawable.ic_metric_dark_circles
-            SkinMetric.Type.BLACKHEADS    -> R.drawable.ic_metric_pores
-            SkinMetric.Type.ACNE          -> R.drawable.ic_metric_sensitivity
-            SkinMetric.Type.SKIN_TONE     -> R.drawable.ic_metric_texture
-            SkinMetric.Type.SENSITIVITY   -> R.drawable.ic_metric_sensitivity
-            SkinMetric.Type.ROSACEA       -> R.drawable.ic_metric_rosacea
-            SkinMetric.Type.MELASMA       -> R.drawable.ic_metric_melasma
         }
 
         private fun SkinMetric.Type.iconBgHex(): String = when (this) {

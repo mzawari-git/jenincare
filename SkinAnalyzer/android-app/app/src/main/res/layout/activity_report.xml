@@ -91,6 +91,17 @@
             app:iconTint="@color/text_secondary"
             app:cornerRadius="12dp"
             app:tooltipText="تصدير البيانات" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnReportType"
+            style="@style/Button.Ghost"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:layout_marginStart="8dp"
+            android:text="📑 تقرير احترافي"
+            android:textSize="12sp"
+            android:textColor="@color/primary"
+            app:cornerRadius="12dp" />
     </LinearLayout>
 
     <View
@@ -302,19 +313,6 @@
                                 android:textSize="12sp"
                                 android:textStyle="bold"
                                 android:fontFamily="sans-serif-medium" />
-
-                            <Space
-                                android:layout_width="0dp"
-                                android:layout_height="0dp"
-                                android:layout_weight="1" />
-
-                            <TextView
-                                android:id="@+id/tvProvider"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textColor="@color/text_muted"
-                                android:textSize="10sp"
-                                tools:text="TFLite v2" />
                         </LinearLayout>
 
                         <TextView
@@ -384,16 +382,6 @@
                                 android:textStyle="bold"
                                 android:fontFamily="sans-serif-medium"
                                 tools:text="مختلطة" />
-
-                            <TextView
-                                android:id="@+id/tvFitzpatrick"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:textColor="@color/text_muted"
-                                android:textSize="12sp"
-                                android:visibility="gone"
-                                tools:text="Fitzpatrick III" />
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>

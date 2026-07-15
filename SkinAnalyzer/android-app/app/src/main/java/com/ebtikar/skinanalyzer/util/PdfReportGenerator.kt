@@ -19,6 +19,7 @@ import com.ebtikar.skinanalyzer.model.MetricSeverity
 import com.ebtikar.skinanalyzer.model.SkinAnalysisReport
 import com.ebtikar.skinanalyzer.model.SkinMetric
 import com.ebtikar.skinanalyzer.model.SkinZone
+import com.ebtikar.skinanalyzer.model.arabicName
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
@@ -74,18 +75,24 @@ class PdfReportGenerator @Inject constructor() {
         context: Context,
         report: SkinAnalysisReport,
         outputDir: File,
-        capturedImages: Map<LightSpectrum, File> = emptyMap()
+        capturedImages: Map<LightSpectrum, File> = emptyMap(),
+        compact: Boolean = false
     ): File? {
         val pdfDocument = PdfDocument()
         val bitmapsToRecycle = mutableListOf<Bitmap>()
         return try {
-            drawPage1_ClinicalSummary(pdfDocument, report, 1)
-            drawPage2_ZoneAnalysis(pdfDocument, report, 2)
-            drawPage3_TreatmentPlan(pdfDocument, report, 3)
-            drawPage4_Images(pdfDocument, capturedImages, 4, bitmapsToRecycle)
+            if (compact) {
+                drawCompactPage(pdfDocument, report, capturedImages, bitmapsToRecycle)
+            } else {
+                drawPage1_ClinicalSummary(pdfDocument, report, 1)
+                drawPage2_ZoneAnalysis(pdfDocument, report, 2)
+                drawPage3_TreatmentPlan(pdfDocument, report, 3)
+                drawPage4_Images(pdfDocument, capturedImages, 4, bitmapsToRecycle)
+            }
 
             if (!outputDir.exists()) outputDir.mkdirs()
-            val file = File(outputDir, "DERMA_AI_Report_${report.id.take(8)}.pdf")
+            val suffix = if (compact) "Compact" else "Professional"
+            val file = File(outputDir, "DERMA_AI_${suffix}_${report.id.take(8)}.pdf")
             FileOutputStream(file).use { fos ->
                 pdfDocument.writeTo(fos)
             }
@@ -196,7 +203,7 @@ class PdfReportGenerator @Inject constructor() {
             .sortedBy { it.score }.take(3)
         if (urgent.isNotEmpty()) {
             val urgentPaint = TextPaint().apply { color = RED; textSize = 34f; isAntiAlias = true; typeface = Typeface.create("sans-serif", Typeface.BOLD) }
-            canvas.drawText("🔴 أعلى إلحاحاً: ${urgent.joinToString("، ") { "${getArabicName(it.type)} (${ "%.0f".format(it.score) })" }}", MARGIN + 40f, y + 265f, urgentPaint)
+            canvas.drawText("🔴 أعلى إلحاحاً: ${urgent.joinToString("، ") { "${it.type.arabicName()} (${ "%.0f".format(it.score) })" }}", MARGIN + 40f, y + 265f, urgentPaint)
         }
 
         val summaryText = report.aiAnalysisTextAr ?: report.aiAnalysisText ?: ""
@@ -251,7 +258,7 @@ class PdfReportGenerator @Inject constructor() {
                 val scorePaint = TextPaint().apply { color = scoreColor; textSize = 28f; isAntiAlias = true; typeface = Typeface.create("sans-serif", Typeface.BOLD) }
                 val severityPaint = TextPaint().apply { color = scoreColor; textSize = 24f; isAntiAlias = true }
 
-                canvas.drawText(getArabicName(m.type), rightX + 15f, y + 22f, namePaint)
+                canvas.drawText(m.type.arabicName(), rightX + 15f, y + 22f, namePaint)
                 canvas.drawText("${ "%.0f".format(m.score) }/100 (${m.severity.displayAr})", rightX + 15f, y + 50f, scorePaint)
                 y += 60f
             }
@@ -375,7 +382,7 @@ class PdfReportGenerator @Inject constructor() {
         }
 
         val namePaint = TextPaint().apply { color = DARK; textSize = 36f; isAntiAlias = true }
-        canvas.drawText(getArabicName(metric.type), MARGIN + 20f, y + 45f, namePaint)
+        canvas.drawText(metric.type.arabicName(), MARGIN + 20f, y + 45f, namePaint)
 
         val scoreColor = getScoreColor(metric.score)
         val scorePaint = TextPaint().apply { color = scoreColor; textSize = 38f; isAntiAlias = true; typeface = Typeface.create("sans-serif", Typeface.BOLD) }
@@ -468,7 +475,7 @@ class PdfReportGenerator @Inject constructor() {
                 val detailPaint = TextPaint().apply { color = GRAY; textSize = 28f; isAntiAlias = true }
 
                 canvas.drawText("${stepNum}.", MARGIN + 30f, y + 25f, namePaint)
-                canvas.drawText("${getArabicName(m.type)}: ${m.severity.displayAr}", MARGIN + 65f, y + 25f, namePaint)
+                canvas.drawText("${m.type.arabicName()}: ${m.severity.displayAr}", MARGIN + 65f, y + 25f, namePaint)
 
                 val desc = when (m.severity) {
                     MetricSeverity.CRITICAL -> "يحتاج عناية فورية ومتواصلة"
@@ -661,6 +668,142 @@ class PdfReportGenerator @Inject constructor() {
     }
 
     // ═══════════════════════════════════════════════════════════
+    //  COMPACT — One-Page Summary Report
+    // ═══════════════════════════════════════════════════════════
+
+    private fun drawCompactPage(pdfDocument: PdfDocument, report: SkinAnalysisReport, capturedImages: Map<LightSpectrum, File>, bitmapsToRecycle: MutableList<Bitmap>) {
+        val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, 1).create()
+        val page = pdfDocument.startPage(pageInfo)
+        val canvas = page.canvas
+        canvas.drawColor(BG)
+        var y = 0f
+
+        y = drawBlueHeader(canvas, y, report)
+
+        val score = report.overallScore
+        val scoreColor = getScoreColor(score)
+        val scoreLabel = getScoreLabel(score)
+
+        val cardPaint = Paint().apply { color = CARD_BG; isAntiAlias = true }
+        val scoreCardRect = RectF(MARGIN, y, PAGE_WIDTH - MARGIN, y + 160f)
+        canvas.drawRoundRect(scoreCardRect, 16f, 16f, cardPaint)
+        val borderPaint = Paint().apply { color = BLUE_LIGHT; isAntiAlias = true; style = Paint.Style.STROKE; strokeWidth = 2f }
+        canvas.drawRoundRect(scoreCardRect, 16f, 16f, borderPaint)
+
+        val scorePaint = TextPaint().apply { color = scoreColor; textSize = 90f; isAntiAlias = true; typeface = Typeface.create("sans-serif", Typeface.BOLD) }
+        canvas.drawText("%.0f".format(score), MARGIN + 30f, y + 110f, scorePaint)
+        val scoreLabelPaint = TextPaint().apply { color = scoreColor; textSize = 34f; isAntiAlias = true }
+        canvas.drawText("/100 — $scoreLabel", MARGIN + 30f + scorePaint.measureText("%.0f".format(score)) + 15f, y + 110f, scoreLabelPaint)
+
+        val skinType = report.skinProfile?.skinTypeAr ?: "غير محدد"
+        val typePaint = TextPaint().apply { color = DARK; textSize = 32f; isAntiAlias = true }
+        canvas.drawText("نوع البشرة: $skinType", MARGIN + 30f, y + 150f, typePaint)
+        y += 180f
+
+        val urgent = report.metrics.filter { it.severity == MetricSeverity.CRITICAL || it.severity == MetricSeverity.POOR }.sortedBy { it.score }.take(3)
+        if (urgent.isNotEmpty()) {
+            val urgentPaint = TextPaint().apply { color = RED; textSize = 30f; isAntiAlias = true; typeface = Typeface.create("sans-serif", Typeface.BOLD) }
+            canvas.drawText("⚠ ${urgent.joinToString(" • ") { it.type.arabicName() }}", MARGIN, y + 25f, urgentPaint)
+            y += 45f
+        }
+
+        y += 10f
+        drawSectionTitle(canvas, MARGIN, y, "المؤشرات التفصيلية", "DETAILED METRICS")
+        y += 35f
+
+        val cols = 3
+        val colWidth = (CONTENT_WIDTH - 20f * (cols - 1)) / cols
+        val rowHeight = 72f
+        val sortedMetrics = report.metrics.sortedBy { it.zone.ordinal * 100 + it.score }
+
+        for ((index, metric) in sortedMetrics.withIndex()) {
+            if (y + rowHeight > PAGE_HEIGHT - 120f) break
+            val col = index % cols
+            val row = index / cols
+            val cellX = MARGIN + col * (colWidth + 20f)
+            val cellY = y + row * (rowHeight + 8f)
+
+            if (col == 0 && index > 0) {
+                y += rowHeight + 8f
+            }
+
+            val cellBg = Paint().apply { color = if (col % 2 == 0) 0x04000000 else 0x0806B6D4; isAntiAlias = true }
+            canvas.drawRoundRect(RectF(cellX, cellY, cellX + colWidth, cellY + rowHeight), 10f, 10f, cellBg)
+
+            val namePaint = TextPaint().apply { color = DARK; textSize = 28f; isAntiAlias = true }
+            canvas.drawText(metric.type.arabicName(), cellX + 12f, cellY + 28f, namePaint)
+
+            val mScoreColor = getScoreColor(metric.score)
+            val scorePaintM = TextPaint().apply { color = mScoreColor; textSize = 26f; isAntiAlias = true; typeface = Typeface.create("sans-serif", Typeface.BOLD) }
+            canvas.drawText("%.0f — ${metric.severity.displayAr}", cellX + 12f, cellY + 55f, scorePaintM)
+
+            val barX = cellX + colWidth - 100f
+            val barY = cellY + 40f
+            val barW = 85f
+            val barH = 14f
+            val barBg = Paint().apply { color = 0xFFE5E7EB.toInt(); isAntiAlias = true }
+            canvas.drawRoundRect(RectF(barX, barY, barX + barW, barY + barH), 7f, 7f, barBg)
+            val fillW = (metric.score / 100f * barW).coerceIn(0f, barW)
+            if (fillW > 0) {
+                val barFill = Paint().apply { color = mScoreColor; isAntiAlias = true }
+                canvas.drawRoundRect(RectF(barX, barY, barX + fillW, barY + barH), 7f, 7f, barFill)
+            }
+        }
+
+        val lastRow = (sortedMetrics.size - 1) / cols
+        y += (lastRow + 1) * (rowHeight + 8f) + 20f
+
+        val summaryText = report.aiAnalysisTextAr ?: report.aiAnalysisText ?: ""
+        if (summaryText.isNotEmpty()) {
+            drawSectionTitle(canvas, MARGIN, y, "الخلاصة", "SUMMARY")
+            y += 30f
+            val textPaint = TextPaint().apply { color = GRAY; textSize = 28f; isAntiAlias = true }
+            val lines = summaryText.lines().take(4).joinToString("\n")
+            val staticLayout = StaticLayout.Builder.obtain(lines, 0, lines.length, textPaint, CONTENT_WIDTH.toInt())
+                .setAlignment(Layout.Alignment.ALIGN_NORMAL).setLineSpacing(3f, 1.15f).build()
+            canvas.save()
+            canvas.translate(MARGIN, y)
+            staticLayout.draw(canvas)
+            canvas.restore()
+            y += staticLayout.height + 20f
+        }
+
+        y += 10f
+        val spectra = LightSpectrum.CAPTURE_SEQUENCE.filter { capturedImages.containsKey(it) }
+        if (spectra.isNotEmpty()) {
+            drawSectionTitle(canvas, MARGIN, y, "الصور الملتقطة", "CAPTURED IMAGES")
+            y += 30f
+            val thumbSize = 160f
+            val thumbSpacing = 15f
+            var thumbX = MARGIN
+            for ((idx, spectrum) in spectra.take(8).withIndex()) {
+                if (thumbX + thumbSize > PAGE_WIDTH - MARGIN) break
+                val file = capturedImages[spectrum] ?: continue
+                try {
+                    val options = BitmapFactory.Options().apply { inSampleSize = 6 }
+                    val bitmap = BitmapFactory.decodeFile(file.absolutePath, options)
+                    if (bitmap != null) {
+                        val imgRect = RectF(thumbX, y, thumbX + thumbSize, y + thumbSize)
+                        val cardBg = Paint().apply { color = CARD_BG; isAntiAlias = true }
+                        canvas.drawRoundRect(imgRect, 10f, 10f, cardBg)
+                        canvas.drawBitmap(bitmap, null, RectF(thumbX + 4f, y + 4f, thumbX + thumbSize - 4f, y + thumbSize - 4f), null)
+                        bitmapsToRecycle.add(bitmap)
+                    }
+                } catch (_: Exception) {}
+                val spectrumColor = try { Color.parseColor(spectrum.colorHex) } catch (_: Exception) { BLUE }
+                val dotPaint = Paint().apply { color = spectrumColor; isAntiAlias = true }
+                canvas.drawCircle(thumbX + thumbSize - 12f, y + 12f, 8f, dotPaint)
+                thumbX += thumbSize + thumbSpacing
+            }
+            y += thumbSize + 30f
+        }
+
+        drawDisclaimer(canvas, y)
+        drawFooter(canvas, 1, 1)
+        pdfDocument.finishPage(page)
+    }
+
+    // ═══════════════════════════════════════════════════════════
     //  UTILITY
     // ═══════════════════════════════════════════════════════════
 
@@ -699,23 +842,5 @@ class PdfReportGenerator @Inject constructor() {
         score >= 35f -> "متوسط"
         score >= 20f -> "يحتاج عناية"
         else -> "يحتاج عناية مركزة"
-    }
-
-    private fun getArabicName(type: SkinMetric.Type): String = when (type) {
-        SkinMetric.Type.MOISTURE -> "الرطوبة"
-        SkinMetric.Type.PORES -> "المسام"
-        SkinMetric.Type.SEBUM -> "الدهنية"
-        SkinMetric.Type.WRINKLES -> "التجاعيد"
-        SkinMetric.Type.TEXTURE -> "الملمس"
-        SkinMetric.Type.UV_SPOTS -> "البقع الضوئية"
-        SkinMetric.Type.VASCULAR -> "الأوعية الدموية"
-        SkinMetric.Type.PIGMENTATION -> "التصبغ"
-        SkinMetric.Type.DARK_CIRCLES -> "الهالات الداكنة"
-        SkinMetric.Type.BLACKHEADS -> "الرؤوس السوداء"
-        SkinMetric.Type.ACNE -> "حب الشباب"
-        SkinMetric.Type.SKIN_TONE -> "لون البشرة"
-        SkinMetric.Type.SENSITIVITY -> "الحساسية"
-        SkinMetric.Type.ROSACEA -> "الوردية"
-        SkinMetric.Type.MELASMA -> "الكلف"
     }
 }

@@ -12,6 +12,7 @@ import com.ebtikar.skinanalyzer.model.ProductRecommendation
 import com.ebtikar.skinanalyzer.model.SkinAnalysisReport
 import com.ebtikar.skinanalyzer.model.SkinMetric
 import com.ebtikar.skinanalyzer.model.SkinProfile
+import com.ebtikar.skinanalyzer.model.arabicName
 import com.ebtikar.skinanalyzer.util.PdfReportGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -85,12 +86,6 @@ class ReportViewModel @Inject constructor(
     private val _heatmapPoints = MutableStateFlow<List<HeatmapPoint>>(emptyList())
     val heatmapPoints: StateFlow<List<HeatmapPoint>> = _heatmapPoints.asStateFlow()
 
-    private val _excellentMetrics = MutableStateFlow<List<SkinMetric>>(emptyList())
-    val excellentMetrics: StateFlow<List<SkinMetric>> = _excellentMetrics.asStateFlow()
-
-    private val _needsAttentionMetrics = MutableStateFlow<List<SkinMetric>>(emptyList())
-    val needsAttentionMetrics: StateFlow<List<SkinMetric>> = _needsAttentionMetrics.asStateFlow()
-
     private var currentReportId: String? = null
 
     private val _isReportMissing = MutableStateFlow(false)
@@ -139,10 +134,8 @@ class ReportViewModel @Inject constructor(
 
             val metricsMap = metricsList.associateBy { it.type }
             _radarValues.value = metricsList.map { it.score }
-            _radarLabels.value = metricsList.map { getArabicName(it.type) }
+            _radarLabels.value = metricsList.map { it.type.arabicName() }
             _topConcerns.value = metricsList.sortedBy { it.score }.take(3)
-            _excellentMetrics.value = metricsList.filter { it.severity == MetricSeverity.EXCELLENT || it.severity == MetricSeverity.GOOD }
-            _needsAttentionMetrics.value = metricsList.filter { it.severity == MetricSeverity.POOR || it.severity == MetricSeverity.CRITICAL }
         } catch (e: Exception) {
             Timber.e(e, "Failed to parse metrics JSON")
             val sampleMetrics = generateSampleMetrics()
@@ -177,13 +170,21 @@ class ReportViewModel @Inject constructor(
         }
     }
 
+    private val _reportType = MutableStateFlow("professional")
+    val reportType: StateFlow<String> = _reportType.asStateFlow()
+
+    fun setReportType(type: String) {
+        _reportType.value = type
+    }
+
     fun shareReport() {
         val reportId = currentReportId ?: return
         viewModelScope.launch {
             val entity = repository.getReport(reportId) ?: return@launch
             val report = entity.toReport()
             val outputDir = File(context.cacheDir, "pdf_reports")
-            val pdfFile = pdfReportGenerator.generate(context, report, outputDir, _capturedImages.value)
+            val compact = _reportType.value == "compact"
+            val pdfFile = pdfReportGenerator.generate(context, report, outputDir, _capturedImages.value, compact)
             if (pdfFile != null) {
                 val uri = androidx.core.content.FileProvider.getUriForFile(
                     context, "${context.packageName}.fileprovider", pdfFile
@@ -205,7 +206,8 @@ class ReportViewModel @Inject constructor(
             val entity = repository.getReport(reportId) ?: return@launch
             val report = entity.toReport()
             val outputDir = File(context.filesDir, "pdf_reports")
-            val pdfFile = pdfReportGenerator.generate(context, report, outputDir, _capturedImages.value)
+            val compact = _reportType.value == "compact"
+            val pdfFile = pdfReportGenerator.generate(context, report, outputDir, _capturedImages.value, compact)
             if (pdfFile != null) {
                 Timber.i("PDF saved: ${pdfFile.absolutePath}")
             }
@@ -219,7 +221,8 @@ class ReportViewModel @Inject constructor(
             val report = entity.toReport()
             val outputDir = File(context.getExternalFilesDir(null), "pdf_reports")
             outputDir.mkdirs()
-            pdfReportGenerator.generate(context, report, outputDir, _capturedImages.value)
+            val compact = _reportType.value == "compact"
+            pdfReportGenerator.generate(context, report, outputDir, _capturedImages.value, compact)
         } catch (e: Exception) {
             Timber.e(e, "Failed to save PDF")
             null
@@ -233,7 +236,8 @@ class ReportViewModel @Inject constructor(
             val report = entity.toReport()
             val outputDir = File(context.cacheDir, "pdf_reports")
             outputDir.mkdirs()
-            pdfReportGenerator.generate(context, report, outputDir, _capturedImages.value)
+            val compact = _reportType.value == "compact"
+            pdfReportGenerator.generate(context, report, outputDir, _capturedImages.value, compact)
         } catch (e: Exception) {
             Timber.e(e, "Failed to generate PDF for sharing")
             null
@@ -252,7 +256,7 @@ class ReportViewModel @Inject constructor(
             csvFile.bufferedWriter().use { writer ->
                 writer.write("Metric,Score,Severity,Details\n")
                 for (m in metrics) {
-                    writer.write("\"${getArabicName(m.type)}\",${m.score},${m.severity},\"${m.details}\"\n")
+                    writer.write("\"${m.type.arabicName()}\",${m.score},${m.severity},\"${m.details}\"\n")
                 }
                 writer.write("\nOverall Score,${entity.overallScore}\n")
                 writer.write("Provider,${entity.providerName}\n")
@@ -344,23 +348,5 @@ class ReportViewModel @Inject constructor(
                 emptyList()
             }
         )
-    }
-
-    private fun getArabicName(type: SkinMetric.Type): String = when (type) {
-        SkinMetric.Type.MOISTURE -> "الرطوبة"
-        SkinMetric.Type.PORES -> "المسام"
-        SkinMetric.Type.SEBUM -> "الدهنية"
-        SkinMetric.Type.WRINKLES -> "التجاعيد"
-        SkinMetric.Type.TEXTURE -> "الملمس"
-        SkinMetric.Type.UV_SPOTS -> "البقع"
-        SkinMetric.Type.VASCULAR -> "الأوعية"
-        SkinMetric.Type.PIGMENTATION -> "التصبغ"
-        SkinMetric.Type.DARK_CIRCLES -> "الهالات"
-        SkinMetric.Type.BLACKHEADS -> "الرؤوس"
-        SkinMetric.Type.ACNE -> "الحب"
-        SkinMetric.Type.SKIN_TONE -> "اللون"
-        SkinMetric.Type.SENSITIVITY -> "الحساسية"
-        SkinMetric.Type.ROSACEA -> "الوردية"
-        SkinMetric.Type.MELASMA -> "الكلف"
     }
 }
