@@ -51,8 +51,14 @@ class FiseGpioController @Inject constructor(
     init {
         checkSelinux()
         initJob = CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
-            initialize()
-            initDeferred.complete(Unit)
+            try {
+                initialize()
+            } catch (e: Exception) {
+                Timber.e(e, "FiseGpioController init failed")
+                _statusMessage = "فشل تهيئة GPIO: ${e.message}"
+            } finally {
+                initDeferred.complete(Unit)
+            }
         }
     }
 

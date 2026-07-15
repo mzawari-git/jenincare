@@ -159,7 +159,11 @@ class SerialBusManager @Inject constructor(
                 port.setParameters(BAUD_RATE, DATA_BITS, STOP_BITS, PARITY)
             }
 
-            ioManager = SerialInputOutputManager(serialPort!!, this).also { it.start() }
+            val port = serialPort ?: run {
+                _connectionState.value = ConnectionState.ERROR
+                return Result.failure(IllegalStateException("Serial port is null after open"))
+            }
+            ioManager = SerialInputOutputManager(port, this).also { it.start() }
             _connectionState.value = ConnectionState.CONNECTED
             _lastError.value = null
             Timber.i("Serial bus connected at $BAUD_RATE baud")

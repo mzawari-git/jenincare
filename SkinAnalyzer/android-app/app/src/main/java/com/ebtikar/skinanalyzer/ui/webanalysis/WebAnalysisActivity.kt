@@ -175,6 +175,7 @@ class WebAnalysisActivity : AppCompatActivity() {
             cameraExecutor,
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                    if (isDestroyed || isFinishing) return@onImageSaved
                     runOnUiThread {
                         binding.loadingIndicator.visibility = View.GONE
                         onPhotoCaptured(photoFile)
@@ -183,6 +184,7 @@ class WebAnalysisActivity : AppCompatActivity() {
 
                 override fun onError(exc: ImageCaptureException) {
                     Timber.e(exc, "Photo capture failed")
+                    if (isDestroyed || isFinishing) return@onError
                     runOnUiThread {
                         binding.loadingIndicator.visibility = View.GONE
                         binding.btnCapturePhoto.isEnabled = true
