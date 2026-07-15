@@ -5,8 +5,13 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.Handler
 import android.os.Looper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -49,6 +54,7 @@ class CameraWatchdog @Inject constructor(
     }
 
     private val handler = Handler(Looper.getMainLooper())
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val lastFrameTimestamp = AtomicLong(0L)
 
     /** Public read access for AE convergence checks */
@@ -179,34 +185,36 @@ class CameraWatchdog @Inject constructor(
 
     private fun attemptUsbReset() {
         totalResetAttempts++
-        try {
-            val usbManager = context.getSystemService(Context.USB_SERVICE) as? UsbManager
-            if (usbManager == null) {
-                Timber.e("Camera Watchdog: UsbManager unavailable")
-                listeners.forEach { it.onCameraResetAttempt(false) }
-                return
-            }
+        scope.launch {
+            try {
+                val usbManager = context.getSystemService(Context.USB_SERVICE) as? UsbManager
+                if (usbManager == null) {
+                    Timber.e("Camera Watchdog: UsbManager unavailable")
+                    listeners.forEach { it.onCameraResetAttempt(false) }
+                    return@launch
+                }
 
-            // Find the camera USB device (OV13850)
-            val cameraDevice = findCameraUsbDevice(usbManager)
-            if (cameraDevice == null) {
-                Timber.w("Camera Watchdog: camera USB device not found for reset")
-                listeners.forEach { it.onCameraResetAttempt(false) }
-                return
-            }
+                // Find the camera USB device (OV13850)
+                val cameraDevice = findCameraUsbDevice(usbManager)
+                if (cameraDevice == null) {
+                    Timber.w("Camera Watchdog: camera USB device not found for reset")
+                    listeners.forEach { it.onCameraResetAttempt(false) }
+                    return@launch
+                }
 
-            // Reset the USB connection
-            val success = resetUsbDevice(usbManager, cameraDevice)
-            if (success) {
-                totalSuccessfulResets++
-                Timber.i("Camera Watchdog: USB reset successful for ${cameraDevice.deviceName}")
-            } else {
-                Timber.w("Camera Watchdog: USB reset failed for ${cameraDevice.deviceName}")
+                // Reset the USB connection
+                val success = resetUsbDevice(usbManager, cameraDevice)
+                if (success) {
+                    totalSuccessfulResets++
+                    Timber.i("Camera Watchdog: USB reset successful for ${cameraDevice.deviceName}")
+                } else {
+                    Timber.w("Camera Watchdog: USB reset failed for ${cameraDevice.deviceName}")
+                }
+                listeners.forEach { it.onCameraResetAttempt(success) }
+            } catch (e: Exception) {
+                Timber.e(e, "Camera Watchdog: USB reset exception")
+                listeners.forEach { it.onCameraResetAttempt(false) }
             }
-            listeners.forEach { it.onCameraResetAttempt(success) }
-        } catch (e: Exception) {
-            Timber.e(e, "Camera Watchdog: USB reset exception")
-            listeners.forEach { it.onCameraResetAttempt(false) }
         }
     }
 
@@ -223,15 +231,14 @@ class CameraWatchdog @Inject constructor(
 
     private fun resetUsbDevice(usbManager: UsbManager, device: UsbDevice): Boolean {
         return try {
-            // Reset via sysfs unbind/bind (requires shell permissions or root)
             val devicePath = device.deviceName
             val unbind = Runtime.getRuntime().exec(arrayOf("sh", "-c",
                 "echo '$devicePath' > /sys/bus/usb/drivers/usb/unbind 2>/dev/null"
             ))
-            val unbindExit = unbind.waitFor()
-            if (unbindExit != 0) {
+            val unbindCompleted = unbind.waitFor(3, TimeUnit.SECONDS)
+            if (!unbindCompleted || unbind.exitValue() != 0) {
                 val stderr = unbind.errorStream.bufferedReader().readText()
-                Timber.w("Camera Watchdog: USB unbind failed (exit=$unbindExit): $stderr")
+                Timber.w("Camera Watchdog: USB unbind failed (completed=$unbindCompleted): $stderr")
                 return false
             }
 
@@ -240,13 +247,13 @@ class CameraWatchdog @Inject constructor(
             val bind = Runtime.getRuntime().exec(arrayOf("sh", "-c",
                 "echo '$devicePath' > /sys/bus/usb/drivers/usb/bind 2>/dev/null"
             ))
-            val bindExit = bind.waitFor()
-            if (bindExit == 0) {
+            val bindCompleted = bind.waitFor(5, TimeUnit.SECONDS)
+            if (bindCompleted && bind.exitValue() == 0) {
                 Timber.i("Camera Watchdog: USB reset via sysfs unbind/bind succeeded")
                 true
             } else {
                 val stderr = bind.errorStream.bufferedReader().readText()
-                Timber.w("Camera Watchdog: USB bind failed (exit=$bindExit): $stderr")
+                Timber.w("Camera Watchdog: USB bind failed (completed=$bindCompleted): $stderr")
                 false
             }
         } catch (e: Exception) {

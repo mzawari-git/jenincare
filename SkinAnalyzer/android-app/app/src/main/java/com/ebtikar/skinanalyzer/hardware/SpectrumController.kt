@@ -1,11 +1,16 @@
 package com.ebtikar.skinanalyzer.hardware
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 import java.util.concurrent.CopyOnWriteArrayList
 import javax.inject.Inject
@@ -279,8 +284,8 @@ class SpectrumController @Inject constructor(
         } catch (_: Exception) {}
         try {
             if (serialBus.isConnected) {
-                kotlinx.coroutines.runBlocking {
-                    kotlinx.coroutines.withTimeoutOrNull(3000L) {
+                CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+                    withTimeoutOrNull(3000L) {
                         serialBus.sendCommand(LightSpectrum.OFF)
                     }
                 }

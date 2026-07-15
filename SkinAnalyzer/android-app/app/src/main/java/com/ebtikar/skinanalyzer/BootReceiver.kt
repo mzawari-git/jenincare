@@ -16,6 +16,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -84,20 +85,19 @@ class BootReceiver : BroadcastReceiver() {
     private suspend fun tryFiseRebind(): Boolean {
         return withContext(Dispatchers.IO) {
             try {
-                // Unbind FISE driver
                 val unbind = Runtime.getRuntime().exec(arrayOf("sh", "-c",
                     "echo fise_gpio > /sys/bus/platform/drivers/fise_gpio/unbind 2>/dev/null"
                 ))
-                unbind.waitFor()
+                unbind.waitFor(3, TimeUnit.SECONDS)
                 delay(300)
 
-                // Rebind FISE driver
                 val bind = Runtime.getRuntime().exec(arrayOf("sh", "-c",
                     "echo fise_gpio > /sys/bus/platform/drivers/fise_gpio/bind 2>/dev/null"
                 ))
-                val exitCode = bind.waitFor()
-                Timber.i("FISE rebind: exit=$exitCode")
-                exitCode == 0
+                val completed = bind.waitFor(3, TimeUnit.SECONDS)
+                val exitCode = if (completed) bind.exitValue() else -1
+                Timber.i("FISE rebind: completed=$completed, exit=$exitCode")
+                completed && exitCode == 0
             } catch (e: Exception) {
                 Timber.w(e, "FISE rebind failed")
                 false
