@@ -412,9 +412,22 @@ class FrameCapturePipeline @Inject constructor(
 
             for (retry in 0 until maxRetries) {
                 val bitmap = try {
-                    if (cameraManager.isReady) cameraManager.captureFrame(spectrum) else null
+                    if (cameraManager.isReady) {
+                        cameraManager.captureFrame(spectrum)
+                    } else {
+                        Timber.w("Camera not ready for ${spectrum.name}, attempting reconnect (retry ${retry + 1})")
+                        cameraManager.reconnectCamera()
+                        delay(500)
+                        if (cameraManager.isReady) cameraManager.captureFrame(spectrum) else null
+                    }
                 } catch (e: Exception) {
                     Timber.w(e, "Camera capture failed for ${spectrum.name} (retry ${retry + 1})")
+                    if (retry == 0) {
+                        try {
+                            cameraManager.reconnectCamera()
+                            delay(500)
+                        } catch (_: Exception) {}
+                    }
                     null
                 }
 
