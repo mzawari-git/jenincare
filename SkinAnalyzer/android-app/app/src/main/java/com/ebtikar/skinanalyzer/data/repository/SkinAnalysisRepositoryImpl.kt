@@ -453,8 +453,9 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
         val score = metrics.map { it.score }.average().toFloat()
         val excellent = metrics.count { it.severity == MetricSeverity.EXCELLENT || it.severity == MetricSeverity.GOOD }
         val fair = metrics.count { it.severity == MetricSeverity.FAIR }
-        val needsAttention = metrics.count { it.severity == MetricSeverity.POOR || it.severity == MetricSeverity.CRITICAL }
-        val topConcern = metrics.minByOrNull { it.score }
+        val poor = metrics.count { it.severity == MetricSeverity.POOR }
+        val critical = metrics.count { it.severity == MetricSeverity.CRITICAL }
+        val needsAttention = poor + critical
         val knowledge = knowledgeRepository.getCachedKnowledge()
 
         fun getMetricKnowledge(type: SkinMetric.Type): MetricKnowledge? =
@@ -464,21 +465,21 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
             val desc = getMetricKnowledge(type)?.descriptions?.get(severity.name)
             if (!desc.isNullOrBlank()) return desc
             return when (type) {
-                SkinMetric.Type.MOISTURE -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "مستوى الرطوبة مثالي"; MetricSeverity.FAIR -> "رطوبة متوسطة"; else -> "جفاف واضح" }
-                SkinMetric.Type.PORES -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "المسام ضيقة ومنتظمة"; MetricSeverity.FAIR -> "بعض المسام الواسعة"; else -> "مسام واسعة" }
-                SkinMetric.Type.SEBUM -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "إفراز دهني متوازن"; MetricSeverity.FAIR -> "زيادة طفيفة"; else -> "إفراز دهني زائد" }
-                SkinMetric.Type.WRINKLES -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "خطوط دقيقة قليلة"; MetricSeverity.FAIR -> "خطوط تعبير واضحة"; else -> "تجاعيد عميقة" }
-                SkinMetric.Type.TEXTURE -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "ملمس ناعم ومتجانس"; MetricSeverity.FAIR -> "خشونة خفيفة"; else -> "ملمس خشن" }
-                SkinMetric.Type.UV_SPOTS -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لا توجد أضرار شمس"; MetricSeverity.FAIR -> "بقع شمس خفيفة"; else -> "أضرار شمس متقدمة" }
-                SkinMetric.Type.VASCULAR -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "دورة دموية صحية"; MetricSeverity.FAIR -> "احمرار خفيف"; else -> "احمرار واضح" }
-                SkinMetric.Type.PIGMENTATION -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لون بشرة موحد"; MetricSeverity.FAIR -> "تصبغات خفيفة"; else -> "تصبغات غامقة" }
-                SkinMetric.Type.DARK_CIRCLES -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "منطقة العين مشرقة"; MetricSeverity.FAIR -> "هالات خفيفة"; else -> "هالات داكنة" }
-                SkinMetric.Type.BLACKHEADS -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "مسام نظيفة"; MetricSeverity.FAIR -> "رؤوس سوداء خفيفة"; else -> "انتشار واسع" }
-                SkinMetric.Type.ACNE -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لا توجد بثور نشطة"; MetricSeverity.FAIR -> "بثور خفيفة"; else -> "حب شباب نشط" }
-                SkinMetric.Type.SKIN_TONE -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لون بشرة متجانس"; MetricSeverity.FAIR -> "اختلافات طفيفة"; else -> "عدم تجانس واضح" }
-                SkinMetric.Type.SENSITIVITY -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "بشرة غير حساسة"; MetricSeverity.FAIR -> "حساسية خفيفة"; else -> "بشرة شديدة الحساسية" }
-                SkinMetric.Type.ROSACEA -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لا توجد علامات وردية"; MetricSeverity.FAIR -> "احمرار خفيف"; else -> "علامات وردية واضحة" }
-                SkinMetric.Type.MELASMA -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لا توجد علامات كلف"; MetricSeverity.FAIR -> "تصبغ خفيف"; else -> "كلف عميق" }
+                SkinMetric.Type.MOISTURE -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "مستوى الرطوبة مثالي — البشرة مرطبة بشكل كافٍ"; MetricSeverity.FAIR -> "رطوبة متوسطة — تحتاجين لترطيب إضافي"; MetricSeverity.POOR -> "جفاف واضح — البشرة تحتاج لترطيب مكثف"; else -> "جفاف شديد — البشرة في حالة حرجة وتحتاج رطوبة فورية" }
+                SkinMetric.Type.PORES -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "المسام ضيقة ومنتظمة — مظهر ناعم"; MetricSeverity.FAIR -> "بعض المسام الواسعة في منطقة الأنف والجبين"; MetricSeverity.POOR -> "مسام واسعة وملوحة — تحتاج لعناية مركزة"; else -> "مسام مسدودة وواسعة جداً — احمرار وتهيج مصاحب" }
+                SkinMetric.Type.SEBUM -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "إفراز دهني متوازن — بشرة صحية"; MetricSeverity.FAIR -> "زيادة طفيفة في الإفرازات الدهنية"; MetricSeverity.POOR -> "إفراز دهني زائد — بشرة لامعة عرضة لحب الشباب"; else -> "إفراز دهني مفرط — انسداد المسام والالتهابات" }
+                SkinMetric.Type.WRINKLES -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "خطوط دقيقة قليلة جداً — بشرة شابة"; MetricSeverity.FAIR -> "خطوط تعبير واضحة حول العينين والجبين"; MetricSeverity.POOR -> "تجاعيد واضحة — تحتاج روتين مضاد للشيخوخة"; else -> "تجاعيد عميقة — علاماتشيخوخة متقدمة" }
+                SkinMetric.Type.TEXTURE -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "ملمس ناعم ومتجانس"; MetricSeverity.FAIR -> "خشونة خفيفة في بعض المناطق"; MetricSeverity.POOR -> "ملمس خشن وغير متساوٍ — يحتاج تقشير"; else -> "ملمس خشن جداً مع بقع جافة ودهنية" }
+                SkinMetric.Type.UV_SPOTS -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لا توجد أضرار شمس واضحة"; MetricSeverity.FAIR -> "بقع شمس خفيفة — يحتاج واقي شمس"; MetricSeverity.POOR -> "أضرار شمس متقدمة — بقع بنية"; else -> "أضرار شمس شديدة — تصبغات عميقة" }
+                SkinMetric.Type.VASCULAR -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "دورة دموية صحية — لا احمرار"; MetricSeverity.FAIR -> "احمرار خفيف في الخدود"; MetricSeverity.POOR -> "احمرار واضح وأوعية دموية بارزة"; else -> "احمرار شديد وتهاب مزمن" }
+                SkinMetric.Type.PIGMENTATION -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لون بشرة موحد ومتجانس"; MetricSeverity.FAIR -> "تصبغات خفيفة متفرقة"; MetricSeverity.POOR -> "تصبغات غامقة واسعة الانتشار"; else -> "تصبغات شديدة — تغير واضح في لون البشرة" }
+                SkinMetric.Type.DARK_CIRCLES -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "منطقة العين مشرقة ونضرة"; MetricSeverity.FAIR -> "هالات خفيفة تحت العين"; MetricSeverity.POOR -> "هالات داكنة واضحة تحت العين"; else -> "هالات داكنة جداً مع تورم وتجعيد" }
+                SkinMetric.Type.BLACKHEADS -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "مسام نظيفة من الرؤوس السوداء"; MetricSeverity.FAIR -> "رؤوس سوداء خفيفة في الأنف والذقن"; MetricSeverity.POOR -> "انتشار واسع للرؤوس السوداء"; else -> "رؤوس سوداء ملتهبة ومنتشرة" }
+                SkinMetric.Type.ACNE -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لا توجد بثور نشطة"; MetricSeverity.FAIR -> "بثور خفيفة متفرقة"; MetricSeverity.POOR -> "حب شباب نشط مع التهابات"; else -> "حب شباب شديد — التهابات وندبات" }
+                SkinMetric.Type.SKIN_TONE -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لون بشرة متجانس ومشرق"; MetricSeverity.FAIR -> "اختلافات طفيفة في اللون"; MetricSeverity.POOR -> "عدم تجانس واضح في لون البشرة"; else -> "تباين كبير في لون البشرة" }
+                SkinMetric.Type.SENSITIVITY -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "بشرة غير حساسة — تتحمل المنتجات"; MetricSeverity.FAIR -> "حساسية خفيفة لبعض المكونات"; MetricSeverity.POOR -> "بشرة حساسة — تهيج سهل"; else -> "بشرة شديدة الحساسية — لا تتحمل أي منتج" }
+                SkinMetric.Type.ROSACEA -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لا توجد علامات وردية — بشرة صافية"; MetricSeverity.FAIR -> "احمرار خفيف قد يكون بداية وردية"; MetricSeverity.POOR -> "علامات وردية واضحة — احمرار مزمن"; else -> "وردية متقدمة — التهاب واحمرار شديد" }
+                SkinMetric.Type.MELASMA -> when (severity) { MetricSeverity.EXCELLENT, MetricSeverity.GOOD -> "لا توجد علامات كلف — تصبغ موحد"; MetricSeverity.FAIR -> "تصبغ خفيف في بعض المناطق"; MetricSeverity.POOR -> "كلف واضح — يحتاج علاج مكثف"; else -> "كلف عميق واسع الانتشار — حالة حرجة" }
             }
         }
 
@@ -491,76 +492,187 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
         fun getIngredients(type: SkinMetric.Type): List<String> =
             getMetricKnowledge(type)?.ingredientsAr?.filter { it.isNotBlank() } ?: emptyList()
 
+        fun zoneNameAr(zone: SkinZone): String = when (zone) {
+            SkinZone.T_ZONE -> "منطقة T — الجبهة والأنف والذقن"
+            SkinZone.U_ZONE -> "الخدود والوجنتين"
+            SkinZone.O_ZONE -> "المنطقة الخارجية للوجه"
+            SkinZone.EYE_AREA -> "منطقة حول العين"
+            SkinZone.FULL_FACE -> "الوجه بالكامل"
+        }
+
+        fun zoneEmoji(zone: SkinZone): String = when (zone) {
+            SkinZone.T_ZONE -> "🔹"
+            SkinZone.U_ZONE -> "🔸"
+            SkinZone.O_ZONE -> "◾"
+            SkinZone.EYE_AREA -> "👁"
+            SkinZone.FULL_FACE -> "🔹"
+        }
+
         val sb = StringBuilder()
-        sb.append("تحليل شامل للبشرة — ")
-        sb.append("نوع البشرة: ${profile.skinTypeAr}")
-        sb.append("\n\n")
 
-        sb.append("النتيجة الإجمالية: ${"%.1f".format(score)}/100 — ")
-        sb.append(when {
-            score >= 72f -> "حالة البشرة ممتازة بشكل عام"
-            score >= 55f -> "حالة البشرة جيدة مع بعض المؤشرات التي تحتاج متابعة"
-            score >= 35f -> "حالة البشرة متوسطة — هناك مجالات للتحسين"
-            else -> "البشرة تحتاج عناية مركزة في عدة مؤشرات"
+        sb.appendLine("══════════════════════════════════════")
+        sb.appendLine("       تقرير تحليل البشرة")
+        sb.appendLine("    DERMA AI — تحليل متكامل")
+        sb.appendLine("══════════════════════════════════════")
+        sb.appendLine()
+
+        sb.appendLine("▸ الملخص التنفيذي")
+        sb.appendLine("─────────────────────")
+        sb.appendLine("• النتيجة الإجمالية: ${"%.0f".format(score)}/100 — ")
+        sb.appendLine(when {
+            score >= 72f -> "  حالة البشرة ممتازة بشكل عام"
+            score >= 55f -> "  حالة البشرة جيدة مع بعض المؤشرات التي تحتاج متابعة"
+            score >= 35f -> "  حالة البشرة متوسطة — هناك مجالات للتحسين"
+            else -> "  البشرة تحتاج عناية مركزة في عدة مؤشرات"
         })
-        sb.append("\n\n")
-
-        sb.append("المؤشرات الإيجابية: $excellent من ${metrics.size} مؤشر في الحالة الجيدة أو الممتازة")
-        sb.append("، والمتوسطة: $fair")
+        sb.appendLine()
+        sb.appendLine("• المؤشرات الإيجابية: $excellent من ${metrics.size}")
+        sb.appendLine("  المتوسطة: $fair | تحتاج عناية: $poor | حرجة: $critical")
         if (needsAttention > 0) {
-            sb.append("، والتي تحتاج اهتماماً: $needsAttention مؤشر")
-            topConcern?.let {
-                sb.append(" (أكثرها إلحاحاً: ${getArabicName(it.type)})")
+            val urgent = metrics.filter { it.severity == MetricSeverity.CRITICAL || it.severity == MetricSeverity.POOR }
+                .sortedBy { it.score }
+                .take(3)
+            if (urgent.isNotEmpty()) {
+                sb.appendLine("• أعلى إلحاحاً: ${urgent.joinToString("، ") { "${getArabicName(it.type)} (${"%.0f".format(it.score)})" }}")
             }
         }
-        sb.append("\n\n")
+        sb.appendLine("• نوع البشرة: ${profile.skinTypeAr} | الحساسية: ${profile.sensitivityLevel}")
+        sb.appendLine()
 
-        for (metric in metrics) {
-            sb.append("【${getArabicName(metric.type)}】— ${"%.0f".format(metric.score)}/100 (${metric.severity.displayAr})\n")
-            sb.append(getDescription(metric.type, metric.severity))
-            sb.append("\n")
+        val metricsByZone = metrics.groupBy { it.zone }
+        val zoneOrder = listOf(SkinZone.T_ZONE, SkinZone.U_ZONE, SkinZone.EYE_AREA, SkinZone.O_ZONE, SkinZone.FULL_FACE)
 
-            if (metric.severity == MetricSeverity.POOR || metric.severity == MetricSeverity.CRITICAL) {
-                val causes = getCauses(metric.type)
-                if (causes.isNotEmpty()) {
-                    sb.append("الأسباب: ${causes.take(2).joinToString("، ")}")
-                    sb.append("\n")
-                }
-                val tips = getTips(metric.type)
-                if (tips.isNotEmpty()) {
-                    sb.append("نصائح: ${tips.take(2).joinToString("، ")}")
-                    sb.append("\n")
-                }
-                val ing = getIngredients(metric.type)
-                if (ing.isNotEmpty()) {
-                    sb.append("مكونات مفيدة: ${ing.take(3).joinToString("، ")}")
-                    sb.append("\n")
-                }
-            } else if (metric.severity == MetricSeverity.FAIR) {
-                val tips = getTips(metric.type)
-                if (tips.isNotEmpty()) {
-                    sb.append("نصيحة: ${tips.first()}")
-                    sb.append("\n")
-                }
+        sb.appendLine("▸ التحليل حسب المنطقة")
+        sb.appendLine("─────────────────────")
+        for (zone in zoneOrder) {
+            val zoneMetrics = metricsByZone[zone] ?: continue
+            if (zoneMetrics.isEmpty()) continue
+            sb.appendLine()
+            sb.appendLine("${zoneEmoji(zone)} ${zoneNameAr(zone)}:")
+            for (m in zoneMetrics.sortedBy { it.score }) {
+                val desc = getDescription(m.type, m.severity)
+                sb.appendLine("   ${getArabicName(m.type)}: ${"%.0f".format(m.score)}/100 (${m.severity.displayAr})")
+                sb.appendLine("   $desc")
             }
-            sb.append("\n")
+        }
+        sb.appendLine()
+
+        val causalLinks = mutableListOf<String>()
+        val sebum = metrics.find { it.type == SkinMetric.Type.SEBUM }
+        val acne = metrics.find { it.type == SkinMetric.Type.ACNE }
+        val blackheads = metrics.find { it.type == SkinMetric.Type.BLACKHEADS }
+        val pores = metrics.find { it.type == SkinMetric.Type.PORES }
+        val moisture = metrics.find { it.type == SkinMetric.Type.MOISTURE }
+        val wrinkles = metrics.find { it.type == SkinMetric.Type.WRINKLES }
+        val uvSpots = metrics.find { it.type == SkinMetric.Type.UV_SPOTS }
+        val pigmentation = metrics.find { it.type == SkinMetric.Type.PIGMENTATION }
+
+        if (sebum != null && sebum.severity == MetricSeverity.POOR || sebum?.severity == MetricSeverity.CRITICAL) {
+            val targets = listOfNotNull(
+                acne?.let { getArabicName(it.type) },
+                pores?.let { getArabicName(it.type) },
+                blackheads?.let { getArabicName(it.type) }
+            ).joinToString("، ")
+            if (targets.isNotEmpty()) causalLinks.add("الإفراز الدهني الزائد يسبب: $targets")
+        }
+        if (moisture != null && (moisture.severity == MetricSeverity.POOR || moisture.severity == MetricSeverity.CRITICAL)) {
+            val targets = listOfNotNull(
+                wrinkles?.let { getArabicName(it.type) },
+                (metrics.find { it.type == SkinMetric.Type.TEXTURE })?.let { getArabicName(it.type) }
+            ).joinToString("، ")
+            if (targets.isNotEmpty()) causalLinks.add("نقص الرطوبة يسبب: $targets")
+        }
+        if (uvSpots != null && (uvSpots.severity == MetricSeverity.POOR || uvSpots.severity == MetricSeverity.CRITICAL)) {
+            val targets = listOfNotNull(
+                pigmentation?.let { getArabicName(it.type) }
+            ).joinToString("، ")
+            if (targets.isNotEmpty()) causalLinks.add("التعرض للشمس يسبب: $targets")
+            else causalLinks.add("التعرض للشمس يسبب: ${getArabicName(uvSpots.type)}")
         }
 
-        if (profile.primaryConcernsAr.isNotEmpty()) {
-            sb.append("أبرز المخاوف المذكورة: ${profile.primaryConcernsAr.joinToString("، ")}")
-            sb.append("\n\n")
+        if (causalLinks.isNotEmpty()) {
+            sb.appendLine("▸ العوامل المؤثرة")
+            sb.appendLine("─────────────────────")
+            for (link in causalLinks) sb.appendLine("• $link")
+            sb.appendLine()
+        }
+
+        val urgentMetrics = metrics.filter { it.severity == MetricSeverity.CRITICAL || it.severity == MetricSeverity.POOR }
+            .sortedBy { it.score }
+
+        if (urgentMetrics.isNotEmpty()) {
+            sb.appendLine("▸ خطة العلاج المقترحة")
+            sb.appendLine("─────────────────────")
+            sb.appendLine()
+
+            sb.appendLine("🔴 فوري (هذا الأسبوع):")
+            var stepNum = 1
+            for (m in urgentMetrics.take(3)) {
+                val tips = getTips(m.type)
+                if (tips.isNotEmpty()) {
+                    sb.appendLine("   $stepNum. ${tips.first()} — ${getArabicName(m.type)}")
+                    stepNum++
+                }
+            }
+            val sunProtection = metrics.find { it.type == SkinMetric.Type.UV_SPOTS || it.type == SkinMetric.Type.PIGMENTATION }
+            if (sunProtection != null && (sunProtection.severity == MetricSeverity.POOR || sunProtection.severity == MetricSeverity.CRITICAL || sunProtection.severity == MetricSeverity.FAIR)) {
+                sb.appendLine("   $stepNum. واقي شمس SPF 50+ — كل يوم بدون استثناء")
+                stepNum++
+            }
+            sb.appendLine()
+
+            val mediumMetrics = metrics.filter { it.severity == MetricSeverity.FAIR }
+            if (mediumMetrics.isNotEmpty()) {
+                sb.appendLine("🟡 قصير المدى (هذا الشهر):")
+                for (m in mediumMetrics.take(3)) {
+                    val tips = getTips(m.type)
+                    if (tips.isNotEmpty()) {
+                        sb.appendLine("   $stepNum. ${tips.first()} — ${getArabicName(m.type)}")
+                        stepNum++
+                    }
+                }
+                sb.appendLine()
+            }
+
+            sb.appendLine("🟢 طويل المدى (٣-٦ شهور):")
+            if (wrinkles != null && wrinkles.severity != MetricSeverity.EXCELLENT && wrinkles.severity != MetricSeverity.GOOD) {
+                sb.appendLine("   $stepNum. ريتينول تدريجي ليلاً للتجاعيد")
+                stepNum++
+            }
+            if (pigmentation != null && (pigmentation.severity == MetricSeverity.POOR || pigmentation.severity == MetricSeverity.CRITICAL)) {
+                sb.appendLine("   $stepNum. علاج تصبغ مع طبيب جلدية")
+                stepNum++
+            }
+            if (stepNum == (urgentMetrics.take(3).size + if (sunProtection != null) 1 else 0) + 1) {
+                sb.appendLine("   $stepNum. متابعة دورية مع أخصائي جلدية")
+            }
+            sb.appendLine()
         }
 
         val goodIngredients = mutableSetOf<String>()
-        for (metric in metrics) {
-            if (metric.severity == MetricSeverity.POOR || metric.severity == MetricSeverity.CRITICAL) {
-                goodIngredients.addAll(getIngredients(metric.type))
+        for (m in metrics) {
+            if (m.severity == MetricSeverity.POOR || m.severity == MetricSeverity.CRITICAL) {
+                goodIngredients.addAll(getIngredients(m.type))
             }
         }
         if (goodIngredients.isNotEmpty()) {
-            sb.append("مكونات مقترحة للعناية: ${goodIngredients.take(5).joinToString("، ")}")
-            sb.append("\n")
+            sb.appendLine("▸ المكونات المقترحة")
+            sb.appendLine("─────────────────────")
+            sb.appendLine(goodIngredients.take(5).joinToString(" • "))
+            sb.appendLine()
         }
+
+        if (profile.primaryConcernsAr.isNotEmpty()) {
+            sb.appendLine("▸ أبرز المخاوف")
+            sb.appendLine("─────────────────────")
+            sb.appendLine(profile.primaryConcernsAr.joinToString("، "))
+            sb.appendLine()
+        }
+
+        sb.appendLine("══════════════════════════════════════")
+        sb.appendLine("هذا التقرير تم إنشاؤه بواسطة الذكاء الاصطناعي")
+        sb.appendLine("ولا يغني عن استشارة الطبيب المختص")
+        sb.appendLine("══════════════════════════════════════")
 
         return sb.toString()
     }

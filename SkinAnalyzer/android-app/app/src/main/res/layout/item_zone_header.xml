@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingHorizontal="8dp"
+    android:paddingVertical="10dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginBottom="2dp">
+
+    <View
+        android:layout_width="4dp"
+        android:layout_height="20dp"
+        android:background="#FF06B6D4" />
+
+    <TextView
+        android:id="@+id/tvZoneName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="10dp"
+        android:textColor="#FF06B6D4"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-medium"
+        tools:text="🔹 منطقة T — الجبهة والأنف" />
+
+</LinearLayout>

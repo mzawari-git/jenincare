@@ -2,6 +2,7 @@ package com.ebtikar.skinanalyzer.ai
 
 import com.ebtikar.skinanalyzer.model.MetricSeverity
 import com.ebtikar.skinanalyzer.model.SkinMetric
+import com.ebtikar.skinanalyzer.model.SkinZone
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -9,11 +10,11 @@ import kotlin.math.abs
 
 /**
  * Ensemble Analysis Engine — combines results from multiple analysis engines
- * using weighted voting to produce more robust and accurate metrics.
+ * using weighted median with outlier rejection for robust, clinically-accurate metrics.
  *
- * Each engine contributes its metrics with a confidence weight.
- * The ensemble computes a weighted average across all engines that produced
- * a value for each metric type.
+ * Uses median-based scoring: the middle value is taken as baseline, and engines
+ * that deviate by >20 points get their weight halved (outlier penalty).
+ * Zone-aware merging preserves per-region accuracy.
  */
 @Singleton
 class EnsembleAnalysisEngine @Inject constructor() {
@@ -33,8 +34,15 @@ class EnsembleAnalysisEngine @Inject constructor() {
         val agreementScore: Float
     )
 
+    data class ScoredEngine(
+        val score: Float,
+        val weight: Float,
+        val zone: SkinZone,
+        val details: String,
+        val severity: MetricSeverity
+    )
+
     companion object {
-        /** Base weights for each engine (before health adjustment) */
         val BASE_WEIGHTS = mapOf(
             "Local_TFLite" to 0.35f,
             "Advanced_MediaPipe" to 0.30f,
@@ -42,23 +50,13 @@ class EnsembleAnalysisEngine @Inject constructor() {
             "Basic_Pixel" to 0.15f
         )
 
-        /** Minimum agreement threshold: if engines disagree by more than this, flag it */
         const val DISAGREEMENT_THRESHOLD = 25f
-
-        /** Minimum number of engines for ensemble voting */
-        const val MIN_ENGINES_FOR_ENSEMBLE = 2
-
-        /** Maximum confidence cap */
+        const val OUTLIER_THRESHOLD = 20f
+        const val OUTLIER_PENALTY = 0.5f
         const val MAX_CONFIDENCE = 0.98f
-
-        /** Minimum confidence floor */
         const val MIN_CONFIDENCE = 0.50f
     }
 
-    /**
-     * Combine results from multiple engines using weighted voting.
-     * Returns an EnsembleReport with merged metrics and confidence scores.
-     */
     fun combineResults(results: List<EngineResult>): EnsembleReport {
         if (results.isEmpty()) {
             return EnsembleReport(emptyMap(), 0f, emptyMap(), 0, 0f)
@@ -75,85 +73,95 @@ class EnsembleAnalysisEngine @Inject constructor() {
             )
         }
 
-        // Collect all metric types across all engines
         val allTypes = results.flatMap { it.metrics.keys }.distinct()
-
         val mergedMetrics = mutableMapOf<SkinMetric.Type, SkinMetric>()
         val engineContributions = mutableMapOf<String, Float>()
-        var totalWeight = 0f
 
         for (type in allTypes) {
             val contributions = results.filter { it.metrics.containsKey(type) }
             if (contributions.isEmpty()) continue
 
-            // Calculate weighted average score
-            var weightedScore = 0f
-            var weightSum = 0f
-            var bestDetails = ""
-            var bestSeverity = MetricSeverity.GOOD
-            val individualScores = mutableListOf<Float>()
-
-            for (result in contributions) {
-                val metric = result.metrics[type] ?: continue
+            val scored = contributions.map { result ->
+                val metric = result.metrics[type]!!
                 val baseWeight = BASE_WEIGHTS[result.engineName] ?: 0.1f
-                val healthWeight = result.confidence  // confidence reflects engine health
-                val effectiveWeight = baseWeight * healthWeight
-
-                weightedScore += metric.score * effectiveWeight
-                weightSum += effectiveWeight
-                individualScores.add(metric.score)
-
-                // Track the most detailed description
-                if (metric.details.length > bestDetails.length) {
-                    bestDetails = metric.details
-                    bestSeverity = metric.severity
-                }
-
-                // Accumulate engine contributions
-                engineContributions[result.engineName] =
-                    (engineContributions[result.engineName] ?: 0f) + effectiveWeight
-            }
-
-            if (weightSum > 0) {
-                val finalScore = weightedScore / weightSum
-
-                // Calculate agreement: how much do engines agree?
-                val agreement = if (individualScores.size > 1) {
-                    val mean = individualScores.average().toFloat()
-                    val variance = individualScores.map { (it - mean) * (it - mean) }.average().toFloat()
-                    val stdDev = kotlin.math.sqrt(variance)
-                    // Low std dev = high agreement (1.0 = perfect, 0.0 = no agreement)
-                    (1f - (stdDev / DISAGREEMENT_THRESHOLD)).coerceIn(0f, 1f)
-                } else {
-                    1.0f  // Single engine = full agreement with itself
-                }
-
-                // Adjust confidence based on agreement and engine count
-                val engineBonus = (contributions.size.coerceAtMost(4) / 4f) * 0.15f
-                val agreementBonus = agreement * 0.10f
-                val baseConfidence = results.map { it.confidence }.average().toFloat()
-                val finalConfidence = (baseConfidence + engineBonus + agreementBonus)
-                    .coerceIn(MIN_CONFIDENCE, MAX_CONFIDENCE)
-
-                // Classify final score
-                val severity = classifyScore(finalScore)
-
-                // Build enhanced details string
-                val engineNames = contributions.joinToString("+") { it.engineName }
-                val enhancedDetails = "$bestDetails | Ensemble($engineNames) — اتفاق: ${"%.0f".format(agreement * 100)}%"
-
-                mergedMetrics[type] = SkinMetric(
-                    type = type,
-                    score = finalScore,
-                    severity = severity,
-                    details = enhancedDetails
+                val effectiveWeight = baseWeight * result.confidence
+                ScoredEngine(
+                    score = metric.score,
+                    weight = effectiveWeight,
+                    zone = metric.zone,
+                    details = metric.details,
+                    severity = metric.severity
                 )
-
-                totalWeight += weightSum
             }
+
+            val finalScore: Float
+            val agreement: Float
+            val dominantZone: SkinZone
+
+            if (scored.size == 1) {
+                finalScore = scored[0].score
+                agreement = 1.0f
+                dominantZone = scored[0].zone
+            } else {
+                val sorted = scored.sortedBy { it.score }
+                val median = sorted[sorted.size / 2].score
+
+                var weightedSum = 0f
+                var weightSum = 0f
+                val individualScores = mutableListOf<Float>()
+
+                for (s in scored) {
+                    val deviation = abs(s.score - median)
+                    val finalWeight = if (deviation > OUTLIER_THRESHOLD) {
+                        Timber.d("Ensemble outlier: ${type.name} score=${s.score} deviates ${"%.1f".format(deviation)} from median $median — weight halved")
+                        s.weight * OUTLIER_PENALTY
+                    } else {
+                        s.weight
+                    }
+                    weightedSum += s.score * finalWeight
+                    weightSum += finalWeight
+                    individualScores.add(s.score)
+
+                    for (r in contributions) {
+                        if (r.metrics[type]?.score == s.score) {
+                            engineContributions[r.engineName] =
+                                (engineContributions[r.engineName] ?: 0f) + finalWeight
+                        }
+                    }
+                }
+
+                finalScore = if (weightSum > 0) weightedSum / weightSum else median
+
+                val mean = individualScores.average().toFloat()
+                val variance = individualScores.map { (it - mean) * (it - mean) }.average().toFloat()
+                val stdDev = kotlin.math.sqrt(variance)
+                agreement = (1f - (stdDev / DISAGREEMENT_THRESHOLD)).coerceIn(0f, 1f)
+
+                dominantZone = scored.maxByOrNull { it.weight }?.zone ?: SkinZone.FULL_FACE
+            }
+
+            val severity = classifyScore(finalScore)
+
+            val bestDetails = scored.maxByOrNull { it.details.length }?.details ?: ""
+            val engineNames = contributions.joinToString("+") { it.engineName }
+            val enhancedDetails = "$bestDetails | Ensemble($engineNames) — اتفاق: ${"%.0f".format(agreement * 100)}%"
+
+            val engineBonus = (contributions.size.coerceAtMost(4) / 4f) * 0.15f
+            val agreementBonus = agreement * 0.10f
+            val baseConfidence = results.map { it.confidence }.average().toFloat()
+            val finalConfidence = (baseConfidence + engineBonus + agreementBonus)
+                .coerceIn(MIN_CONFIDENCE, MAX_CONFIDENCE)
+
+            mergedMetrics[type] = SkinMetric(
+                type = type,
+                score = finalScore,
+                severity = severity,
+                zone = dominantZone,
+                details = enhancedDetails,
+                confidence = finalConfidence
+            )
         }
 
-        // Normalize engine contributions to sum to 1.0
         val totalContribution = engineContributions.values.sum()
         if (totalContribution > 0) {
             for (key in engineContributions.keys) {
@@ -161,9 +169,7 @@ class EnsembleAnalysisEngine @Inject constructor() {
             }
         }
 
-        // Overall agreement across all metrics
-        val overallAgreement = if (mergedMetrics.isNotEmpty()) {
-            // Re-calculate per-type agreement for overall
+        val overallAgreement = if (mergedMetrics.size > 1) {
             var totalAgreement = 0f
             var typeCount = 0
             for (type in allTypes) {
@@ -180,7 +186,7 @@ class EnsembleAnalysisEngine @Inject constructor() {
             }
             if (typeCount > 0) totalAgreement / typeCount else 1f
         } else {
-            0f
+            1f
         }
 
         val overallConfidence = (results.map { it.confidence }.average().toFloat() +

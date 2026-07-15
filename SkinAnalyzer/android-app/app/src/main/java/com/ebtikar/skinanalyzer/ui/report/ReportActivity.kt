@@ -260,7 +260,7 @@ class ReportActivity : AppCompatActivity() {
 
                 launch {
                     viewModel.metrics.collect { metrics ->
-                        metricsAdapter.submitList(metrics)
+                        metricsAdapter.submitMetrics(metrics)
                         binding.tvMetricCount.text = "${metrics.size}/${com.ebtikar.skinanalyzer.model.SkinMetric.TOTAL_METRICS}"
                     }
                 }

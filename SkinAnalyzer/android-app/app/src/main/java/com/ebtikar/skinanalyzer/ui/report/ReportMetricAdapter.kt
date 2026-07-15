@@ -13,28 +13,97 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.ebtikar.skinanalyzer.R
 import com.ebtikar.skinanalyzer.databinding.ItemMetricCardBinding
+import com.ebtikar.skinanalyzer.databinding.ItemZoneHeaderBinding
 import com.ebtikar.skinanalyzer.model.MetricSeverity
 import com.ebtikar.skinanalyzer.model.MetricTrend
 import com.ebtikar.skinanalyzer.model.SkinMetric
+import com.ebtikar.skinanalyzer.model.SkinZone
 
-class ReportMetricAdapter : ListAdapter<SkinMetric, ReportMetricAdapter.MetricViewHolder>(MetricDiffCallback()) {
+sealed class ReportListItem {
+    data class ZoneHeader(val zone: SkinZone, val zoneNameAr: String, val emoji: String) : ReportListItem()
+    data class MetricItem(val metric: SkinMetric) : ReportListItem()
+}
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MetricViewHolder {
-        val binding = ItemMetricCardBinding.inflate(
-            LayoutInflater.from(parent.context), parent, false
-        )
-        return MetricViewHolder(binding)
+class ReportMetricAdapter : ListAdapter<ReportListItem, RecyclerView.ViewHolder>(ReportItemDiffCallback()) {
+
+    companion object {
+        private const val TYPE_ZONE_HEADER = 0
+        private const val TYPE_METRIC = 1
     }
 
-    override fun onBindViewHolder(holder: MetricViewHolder, position: Int) {
-        holder.bind(getItem(position))
+    override fun getItemViewType(position: Int): Int = when (getItem(position)) {
+        is ReportListItem.ZoneHeader -> TYPE_ZONE_HEADER
+        is ReportListItem.MetricItem -> TYPE_METRIC
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return when (viewType) {
+            TYPE_ZONE_HEADER -> {
+                val binding = ItemZoneHeaderBinding.inflate(
+                    LayoutInflater.from(parent.context), parent, false
+                )
+                ZoneHeaderViewHolder(binding)
+            }
+            else -> {
+                val binding = ItemMetricCardBinding.inflate(
+                    LayoutInflater.from(parent.context), parent, false
+                )
+                MetricViewHolder(binding)
+            }
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (val item = getItem(position)) {
+            is ReportListItem.ZoneHeader -> (holder as ZoneHeaderViewHolder).bind(item)
+            is ReportListItem.MetricItem -> (holder as MetricViewHolder).bind(item.metric, position)
+        }
+    }
+
+    fun submitMetrics(metrics: List<SkinMetric>) {
+        val items = mutableListOf<ReportListItem>()
+        val grouped = metrics.groupBy { it.zone }
+        val zoneOrder = listOf(
+            SkinZone.T_ZONE to "منطقة T — الجبهة والأنف",
+            SkinZone.U_ZONE to "الخدود والوجنتين",
+            SkinZone.EYE_AREA to "منطقة حول العين",
+            SkinZone.O_ZONE to "المنطقة الخارجية",
+            SkinZone.FULL_FACE to "الوجه بالكامل"
+        )
+        val zoneEmoji = mapOf(
+            SkinZone.T_ZONE to "🔹",
+            SkinZone.U_ZONE to "🔸",
+            SkinZone.EYE_AREA to "👁",
+            SkinZone.O_ZONE to "◾",
+            SkinZone.FULL_FACE to "🔹"
+        )
+
+        for ((zone, name) in zoneOrder) {
+            val zoneMetrics = grouped[zone]?.sortedBy { it.score } ?: continue
+            if (zoneMetrics.isEmpty()) continue
+            items.add(ReportListItem.ZoneHeader(zone, name, zoneEmoji[zone] ?: ""))
+            for (m in zoneMetrics) {
+                items.add(ReportListItem.MetricItem(m))
+            }
+        }
+
+        submitList(items)
+    }
+
+    class ZoneHeaderViewHolder(
+        private val binding: ItemZoneHeaderBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+
+        fun bind(header: ReportListItem.ZoneHeader) {
+            binding.tvZoneName.text = "${header.emoji} ${header.zoneNameAr}"
+        }
     }
 
     class MetricViewHolder(
         private val binding: ItemMetricCardBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(metric: SkinMetric) {
+        fun bind(metric: SkinMetric, position: Int) {
             binding.tvMetricName.text = metric.type.arabicName()
 
             val iconRes = metric.type.iconRes()
@@ -71,7 +140,7 @@ class ReportMetricAdapter : ListAdapter<SkinMetric, ReportMetricAdapter.MetricVi
 
             ValueAnimator.ofInt(0, metric.score.toInt()).apply {
                 duration = 800L
-                startDelay = adapterPosition * 60L
+                startDelay = position * 60L
                 interpolator = DecelerateInterpolator(1.5f)
                 addUpdateListener { anim ->
                     binding.progressMetric.progress = anim.animatedValue as Int
@@ -193,11 +262,19 @@ class ReportMetricAdapter : ListAdapter<SkinMetric, ReportMetricAdapter.MetricVi
         }
     }
 
-    class MetricDiffCallback : DiffUtil.ItemCallback<SkinMetric>() {
-        override fun areItemsTheSame(oldItem: SkinMetric, newItem: SkinMetric) =
-            oldItem.type == newItem.type
+    class ReportItemDiffCallback : DiffUtil.ItemCallback<ReportListItem>() {
+        override fun areItemsTheSame(oldItem: ReportListItem, newItem: ReportListItem): Boolean {
+            return when {
+                oldItem is ReportListItem.ZoneHeader && newItem is ReportListItem.ZoneHeader ->
+                    oldItem.zone == newItem.zone
+                oldItem is ReportListItem.MetricItem && newItem is ReportListItem.MetricItem ->
+                    oldItem.metric.type == newItem.metric.type
+                else -> false
+            }
+        }
 
-        override fun areContentsTheSame(oldItem: SkinMetric, newItem: SkinMetric) =
-            oldItem == newItem
+        override fun areContentsTheSame(oldItem: ReportListItem, newItem: ReportListItem): Boolean {
+            return oldItem == newItem
+        }
     }
 }
