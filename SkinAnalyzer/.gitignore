@@ -65,3 +65,4 @@ user.txt
 # OS files
 .DS_Store
 Thumbs.db
+build_output*.txt
