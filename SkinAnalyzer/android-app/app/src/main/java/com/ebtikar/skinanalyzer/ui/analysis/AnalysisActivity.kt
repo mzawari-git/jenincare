@@ -213,8 +213,7 @@ class AnalysisActivity : BaseCameraActivity() {
 
     /**
      * Checks lighting hardware before starting the capture pipeline.
-     * Shows a blocking dialog if NO lights are connected at all.
-     * Shows a soft warning if only serial-only lights (BLUE/RED/BROWN) are missing.
+     * Always auto-continues — shows no blocking dialogs.
      */
     private fun checkLightingHardware(onReady: () -> Unit) {
         val gpioAvailable = fiseGpioController.isAvailable
@@ -222,43 +221,15 @@ class AnalysisActivity : BaseCameraActivity() {
 
         Timber.i("Hardware pre-check: gpio=$gpioAvailable, serial=$serialAvailable")
 
-        when {
-            // No hardware at all — block the scan
-            !gpioAvailable && !serialAvailable -> {
-                android.app.AlertDialog.Builder(this)
-                    .setTitle("⚠️ أضواء التشخيص غير متصلة")
-                    .setMessage(
-                        "لم يتم الكشف عن FISE GPIO driver.\n\n" +
-                        "تأكد من أن الجهاز ZMLH02 يعمل بشكل صحيح.\n\n" +
-                        "هل تريد المتابعة بدون إضاءة؟ (ستكون الصور بالإضاءة الطبيعية فقط)"
-                    )
-                    .setCancelable(false)
-                    .setPositiveButton("متابعة بدون إضاءة") { _, _ -> onReady() }
-                    .setNegativeButton("إلغاء الفحص") { _, _ -> finish() }
-                    .show()
-            }
-
-            // GPIO OK but no serial — BLUE/RED/BROWN won't fire
-            gpioAvailable && !serialAvailable -> {
-                android.app.AlertDialog.Builder(this)
-                    .setTitle("معلومة: بعض الأضواء غير متصلة")
-                    .setMessage(
-                        "الأضواء التالية تحتاج USB Serial متصل:\n" +
-                        "• ضوء أزرق 465nm\n• ضوء أحمر 630nm\n• ضوء بني 590nm\n\n" +
-                        "الأضواء الخمسة الأخرى ستعمل بشكل صحيح. هل تريد المتابعة؟"
-                    )
-                    .setCancelable(false)
-                    .setPositiveButton("متابعة (5 أضواء فقط)") { _, _ -> onReady() }
-                    .setNegativeButton("إلغاء") { _, _ -> finish() }
-                    .show()
-            }
-
-            // All hardware ready
-            else -> {
-                Timber.i("All lighting hardware ready (gpio=$gpioAvailable, serial=$serialAvailable)")
-                onReady()
-            }
+        if (!gpioAvailable && !serialAvailable) {
+            Timber.w("No lighting hardware detected — continuing without LEDs")
+        } else if (gpioAvailable && !serialAvailable) {
+            Timber.i("GPIO available, serial not connected — BLUE/RED/BROWN will be dark frames")
+        } else {
+            Timber.i("All lighting hardware ready (gpio=$gpioAvailable, serial=$serialAvailable)")
         }
+
+        onReady()
     }
 
     private fun setupUI() {

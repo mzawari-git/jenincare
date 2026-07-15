@@ -244,7 +244,8 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                 }
             } catch (e: Throwable) {
                 healthMonitor.recordFailure("Advanced_MediaPipe", e.message ?: "Exception")
-                Timber.w(e, "Advanced analysis failed")
+                Timber.e(e, "Advanced analysis FAILED: ${e.javaClass.simpleName}: ${e.message}")
+                e.stackTrace.take(10).forEach { Timber.e("  at $it") }
             }
 
             // 2c: OpenCV engine
@@ -270,7 +271,8 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                 }
             } catch (e: Throwable) {
                 healthMonitor.recordFailure("CV_OpenCV", e.message ?: "Exception")
-                Timber.w(e, "OpenCV analysis failed")
+                Timber.e(e, "OpenCV analysis FAILED: ${e.javaClass.simpleName}: ${e.message}")
+                e.stackTrace.take(10).forEach { Timber.e("  at $it") }
             }
 
             // 2d: Basic Pixel engine (always run as fallback)
@@ -293,7 +295,8 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                 }
             } catch (e: Throwable) {
                 healthMonitor.recordFailure("Basic_Pixel", e.message ?: "Exception")
-                Timber.w(e, "Basic Pixel analysis failed")
+                Timber.e(e, "Basic Pixel analysis FAILED: ${e.javaClass.simpleName}: ${e.message}")
+                e.stackTrace.take(10).forEach { Timber.e("  at $it") }
             }
 
             // Phase 3: Combine results using ensemble engine

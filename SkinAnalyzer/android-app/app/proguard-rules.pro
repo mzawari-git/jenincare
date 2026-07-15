@@ -30,6 +30,10 @@
 -keep,includedescriptorclasses class com.ebtikar.skinanalyzer.**$$serializer { *; }
 -keepclassmembers class com.ebtikar.skinanalyzer.** { *** Companion; }
 -keepclasseswithmembers class com.ebtikar.skinanalyzer.** { kotlinx.serialization.KSerializer serializer(...); }
+-keep class kotlinx.serialization.** { *; }
+-keepclassmembers class * { *** Companion; }
+-keepclasseswithmembers class * { kotlinx.serialization.KSerializer serializer(...); }
+-keep,includedescriptorclasses class ** { *; }
 
 # Hilt
 -keep class dagger.hilt.** { *; }
