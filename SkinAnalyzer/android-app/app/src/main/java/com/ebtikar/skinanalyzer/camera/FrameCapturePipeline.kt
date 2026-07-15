@@ -301,6 +301,12 @@ class FrameCapturePipeline @Inject constructor(
 
             spectrumController.activate(LightSpectrum.OFF)
 
+            // Re-check GPIO availability before capture (may have become available after boot)
+            if (!fiseGpioController.isAvailable) {
+                _positionMessage.value = "جاري فحص أضواء التشخيص..."
+                fiseGpioController.recheckAvailability()
+            }
+
             _captureState.value = CaptureState.CAPTURING
             onStateChanged(CaptureState.CAPTURING)
             val frames = mutableMapOf<LightSpectrum, File>()

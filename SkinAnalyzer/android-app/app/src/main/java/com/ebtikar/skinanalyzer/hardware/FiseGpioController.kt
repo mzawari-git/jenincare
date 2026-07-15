@@ -27,6 +27,7 @@ class FiseGpioController @Inject constructor(
     @Volatile private var _available = false
     @Volatile private var _useRawGpio = false
     @Volatile private var _setupComplete = false
+    @Volatile private var _lastActiveGpioIndex = -1
     var selinuxEnforcing: Boolean? = null
         private set
 
@@ -70,19 +71,28 @@ class FiseGpioController @Inject constructor(
         val driverBound = isFiseDriverBound()
         val fiseFilesExist = withContext(Dispatchers.IO) { gpioFiles.all { it.exists() } && ledFile.exists() }
         val fiseWriteOk = if (fiseFilesExist) verifyWriteAccess() else false
-        val fiseActuallyWorks = if (fiseWriteOk) testFiseWriteEffect() else false
 
-        if (fiseActuallyWorks) {
+        if (fiseWriteOk) {
+            // FISE files exist and are writable — mark as available immediately
+            // Don't wait for testFiseWriteEffect() which can be unreliable on some boots
             _available = true
             _useRawGpio = false
             _statusMessage = "أضواء التشخيص جاهزة ✓ (FISE driver)"
-            Timber.i("FISE GPIO controller VERIFIED: files exist, writable, driver bound, AND writes take effect")
+            Timber.i("FISE GPIO files exist and are writable — marking as available (driverBound=$driverBound)")
             turnAllOff()
+
+            // Run effect test in background for diagnostics (non-blocking)
+            CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+                val effectWorks = testFiseWriteEffect()
+                if (!effectWorks) {
+                    Timber.w("FISE write effect test failed — files are writable but LED control may be unreliable")
+                }
+            }
         } else {
             if (fiseFilesExist && !driverBound) {
-                Timber.w("FISE files exist but driver is UNBOUND — raw GPIO should work")
+                Timber.w("FISE files exist but driver is UNBOUND — trying raw GPIO fallback")
             } else if (fiseFilesExist) {
-                Timber.w("FISE files exist but writes do NOT control LEDs — trying raw GPIO fallback")
+                Timber.w("FISE files exist but writes failed — trying raw GPIO fallback")
             }
             val rawOk = tryRawGpioSetup()
             if (rawOk) {
@@ -299,20 +309,17 @@ class FiseGpioController @Inject constructor(
         }
         Timber.i("Rechecking GPIO availability at runtime...")
         checkSelinux()
-        val driverBound = isFiseDriverBound()
         val gpioOk = gpioFiles.all { it.exists() } && verifyWriteAccess()
-        val ledOk = ledFile.exists()
-        if (gpioOk && ledOk) {
-            val fiseWorks = testFiseWriteEffect()
-            if (fiseWorks) {
-                _available = true
-                _useRawGpio = false
-                _statusMessage = "أضواء التشخيص جاهزة ✓ (FISE driver)"
-                Timber.i("FISE GPIO re-check: NOW available! gpio_ok=$gpioOk, led_ok=$ledOk")
-                turnAllOff()
-                return true
-            }
+
+        if (gpioOk) {
+            _available = true
+            _useRawGpio = false
+            _statusMessage = "أضواء التشخيص جاهزة ✓ (FISE driver)"
+            Timber.i("FISE GPIO re-check: files exist and writable — marking as available")
+            turnAllOff()
+            return true
         }
+
         val rawOk = tryRawGpioSetup()
         if (rawOk) {
             _available = true
@@ -322,10 +329,11 @@ class FiseGpioController @Inject constructor(
             turnAllOff()
             return true
         }
+
         _available = false
         _useRawGpio = false
         _statusMessage = "⚠️ أضواء التشخيص غير متصلة — FISE driver لا يوجد"
-        Timber.w("GPIO re-check: still unavailable. SELinux=$selinuxEnforcing, driverBound=$driverBound")
+        Timber.w("GPIO re-check: still unavailable. SELinux=$selinuxEnforcing")
         gpioFiles.forEach {
             Timber.w("  ${it.absolutePath}: exists=${it.exists()}, canWrite=${try { it.canWrite() } catch (_: Exception) { false }}")
         }
@@ -377,25 +385,22 @@ class FiseGpioController @Inject constructor(
         if (index < 0 || index >= gpioFiles.size) return false
         val value = if (on) "0" else "1"  // Active LOW: 0=ON, 1=OFF
 
-        if (index < rawGpioFiles.size && rawGpioFiles[index].exists()) {
+        // If using raw GPIO mode, write via shell
+        if (_useRawGpio && index < rawGpioFiles.size && rawGpioFiles[index].exists()) {
             val path = rawGpioFiles[index].absolutePath
-            try {
-                val ok = shellWrite(path, value)
-                if (ok) {
-                    val readback = shellRead(path)
-                    if (readback == value) {
-                        Timber.i("Raw GPIO pin ${rawGpioPins[index]} -> ${if (on) "ON" else "OFF"} (wrote=$value, readback=$readback) OK")
-                        return true
-                    }
-                    Timber.w("Raw GPIO pin ${rawGpioPins[index]} wrote=$value but readback=$readback, trying FISE")
-                } else {
-                    Timber.w("Raw GPIO pin ${rawGpioPins[index]} shell write failed, trying FISE")
+            val ok = shellWrite(path, value)
+            if (ok) {
+                val readback = shellRead(path)
+                if (readback == value) {
+                    Timber.d("Raw GPIO pin ${rawGpioPins[index]} -> ${if (on) "ON" else "OFF"} OK")
+                    return true
                 }
-            } catch (e: Exception) {
-                Timber.w("Raw GPIO pin ${rawGpioPins[index]} write failed: ${e.message}, trying FISE")
+                Timber.w("Raw GPIO pin ${rawGpioPins[index]} wrote=$value but readback=$readback")
             }
+            return false
         }
 
+        // Default: use FISE file (fast direct write, no shell)
         val file = gpioFiles[index]
         if (!file.exists()) {
             Timber.w("FISE GPIO $index file does not exist: ${file.absolutePath}")
@@ -403,8 +408,7 @@ class FiseGpioController @Inject constructor(
         }
         return try {
             file.writeText(value)
-            val readback = try { file.readText().trim() } catch (_: Exception) { "?" }
-            Timber.i("FISE GPIO $index -> ${if (on) "ON" else "OFF"} (wrote=$value, readback=$readback)")
+            Timber.d("FISE GPIO $index -> ${if (on) "ON" else "OFF"} (wrote=$value)")
             true
         } catch (e: Exception) {
             Timber.e(e, "Failed to write FISE GPIO $index (SELinux=$selinuxEnforcing)")
@@ -468,6 +472,7 @@ class FiseGpioController @Inject constructor(
         for (i in gpioFiles.indices) {
             setGpio(i, false)
         }
+        _lastActiveGpioIndex = -1
         if (ledFile.exists() || File("/sys/class/fise_led/level").exists()) {
             setMasterLed(false)
         }
@@ -482,12 +487,20 @@ class FiseGpioController @Inject constructor(
             Timber.w("No GPIO channel for ${spectrum.name}")
             return false
         }
-        turnAllOff()
+
+        // Turn off previous LED only (not all 5) for faster switching
+        val prevIndex = _lastActiveGpioIndex
+        if (prevIndex >= 0 && prevIndex != gpioIndex && prevIndex < gpioFiles.size) {
+            setGpio(prevIndex, false)
+        }
+
         val gpioOk = setGpio(gpioIndex, true)
         if (!gpioOk) return false
+
         if (ledFile.exists() || File("/sys/class/fise_led/level").exists()) {
             setMasterLed(true)
         }
+        _lastActiveGpioIndex = gpioIndex
         return true
     }
 
