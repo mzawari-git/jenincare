@@ -41,9 +41,11 @@
 -dontwarn okio.**
 -keep class okhttp3.** { *; }
 
-# MediaPipe
+# MediaPipe - must not optimize (Graph.<clinit> uses stack inspection)
 -keep class com.google.mediapipe.** { *; }
+-keepclassmembers class com.google.mediapipe.** { *; }
 -dontwarn com.google.mediapipe.**
+-optimizations !class/merging/**,!code/simplification/**,!code/removal/**,!method/inlining/**,!code/hoisting/**
 
 # javax.lang.model (referenced by autovalue/JavaPoet in annotation processors)
 -dontwarn javax.lang.model.**

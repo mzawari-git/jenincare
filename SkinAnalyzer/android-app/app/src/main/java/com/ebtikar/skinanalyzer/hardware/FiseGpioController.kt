@@ -50,15 +50,20 @@ class FiseGpioController @Inject constructor(
     private val initDeferred = CompletableDeferred<Unit>()
 
     init {
-        checkSelinux()
+        try {
+            checkSelinux()
+        } catch (_: Exception) {}
         initJob = CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
             try {
                 initialize()
             } catch (e: Exception) {
                 Timber.e(e, "FiseGpioController init failed")
+                _available = false
                 _statusMessage = "فشل تهيئة GPIO: ${e.message}"
             } finally {
-                initDeferred.complete(Unit)
+                try {
+                    initDeferred.complete(Unit)
+                } catch (_: Exception) {}
             }
         }
     }
@@ -73,20 +78,18 @@ class FiseGpioController @Inject constructor(
         val fiseWriteOk = if (fiseFilesExist) verifyWriteAccess() else false
 
         if (fiseWriteOk) {
-            // FISE files exist and are writable — mark as available immediately
-            // Don't wait for testFiseWriteEffect() which can be unreliable on some boots
             _available = true
             _useRawGpio = false
             _statusMessage = "أضواء التشخيص جاهزة ✓ (FISE driver)"
             Timber.i("FISE GPIO files exist and are writable — marking as available (driverBound=$driverBound)")
-            turnAllOff()
-
-            // Run effect test in background for diagnostics (non-blocking)
+            try { turnAllOff() } catch (_: Exception) {}
             CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
-                val effectWorks = testFiseWriteEffect()
-                if (!effectWorks) {
-                    Timber.w("FISE write effect test failed — files are writable but LED control may be unreliable")
-                }
+                try {
+                    val effectWorks = testFiseWriteEffect()
+                    if (!effectWorks) {
+                        Timber.w("FISE write effect test failed")
+                    }
+                } catch (_: Exception) {}
             }
         } else {
             if (fiseFilesExist && !driverBound) {

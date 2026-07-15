@@ -63,7 +63,7 @@ class FaceMeshDetector @Inject constructor(
             useMediaPipe = true
             Timber.i("FaceMeshDetector initialized with MediaPipe")
             true
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Timber.w(e, "MediaPipe model not available, will use ML Kit fallback")
             useMediaPipe = false
             landmarker = null
