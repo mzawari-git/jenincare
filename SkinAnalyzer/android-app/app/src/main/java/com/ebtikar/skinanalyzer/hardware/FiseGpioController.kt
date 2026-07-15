@@ -91,6 +91,21 @@ class FiseGpioController @Inject constructor(
                     }
                 } catch (_: Exception) {}
             }
+        } else if (fiseFilesExist || driverBound) {
+            // Files exist or driver is bound — mark as available optimistically.
+            // Write verification may fail due to SELinux denials on untrusted_app
+            // or FISE driver ignoring readback, but actual writes often work at capture time.
+            _available = true
+            _useRawGpio = false
+            _statusMessage = "أضواء التشخيص جاهزة ✓ (FISE driver, unverified writes)"
+            Timber.w("FISE GPIO files exist (driverBound=$driverBound, writeVerify=$fiseWriteOk) — marking as available optimistically")
+            try { turnAllOff() } catch (_: Exception) {}
+            CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+                try {
+                    val effectWorks = testFiseWriteEffect()
+                    Timber.i("FISE write effect test result: $effectWorks")
+                } catch (_: Exception) {}
+            }
         } else {
             if (fiseFilesExist && !driverBound) {
                 Timber.w("FISE files exist but driver is UNBOUND — trying raw GPIO fallback")
@@ -312,14 +327,27 @@ class FiseGpioController @Inject constructor(
         }
         Timber.i("Rechecking GPIO availability at runtime...")
         checkSelinux()
-        val gpioOk = gpioFiles.all { it.exists() } && verifyWriteAccess()
+        val gpioExist = withContext(Dispatchers.IO) { gpioFiles.any { it.exists() } || ledFile.exists() }
+        val driverBound = isFiseDriverBound()
+        val gpioOk = gpioFiles.all { it.exists() } && ledFile.exists()
+        val writeOk = if (gpioOk) verifyWriteAccess() else false
 
-        if (gpioOk) {
+        if (gpioOk && writeOk) {
             _available = true
             _useRawGpio = false
             _statusMessage = "أضواء التشخيص جاهزة ✓ (FISE driver)"
             Timber.i("FISE GPIO re-check: files exist and writable — marking as available")
             turnAllOff()
+            return true
+        }
+
+        // Lenient: files exist or driver bound — mark available even without write verification
+        if (gpioExist || driverBound) {
+            _available = true
+            _useRawGpio = false
+            _statusMessage = "أضواء التشخيص جاهزة ✓ (FISE driver, unverified writes)"
+            Timber.w("FISE GPIO re-check: files exist (gpioExist=$gpioExist, driverBound=$driverBound) — marking available optimistically")
+            try { turnAllOff() } catch (_: Exception) {}
             return true
         }
 

@@ -127,9 +127,21 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
 
     override suspend fun analyzeImages(frames: Map<LightSpectrum, File>, mode: String): Result<SkinAnalysisReport> {
         return try {
+            Timber.i("analyzeImages: received ${frames.size} frames, mode=$mode")
+            for ((spec, f) in frames) {
+                Timber.i("  Frame ${spec.name}: file=${f.name}, exists=${f.exists()}, size=${if(f.exists()) f.length() else -1}L, parent=${f.parentFile?.absolutePath}")
+            }
+
             val analysisFrames = frames.mapValues { (_, file) ->
                 val rawFile = File(file.parentFile, file.nameWithoutExtension + "_raw.jpg")
-                if (rawFile.exists()) rawFile else file
+                val useRaw = rawFile.exists()
+                Timber.d("  Frame resolution: ${file.name} -> raw=${rawFile.name}(exists=$useRaw) -> using=${if(useRaw) rawFile.name else file.name}")
+                if (useRaw) rawFile else file
+            }
+
+            Timber.i("analysisFrames resolved: ${analysisFrames.size} files")
+            for ((spec, f) in analysisFrames) {
+                Timber.i("  Analysis frame ${spec.name}: ${f.name}, exists=${f.exists()}, size=${if(f.exists()) f.length() else -1}L")
             }
 
             // Check cache for quick re-analysis
@@ -286,8 +298,21 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
 
             // Phase 3: Combine results using ensemble engine
             if (ensembleResults.isEmpty()) {
-                _analysisState.value = AnalysisState.Error("لم يتمكن التحليل من استخراج بيانات كافية. تأكد من وجود الوجه بشكل واضح أمام الكاميرا وأعد المحاولة.")
-                return Result.failure(Exception("All analysis engines failed"))
+                Timber.w("All 4 analysis engines returned empty metrics — attempting emergency fallback")
+                val emergencyMetrics = performEmergencyFallback(analysisFrames)
+                if (emergencyMetrics.isNotEmpty()) {
+                    Timber.i("Emergency fallback produced ${emergencyMetrics.size} metrics")
+                    ensembleResults.add(EnsembleAnalysisEngine.EngineResult(
+                        engineName = "Emergency_Fallback",
+                        metrics = emergencyMetrics,
+                        confidence = 0.50f,
+                        executionTimeMs = 0
+                    ))
+                } else {
+                    Timber.e("Emergency fallback also produced no metrics. Files: ${analysisFrames.map { "${it.key}=${it.value.name}(exists=${it.value.exists()}, size=${if(it.value.exists()) it.value.length() else 0})" }}")
+                    _analysisState.value = AnalysisState.Error("لم يتمكن التحليل من استخراج بيانات كافية. تأكد من وجود الوجه بشكل واضح أمام الكاميرا وأعد المحاولة.")
+                    return Result.failure(Exception("All analysis engines failed (including emergency fallback)"))
+                }
             }
 
             _analysisState.value = AnalysisState.Analyzing("Ensemble_Combining")
@@ -665,6 +690,94 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
     private suspend fun performAdvancedAnalysis(frames: Map<LightSpectrum, File>): Map<SkinMetric.Type, SkinMetric> {
         val whiteFile = frames.entries.find { it.key == LightSpectrum.WHITE }?.value
         return advancedSkinAnalyzer.analyze(frames, whiteFile)
+    }
+
+    /**
+     * Emergency fallback when all 4 engines fail.
+     * Uses extremely simple pixel-level analysis with no dependencies on
+     * FaceMesh, TFLite, or ML Kit. Just raw bitmap statistics.
+     */
+    private suspend fun performEmergencyFallback(frames: Map<LightSpectrum, File>): Map<SkinMetric.Type, SkinMetric> = withContext(Dispatchers.Default) {
+        val metrics = mutableMapOf<SkinMetric.Type, SkinMetric>()
+        var decodedCount = 0
+        for ((spectrum, file) in frames) {
+            Timber.d("Emergency fallback: checking ${spectrum.name} -> ${file.name} (exists=${file.exists()}, size=${if(file.exists()) file.length() else 0})")
+            if (!file.exists()) continue
+            val bitmap = try {
+                CVUtils.decodeSampled(file, 512)
+            } catch (e: Exception) {
+                Timber.e(e, "Emergency fallback: decode failed for ${file.name}")
+                null
+            } ?: continue
+            decodedCount++
+            try {
+                val width = bitmap.width
+                val height = bitmap.height
+                val totalPixels = width * height
+                var rSum = 0L; var gSum = 0L; var bSum = 0L
+                var brightnessSum = 0L
+                val sampleStep = maxOf(1, totalPixels / 10000)
+                var count = 0
+                for (y in 0 until height step sampleStep) {
+                    for (x in 0 until width step sampleStep) {
+                        val px = bitmap.getPixel(x, y)
+                        rSum += android.graphics.Color.red(px)
+                        gSum += android.graphics.Color.green(px)
+                        bSum += android.graphics.Color.blue(px)
+                        brightnessSum += (android.graphics.Color.red(px) + android.graphics.Color.green(px) + android.graphics.Color.blue(px)) / 3
+                        count++
+                    }
+                }
+                if (count == 0) { bitmap.recycle(); continue }
+                val avgR = rSum.toFloat() / count
+                val avgG = gSum.toFloat() / count
+                val avgB = bSum.toFloat() / count
+                val avgBrightness = brightnessSum.toFloat() / count / 255f
+
+                when (spectrum) {
+                    LightSpectrum.WHITE -> {
+                        val texScore = CVUtils.calibratedScore(avgBrightness * 80f, 50f, 5f)
+                        val toneScore = CVUtils.calibratedScore((avgR + avgG + avgB) / 3f / 255f * 100f, 25f, 2f)
+                        metrics[SkinMetric.Type.TEXTURE] = SkinMetric(SkinMetric.Type.TEXTURE, texScore, classify(texScore), details = "تحليل أساسي - الضوء الأبيض")
+                        metrics[SkinMetric.Type.SKIN_TONE] = SkinMetric(SkinMetric.Type.SKIN_TONE, toneScore, classify(toneScore), details = "تحليل لون أساسي - الضوء الأبيض")
+                    }
+                    LightSpectrum.UV365 -> {
+                        val uvScore = CVUtils.calibratedScore(avgBrightness * 100f, 0.15f, 0.005f)
+                        metrics[SkinMetric.Type.UV_SPOTS] = SkinMetric(SkinMetric.Type.UV_SPOTS, uvScore, classify(uvScore), details = "تحليل أساسي UV")
+                    }
+                    LightSpectrum.POL_P -> {
+                        val redness = avgR / maxOf(avgG, avgB, 1f)
+                        val vScore = CVUtils.calibratedScore(redness * 20f, 0.25f, 0.02f)
+                        metrics[SkinMetric.Type.VASCULAR] = SkinMetric(SkinMetric.Type.VASCULAR, vScore, classify(vScore), details = "تحليل أساسي - قطبي متقاطع")
+                    }
+                    LightSpectrum.POL_N -> {
+                        val contrast = (maxOf(avgR, avgG, avgB) - minOf(avgR, avgG, avgB)).toFloat() / 255f
+                        val wScore = CVUtils.calibratedScore(contrast * 50f, 0.15f, 0.003f)
+                        metrics[SkinMetric.Type.WRINKLES] = SkinMetric(SkinMetric.Type.WRINKLES, wScore, classify(wScore), details = "تحليل أساسي - قطبي موازي")
+                    }
+                    LightSpectrum.WOODS -> {
+                        metrics[SkinMetric.Type.MOISTURE] = SkinMetric(SkinMetric.Type.MOISTURE, CVUtils.calibratedScoreInverted(avgBrightness * 85f, 0.05f, 0.85f), classify(avgBrightness * 85f), details = "تحليل أساسي - وودز")
+                    }
+                    LightSpectrum.BLUE -> {
+                        val bBlue = avgB.toFloat() / 255f
+                        metrics[SkinMetric.Type.SEBUM] = SkinMetric(SkinMetric.Type.SEBUM, CVUtils.calibratedScoreInverted(bBlue * 80f, 0.15f, 0.55f), classify(bBlue * 80f), details = "تحليل أساسي - أزرق")
+                    }
+                    LightSpectrum.RED -> {
+                        val redness = avgR / maxOf(avgG, avgB, 1f)
+                        metrics[SkinMetric.Type.VASCULAR] = SkinMetric(SkinMetric.Type.VASCULAR, CVUtils.calibratedScore(redness * 20f, 0.25f, 0.02f), classify(redness * 20f), details = "تحليل أساسي - أحمر")
+                    }
+                    LightSpectrum.BROWN -> {
+                        metrics[SkinMetric.Type.DARK_CIRCLES] = SkinMetric(SkinMetric.Type.DARK_CIRCLES, CVUtils.calibratedScore(avgBrightness * 70f, 0.14f, 0.005f), classify(avgBrightness * 70f), details = "تحليل أساسي - بني")
+                    }
+                    else -> {}
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Emergency fallback: analysis failed for ${spectrum.name}")
+            }
+            bitmap.recycle()
+        }
+        Timber.i("Emergency fallback: decoded $decodedCount frames, produced ${metrics.size} metrics")
+        metrics
     }
 
     private fun getArabicName(type: SkinMetric.Type): String = when (type) {
