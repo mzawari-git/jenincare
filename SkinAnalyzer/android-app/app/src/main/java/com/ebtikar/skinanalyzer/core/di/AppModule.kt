@@ -115,14 +115,14 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideEnsembleAnalysisEngine(): EnsembleAnalysisEngine {
-        return EnsembleAnalysisEngine()
+    fun provideEngineHealthMonitor(): EngineHealthMonitor {
+        return EngineHealthMonitor()
     }
 
     @Provides
     @Singleton
-    fun provideEngineHealthMonitor(): EngineHealthMonitor {
-        return EngineHealthMonitor()
+    fun provideEnsembleAnalysisEngine(healthMonitor: EngineHealthMonitor): EnsembleAnalysisEngine {
+        return EnsembleAnalysisEngine(healthMonitor)
     }
 
 

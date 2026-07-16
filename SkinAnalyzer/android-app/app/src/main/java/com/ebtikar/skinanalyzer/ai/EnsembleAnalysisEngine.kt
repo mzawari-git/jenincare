@@ -17,7 +17,9 @@ import kotlin.math.abs
  * Zone-aware merging preserves per-region accuracy.
  */
 @Singleton
-class EnsembleAnalysisEngine @Inject constructor() {
+class EnsembleAnalysisEngine @Inject constructor(
+    private val healthMonitor: EngineHealthMonitor
+) {
 
     data class EngineResult(
         val engineName: String,
@@ -57,6 +59,15 @@ class EnsembleAnalysisEngine @Inject constructor() {
         const val MIN_CONFIDENCE = 0.50f
     }
 
+    private fun getEffectiveWeights(): Map<String, Float> {
+        return try {
+            val adjusted = healthMonitor.getAdjustedWeights()
+            if (adjusted.values.sum() > 0f) adjusted else BASE_WEIGHTS
+        } catch (_: Exception) {
+            BASE_WEIGHTS
+        }
+    }
+
     fun combineResults(results: List<EngineResult>): EnsembleReport {
         if (results.isEmpty()) {
             return EnsembleReport(emptyMap(), 0f, emptyMap(), 0, 0f)
@@ -76,6 +87,7 @@ class EnsembleAnalysisEngine @Inject constructor() {
         val allTypes = results.flatMap { it.metrics.keys }.distinct()
         val mergedMetrics = mutableMapOf<SkinMetric.Type, SkinMetric>()
         val engineContributions = mutableMapOf<String, Float>()
+        val effectiveWeights = getEffectiveWeights()
 
         for (type in allTypes) {
             val contributions = results.filter { it.metrics.containsKey(type) }
@@ -83,7 +95,7 @@ class EnsembleAnalysisEngine @Inject constructor() {
 
             val scored = contributions.map { result ->
                 val metric = result.metrics[type]!!
-                val baseWeight = BASE_WEIGHTS[result.engineName] ?: 0.1f
+                val baseWeight = effectiveWeights[result.engineName] ?: 0.1f
                 val effectiveWeight = baseWeight * result.confidence
                 ScoredEngine(
                     score = metric.score,

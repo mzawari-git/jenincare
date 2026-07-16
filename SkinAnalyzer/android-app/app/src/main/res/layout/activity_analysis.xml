@@ -162,7 +162,7 @@
             android:max="100"
             android:layout_marginBottom="12dp" />
 
-        <!-- LED Test Status (Moved here for better visibility) -->
+        <!-- LED Test Status -->
         <TextView
             android:id="@+id/tvLedTestStatus"
             android:layout_width="match_parent"
@@ -173,11 +173,38 @@
             android:layout_marginBottom="8dp"
             android:visibility="gone" />
 
-        <!-- Hidden Scan Status (merged into Instruction) -->
+        <!-- Phase Name -->
+        <TextView
+            android:id="@+id/tvPhaseName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp"
+            android:visibility="gone" />
+
+        <!-- Scan Status -->
         <TextView
             android:id="@+id/tvScanStatus"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
+            android:layout_height="wrap_content"
+            android:textColor="#B0FFFFFF"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:layout_marginBottom="4dp"
+            android:visibility="gone" />
+
+        <!-- Time Remaining -->
+        <TextView
+            android:id="@+id/tvTimeRemaining"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#80FFFFFF"
+            android:textSize="11sp"
+            android:gravity="center"
+            android:layout_marginBottom="8dp"
             android:visibility="gone" />
 
         <!-- Step Counter & Current Spectrum -->

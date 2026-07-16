@@ -963,4 +963,111 @@ object CVUtils {
         val labVar = labColorUniformity(bitmap)
         return (redness * 0.4f + spots * 0.3f + labVar / 20f * 0.3f).coerceIn(0f, 1f)
     }
+
+    // ═══════════════════════════════════════════════════════════
+    //  FITZPATRICK SKIN TONE DETECTION
+    // ═══════════════════════════════════════════════════════════
+
+    enum class FitzpatrickType(val displayName: String, val displayNameAr: String) {
+        TYPE_I("Very Light", "فاتحة جدًا"),
+        TYPE_II("Light", "فاتحة"),
+        TYPE_III("Medium", "متوسطة"),
+        TYPE_IV("Olive", "زيتونية"),
+        TYPE_V("Brown", "بنيّة"),
+        TYPE_VI("Dark", "داكنة")
+    }
+
+    data class SkinToneResult(
+        val fitzpatrickType: FitzpatrickType,
+        val melaninIndex: Float,
+        val luminance: Float,
+        val hueMean: Float
+    )
+
+    fun detectSkinTone(bitmap: Bitmap): SkinToneResult {
+        val w = bitmap.width
+        val h = bitmap.height
+        val sampleSize = 4
+
+        var sumL = 0f
+        var sumH = 0f
+        var count = 0
+
+        for (y in 0 until h step sampleSize) {
+            for (x in 0 until w step sampleSize) {
+                val pixel = bitmap.getPixel(x, y)
+                val r = (pixel shr 16 and 0xFF) / 255f
+                val g = (pixel shr 8 and 0xFF) / 255f
+                val b = (pixel and 0xFF) / 255f
+
+                val l = 0.299f * r + 0.587f * g + 0.114f * b
+                val maxC = maxOf(r, g, b)
+                val minC = minOf(r, g, b)
+                val delta = maxC - minC
+                val hv = when {
+                    delta == 0f -> 0f
+                    maxC == r -> 60f * ((g - b) / delta % 6f)
+                    maxC == g -> 60f * ((b - r) / delta + 2f)
+                    else -> 60f * ((r - g) / delta + 4f)
+                }
+                val hCorrected = if (hv < 0) hv + 360f else hv
+
+                sumL += l
+                sumH += hCorrected
+                count++
+            }
+        }
+
+        if (count == 0) return SkinToneResult(FitzpatrickType.TYPE_III, 0.5f, 0.5f, 30f)
+
+        val avgL = sumL / count
+        val avgH = sumH / count
+        val melaninIndex = (1f - avgL).coerceIn(0f, 1f)
+
+        val fitzpatrick = when {
+            melaninIndex < 0.15f -> FitzpatrickType.TYPE_I
+            melaninIndex < 0.30f -> FitzpatrickType.TYPE_II
+            melaninIndex < 0.50f -> FitzpatrickType.TYPE_III
+            melaninIndex < 0.70f -> FitzpatrickType.TYPE_IV
+            melaninIndex < 0.85f -> FitzpatrickType.TYPE_V
+            else -> FitzpatrickType.TYPE_VI
+        }
+
+        Timber.d("SkinTone: fitzpatrick=${fitzpatrick.name}, melanin=${"%.3f".format(melaninIndex)}, L=${"%.3f".format(avgL)}, H=${"%.1f".format(avgH)}")
+
+        return SkinToneResult(fitzpatrick, melaninIndex, avgL, avgH)
+    }
+
+    fun getThresholdAdjustments(fitzpatrick: FitzpatrickType): Map<String, Float> = when (fitzpatrick) {
+        FitzpatrickType.TYPE_I, FitzpatrickType.TYPE_II -> mapOf(
+            "redness_sensitivity" to 1.0f,
+            "vascular_threshold" to 0.15f,
+            "spot_contrast" to 1.0f,
+            "uv_sensitivity" to 1.0f
+        )
+        FitzpatrickType.TYPE_III -> mapOf(
+            "redness_sensitivity" to 0.85f,
+            "vascular_threshold" to 0.20f,
+            "spot_contrast" to 0.9f,
+            "uv_sensitivity" to 0.9f
+        )
+        FitzpatrickType.TYPE_IV -> mapOf(
+            "redness_sensitivity" to 0.7f,
+            "vascular_threshold" to 0.25f,
+            "spot_contrast" to 0.8f,
+            "uv_sensitivity" to 0.8f
+        )
+        FitzpatrickType.TYPE_V -> mapOf(
+            "redness_sensitivity" to 0.55f,
+            "vascular_threshold" to 0.30f,
+            "spot_contrast" to 0.7f,
+            "uv_sensitivity" to 0.7f
+        )
+        FitzpatrickType.TYPE_VI -> mapOf(
+            "redness_sensitivity" to 0.4f,
+            "vascular_threshold" to 0.35f,
+            "spot_contrast" to 0.6f,
+            "uv_sensitivity" to 0.6f
+        )
+    }
 }

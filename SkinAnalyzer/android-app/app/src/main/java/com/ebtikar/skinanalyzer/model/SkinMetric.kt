@@ -129,5 +129,8 @@ data class SkinProfile(
     val hydrationLevel: String = "moderate",
     val sensitivityLevel: String = "low",
     val primaryConcerns: List<String> = emptyList(),
-    val primaryConcernsAr: List<String> = emptyList()
+    val primaryConcernsAr: List<String> = emptyList(),
+    val fitzpatrickType: Int = 3,
+    val fitzpatrickTypeAr: String = "متوسطة",
+    val melaninIndex: Float = 0.5f
 )

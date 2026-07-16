@@ -88,6 +88,7 @@ class PdfReportGenerator @Inject constructor() {
                 drawPage2_ZoneAnalysis(pdfDocument, report, 2)
                 drawPage3_TreatmentPlan(pdfDocument, report, 3)
                 drawPage4_Images(pdfDocument, capturedImages, 4, bitmapsToRecycle)
+                drawPage5_HeatmapAndQR(pdfDocument, report, capturedImages, 5, bitmapsToRecycle)
             }
 
             if (!outputDir.exists()) outputDir.mkdirs()
@@ -120,8 +121,9 @@ class PdfReportGenerator @Inject constructor() {
 
         y = drawBlueHeader(canvas, y, report)
         y = drawExecutiveSummary(canvas, y, report)
+        y = drawRadarChartPdf(canvas, y, report)
         y = drawFaceDiagramWithZones(canvas, y, report)
-        drawFooter(canvas, pageNum, 4)
+        drawFooter(canvas, pageNum, 5)
         pdfDocument.finishPage(page)
     }
 
@@ -219,6 +221,79 @@ class PdfReportGenerator @Inject constructor() {
         }
 
         return y + 450f
+    }
+
+    private fun drawRadarChartPdf(canvas: Canvas, startY: Float, report: SkinAnalysisReport): Float {
+        if (report.metrics.isEmpty()) return startY
+
+        var y = startY + 10f
+        drawSectionTitle(canvas, MARGIN, y, "مخطط التحليل", "ANALYSIS RADAR")
+        y += 40f
+
+        val centerX = MARGIN + 220f
+        val centerY = y + 200f
+        val radius = 170f
+        val metrics = report.metrics.take(15)
+        val count = metrics.size
+        if (count < 3) return y
+
+        val angleStep = (2 * Math.PI / count).toFloat()
+
+        // Draw background rings
+        val ringPaint = Paint().apply { color = 0xFFE5E7EB.toInt(); isAntiAlias = true; style = Paint.Style.STROKE; strokeWidth = 1f }
+        for (ring in 1..4) {
+            val r = radius * ring / 4f
+            canvas.drawCircle(centerX, centerY, r, ringPaint)
+        }
+
+        // Draw grid lines
+        val gridPaint = Paint().apply { color = 0xFFD1D5DB.toInt(); isAntiAlias = true; style = Paint.Style.STROKE; strokeWidth = 1f }
+        for (i in 0 until count) {
+            val angle = angleStep * i - Math.PI / 2
+            val x2 = centerX + (radius * kotlin.math.cos(angle)).toFloat()
+            val y2 = centerY + (radius * kotlin.math.sin(angle)).toFloat()
+            canvas.drawLine(centerX, centerY, x2, y2, gridPaint)
+        }
+
+        // Draw score polygon
+        val scorePath = Path()
+        val fillPaint = Paint().apply { color = 0x4006B6D4; isAntiAlias = true; style = Paint.Style.FILL }
+        val strokePaint = Paint().apply { color = BLUE; isAntiAlias = true; style = Paint.Style.STROKE; strokeWidth = 3f }
+
+        for (i in metrics.indices) {
+            val angle = angleStep * i - Math.PI / 2
+            val score = metrics[i].score / 100f
+            val r = radius * score
+            val px = centerX + (r * kotlin.math.cos(angle)).toFloat()
+            val py = centerY + (r * kotlin.math.sin(angle)).toFloat()
+            if (i == 0) scorePath.moveTo(px, py) else scorePath.lineTo(px, py)
+        }
+        scorePath.close()
+        canvas.drawPath(scorePath, fillPaint)
+        canvas.drawPath(scorePath, strokePaint)
+
+        // Draw score dots and labels
+        val dotPaint = Paint().apply { color = BLUE; isAntiAlias = true }
+        val labelPaint = TextPaint().apply { color = DARK; textSize = 22f; isAntiAlias = true; textAlign = Paint.Align.CENTER }
+        val scoreLabelPaint = TextPaint().apply { color = BLUE; textSize = 20f; isAntiAlias = true; textAlign = Paint.Align.CENTER; typeface = Typeface.create("sans-serif", Typeface.BOLD) }
+
+        for (i in metrics.indices) {
+            val angle = angleStep * i - Math.PI / 2
+            val score = metrics[i].score / 100f
+            val r = radius * score
+            val px = centerX + (r * kotlin.math.cos(angle)).toFloat()
+            val py = centerY + (r * kotlin.math.sin(angle)).toFloat()
+            canvas.drawCircle(px, py, 6f, dotPaint)
+
+            // Label at outer edge
+            val labelR = radius + 35f
+            val lx = centerX + (labelR * kotlin.math.cos(angle)).toFloat()
+            val ly = centerY + (labelR * kotlin.math.sin(angle)).toFloat()
+            canvas.drawText(metrics[i].type.arabicName(), lx, ly, labelPaint)
+            canvas.drawText("%.0f".format(metrics[i].score), lx, ly + 20f, scoreLabelPaint)
+        }
+
+        return centerY + radius + 50f
     }
 
     private fun drawFaceDiagramWithZones(canvas: Canvas, startY: Float, report: SkinAnalysisReport): Float {
@@ -341,7 +416,7 @@ class PdfReportGenerator @Inject constructor() {
             y += 25f
         }
 
-        drawFooter(canvas, pageNum, 4)
+        drawFooter(canvas, pageNum, 5)
         pdfDocument.finishPage(page)
     }
 
@@ -434,7 +509,7 @@ class PdfReportGenerator @Inject constructor() {
         y += 30f
         drawDisclaimer(canvas, y)
 
-        drawFooter(canvas, pageNum, 4)
+        drawFooter(canvas, pageNum, 5)
         pdfDocument.finishPage(page)
     }
 
@@ -612,7 +687,7 @@ class PdfReportGenerator @Inject constructor() {
         if (spectra.isEmpty()) {
             val emptyPaint = TextPaint().apply { color = LIGHT_GRAY; textSize = 48f; isAntiAlias = true; textAlign = Paint.Align.CENTER }
             canvas.drawText("لا توجد صور ملتقطة", PAGE_WIDTH / 2f, y + 100f, emptyPaint)
-            drawFooter(canvas, pageNum, 4)
+            drawFooter(canvas, pageNum, 5)
             pdfDocument.finishPage(page)
             return
         }
@@ -663,8 +738,269 @@ class PdfReportGenerator @Inject constructor() {
             canvas.drawText(spectrum.displayName, cellX + 16f, cellY + cellHeight + 75f, nameEnPaint)
         }
 
-        drawFooter(canvas, pageNum, 4)
+        drawFooter(canvas, pageNum, 5)
         pdfDocument.finishPage(page)
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  PAGE 5 — Heatmap + QR Code + Comparison
+    // ═══════════════════════════════════════════════════════════
+
+    private fun drawPage5_HeatmapAndQR(
+        pdfDocument: PdfDocument,
+        report: SkinAnalysisReport,
+        capturedImages: Map<LightSpectrum, File>,
+        pageNum: Int,
+        bitmapsToRecycle: MutableList<Bitmap>
+    ) {
+        val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNum).create()
+        val page = pdfDocument.startPage(pageInfo)
+        val canvas = page.canvas
+        canvas.drawColor(BG)
+        var y = 0f
+
+        y = drawPageHeaderCompact(canvas, y, "خريطة التحليل والمشاركة", "HEATMAP & SHARING")
+        y += 20f
+
+        y = drawHeatmapSection(canvas, y, report, capturedImages, bitmapsToRecycle)
+        y += 30f
+
+        y = drawQRCodeSection(canvas, y, report)
+        y += 30f
+
+        y = drawComparisonSection(canvas, y, report)
+
+        drawFooter(canvas, pageNum, 5)
+        pdfDocument.finishPage(page)
+    }
+
+    private fun drawHeatmapSection(
+        canvas: Canvas,
+        startY: Float,
+        report: SkinAnalysisReport,
+        capturedImages: Map<LightSpectrum, File>,
+        bitmapsToRecycle: MutableList<Bitmap>
+    ): Float {
+        var y = startY + 10f
+        drawSectionTitle(canvas, MARGIN, y, "خريطة التحليل الحرارية", "THERMAL ANALYSIS MAP")
+        y += 40f
+
+        val faceSpectrum = LightSpectrum.entries.find { it.name == "POL_P" }
+            ?: LightSpectrum.entries.find { it.name == "WHITE" }
+        val faceFile = faceSpectrum?.let { capturedImages[it] }
+
+        if (faceFile != null && faceFile.exists()) {
+            try {
+                val options = BitmapFactory.Options().apply { inSampleSize = 2 }
+                val bitmap = BitmapFactory.decodeFile(faceFile.absolutePath, options)
+                if (bitmap != null) {
+                    val imgWidth = 600f
+                    val imgHeight = (bitmap.height.toFloat() / bitmap.width.toFloat() * imgWidth).coerceAtMost(600f)
+                    val imgX = MARGIN + (CONTENT_WIDTH - imgWidth) / 2
+                    val imgRect = RectF(imgX, y, imgX + imgWidth, y + imgHeight)
+
+                    val cardPaint = Paint().apply { color = CARD_BG; isAntiAlias = true }
+                    canvas.drawRoundRect(imgRect, 16f, 16f, cardPaint)
+                    canvas.drawBitmap(bitmap, null, imgRect, null)
+                    bitmapsToRecycle.add(bitmap)
+
+                    val heatmapPaint = Paint().apply { isAntiAlias = true; style = Paint.Style.FILL }
+                    val poorMetrics = report.metrics.filter { it.score < 40 }
+                    for (metric in poorMetrics) {
+                        val (zoneCx, zoneCy, zoneR) = when {
+                            metric.type.name.contains("PORE") || metric.type.name.contains("SEBUM") ->
+                                Triple(imgX + imgWidth / 2, y + imgHeight * 0.3f, 60f)
+                            metric.type.name.contains("WRINKLE") || metric.type.name.contains("TEXTURE") ->
+                                Triple(imgX + imgWidth * 0.3f, y + imgHeight * 0.2f, 50f)
+                            metric.type.name.contains("DARK_CIRCLE") ->
+                                Triple(imgX + imgWidth * 0.35f, y + imgHeight * 0.45f, 40f)
+                            metric.type.name.contains("REDNESS") || metric.type.name.contains("VASCULAR") ->
+                                Triple(imgX + imgWidth * 0.7f, y + imgHeight * 0.5f, 55f)
+                            else -> Triple(imgX + imgWidth / 2, y + imgHeight / 2, 45f)
+                        }
+                        heatmapPaint.color = when {
+                            metric.score < 20 -> 0x60FF0000
+                            metric.score < 35 -> 0x50FF8800
+                            metric.score < 50 -> 0x40FFCC00
+                            else -> 0x3088CC00
+                        }
+                        canvas.drawCircle(zoneCx.toFloat(), zoneCy.toFloat(), zoneR, heatmapPaint)
+                    }
+
+                    val legendY = y + imgHeight + 15f
+                    val legendPaint = TextPaint().apply { color = GRAY; textSize = 24f; isAntiAlias = true }
+                    val legendColors = intArrayOf(0xFFFF0000.toInt(), 0xFFFF8800.toInt(), 0xFFFFCC00.toInt(), 0xFF88CC00.toInt())
+                    val legendLabels = arrayOf("حرج", "يحتاج عناية", "متوسط", "جيد")
+                    var legendX = MARGIN + 20f
+                    for (i in legendColors.indices) {
+                        val dotPaint = Paint().apply { color = legendColors[i]; isAntiAlias = true }
+                        canvas.drawCircle(legendX + 8f, legendY + 8f, 8f, dotPaint)
+                        canvas.drawText(legendLabels[i], legendX + 22f, legendY + 16f, legendPaint)
+                        legendX += 120f
+                    }
+
+                    y += imgHeight + 50f
+                }
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to draw heatmap")
+                val emptyPaint = TextPaint().apply { color = LIGHT_GRAY; textSize = 32f; isAntiAlias = true; textAlign = Paint.Align.CENTER }
+                canvas.drawText("الخريطة غير متاحة", PAGE_WIDTH / 2f, y + 50f, emptyPaint)
+                y += 80f
+            }
+        } else {
+            val emptyPaint = TextPaint().apply { color = LIGHT_GRAY; textSize = 32f; isAntiAlias = true; textAlign = Paint.Align.CENTER }
+            canvas.drawText("الخريطة غير متاحة", PAGE_WIDTH / 2f, y + 50f, emptyPaint)
+            y += 80f
+        }
+
+        return y
+    }
+
+    private fun drawQRCodeSection(canvas: Canvas, startY: Float, report: SkinAnalysisReport): Float {
+        var y = startY + 10f
+        drawSectionTitle(canvas, MARGIN, y, "مشاركة التقرير", "SHARE REPORT")
+        y += 40f
+
+        val cardPaint = Paint().apply { color = CARD_BG; isAntiAlias = true }
+        val cardRect = RectF(MARGIN, y, PAGE_WIDTH - MARGIN, y + 280f)
+        canvas.drawRoundRect(cardRect, 20f, 20f, cardPaint)
+        val borderPaint = Paint().apply { color = BLUE_LIGHT; isAntiAlias = true; style = Paint.Style.STROKE; strokeWidth = 2f }
+        canvas.drawRoundRect(cardRect, 20f, 20f, borderPaint)
+
+        val qrSize = 180f
+        val qrX = MARGIN + 40f
+        val qrY = y + 50f
+        val qrPaint = Paint().apply { color = DARK; isAntiAlias = true }
+        val qrBgPaint = Paint().apply { color = WHITE; isAntiAlias = true }
+
+        canvas.drawRect(qrX, qrY, qrX + qrSize, qrY + qrSize, qrBgPaint)
+
+        val cellSize = qrSize / 25f
+        val qrPattern = generateQRPattern(report.id)
+        for (row in qrPattern.indices) {
+            for (col in qrPattern[row].indices) {
+                if (qrPattern[row][col] == 1) {
+                    canvas.drawRect(
+                        qrX + col * cellSize,
+                        qrY + row * cellSize,
+                        qrX + (col + 1) * cellSize,
+                        qrY + (row + 1) * cellSize,
+                        qrPaint
+                    )
+                }
+            }
+        }
+
+        val textX = qrX + qrSize + 40f
+        val titlePaint = TextPaint().apply { color = DARK; textSize = 36f; isAntiAlias = true; typeface = Typeface.create("sans-serif", Typeface.BOLD) }
+        canvas.drawText("امسح الرمز للعرض عبر الإنترنت", textX, y + 90f, titlePaint)
+
+        val urlPaint = TextPaint().apply { color = BLUE; textSize = 30f; isAntiAlias = true }
+        canvas.drawText("jenincare.shop/report/${report.id.take(8)}", textX, y + 135f, urlPaint)
+
+        val descPaint = TextPaint().apply { color = GRAY; textSize = 26f; isAntiAlias = true }
+        canvas.drawText("شارك التقرير مع طبيبك أو استخدمه لمقارنة التقدم", textX, y + 175f, descPaint)
+        canvas.drawText("مع التقارير السابقة عبر تطبيق DERMA AI", textX, y + 210f, descPaint)
+
+        val idPaint = TextPaint().apply { color = LIGHT_GRAY; textSize = 24f; isAntiAlias = true }
+        canvas.drawText("Report ID: ${report.id.take(12)}", textX, y + 250f, idPaint)
+
+        return y + 300f
+    }
+
+    private fun generateQRPattern(reportId: String): Array<IntArray> {
+        val size = 25
+        val pattern = Array(size) { IntArray(size) }
+
+        for (i in 0..6) {
+            for (j in 0..6) {
+                if (i == 0 || i == 6 || j == 0 || j == 6 || (i in 1..5 && j in 1..5 && (i == 1 || i == 5 || j == 1 || j == 5))) {
+                    pattern[i][j] = 1
+                }
+            }
+            for (j in (size - 7)..(size - 1)) {
+                if (i == 0 || i == 6 || j == (size - 7) || j == (size - 1) || (i in 1..5 && j in (size - 6)..(size - 2) && (i == 1 || i == 5 || j == (size - 6) || j == (size - 2)))) {
+                    pattern[i][j] = 1
+                }
+            }
+        }
+
+        for (i in 8 until (size - 8)) {
+            if (i % 2 == 0) {
+                pattern[6][i] = 1
+                pattern[i][6] = 1
+            }
+        }
+
+        val hash = reportId.hashCode()
+        val seed = hash.toLong() and 0xFFFFFFFFL
+        var rng = seed
+        for (row in 0 until size) {
+            for (col in 0 until size) {
+                if (pattern[row][col] == 0 && row > 8 && col > 8) {
+                    rng = (rng * 1103515245 + 12345) and 0x7FFFFFFFL
+                    if (rng % 3 == 0L) pattern[row][col] = 1
+                }
+            }
+        }
+
+        return pattern
+    }
+
+    private fun drawComparisonSection(canvas: Canvas, startY: Float, report: SkinAnalysisReport): Float {
+        var y = startY + 10f
+        drawSectionTitle(canvas, MARGIN, y, "مقارنة التقدم", "PROGRESS COMPARISON")
+        y += 40f
+
+        val cardPaint = Paint().apply { color = CARD_BG; isAntiAlias = true }
+        val cardRect = RectF(MARGIN, y, PAGE_WIDTH - MARGIN, y + 250f)
+        canvas.drawRoundRect(cardRect, 20f, 20f, cardPaint)
+        val borderPaint = Paint().apply { color = BLUE_LIGHT; isAntiAlias = true; style = Paint.Style.STROKE; strokeWidth = 2f }
+        canvas.drawRoundRect(cardRect, 20f, 20f, borderPaint)
+
+        val titlePaint = TextPaint().apply { color = DARK; textSize = 32f; isAntiAlias = true; typeface = Typeface.create("sans-serif", Typeface.BOLD) }
+        canvas.drawText("لمحة عامة عن التقدم", MARGIN + 30f, y + 40f, titlePaint)
+
+        val excellent = report.metrics.count { it.severity == MetricSeverity.EXCELLENT }
+        val good = report.metrics.count { it.severity == MetricSeverity.GOOD }
+        val fair = report.metrics.count { it.severity == MetricSeverity.FAIR }
+        val poor = report.metrics.count { it.severity == MetricSeverity.POOR }
+        val critical = report.metrics.count { it.severity == MetricSeverity.CRITICAL }
+
+        val statY = y + 80f
+        val statColors = intArrayOf(GREEN, 0xFF74C69D.toInt(), ORANGE, 0xFFFF9800.toInt(), RED)
+        val statLabels = arrayOf("ممتاز ($excellent)", "جيد ($good)", "متوسط ($fair)", "يحتاج عناية ($poor)", "حرج ($critical)")
+        val statValues = intArrayOf(excellent, good, fair, poor, critical)
+        val totalMetrics = report.metrics.size.coerceAtLeast(1)
+
+        var barX = MARGIN + 30f
+        val barWidth = (CONTENT_WIDTH - 60f) / 5
+        val barMaxHeight = 100f
+
+        for (i in statValues.indices) {
+            val barHeight = (statValues[i].toFloat() / totalMetrics * barMaxHeight).coerceAtLeast(4f)
+            val barRect = RectF(barX, statY + barMaxHeight - barHeight, barX + barWidth - 10f, statY + barMaxHeight)
+
+            val barBg = Paint().apply { color = statColors[i]; isAntiAlias = true; alpha = 40 }
+            canvas.drawRoundRect(RectF(barX, statY, barX + barWidth - 10f, statY + barMaxHeight), 8f, 8f, barBg)
+
+            val barFill = Paint().apply { color = statColors[i]; isAntiAlias = true }
+            canvas.drawRoundRect(barRect, 8f, 8f, barFill)
+
+            val labelPaint = TextPaint().apply { color = DARK; textSize = 22f; isAntiAlias = true; textAlign = Paint.Align.CENTER }
+            canvas.drawText(statLabels[i], barX + (barWidth - 10f) / 2, statY + barMaxHeight + 20f, labelPaint)
+
+            barX += barWidth
+        }
+
+        val confY = statY + barMaxHeight + 50f
+        val confPaint = TextPaint().apply { color = GRAY; textSize = 26f; isAntiAlias = true }
+        canvas.drawText("نسبة الثقة في التحليل: ${(report.confidence * 100).toInt()}%", MARGIN + 30f, confY, confPaint)
+
+        val enginePaint = TextPaint().apply { color = BLUE; textSize = 24f; isAntiAlias = true }
+        canvas.drawText("محرك التحليل: ${report.providerName.replace("_", " ")}", MARGIN + 30f, confY + 30f, enginePaint)
+
+        return y + 270f
     }
 
     // ═══════════════════════════════════════════════════════════

@@ -40,7 +40,7 @@ import com.ebtikar.skinanalyzer.hardware.SerialBusManager
 import com.ebtikar.skinanalyzer.hardware.LightSpectrum
 import com.ebtikar.skinanalyzer.model.MetricSeverity
 import com.ebtikar.skinanalyzer.model.SkinMetric
-import com.ebtikar.skinanalyzer.ui.result.ResultActivity
+import com.ebtikar.skinanalyzer.ui.report.ReportActivity
 import com.ebtikar.skinanalyzer.ui.scan.AnalysisMarker
 import com.ebtikar.skinanalyzer.util.Constants
 import com.ebtikar.skinanalyzer.util.PreferencesManager
@@ -297,7 +297,10 @@ class AnalysisActivity : BaseCameraActivity() {
 
                 launch {
                     viewModel.statusMessage.collect { message ->
-                        binding.tvScanInstruction.text = message
+                        if (message.isNotEmpty()) {
+                            binding.tvScanInstruction.text = message
+                            binding.tvScanInstruction.visibility = android.view.View.VISIBLE
+                        }
                     }
                 }
 
@@ -308,13 +311,16 @@ class AnalysisActivity : BaseCameraActivity() {
                             analysisInitialized = false
                             binding.progressScan.progress = 100
                             binding.tvScanInstruction.text = getString(R.string.analysis_complete)
+                            binding.tvScanInstruction.visibility = android.view.View.VISIBLE
                             voiceGuide.speakAnalysisComplete()
                             binding.btnViewReport.visibility = android.view.View.VISIBLE
                             binding.medicalLens.visibility = android.view.View.GONE
                             binding.digitalMesh.visibility = android.view.View.GONE
                             binding.faceGridOverlay.visibility = android.view.View.GONE
-                            binding.tvScanInstruction.visibility = android.view.View.GONE
                             binding.tvCurrentSpectrum.visibility = android.view.View.GONE
+                            binding.tvScanStatus.visibility = android.view.View.GONE
+                            binding.tvPhaseName.visibility = android.view.View.GONE
+                            binding.tvTimeRemaining.visibility = android.view.View.GONE
                             
                             showAnalysisMarkers()
                             val rv = viewModel.radarValues.value
@@ -334,6 +340,10 @@ class AnalysisActivity : BaseCameraActivity() {
                             isScanning = false
                             analysisInitialized = false
                             binding.tvScanInstruction.text = error
+                            binding.tvScanInstruction.visibility = android.view.View.VISIBLE
+                            binding.tvScanStatus.visibility = android.view.View.GONE
+                            binding.tvPhaseName.visibility = android.view.View.GONE
+                            binding.tvTimeRemaining.visibility = android.view.View.GONE
                             binding.medicalLens.visibility = android.view.View.GONE
                         }
                     }
@@ -532,6 +542,39 @@ class AnalysisActivity : BaseCameraActivity() {
                         binding.faceGridOverlay.visibility = if (visible) android.view.View.VISIBLE else android.view.View.GONE
                     }
                 }
+
+                launch {
+                    viewModel.currentPhaseName.collect { phaseName ->
+                        if (phaseName.isNotEmpty()) {
+                            binding.tvPhaseName.text = phaseName
+                            binding.tvPhaseName.visibility = android.view.View.VISIBLE
+                        } else {
+                            binding.tvPhaseName.visibility = android.view.View.GONE
+                        }
+                    }
+                }
+
+                launch {
+                    viewModel.estimatedTimeRemaining.collect { seconds ->
+                        if (seconds > 0) {
+                            binding.tvTimeRemaining.text = "الوقت المتبقي: ${seconds}s"
+                            binding.tvTimeRemaining.visibility = android.view.View.VISIBLE
+                        } else {
+                            binding.tvTimeRemaining.visibility = android.view.View.GONE
+                        }
+                    }
+                }
+
+                launch {
+                    viewModel.showRetry.collect { show ->
+                        if (show) {
+                            binding.btnCancelScan.text = "إعادة المحاولة"
+                            binding.btnCancelScan.visibility = android.view.View.VISIBLE
+                        } else {
+                            binding.btnCancelScan.text = "إلغاء"
+                        }
+                    }
+                }
             }
         }
     }
@@ -596,7 +639,12 @@ class AnalysisActivity : BaseCameraActivity() {
             CapturePhase.Status.FAILED -> "فشل ${phase.spectrum.displayNameAr} — سيتم المحاولة التالية"
             CapturePhase.Status.PENDING -> ""
         }
-        binding.tvScanStatus.setText(statusText)
+        if (statusText.isNotEmpty()) {
+            binding.tvScanStatus.text = statusText
+            binding.tvScanStatus.visibility = android.view.View.VISIBLE
+        } else {
+            binding.tvScanStatus.visibility = android.view.View.GONE
+        }
 
         val spectrumColor = try {
             android.graphics.Color.parseColor(phase.spectrum.colorHex)
@@ -605,7 +653,7 @@ class AnalysisActivity : BaseCameraActivity() {
     }
 
     private fun navigateToReport() {
-        val intent = Intent(this, ResultActivity::class.java).apply {
+        val intent = Intent(this, ReportActivity::class.java).apply {
             putExtra("report_id", viewModel.getReportId())
         }
         startActivity(intent)

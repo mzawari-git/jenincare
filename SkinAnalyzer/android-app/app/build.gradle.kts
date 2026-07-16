@@ -132,6 +132,9 @@ dependencies {
     implementation("org.tensorflow:tensorflow-lite-gpu:2.16.1")
     implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
 
+    // OpenCV (for advanced skin analysis algorithms)
+    implementation("org.opencv:opencv:4.9.0")
+
     // Google ML Kit (Face Detection & Landmarks)
     implementation("com.google.mlkit:face-detection:16.1.7")
 
