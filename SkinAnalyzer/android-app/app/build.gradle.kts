@@ -31,13 +31,13 @@ android {
         minSdk = 26
         //noinspection EditedTargetSdkVersion
         targetSdk = 33
-        versionCode = 62
-        versionName = "1.5.0"
+        versionCode = 63
+        versionName = "1.6.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
         }
 
         buildConfigField("String", "API_BASE_URL", "\"$cloudApiUrl\"")
