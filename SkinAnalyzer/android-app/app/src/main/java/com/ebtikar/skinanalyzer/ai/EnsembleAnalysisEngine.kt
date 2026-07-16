@@ -218,7 +218,7 @@ class EnsembleAnalysisEngine @Inject constructor(
     }
 
     private fun classifyScore(score: Float): MetricSeverity = when {
-        score >= 72f -> MetricSeverity.EXCELLENT
+        score >= 75f -> MetricSeverity.EXCELLENT
         score >= 55f -> MetricSeverity.GOOD
         score >= 35f -> MetricSeverity.FAIR
         score >= 20f -> MetricSeverity.POOR

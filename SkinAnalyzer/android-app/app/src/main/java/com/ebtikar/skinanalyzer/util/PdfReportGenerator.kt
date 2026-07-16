@@ -20,6 +20,7 @@ import com.ebtikar.skinanalyzer.model.SkinAnalysisReport
 import com.ebtikar.skinanalyzer.model.SkinMetric
 import com.ebtikar.skinanalyzer.model.SkinZone
 import com.ebtikar.skinanalyzer.model.arabicName
+import com.ebtikar.skinanalyzer.data.knowledge.SkinKnowledgeRepository
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
@@ -30,7 +31,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class PdfReportGenerator @Inject constructor() {
+class PdfReportGenerator @Inject constructor(
+    private val knowledgeRepository: SkinKnowledgeRepository
+) {
 
     companion object {
         private const val PAGE_WIDTH = 2480
@@ -552,11 +555,15 @@ class PdfReportGenerator @Inject constructor() {
                 canvas.drawText("${stepNum}.", MARGIN + 30f, y + 25f, namePaint)
                 canvas.drawText("${m.type.arabicName()}: ${m.severity.displayAr}", MARGIN + 65f, y + 25f, namePaint)
 
-                val desc = when (m.severity) {
-                    MetricSeverity.CRITICAL -> "يحتاج عناية فورية ومتواصلة"
-                    MetricSeverity.POOR -> "يحتاج عناية مركزة هذا الأسبوع"
-                    MetricSeverity.FAIR -> "يحتاج متابعة وتحسين تدريجي"
-                    else -> "في حالة جيدة — حافظي عليها"
+                val knowledge = knowledgeRepository.getCachedKnowledge()
+                val metricKnowledge = knowledge.metrics[m.type.name]
+                val desc = metricKnowledge?.descriptions?.get(m.severity.name)
+                    ?: metricKnowledge?.descriptionAr
+                    ?: when (m.severity) {
+                        MetricSeverity.CRITICAL -> "يحتاج عناية فورية ومتواصلة"
+                        MetricSeverity.POOR -> "يحتاج عناية مركزة هذا الأسبوع"
+                        MetricSeverity.FAIR -> "يحتاج متابعة وتحسين تدريجي"
+                        else -> "في حالة جيدة — حافظي عليها"
                 }
                 canvas.drawText(desc, MARGIN + 65f, y + 55f, detailPaint)
                 stepNum++

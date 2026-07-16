@@ -164,8 +164,8 @@ class OpenCVSkinAnalyzer @Inject constructor(
                 val spots = CVUtils.adaptiveThresholdSpots(analyzeBitmap, 15, 8)
                 val morphGrad = CVUtils.morphologicalGradient(analyzeBitmap, 5)
                 val pigHetero = CVUtils.pigmentationHeterogeneity(analyzeBitmap)
-                val uvSpots = CVUtils.calibratedScore(spots * 0.6f + morphGrad / 100f * 0.4f, 0.15f, 0.005f)
-                val pigmentation = CVUtils.calibratedScore(stats.contrast * 0.5f + pigHetero * 0.5f, 30f, 3f)
+                val uvSpots = CVUtils.calibratedScore(spots * 0.6f + morphGrad / 100f * 0.4f, 0.40f, 0.005f)
+                val pigmentation = CVUtils.calibratedScore(stats.contrast * 0.5f + pigHetero * 0.5f, 40f, 3f)
                 mapOf(
                     SkinMetric.Type.UV_SPOTS to uvSpots,
                     SkinMetric.Type.PIGMENTATION to pigmentation
@@ -176,9 +176,9 @@ class OpenCVSkinAnalyzer @Inject constructor(
                 val vascularComplexity = CVUtils.vascularPatternComplexity(analyzeBitmap)
                 val inflammatory = CVUtils.inflammatoryMarkerDetection(analyzeBitmap)
                 mapOf(
-                    SkinMetric.Type.VASCULAR to CVUtils.calibratedScore(rednessRatio * 0.5f + vascularComplexity * 0.3f + inflammatory * 0.2f, 0.50f, 0.01f),
-                    SkinMetric.Type.SENSITIVITY to CVUtils.calibratedScore(rednessRatio * 0.6f + inflammatory * 0.4f, 0.40f, 0.01f),
-                    SkinMetric.Type.ROSACEA to CVUtils.calibratedScore((rednessRatio + vascularComplexity) / 2f, 0.35f, 0.005f)
+                    SkinMetric.Type.VASCULAR to CVUtils.calibratedScore(rednessRatio * 0.5f + vascularComplexity * 0.3f + inflammatory * 0.2f, 0.60f, 0.01f),
+                    SkinMetric.Type.SENSITIVITY to CVUtils.calibratedScore(rednessRatio * 0.6f + inflammatory * 0.4f, 0.50f, 0.01f),
+                    SkinMetric.Type.ROSACEA to CVUtils.calibratedScore((rednessRatio + vascularComplexity) / 2f, 0.45f, 0.005f)
                 )
             }
             LightSpectrum.POL_N -> {
@@ -193,7 +193,7 @@ class OpenCVSkinAnalyzer @Inject constructor(
                 val pigHetero = CVUtils.pigmentationHeterogeneity(analyzeBitmap)
                 mapOf(
                     SkinMetric.Type.MOISTURE to CVUtils.calibratedScoreInverted(relativeBright * 0.6f + skinBarrier * 0.4f, 0.05f, 0.90f),
-                    SkinMetric.Type.MELASMA to CVUtils.calibratedScore(melasmaSpots * 0.6f + pigHetero * 0.4f, 0.12f, 0.003f)
+                    SkinMetric.Type.MELASMA to CVUtils.calibratedScore(melasmaSpots * 0.6f + pigHetero * 0.4f, 0.40f, 0.003f)
                 )
             }
             LightSpectrum.BLUE -> {
@@ -203,15 +203,15 @@ class OpenCVSkinAnalyzer @Inject constructor(
                 val sebumBlue = CVUtils.calibratedScoreInverted(stats.meanB / 255f * 0.5f + sebumDist * 0.3f + morphGrad / 100f * 0.2f, 0.2f, 0.5f)
                 mapOf(
                     SkinMetric.Type.SEBUM to sebumBlue,
-                    SkinMetric.Type.ACNE to CVUtils.calibratedScore(spots * 0.6f + morphGrad / 100f * 0.4f, 0.15f, 0.003f),
-                    SkinMetric.Type.BLACKHEADS to CVUtils.calibratedScore(spots * 0.5f + (1f - sebumUniformity / 50f) * 0.3f + morphGrad / 100f * 0.2f, 0.12f, 0.005f)
+                    SkinMetric.Type.ACNE to CVUtils.calibratedScore(spots * 0.6f + morphGrad / 100f * 0.4f, 0.40f, 0.003f),
+                    SkinMetric.Type.BLACKHEADS to CVUtils.calibratedScore(spots * 0.5f + (1f - sebumUniformity / 50f) * 0.3f + morphGrad / 100f * 0.2f, 0.35f, 0.005f)
                 )
             }
             LightSpectrum.RED -> {
                 val redness = CVUtils.hsvRednessIndex(analyzeBitmap)
                 val vascularComplexity = CVUtils.vascularPatternComplexity(analyzeBitmap)
                 mapOf(
-                    SkinMetric.Type.VASCULAR to CVUtils.calibratedScore(redness * 0.6f + vascularComplexity * 0.4f, 0.25f, 0.02f)
+                    SkinMetric.Type.VASCULAR to CVUtils.calibratedScore(redness * 0.6f + vascularComplexity * 0.4f, 0.60f, 0.02f)
                 )
             }
             LightSpectrum.BROWN -> {
@@ -219,7 +219,7 @@ class OpenCVSkinAnalyzer @Inject constructor(
                 val texture = CVUtils.localBinaryPattern(analyzeBitmap, 3)
                 val morphGrad = CVUtils.morphologicalGradient(analyzeBitmap, 3)
                 mapOf(
-                    SkinMetric.Type.DARK_CIRCLES to CVUtils.calibratedScore(spots * 0.5f + texture * 0.3f + morphGrad / 100f * 0.2f, 0.12f, 0.005f)
+                    SkinMetric.Type.DARK_CIRCLES to CVUtils.calibratedScore(spots * 0.5f + texture * 0.3f + morphGrad / 100f * 0.2f, 0.38f, 0.005f)
                 )
             }
             else -> emptyMap()

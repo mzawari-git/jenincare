@@ -350,13 +350,13 @@ class AdvancedSkinAnalyzer @Inject constructor(
         val pigHetero = CVUtils.pigmentationHeterogeneity(faceBitmap)
         val morphGrad = CVUtils.morphologicalGradient(faceBitmap, 5)
 
-        val uvSpotsScore = CVUtils.calibratedScore(spots * 0.6f + morphGrad / 100f * 0.4f, 0.15f, 0.005f)
+        val uvSpotsScore = CVUtils.calibratedScore(spots * 0.6f + morphGrad / 100f * 0.4f, 0.40f, 0.005f)
         metrics[SkinMetric.Type.UV_SPOTS] = createMetric(
             SkinMetric.Type.UV_SPOTS, uvSpotsScore, SkinZone.FULL_FACE,
             "تحليل البقع فوق البنفسجية (Morphological + Adaptive Threshold)"
         )
 
-        val pigmentation = CVUtils.calibratedScore(stats.contrast * 0.5f + pigHetero * 0.5f, 35f, 3f)
+        val pigmentation = CVUtils.calibratedScore(stats.contrast * 0.5f + pigHetero * 0.5f, 45f, 3f)
         metrics[SkinMetric.Type.PIGMENTATION] = createMetric(
             SkinMetric.Type.PIGMENTATION, pigmentation, SkinZone.FULL_FACE,
             "تحليل التصبغ (LAB Variance + Histogram Entropy)"
@@ -395,19 +395,19 @@ class AdvancedSkinAnalyzer @Inject constructor(
         val vascularComplexity = if (faceBitmap != null) CVUtils.vascularPatternComplexity(faceBitmap) else 0f
         val inflammatory = if (faceBitmap != null) CVUtils.inflammatoryMarkerDetection(faceBitmap) else 0f
 
-        val vascularScore = CVUtils.calibratedScore(cheecksRedness * 0.5f + vascularComplexity * 0.3f + inflammatory * 0.2f, 0.25f, 0.02f)
+        val vascularScore = CVUtils.calibratedScore(cheecksRedness * 0.5f + vascularComplexity * 0.3f + inflammatory * 0.2f, 0.60f, 0.02f)
         metrics[SkinMetric.Type.VASCULAR] = createMetric(
             SkinMetric.Type.VASCULAR, vascularScore, SkinZone.U_ZONE,
             "تحليل الأوعية الدموية (Vascular Pattern + Inflammatory Markers)"
         )
 
-        val sensitivityScore = CVUtils.calibratedScore(faceRedness * 0.6f + inflammatory * 0.4f, 0.22f, 0.02f)
+        val sensitivityScore = CVUtils.calibratedScore(faceRedness * 0.6f + inflammatory * 0.4f, 0.50f, 0.02f)
         metrics[SkinMetric.Type.SENSITIVITY] = createMetric(
             SkinMetric.Type.SENSITIVITY, sensitivityScore, SkinZone.FULL_FACE,
             "تحليل حساسية البشرة (Redness + Inflammatory Detection)"
         )
 
-        val rosaceaScore = CVUtils.calibratedScore((cheecksRedness + centerRedness) / 2f * 0.5f + vascularComplexity * 0.3f + inflammatory * 0.2f, 0.18f, 0.01f)
+        val rosaceaScore = CVUtils.calibratedScore((cheecksRedness + centerRedness) / 2f * 0.5f + vascularComplexity * 0.3f + inflammatory * 0.2f, 0.45f, 0.01f)
         metrics[SkinMetric.Type.ROSACEA] = createMetric(
             SkinMetric.Type.ROSACEA, rosaceaScore, SkinZone.U_ZONE,
             "تحليل الوردية (Vascular Complexity + Cheek Redness)"
@@ -441,7 +441,7 @@ class AdvancedSkinAnalyzer @Inject constructor(
         val edgeHist = if (faceBitmap != null) CVUtils.edgeDirectionHistogram(faceBitmap) else 0f
         val depthScore = analyzeDepthFromLandmarks(faceMesh)
         val combined = edgeRatio * 0.3f + wrinkleDepth * 0.3f + edgeHist * 0.2f + depthScore * 0.2f
-        val wrinkleScore = CVUtils.calibratedScore(combined, 0.15f, 0.003f)
+        val wrinkleScore = CVUtils.calibratedScore(combined, 0.40f, 0.003f)
 
         metrics[SkinMetric.Type.WRINKLES] = createMetric(
             SkinMetric.Type.WRINKLES, wrinkleScore, SkinZone.FULL_FACE,
@@ -493,7 +493,7 @@ class AdvancedSkinAnalyzer @Inject constructor(
         } else 0.5f
 
         val skinBarrier = CVUtils.skinBarrierEstimate(faceBitmap)
-        val moistureScore = CVUtils.calibratedScoreInverted(relativeBright * 0.6f + skinBarrier * 0.4f, 0.05f, 0.35f)
+        val moistureScore = CVUtils.calibratedScoreInverted(relativeBright * 0.6f + skinBarrier * 0.4f, 0.05f, 0.85f)
         metrics[SkinMetric.Type.MOISTURE] = createMetric(
             SkinMetric.Type.MOISTURE, moistureScore, SkinZone.FULL_FACE,
             "تحليل الرطوبة (Relative Brightness + Skin Barrier Estimate)"
@@ -501,7 +501,7 @@ class AdvancedSkinAnalyzer @Inject constructor(
 
         val melasmaSpots = CVUtils.adaptiveThresholdSpots(faceBitmap, 11, 5)
         val pigHetero = CVUtils.pigmentationHeterogeneity(faceBitmap)
-        val melasmaScore = CVUtils.calibratedScore(melasmaSpots * 0.6f + pigHetero * 0.4f, 0.15f, 0.003f)
+        val melasmaScore = CVUtils.calibratedScore(melasmaSpots * 0.6f + pigHetero * 0.4f, 0.40f, 0.003f)
         metrics[SkinMetric.Type.MELASMA] = createMetric(
             SkinMetric.Type.MELASMA, melasmaScore, SkinZone.FULL_FACE,
             "تحليل الميلasma (Adaptive Spots + Pigmentation Heterogeneity)"
@@ -522,7 +522,7 @@ class AdvancedSkinAnalyzer @Inject constructor(
         val redness = CVUtils.hsvRednessIndex(faceBitmap ?: bitmap)
 
         metrics[SkinMetric.Type.VASCULAR] = createMetric(
-            SkinMetric.Type.VASCULAR, CVUtils.calibratedScore(redness, 0.25f, 0.02f), SkinZone.U_ZONE,
+            SkinMetric.Type.VASCULAR, CVUtils.calibratedScore(redness, 0.60f, 0.02f), SkinZone.U_ZONE,
             "تحليل الأوعية الدموية بالجهد الأحمر 630nm"
         )
 
@@ -556,13 +556,13 @@ class AdvancedSkinAnalyzer @Inject constructor(
             "تحليل الدهون (Blue Channel + Distribution + Morphology)"
         )
 
-        val acneScore = CVUtils.calibratedScore(spots * 0.6f + morphGrad / 100f * 0.4f, 0.18f, 0.003f)
+        val acneScore = CVUtils.calibratedScore(spots * 0.6f + morphGrad / 100f * 0.4f, 0.40f, 0.003f)
         metrics[SkinMetric.Type.ACNE] = createMetric(
             SkinMetric.Type.ACNE, acneScore, SkinZone.T_ZONE,
             "تحليل حبشباب (Adaptive Threshold + Morphological Gradient)"
         )
 
-        val blackheadScore = CVUtils.calibratedScore(spots * 0.5f + (1f - sebumUniformity / 50f) * 0.3f + morphGrad / 100f * 0.2f, 0.14f, 0.005f)
+        val blackheadScore = CVUtils.calibratedScore(spots * 0.5f + (1f - sebumUniformity / 50f) * 0.3f + morphGrad / 100f * 0.2f, 0.38f, 0.005f)
         metrics[SkinMetric.Type.BLACKHEADS] = createMetric(
             SkinMetric.Type.BLACKHEADS, blackheadScore, SkinZone.T_ZONE,
             "تحليل الرؤوس السوداء (Spots + Texture Uniformity + Morphology)"
@@ -594,7 +594,7 @@ class AdvancedSkinAnalyzer @Inject constructor(
         val morphRight = if (periorbitalRight != null) CVUtils.morphologicalGradient(periorbitalRight, 3) else 0f
         val avgMorph = (morphLeft + morphRight) / 2f
 
-        val darkCircleScore = CVUtils.calibratedScore(avgSpots * 0.5f + avgTexture * 0.3f + avgMorph / 100f * 0.2f, 0.14f, 0.005f)
+        val darkCircleScore = CVUtils.calibratedScore(avgSpots * 0.5f + avgTexture * 0.3f + avgMorph / 100f * 0.2f, 0.38f, 0.005f)
         metrics[SkinMetric.Type.DARK_CIRCLES] = createMetric(
             SkinMetric.Type.DARK_CIRCLES, darkCircleScore, SkinZone.EYE_AREA,
             "تحليل الهالات السوداء (Spots + LBP Texture + Morphology)"
@@ -708,23 +708,23 @@ class AdvancedSkinAnalyzer @Inject constructor(
                         metrics[SkinMetric.Type.SKIN_TONE] = createMetric(SkinMetric.Type.SKIN_TONE, toneScore, SkinZone.FULL_FACE, "تحليل لون البشرة (بدون شبكة الوجه)")
                     }
                     LightSpectrum.UV365 -> {
-                        val uvSpotsScore = CVUtils.calibratedScore(spots, 0.12f, 0.003f)
-                        val pigmentationScore = CVUtils.calibratedScore(stats.contrast, 25f, 2f)
+                        val uvSpotsScore = CVUtils.calibratedScore(spots, 0.40f, 0.003f)
+                        val pigmentationScore = CVUtils.calibratedScore(stats.contrast, 35f, 2f)
                         metrics[SkinMetric.Type.UV_SPOTS] = createMetric(SkinMetric.Type.UV_SPOTS, uvSpotsScore, SkinZone.FULL_FACE, "تحليل البقع فوق البنفسجية (بدون شبكة الوجه)")
                         metrics[SkinMetric.Type.PIGMENTATION] = createMetric(SkinMetric.Type.PIGMENTATION, pigmentationScore, SkinZone.FULL_FACE, "تحليل التصبغ (بدون شبكة الوجه)")
                     }
                     LightSpectrum.POL_P -> {
                         Timber.d("POL_P: cheeksRed=$cheeksRed, fullRedness=$redness, spots=$spots")
-                        val vascularScore = CVUtils.calibratedScore(cheeksRed, 0.50f, 0.01f)
-                        val sensitivityScore = CVUtils.calibratedScore(redness, 0.35f, 0.01f)
-                        val rosaceaScore = CVUtils.calibratedScore((cheeksRed + spots) / 2f, 0.30f, 0.005f)
+                        val vascularScore = CVUtils.calibratedScore(cheeksRed, 0.60f, 0.01f)
+                        val sensitivityScore = CVUtils.calibratedScore(redness, 0.50f, 0.01f)
+                        val rosaceaScore = CVUtils.calibratedScore((cheeksRed + spots) / 2f, 0.45f, 0.005f)
                         metrics[SkinMetric.Type.VASCULAR] = createMetric(SkinMetric.Type.VASCULAR, vascularScore, SkinZone.U_ZONE, "تحليل الأوعية الدموية (بدون شبكة الوجه)")
                         metrics[SkinMetric.Type.SENSITIVITY] = createMetric(SkinMetric.Type.SENSITIVITY, sensitivityScore, SkinZone.FULL_FACE, "تحليل الحساسية (بدون شبكة الوجه)")
                         metrics[SkinMetric.Type.ROSACEA] = createMetric(SkinMetric.Type.ROSACEA, rosaceaScore, SkinZone.U_ZONE, "تحليل الوردية (بدون شبكة الوجه)")
                     }
                     LightSpectrum.POL_N -> {
                         Timber.d("POL_N: foreheadEdge=$foreheadEdge")
-                        val wrinkleScore = CVUtils.calibratedScore(foreheadEdge, 0.40f, 0.005f)
+                        val wrinkleScore = CVUtils.calibratedScore(foreheadEdge, 0.50f, 0.005f)
                         metrics[SkinMetric.Type.WRINKLES] = createMetric(SkinMetric.Type.WRINKLES, wrinkleScore, SkinZone.FULL_FACE, "تحليل التجاعيد (بدون شبكة الوجه)")
                     }
                     LightSpectrum.WOODS -> {
@@ -737,24 +737,24 @@ class AdvancedSkinAnalyzer @Inject constructor(
                         Timber.d("MOISTURE: woodsBright=$rawBrightness, whiteBright=$whiteBright")
                         val relativeBright = if (whiteBright > 10f) rawBrightness / whiteBright else 0.5f
                         val moistureScore = CVUtils.calibratedScoreInverted(relativeBright, 0.05f, 0.90f)
-                        val melasmaScore = CVUtils.calibratedScore(spots, 0.25f, 0.003f)
+                        val melasmaScore = CVUtils.calibratedScore(spots, 0.45f, 0.003f)
                         metrics[SkinMetric.Type.MOISTURE] = createMetric(SkinMetric.Type.MOISTURE, moistureScore, SkinZone.FULL_FACE, "تحليل الرطوبة (بدون شبكة الوجه)")
                         metrics[SkinMetric.Type.MELASMA] = createMetric(SkinMetric.Type.MELASMA, melasmaScore, SkinZone.FULL_FACE, "تحليل الكلف (بدون شبكة الوجه)")
                     }
                     LightSpectrum.BLUE -> {
                         val sebumScore = CVUtils.calibratedScoreInverted(stats.meanB / 255f, 0.15f, 0.50f)
-                        val tZoneSpotScore = if (!useFull) CVUtils.calibratedScore(tZoneSpots, 0.18f, 0.003f) else CVUtils.calibratedScore(spots, 0.18f, 0.003f)
-                        val tZoneBlackhead = if (!useFull) CVUtils.calibratedScore(tZoneSpots, 0.14f, 0.005f) else CVUtils.calibratedScore(spots, 0.14f, 0.005f)
+                        val tZoneSpotScore = if (!useFull) CVUtils.calibratedScore(tZoneSpots, 0.40f, 0.003f) else CVUtils.calibratedScore(spots, 0.40f, 0.003f)
+                        val tZoneBlackhead = if (!useFull) CVUtils.calibratedScore(tZoneSpots, 0.38f, 0.005f) else CVUtils.calibratedScore(spots, 0.38f, 0.005f)
                         metrics[SkinMetric.Type.SEBUM] = createMetric(SkinMetric.Type.SEBUM, sebumScore, SkinZone.T_ZONE, "تحليل الدهون (بدون شبكة الوجه)")
                         metrics[SkinMetric.Type.ACNE] = createMetric(SkinMetric.Type.ACNE, tZoneSpotScore, SkinZone.T_ZONE, "تحليل حب الشباب (بدون شبكة الوجه)")
                         metrics[SkinMetric.Type.BLACKHEADS] = createMetric(SkinMetric.Type.BLACKHEADS, tZoneBlackhead, SkinZone.T_ZONE, "تحليل الرؤوس السوداء (بدون شبكة الوجه)")
                     }
                     LightSpectrum.RED -> {
-                        val vascularScore = CVUtils.calibratedScore(redness, 0.25f, 0.02f)
+                        val vascularScore = CVUtils.calibratedScore(redness, 0.60f, 0.02f)
                         metrics[SkinMetric.Type.VASCULAR] = createMetric(SkinMetric.Type.VASCULAR, vascularScore, SkinZone.FULL_FACE, "تحليل الأوعية الدموية (الجهد الأحمر)")
                     }
                     LightSpectrum.BROWN -> {
-                        val darkCircleScore = CVUtils.calibratedScore(eyeSpots, 0.12f, 0.005f)
+                        val darkCircleScore = CVUtils.calibratedScore(eyeSpots, 0.38f, 0.005f)
                         metrics[SkinMetric.Type.DARK_CIRCLES] = createMetric(SkinMetric.Type.DARK_CIRCLES, darkCircleScore, SkinZone.EYE_AREA, "تحليل الهالات السوداء (بدون شبكة الوجه)")
                     }
                     else -> {}

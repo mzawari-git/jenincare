@@ -326,6 +326,9 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
             val crossValidated = ensembleReport.metrics.toMutableMap()
             validateCrossSpectrum(crossValidated)
 
+            // Fill any missing metric types with estimates from correlated metrics
+            fillMissingMetrics(crossValidated)
+
             val metricsList = SkinMetric.ALL_TYPES.mapNotNull { type -> crossValidated[type] }
             val metricsMap = metricsList.associateBy { it.type }
             val expertTips = mockEngine.generateExpertTips(metricsMap)
@@ -416,6 +419,123 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
             metrics[SkinMetric.Type.WRINKLES]?.let { m ->
                 metrics[SkinMetric.Type.WRINKLES] = m.copy(score = adjustedWrinkles, details = m.details + " | تم تعديله بناءً على الرطوبة")
             }
+        }
+    }
+
+    private fun fillMissingMetrics(metrics: MutableMap<SkinMetric.Type, SkinMetric>) {
+        val present = metrics.keys.toSet()
+        val missing = SkinMetric.ALL_TYPES.filter { it !in present }
+        if (missing.isEmpty()) return
+        Timber.i("fillMissingMetrics: ${missing.size} missing types: ${missing.map { it.name }}")
+
+        fun avgScore(vararg types: SkinMetric.Type): Float {
+            val scores = types.mapNotNull { metrics[it]?.score }
+            return if (scores.isNotEmpty()) scores.average().toFloat() else 60f
+        }
+
+        fun avgScoreNearby(vararg types: SkinMetric.Type): Float {
+            val scores = types.mapNotNull { metrics[it]?.score }
+            return if (scores.isNotEmpty()) scores.average().toFloat() else 60f
+        }
+
+        fun avgSeverity(vararg types: SkinMetric.Type): MetricSeverity {
+            val sev = types.mapNotNull { metrics[it]?.severity }
+            return if (sev.isNotEmpty()) sev.sortedBy { it.ordinal }[sev.size / 2] else MetricSeverity.FAIR
+        }
+
+        for (type in missing) {
+            val estimatedScore: Float
+            val zone: SkinZone
+            val details: String
+
+            when (type) {
+                SkinMetric.Type.MOISTURE -> {
+                    estimatedScore = avgScore(SkinMetric.Type.TEXTURE, SkinMetric.Type.SKIN_TONE, SkinMetric.Type.SEBUM)
+                    zone = SkinZone.FULL_FACE
+                    details = "تقدير من مؤشرات متعلقة (لم يتم التقاط طيف WOODS)"
+                }
+                SkinMetric.Type.MELASMA -> {
+                    estimatedScore = avgScore(SkinMetric.Type.UV_SPOTS, SkinMetric.Type.PIGMENTATION)
+                    zone = SkinZone.FULL_FACE
+                    details = "تقدير من مؤشرات التصبغ (لم يتم التقاط طيف WOODS)"
+                }
+                SkinMetric.Type.DARK_CIRCLES -> {
+                    estimatedScore = avgScore(SkinMetric.Type.PIGMENTATION, SkinMetric.Type.VASCULAR, SkinMetric.Type.UV_SPOTS)
+                    zone = SkinZone.EYE_AREA
+                    details = "تقدير من مؤشرات الأوعية والتصبغ (لم يتم التقاط طيف BROWN)"
+                }
+                SkinMetric.Type.UV_SPOTS -> {
+                    estimatedScore = avgScore(SkinMetric.Type.PIGMENTATION, SkinMetric.Type.MELASMA)
+                    zone = SkinZone.FULL_FACE
+                    details = "تقدير من مؤشرات التصبغ (لم يتم التقاط طيف UV)"
+                }
+                SkinMetric.Type.PIGMENTATION -> {
+                    estimatedScore = avgScore(SkinMetric.Type.UV_SPOTS, SkinMetric.Type.SKIN_TONE, SkinMetric.Type.MELASMA)
+                    zone = SkinZone.FULL_FACE
+                    details = "تقدير من مؤشرات لون البشرة والبقع (لم يتم التقاط طيف UV)"
+                }
+                SkinMetric.Type.VASCULAR -> {
+                    estimatedScore = avgScore(SkinMetric.Type.SENSITIVITY, SkinMetric.Type.ROSACEA)
+                    zone = SkinZone.U_ZONE
+                    details = "تقدير من مؤشرات الحساسية والوردية (لم يتم التقاط طيف POL_P)"
+                }
+                SkinMetric.Type.SENSITIVITY -> {
+                    estimatedScore = avgScore(SkinMetric.Type.VASCULAR, SkinMetric.Type.ROSACEA)
+                    zone = SkinZone.FULL_FACE
+                    details = "تقدير من مؤشرات الأوعية (لم يتم التقاط طيف POL_P)"
+                }
+                SkinMetric.Type.ROSACEA -> {
+                    estimatedScore = avgScore(SkinMetric.Type.VASCULAR, SkinMetric.Type.SENSITIVITY)
+                    zone = SkinZone.U_ZONE
+                    details = "تقدير من مؤشرات الأوعية الدموية (لم يتم التقاط طيف POL_P)"
+                }
+                SkinMetric.Type.WRINKLES -> {
+                    estimatedScore = avgScore(SkinMetric.Type.TEXTURE, SkinMetric.Type.SKIN_TONE)
+                    zone = SkinZone.FULL_FACE
+                    details = "تقدير من مؤشرات الملمس (لم يتم التقاط طيف POL_N)"
+                }
+                SkinMetric.Type.SEBUM -> {
+                    estimatedScore = avgScore(SkinMetric.Type.ACNE, SkinMetric.Type.BLACKHEADS, SkinMetric.Type.PORES)
+                    zone = SkinZone.T_ZONE
+                    details = "تقدير من مؤشرات حب الشباب والمسام (لم يتم التقاط طيف BLUE)"
+                }
+                SkinMetric.Type.ACNE -> {
+                    estimatedScore = avgScore(SkinMetric.Type.SEBUM, SkinMetric.Type.BLACKHEADS, SkinMetric.Type.PORES)
+                    zone = SkinZone.T_ZONE
+                    details = "تقدير من مؤشرات الدهون والرؤوس السوداء (لم يتم التقاط طيف BLUE)"
+                }
+                SkinMetric.Type.BLACKHEADS -> {
+                    estimatedScore = avgScore(SkinMetric.Type.SEBUM, SkinMetric.Type.ACNE, SkinMetric.Type.PORES)
+                    zone = SkinZone.T_ZONE
+                    details = "تقدير من مؤشرات الدهون وحب الشباب (لم يتم التقاط طيف BLUE)"
+                }
+                SkinMetric.Type.TEXTURE -> {
+                    estimatedScore = avgScore(SkinMetric.Type.WRINKLES, SkinMetric.Type.PORES, SkinMetric.Type.SKIN_TONE)
+                    zone = SkinZone.FULL_FACE
+                    details = "تقدير من مؤشرات التجاعيد والمسام (لم يتم التقاط طيف WHITE)"
+                }
+                SkinMetric.Type.PORES -> {
+                    estimatedScore = avgScore(SkinMetric.Type.TEXTURE, SkinMetric.Type.SEBUM, SkinMetric.Type.BLACKHEADS)
+                    zone = SkinZone.T_ZONE
+                    details = "تقدير من مؤشرات الملمس والدهون (لم يتم التقاط طيف WHITE)"
+                }
+                SkinMetric.Type.SKIN_TONE -> {
+                    estimatedScore = avgScore(SkinMetric.Type.TEXTURE, SkinMetric.Type.PIGMENTATION, SkinMetric.Type.UV_SPOTS)
+                    zone = SkinZone.FULL_FACE
+                    details = "تقدير من مؤشرات الملمس والتصبغ (لم يتم التقاط طيف WHITE)"
+                }
+            }
+
+            val severity = classify(estimatedScore)
+            metrics[type] = SkinMetric(
+                type = type,
+                score = estimatedScore.coerceIn(10f, 90f),
+                severity = severity,
+                zone = zone,
+                details = details,
+                confidence = 0.55f
+            )
+            Timber.i("fillMissingMetrics: estimated ${type.name} = ${"%.1f".format(estimatedScore)} (severity=$severity)")
         }
     }
 
@@ -744,45 +864,45 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                         metrics[SkinMetric.Type.PORES] = SkinMetric(SkinMetric.Type.PORES, poreScore, classify(cvScore = poreScore), details = "تحليل كثافة المسام - الضوء الأبيض")
                     }
                     LightSpectrum.UV365 -> {
-                        val uvSpots = CVUtils.calibratedScore(spots * 0.6f + morphGrad / 100f * 0.4f, 0.15f, 0.005f)
-                        val pigmentation = CVUtils.calibratedScore(stats.contrast * 0.5f + pigHetero * 0.5f, 35f, 3f)
+                        val uvSpots = CVUtils.calibratedScore(spots * 0.6f + morphGrad / 100f * 0.4f, 0.40f, 0.005f)
+                        val pigmentation = CVUtils.calibratedScore(stats.contrast * 0.5f + pigHetero * 0.5f, 45f, 3f)
                         metrics[SkinMetric.Type.UV_SPOTS] = SkinMetric(SkinMetric.Type.UV_SPOTS, uvSpots, classify(cvScore = uvSpots), details = "تحليل البقع UV - Morphological + Adaptive")
                         metrics[SkinMetric.Type.PIGMENTATION] = SkinMetric(SkinMetric.Type.PIGMENTATION, pigmentation, classify(cvScore = pigmentation), details = "تحليل التصبغ - LAB Variance + Histogram")
                     }
                     LightSpectrum.POL_P -> {
-                        val v = CVUtils.calibratedScore(redness * 0.5f + vascularComplexity * 0.3f + inflammatory * 0.2f, 0.25f, 0.02f)
-                        val s = CVUtils.calibratedScore(redness * 0.6f + inflammatory * 0.4f, 0.20f, 0.015f)
-                        val r = CVUtils.calibratedScore((redness + vascularComplexity) / 2f, 0.18f, 0.01f)
+                        val v = CVUtils.calibratedScore(redness * 0.5f + vascularComplexity * 0.3f + inflammatory * 0.2f, 0.60f, 0.02f)
+                        val s = CVUtils.calibratedScore(redness * 0.6f + inflammatory * 0.4f, 0.50f, 0.015f)
+                        val r = CVUtils.calibratedScore((redness + vascularComplexity) / 2f, 0.45f, 0.01f)
                         metrics[SkinMetric.Type.VASCULAR] = SkinMetric(SkinMetric.Type.VASCULAR, v, classify(cvScore = v), details = "تحليل الأوعية - Vascular Pattern + Inflammatory")
                         metrics[SkinMetric.Type.SENSITIVITY] = SkinMetric(SkinMetric.Type.SENSITIVITY, s, classify(cvScore = s), details = "تحليل الحساسية - Redness + Inflammatory")
                         metrics[SkinMetric.Type.ROSACEA] = SkinMetric(SkinMetric.Type.ROSACEA, r, classify(cvScore = r), details = "تحليل الوردية - Vascular Complexity")
                     }
                     LightSpectrum.POL_N -> {
-                        val wrinkleScore = CVUtils.calibratedScore(edgeRatio * 0.3f + wrinkleDepth * 0.3f + edgeHist * 0.2f + lbp * 0.2f, 0.15f, 0.003f)
+                        val wrinkleScore = CVUtils.calibratedScore(edgeRatio * 0.3f + wrinkleDepth * 0.3f + edgeHist * 0.2f + lbp * 0.2f, 0.40f, 0.003f)
                         metrics[SkinMetric.Type.WRINKLES] = SkinMetric(SkinMetric.Type.WRINKLES, wrinkleScore, classify(cvScore = wrinkleScore), details = "تحليل التجاعيد - Edge + Gabor + LBP")
                     }
                     LightSpectrum.WOODS -> {
                         val moistureScore = CVUtils.calibratedScoreInverted(stats.brightness / 100f * 0.6f + skinBarrier * 0.4f, 0.05f, 0.85f)
                         val melasmaSpots = CVUtils.adaptiveThresholdSpots(bitmap)
-                        val melasmaScore = CVUtils.calibratedScore(melasmaSpots * 0.6f + pigHetero * 0.4f, 0.15f, 0.005f)
+                        val melasmaScore = CVUtils.calibratedScore(melasmaSpots * 0.6f + pigHetero * 0.4f, 0.40f, 0.005f)
                         metrics[SkinMetric.Type.MOISTURE] = SkinMetric(SkinMetric.Type.MOISTURE, moistureScore, classify(cvScore = moistureScore), details = "تحليل الرطوبة - Brightness + Barrier")
                         metrics[SkinMetric.Type.MELASMA] = SkinMetric(SkinMetric.Type.MELASMA, melasmaScore, classify(cvScore = melasmaScore), details = "تحليل الكلف - Spots + Heterogeneity")
                     }
                     LightSpectrum.BLUE -> {
                         val sebumScore = CVUtils.calibratedScoreInverted(stats.meanB / 255f * 0.5f + sebumDist * 0.3f + morphGrad / 100f * 0.2f, 0.15f, 0.55f)
-                        val acneScore = CVUtils.calibratedScore(spots * 0.6f + morphGrad / 100f * 0.4f, 0.15f, 0.003f)
-                        val blackheadScore = CVUtils.calibratedScore(spots * 0.5f + (1f - sebumUniformity / 50f) * 0.3f + morphGrad / 100f * 0.2f, 0.12f, 0.005f)
+                        val acneScore = CVUtils.calibratedScore(spots * 0.6f + morphGrad / 100f * 0.4f, 0.40f, 0.003f)
+                        val blackheadScore = CVUtils.calibratedScore(spots * 0.5f + (1f - sebumUniformity / 50f) * 0.3f + morphGrad / 100f * 0.2f, 0.35f, 0.005f)
                         metrics[SkinMetric.Type.SEBUM] = SkinMetric(SkinMetric.Type.SEBUM, sebumScore, classify(cvScore = sebumScore), details = "تحليل الدهون - Blue + Distribution + Morphology")
                         metrics[SkinMetric.Type.ACNE] = SkinMetric(SkinMetric.Type.ACNE, acneScore, classify(cvScore = acneScore), details = "تحليل حب الشباب - Adaptive + Morphological")
                         metrics[SkinMetric.Type.BLACKHEADS] = SkinMetric(SkinMetric.Type.BLACKHEADS, blackheadScore, classify(cvScore = blackheadScore), details = "تحليل الرؤوس السوداء - Spots + Texture + Morphology")
                     }
                     LightSpectrum.RED -> {
-                        val vascularScore = CVUtils.calibratedScore(redness * 0.6f + vascularComplexity * 0.4f, 0.25f, 0.02f)
+                        val vascularScore = CVUtils.calibratedScore(redness * 0.6f + vascularComplexity * 0.4f, 0.60f, 0.02f)
                         metrics[SkinMetric.Type.VASCULAR] = SkinMetric(SkinMetric.Type.VASCULAR, vascularScore, classify(cvScore = vascularScore), details = "تحليل الأوعية - Redness + Complexity")
                     }
                     LightSpectrum.BROWN -> {
                         val texture = CVUtils.localBinaryPattern(bitmap, 3)
-                        val darkCircleScore = CVUtils.calibratedScore(spots * 0.5f + texture * 0.3f + morphGrad / 100f * 0.2f, 0.14f, 0.005f)
+                        val darkCircleScore = CVUtils.calibratedScore(spots * 0.5f + texture * 0.3f + morphGrad / 100f * 0.2f, 0.38f, 0.005f)
                         metrics[SkinMetric.Type.DARK_CIRCLES] = SkinMetric(SkinMetric.Type.DARK_CIRCLES, darkCircleScore, classify(cvScore = darkCircleScore), details = "تحليل الهالات - Spots + LBP + Morphology")
                     }
                     else -> {}
@@ -858,17 +978,17 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                         metrics[SkinMetric.Type.SKIN_TONE] = SkinMetric(SkinMetric.Type.SKIN_TONE, toneScore, classify(toneScore), details = "تحليل لون أساسي - الضوء الأبيض")
                     }
                     LightSpectrum.UV365 -> {
-                        val uvScore = CVUtils.calibratedScore(avgBrightness * 100f, 0.15f, 0.005f)
+                        val uvScore = CVUtils.calibratedScore(avgBrightness * 100f, 0.40f, 0.005f)
                         metrics[SkinMetric.Type.UV_SPOTS] = SkinMetric(SkinMetric.Type.UV_SPOTS, uvScore, classify(uvScore), details = "تحليل أساسي UV")
                     }
                     LightSpectrum.POL_P -> {
                         val redness = avgR / maxOf(avgG, avgB, 1f)
-                        val vScore = CVUtils.calibratedScore(redness * 20f, 0.25f, 0.02f)
+                        val vScore = CVUtils.calibratedScore(redness * 20f, 0.60f, 0.02f)
                         metrics[SkinMetric.Type.VASCULAR] = SkinMetric(SkinMetric.Type.VASCULAR, vScore, classify(vScore), details = "تحليل أساسي - قطبي متقاطع")
                     }
                     LightSpectrum.POL_N -> {
                         val contrast = (maxOf(avgR, avgG, avgB) - minOf(avgR, avgG, avgB)).toFloat() / 255f
-                        val wScore = CVUtils.calibratedScore(contrast * 50f, 0.15f, 0.003f)
+                        val wScore = CVUtils.calibratedScore(contrast * 50f, 0.40f, 0.003f)
                         metrics[SkinMetric.Type.WRINKLES] = SkinMetric(SkinMetric.Type.WRINKLES, wScore, classify(wScore), details = "تحليل أساسي - قطبي موازي")
                     }
                     LightSpectrum.WOODS -> {
@@ -880,10 +1000,10 @@ class SkinAnalysisRepositoryImpl @Inject constructor(
                     }
                     LightSpectrum.RED -> {
                         val redness = avgR / maxOf(avgG, avgB, 1f)
-                        metrics[SkinMetric.Type.VASCULAR] = SkinMetric(SkinMetric.Type.VASCULAR, CVUtils.calibratedScore(redness * 20f, 0.25f, 0.02f), classify(redness * 20f), details = "تحليل أساسي - أحمر")
+                        metrics[SkinMetric.Type.VASCULAR] = SkinMetric(SkinMetric.Type.VASCULAR, CVUtils.calibratedScore(redness * 20f, 0.60f, 0.02f), classify(redness * 20f), details = "تحليل أساسي - أحمر")
                     }
                     LightSpectrum.BROWN -> {
-                        metrics[SkinMetric.Type.DARK_CIRCLES] = SkinMetric(SkinMetric.Type.DARK_CIRCLES, CVUtils.calibratedScore(avgBrightness * 70f, 0.14f, 0.005f), classify(avgBrightness * 70f), details = "تحليل أساسي - بني")
+                        metrics[SkinMetric.Type.DARK_CIRCLES] = SkinMetric(SkinMetric.Type.DARK_CIRCLES, CVUtils.calibratedScore(avgBrightness * 70f, 0.38f, 0.005f), classify(avgBrightness * 70f), details = "تحليل أساسي - بني")
                     }
                     else -> {}
                 }

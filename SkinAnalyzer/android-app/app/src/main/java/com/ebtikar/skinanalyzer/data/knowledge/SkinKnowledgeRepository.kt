@@ -68,7 +68,11 @@ class SkinKnowledgeRepository @Inject constructor(
     }
 
     fun getCachedKnowledge(): SkinKnowledgeBase {
-        return knowledge ?: SkinKnowledgeBase()
+        return knowledge ?: run {
+            val loaded = loadFromCache() ?: loadFromAssets() ?: SkinKnowledgeBase()
+            knowledge = loaded
+            loaded
+        }
     }
 
     fun getVersion(): Int {

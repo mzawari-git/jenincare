@@ -450,13 +450,13 @@ object CVUtils {
         } catch (e: Exception) { null }
     }
 
-    fun calibratedScore(value: Float, worst: Float, best: Float, maxScore: Float = 85f, minScore: Float = 15f): Float {
+    fun calibratedScore(value: Float, worst: Float, best: Float, maxScore: Float = 92f, minScore: Float = 8f): Float {
         if (value >= worst) return minScore
         if (value <= best) return maxScore
         return ((worst - value) / (worst - best) * (maxScore - minScore) + minScore).coerceIn(minScore, maxScore)
     }
 
-    fun calibratedScoreInverted(value: Float, best: Float, worst: Float, maxScore: Float = 85f, minScore: Float = 15f): Float {
+    fun calibratedScoreInverted(value: Float, best: Float, worst: Float, maxScore: Float = 92f, minScore: Float = 8f): Float {
         if (value <= best) return maxScore
         if (value >= worst) return minScore
         return (maxScore + minScore - ((value - best) / (worst - best) * (maxScore - minScore) + minScore)).coerceIn(minScore, maxScore)
