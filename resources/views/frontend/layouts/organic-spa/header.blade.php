@@ -20,6 +20,8 @@
                 <a href="{{ route('affiliate.landing') }}" class="nav-link">?????</a>
                 <a href="{{ route('blog.index') }}" class="nav-link">?????</a>
                 <a href="{{ route('musk-collection') }}" class="nav-link"><span style="color:#D4AF37;">?????? ?????</span></a>
+                <a href="{{ route('products.landing') }}" class="nav-link"><i class="ph-fill ph-gift" style="color:#EC4899;"></i> ??????? ????????</a>
+                <a href="{{ route('wheel.of.fortune') }}" class="nav-link"><i class="ph-fill ph-spinner" style="color:#FFD700;"></i> ?????? ????</a>
                 <a href="{{ route('contact') }}" class="nav-link">?????</a>
             </nav>
         </div>
@@ -113,6 +115,16 @@
                 <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-flask text-base" style="color:#D4AF37;"></i></span>
                 <span style="color:#D4AF37;">?????? ?????</span>
                 @if(request()->routeIs('musk-collection'))<i class="ph ph-caret-left ms-auto" style="color:var(--brand-500);"></i>@endif
+            </a>
+                <a href="{{ route('products.landing') }}" class="mobile-link {{ request()->routeIs('products.landing')?'active':'' }}">
+                <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph-fill ph-gift text-base" style="color:#EC4899;"></i></span>
+                <span style="color:#EC4899;">??????? ????????</span>
+                @if(request()->routeIs('products.landing'))<i class="ph ph-caret-left ms-auto" style="color:var(--brand-500);"></i>@endif
+            </a>
+            <a href="{{ route('wheel.of.fortune') }}" class="mobile-link {{ request()->routeIs('wheel.of.fortune')?'active':'' }}">
+                <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph-fill ph-spinner text-base" style="color:#FFD700;"></i></span>
+                <span style="color:#FFD700;">?????? ????</span>
+                @if(request()->routeIs('wheel.of.fortune'))<i class="ph ph-caret-left ms-auto" style="color:var(--brand-500);"></i>@endif
             </a>
             <a href="{{ route('contact') }}" class="mobile-link {{ request()->routeIs('contact')?'active':'' }}">
                 <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--surface-alt);"><i class="ph ph-envelope text-base" style="color:var(--ink-dim);"></i></span>

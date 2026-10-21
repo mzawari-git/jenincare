@@ -15,8 +15,11 @@ use App\Http\Controllers\Frontend\BlogController as FrontBlogController;
 use App\Http\Controllers\Frontend\OptimizedImageController;
 use App\Http\Controllers\Frontend\ServeStorageController;
 use App\Http\Controllers\Frontend\VirtualStoreController;
+use App\Http\Controllers\Frontend\LandingController;
+use App\Http\Controllers\Frontend\WheelController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/products-landing', [LandingController::class, 'index'])->name('products.landing');
 Route::get('/shop', [ShopController::class, 'index'])->name('shop');
 Route::get('/product/{slug}', [ProductController::class, 'show'])->name('product.show');
 Route::get('/cart', [CartController::class, 'index'])->name('cart');
@@ -56,6 +59,11 @@ Route::get('/privacy', function () {
     return view('frontend.pages.privacy');
 })->name('privacy');
 
+Route::get('/spin-wheel', [WheelController::class, 'index'])->name('wheel.of.fortune');
+Route::middleware(['auth'])->group(function () {
+    Route::post('/spin-wheel/prize/save', [\App\Http\Controllers\Admin\WheelPrizeController::class, 'inlineSave'])->name('wheel.inline.save');
+    Route::post('/spin-wheel/prize/delete', [\App\Http\Controllers\Admin\WheelPrizeController::class, 'inlineDelete'])->name('wheel.inline.delete');
+});
 Route::get('/musk-collection', function () {
     return view('frontend.pages.musk-collection');
 })->name('musk-collection');

@@ -392,6 +392,12 @@
                     <a href="{{ route('admin.products.index') }}" class="nav-item {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
                         <i class="fas fa-box"></i> <span>المنتجات</span>
                     </a>
+                    <a href="{{ route('admin.products.landing') }}" class="nav-item {{ request()->routeIs('admin.products.landing*') ? 'active' : '' }}">
+                        <i class="fas fa-gift"></i> <span>صفحة العرض (Landing)</span>
+                    </a>
+                    <a href="{{ route('admin.wheel-prizes.index') }}" class="nav-item {{ request()->routeIs('admin.wheel-prizes*') ? 'active' : '' }}">
+                        <i class="fas fa-spinner"></i> <span>جوائز الدولاب (Wheel)</span>
+                    </a>
                     <a href="{{ route('admin.brands.index') }}" class="nav-item {{ request()->routeIs('admin.brands.*') ? 'active' : '' }}">
                         <i class="fas fa-certificate"></i> <span>العلامات التجارية</span>
                     </a>

@@ -87,3 +87,22 @@ stdout.txt
 
 # Temporary planning docs
 roadmapaffiliate.md
+!.env.example
+/vendor/
+/node_modules/
+/storage/logs/
+/storage/framework/cache/
+/storage/framework/sessions/
+/storage/framework/views/
+/storage/app/public/
+/public/uploads/
+/uploads/
+*.zip
+*.apk
+*.tgz
+*.tar.gz
+*.rar
+/.idea/
+/.vscode/
+/.phpunit.result.cache
+/.php-cs-fixer.cache

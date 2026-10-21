@@ -1,0 +1,41 @@
+[12-Jun-2026 15:54:36 UTC] PHP Warning:  require(/home/u920699383/domains/jenincare.shop/public_html/vendor/autoload.php): Failed to open stream: No such file or directory in /home/u920699383/domains/jenincare.shop/public_html/artisan on line 6
+[12-Jun-2026 15:54:36 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/u920699383/domains/jenincare.shop/public_html/vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/u920699383/domains/jenincare.shop/public_html/artisan:6
+Stack trace:
+#0 {main}
+  thrown in /home/u920699383/domains/jenincare.shop/public_html/artisan on line 6
+[12-Jun-2026 15:55:53 UTC] PHP Warning:  require(/home/u920699383/domains/jenincare.shop/public_html/vendor/autoload.php): Failed to open stream: No such file or directory in /home/u920699383/domains/jenincare.shop/public_html/artisan on line 6
+[12-Jun-2026 15:55:53 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/u920699383/domains/jenincare.shop/public_html/vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/u920699383/domains/jenincare.shop/public_html/artisan:6
+Stack trace:
+#0 {main}
+  thrown in /home/u920699383/domains/jenincare.shop/public_html/artisan on line 6
+[12-Jun-2026 15:56:46 UTC] PHP Warning:  require(/home/u920699383/domains/jenincare.shop/public_html/vendor/autoload.php): Failed to open stream: No such file or directory in /home/u920699383/domains/jenincare.shop/public_html/artisan on line 6
+[12-Jun-2026 15:56:46 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/u920699383/domains/jenincare.shop/public_html/vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/u920699383/domains/jenincare.shop/public_html/artisan:6
+Stack trace:
+#0 {main}
+  thrown in /home/u920699383/domains/jenincare.shop/public_html/artisan on line 6
+[12-Jun-2026 15:56:56 UTC] PHP Warning:  require(vendor/autoload.php): Failed to open stream: No such file or directory in Command line code on line 1
+[12-Jun-2026 15:56:56 UTC] PHP Fatal error:  Uncaught Error: Failed opening required 'vendor/autoload.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in Command line code:1
+Stack trace:
+#0 {main}
+  thrown in Command line code on line 1
+[12-Jun-2026 16:05:40 UTC] PHP Fatal error:  Uncaught Error: Class "App\Models\Setting" not found in Command line code:1
+Stack trace:
+#0 {main}
+  thrown in Command line code on line 1
+[12-Jun-2026 16:06:33 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function symlink() in Command line code:1
+Stack trace:
+#0 {main}
+  thrown in Command line code on line 1
+[13-Jun-2026 20:11:39 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function base_path() in Command line code:1
+Stack trace:
+#0 {main}
+  thrown in Command line code on line 1
+[13-Jun-2026 20:42:08 UTC] PHP Parse error:  syntax error, unexpected token "\", expecting end of file in /tmp/test_musk.php on line 2
+[13-Jun-2026 20:42:13 UTC] PHP Parse error:  syntax error, unexpected token "\" in Command line code on line 1
+[13-Jun-2026 20:42:18 UTC] PHP Parse error:  syntax error, unexpected token "\", expecting "," or ";" in Command line code on line 1
+[13-Jun-2026 20:43:21 UTC] PHP Parse error:  syntax error, unexpected token "\" in Command line code on line 1
+[13-Jun-2026 20:52:42 UTC] PHP Parse error:  syntax error, unexpected token "\", expecting ")" in Command line code on line 1
+[13-Jun-2026 20:58:58 UTC] PHP Parse error:  syntax error, unexpected token "=", expecting end of file in /tmp/chk.php on line 4
+[21-Jun-2026 12:03:51 UTC] PHP Parse error:  syntax error, unexpected token "\", expecting end of file in Command line code on line 1
+[21-Jun-2026 16:09:29 UTC] PHP Parse error:  syntax error, unexpected token "\" in Command line code on line 1
+[21-Jun-2026 16:09:33 UTC] PHP Parse error:  syntax error, unexpected token "\" in Command line code on line 1

@@ -54,6 +54,7 @@
         <h1 class="h5 mb-0">قائمة المنتجات</h1>
     </div>
     <div class="d-flex gap-2">
+        <a href="{{ route('admin.products.export') }}" class="btn btn-sm btn-outline-success"><i class="fas fa-file-export"></i> تصدير CSV</a>
         <a href="{{ route('admin.products.import.template') }}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-download"></i> قالب CSV</a>
         <a href="{{ route('admin.products.import') }}" class="btn btn-sm btn-outline-pink"><i class="fas fa-file-excel"></i> استيراد Excel</a>
         <a href="{{ route('admin.products.create') }}" class="btn btn-sm btn-pink"><i class="fas fa-plus"></i> إضافة منتج</a>

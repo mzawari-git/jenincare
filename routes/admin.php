@@ -40,6 +40,7 @@ use App\Http\Controllers\Admin\MetaAdvancedController;
 use App\Http\Controllers\Admin\GoogleAdsController;
 use App\Http\Controllers\Admin\SocialAuthController;
 use App\Http\Controllers\Admin\StoreSceneController;
+use App\Http\Controllers\Admin\WheelPrizeController;
 
 Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
 
@@ -165,10 +166,13 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/products/import', [ProductController::class, 'import'])->name('admin.products.import');
     Route::post('/products/import', [ProductController::class, 'importStore'])->name('admin.products.import.store');
     Route::get('/products/download-template', [ProductController::class, 'downloadTemplate'])->name('admin.products.import.template');
+    Route::get('/products/export', [ProductController::class, 'export'])->name('admin.products.export');
     Route::post('/products', [ProductController::class, 'store'])->name('admin.products.store');
     Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('admin.products.edit');
     Route::put('/products/{product}', [ProductController::class, 'update'])->name('admin.products.update');
     Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('admin.products.destroy');
+    Route::get('/products/landing/manage', [ProductController::class, 'landing'])->name('admin.products.landing');
+    Route::post('/products/{product}/toggle-landing', [ProductController::class, 'toggleLanding'])->name('admin.products.toggle-landing');
 
     // Categories
     Route::get('/categories', [CategoryController::class, 'index'])->name('admin.categories.index');
@@ -615,4 +619,16 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::put('/store-scenes/{storeScene}/3d-objects/{object}', [StoreSceneController::class, 'updateObject3d'])->name('admin.store-scenes.3d-objects.update');
     Route::delete('/store-scenes/{storeScene}/3d-objects/{object}', [StoreSceneController::class, 'destroyObject3d'])->name('admin.store-scenes.3d-objects.destroy');
     Route::post('/store-scenes/{storeScene}/toggle-3d', [StoreSceneController::class, 'toggle3d'])->name('admin.store-scenes.toggle-3d');
+
+    // ============================================================
+    // Wheel of Fortune Prizes
+    // ============================================================
+    Route::get('/wheel-prizes', [WheelPrizeController::class, 'index'])->name('admin.wheel-prizes.index');
+    Route::get('/wheel-prizes/create', [WheelPrizeController::class, 'create'])->name('admin.wheel-prizes.create');
+    Route::post('/wheel-prizes', [WheelPrizeController::class, 'store'])->name('admin.wheel-prizes.store');
+    Route::get('/wheel-prizes/{wheelPrize}/edit', [WheelPrizeController::class, 'edit'])->name('admin.wheel-prizes.edit');
+    Route::put('/wheel-prizes/{wheelPrize}', [WheelPrizeController::class, 'update'])->name('admin.wheel-prizes.update');
+    Route::delete('/wheel-prizes/{wheelPrize}', [WheelPrizeController::class, 'destroy'])->name('admin.wheel-prizes.destroy');
+    Route::post('/wheel-prizes/reorder', [WheelPrizeController::class, 'reorder'])->name('admin.wheel-prizes.reorder');
+    Route::post('/wheel-prizes/{wheelPrize}/toggle', [WheelPrizeController::class, 'toggle'])->name('admin.wheel-prizes.toggle');
 });
